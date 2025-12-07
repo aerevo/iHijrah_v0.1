@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
-import 'home.dart';
+import 'tracker_screen.dart';
 import 'birthdate_prompt_screen.dart'; // ✅ DIPERBETULKAN (Nama fail betul)
 import '../utils/premium_route.dart';
 
@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     // Semak jika data user (tarikh lahir Hijrah) sudah wujud
     if (userModel.hijriDOB != null && userModel.hijriDOB!.isNotEmpty) {
       // User lama -> Terus ke Home
-      Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const HomePage()));
+      Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const TrackerScreen()));
     } else {
       // User baru -> Setup Tarikh Lahir
       // ✅ DIPERBETULKAN: Menggunakan nama kelas yang betul 'BirthdatePromptScreen'
