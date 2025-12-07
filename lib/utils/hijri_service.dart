@@ -12,25 +12,22 @@ import 'package:flutter/foundation.dart';
 /// - Days until next Hijri birthday
 /// - Date formatting untuk UI
 class HijriService {
-  // ===== INITIALIZATION =====
-
-  /// Ensure locale is set (call once during app init)
-  static void _ensureLocale() {
-    HijriCalendar.setLocal('en');
-  }
-
   // ===== BASIC CONVERSIONS =====
 
   /// Get current Hijri date
   static HijriCalendar nowHijri() {
-    _ensureLocale();
     return HijriCalendar.now();
   }
 
   /// Convert Masihi date to Hijri
   static HijriCalendar fromDate(DateTime date) {
-    _ensureLocale();
-    return HijriCalendar.fromDate(date);
+    return HijriCalendar.fromGregorian(date);
+  }
+
+  /// Convert Masihi date to Hijri string (DD/MM/YYYY)
+  static String convertToHijri(DateTime date) {
+    final hijriDate = HijriCalendar.fromGregorian(date);
+    return "${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}";
   }
 
   /// Get current Hijri date as display string
@@ -91,8 +88,13 @@ class HijriService {
       // Adjust untuk negative days
       if (ageDays < 0) {
         ageMonths--;
-        final prevMonth = today.hMonth - 1 == 0 ? 12 : today.hMonth - 1;
-        ageDays += today.getMonthLength(prevMonth);
+        // To get the length of the previous month, we can create a new Hijri object
+        // for the previous month and get its length.
+        final prevMonthDate = HijriCalendar()
+          ..hYear = today.hYear
+          ..hMonth = today.hMonth - 1
+          ..hDay = 1;
+        ageDays += prevMonthDate.lengthOfMonth;
       }
 
       // Adjust untuk negative months
@@ -184,19 +186,17 @@ class HijriService {
         nextYear++;
       }
 
-      // Create next birthday date
-      final nextBday = HijriCalendar(nextYear, dobMonth, dobDay);
-      
-      // Convert to Gregorian for accurate day difference
-      final todayGregorian = DateTime.now();
-      final nextBdayGregorian = DateTime(
-        todayGregorian.year,
-        nextBday.gMonth,
-        nextBday.gDay,
-      );
+      // Create next birthday date object
+      final nextBday = HijriCalendar()
+        ..hYear = nextYear
+        ..hMonth = dobMonth
+        ..hDay = dobDay;
 
-      final difference = nextBdayGregorian.difference(todayGregorian);
-      return difference.inDays;
+      // Calculate the difference in days using Julian Day numbers for accuracy
+      final difference = nextBday.julianDay - today.julianDay;
+
+      // Ensure the result is not negative
+      return difference < 0 ? 0 : difference;
     } catch (e) {
       if (kDebugMode) {
         print("❌ Error calculating days to birthday: $e");
@@ -263,7 +263,7 @@ class HijriService {
   /// Get days in current Hijri month
   static int getDaysInCurrentMonth() {
     final today = nowHijri();
-    return today.getMonthLength(today.hMonth);
+    return today.lengthOfMonth;
   }
 
   // ===== DEBUG =====

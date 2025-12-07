@@ -83,11 +83,14 @@ class PrayerService with ChangeNotifier {
     try {
       _coordinates = Coordinates(_currentLat, _currentLng);
 
-      final params = CalculationMethod.muslimWorldLeague();
-      params.madhab = Madhab.shafi;
+      final params = CalculationParameters(
+        method: CalculationMethod.MUSLIM_WORLD_LEAGUE,
+        madhab: Madhab.SHAFI,
+      );
 
       final date = DateTime.now();
-      _prayerTimes = PrayerTimes(_coordinates!, date, params);
+      _prayerTimes = PrayerTimes(
+          coordinates: _coordinates!, date: date, params: params);
 
       _updateNextPrayer();
       notifyListeners();
@@ -152,10 +155,13 @@ class PrayerService with ChangeNotifier {
       // After Isyak, next is Fajr tomorrow
       nextPrayerName = 'Subuh (Esok)';
 
-      final params = CalculationMethod.muslimWorldLeague();
-      params.madhab = Madhab.shafi;
+      final params = CalculationParameters(
+        method: CalculationMethod.MUSLIM_WORLD_LEAGUE,
+        madhab: Madhab.SHAFI,
+      );
       final tomorrow = now.add(const Duration(days: 1));
-      final prayerTomorrow = PrayerTimes(_coordinates!, tomorrow, params);
+      final prayerTomorrow = PrayerTimes(
+          coordinates: _coordinates!, date: tomorrow, params: params);
 
       timeUntilNextPrayer = prayerTomorrow.fajr.difference(now);
     }
