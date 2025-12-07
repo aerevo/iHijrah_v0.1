@@ -1,0 +1,51 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches: [ "main" ] # Tukar 'main' jika branch utama anda nama lain
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: "12.x"
+          cache: 'gradle'
+
+      - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0' # Pastikan versi ini sesuai dgn projek anda
+          channel: 'stable'
+          cache: true
+
+      - name: Decode Keystore
+        id: decode_keystore
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: ${{ github.workspace }}/android/app/upload-keystore.jks
+          encodedString: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK Release
+        run: flutter build apk --release
+        env:
+                  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
