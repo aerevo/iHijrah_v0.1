@@ -1,4 +1,4 @@
-﻿// lib/main.dart (UPGRADED 8.0/10)
+// lib/main.dart (UPGRADED 8.0/10)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -20,8 +20,10 @@ void main() async {
   // 1. Ensure Bindings
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Init Storage (Hive / SharedPreferences)
-  await StorageService.init();
+  // 2. Init Services
+  final storageService = StorageService();
+  await storageService.init();
+  await SirahService.load();
 
   // 3. Lock Orientation (Optional, untuk design stabil)
   SystemChrome.setPreferredOrientations([
@@ -35,26 +37,32 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  runApp(const IHijrahApp());
+  runApp(IHijrahApp(storageService: storageService));
 }
 
 class IHijrahApp extends StatelessWidget {
-  const IHijrahApp({super.key});
+  final StorageService storageService;
+  const IHijrahApp({super.key, required this.storageService});
 
   @override
   Widget build(BuildContext context) {
     // 5. Setup MultiProvider
     return MultiProvider(
       providers: [
-        // Data Providers
+        // State Management Providers
         ChangeNotifierProvider(create: (_) => UserModel()),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
         
         // Service Providers (Logic)
+        Provider<StorageService>.value(value: storageService),
         Provider(create: (_) => AudioService()),
-        Provider(create: (_) => PrayerService()),
-        Provider(create: (_) => SirahService()),
+        ChangeNotifierProvider(
+          create: (context) => PrayerService(
+            context.read<StorageService>(),
+            context.read<AudioService>(),
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'iHijrah Embun Jiwa',
