@@ -1,0 +1,14 @@
+iHijrah Enhanced v0.1.2 – Fasa 5
+-------------------------------
+✔ Kalkulator Umur Hijrah & Ulang Tahun
+✔ Zikir Harian (Embun Jiwa)
+✔ Pokok Interaktif Berdasarkan Amalan
+✔ Audio Reflektif & Selawat
+✔ Reka Bentuk Dinamik Bertema Nabawi
+
+Dibangunkan oleh:
+Aer (Syahid) – Zya Mina Corp.
+Arkitek Sistem: François Ultra
+
+Versi Kompilasi: 17 Julai 2025
+Hak Milik Penuh AER Global

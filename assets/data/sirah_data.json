@@ -1,0 +1,412 @@
+{
+  "01-01": {
+    "tarikh_hijrah": "1 Muharram",
+    "peristiwa": "Hijrah Rasulullah SAW dari Mekah ke Madinah",
+    "tahun_hijrah": 1,
+    "tahun_masihi": 622,
+    "lokasi": "Mekah - Madinah",
+    "pengajaran": "Pengorbanan dan permulaan negara Islam yang menjadi asas kebangkitan umat."
+  },
+  "10-01": {
+    "tarikh_hijrah": "10 Muharram",
+    "peristiwa": "Syahidnya Saidina Husain di Karbala (Hari Asyura)",
+    "tahun_hijrah": 61,
+    "tahun_masihi": 680,
+    "lokasi": "Karbala, Iraq",
+    "pengajaran": "Keteguhan iman dan perjuangan menentang kezaliman yang menjadi teladan abadi."
+  },
+  "16-01": {
+    "tarikh_hijrah": "16 Muharram",
+    "peristiwa": "Perubahan Kiblat dari Baitul Maqdis ke Ka'bah",
+    "tahun_hijrah": 2,
+    "tahun_masihi": 624,
+    "lokasi": "Madinah (Masjid Qiblatain)",
+    "pengajaran": "Kepatuhan mutlak kepada perintah Allah dan pengukuhan identiti Islam."
+  },
+  "01-02": {
+    "tarikh_hijrah": "1 Safar",
+    "peristiwa": "Permulaan peperangan Zi Amr (Ghatfan)",
+    "tahun_hijrah": 3,
+    "tahun_masihi": 624,
+    "lokasi": "Najd",
+    "pengajaran": "Ketegasan Rasulullah SAW dalam mempertahankan Madinah dari ancaman luar."
+  },
+  "12-03": {
+    "tarikh_hijrah": "12 Rabiulawal",
+    "peristiwa": "Kelahiran Nabi Muhammad SAW",
+    "tahun_hijrah": -53,
+    "tahun_masihi": 571,
+    "lokasi": "Mekah",
+    "pengajaran": "Rahmat terbesar Allah kepada sekalian alam."
+  },
+  "13-03": {
+    "tarikh_hijrah": "12 Rabiulawal",
+    "peristiwa": "Wafatnya Rasulullah SAW",
+    "tahun_hijrah": 11,
+    "tahun_masihi": 632,
+    "lokasi": "Madinah",
+    "pengajaran": "Pentingnya kesinambungan kepimpinan dan kesatuan ummah."
+  },
+  "01-04": {
+    "tarikh_hijrah": "1 Rabiulakhir",
+    "peristiwa": "Perang Al-Ghabah (atau Zi Qarad)",
+    "tahun_hijrah": 6,
+    "tahun_masihi": 627,
+    "lokasi": "Berhampiran Madinah",
+    "pengajaran": "Tindak balas pantas tentera Islam terhadap pencerobohan."
+  },
+  "22-06": {
+    "tarikh_hijrah": "22 Jamadilakhir",
+    "peristiwa": "Wafatnya Khalifah Abu Bakar As-Siddiq",
+    "tahun_hijrah": 13,
+    "tahun_masihi": 634,
+    "lokasi": "Madinah",
+    "pengajaran": "Keikhlasan dan ketegasan dalam memimpin umat selepas kewafatan Nabi."
+  },
+  "08-05": {
+    "tarikh_hijrah": "Jamadilawal",
+    "peristiwa": "Perang Mu'tah",
+    "tahun_hijrah": 8,
+    "tahun_masihi": 629,
+    "lokasi": "Mu'tah, Jordan",
+    "pengajaran": "Keberanian luar biasa 3,000 tentera Islam melawan 200,000 tentera Rom."
+  },
+  "27-07": {
+    "tarikh_hijrah": "27 Rejab",
+    "peristiwa": "Peristiwa Israk dan Mikraj",
+    "tahun_hijrah": -1,
+    "tahun_masihi": 621,
+    "lokasi": "Mekah - Baitul Maqdis - Sidratul Muntaha",
+    "pengajaran": "Penerimaan perintah solat lima waktu dan kemuliaan Nabi Muhammad SAW."
+  },
+  "01-07": {
+    "tarikh_hijrah": "Rejab",
+    "peristiwa": "Perang Tabuk (Ekspedisi terakhir Nabi)",
+    "tahun_hijrah": 9,
+    "tahun_masihi": 630,
+    "lokasi": "Tabuk",
+    "pengajaran": "Ujian keimanan dan ketaatan dalam menghadapi musuh yang besar."
+  },
+  "15-08": {
+    "tarikh_hijrah": "15 Syaaban",
+    "peristiwa": "Nisfu Syaaban (Malam pertukaran buku amalan)",
+    "tahun_hijrah": -
+  ,
+    "tahun_masihi": -
+  ,
+    "lokasi": "Global",
+    "pengajaran": "Malam keampunan dan persiapan rohani sebelum Ramadan."
+  },
+  "01-09": {
+    "tarikh_hijrah": "1 Ramadan",
+    "peristiwa": "Permulaan Puasa Ramadan",
+    "tahun_hijrah": 2,
+    "tahun_masihi": 624,
+    "lokasi": "Madinah",
+    "pengajaran": "Kewajipan berpuasa mula disyariatkan kepada umat Islam."
+  },
+  "03-09": {
+    "tarikh_hijrah": "3 Ramadan",
+    "peristiwa": "Wafatnya Saidatina Fatimah az-Zahra",
+    "tahun_hijrah": 11,
+    "tahun_masihi": 632,
+    "lokasi": "Madinah",
+    "pengajaran": "Kesabaran dan keredhaan puteri kesayangan Rasulullah SAW."
+  },
+  "10-09": {
+    "tarikh_hijrah": "10 Ramadan",
+    "peristiwa": "Wafatnya Saidatina Khadijah binti Khuwailid",
+    "tahun_hijrah": -3,
+    "tahun_masihi": 620,
+    "lokasi": "Mekah",
+    "pengajaran": "Sokongan dan pengorbanan isteri dalam perjuangan dakwah."
+  },
+  "17-09": {
+    "tarikh_hijrah": "17 Ramadan",
+    "peristiwa": "Perang Badar al-Kubra",
+    "tahun_hijrah": 2,
+    "tahun_masihi": 624,
+    "lokasi": "Lembah Badar",
+    "pengajaran": "Kemenangan tentera Islam (313) menentang Quraisy (1000) dengan bantuan Allah."
+  },
+  "18-09": {
+    "tarikh_hijrah": "17 Ramadan",
+    "peristiwa": "Nuzul al-Quran",
+    "tahun_hijrah": -13,
+    "tahun_masihi": 610,
+    "lokasi": "Gua Hira, Mekah",
+    "pengajaran": "Permulaan wahyu dan petunjuk terbesar kepada umat manusia."
+  },
+  "20-09": {
+    "tarikh_hijrah": "20 Ramadan",
+    "peristiwa": "Pembukaan Kota Mekah (Fathu Makkah)",
+    "tahun_hijrah": 8,
+    "tahun_masihi": 630,
+    "lokasi": "Mekah",
+    "pengajaran": "Kemenangan tanpa pertumpahan darah dan sifat pemaaf Rasulullah SAW."
+  },
+  "21-09": {
+    "tarikh_hijrah": "21 Ramadan",
+    "peristiwa": "Syahidnya Khalifah Ali bin Abi Talib",
+    "tahun_hijrah": 40,
+    "tahun_masihi": 661,
+    "lokasi": "Kufah, Iraq",
+    "pengajaran": "Keberanian dan pengorbanan Khulafa ar-Rasyidin keempat."
+  },
+  "27-09": {
+    "tarikh_hijrah": "Malam 27 Ramadan",
+    "peristiwa": "Lailatul Qadar (Malam Al-Qadar)",
+    "tahun_hijrah": -
+  ,
+    "tahun_masihi": -
+  ,
+    "lokasi": "Global",
+    "pengajaran": "Malam yang lebih baik daripada seribu bulan."
+  },
+  "01-10": {
+    "tarikh_hijrah": "Syawal",
+    "peristiwa": "Perang Khandaq (Al-Ahzab)",
+    "tahun_hijrah": 5,
+    "tahun_masihi": 627,
+    "lokasi": "Madinah",
+    "pengajaran": "Kemenangan berkat strategi parit Salman Al-Farisi dan pertolongan Allah."
+  },
+  "02-10": {
+    "tarikh_hijrah": "2 Syawal",
+    "peristiwa": "Hari ini, 2 Syawal, kita mengingati: Perang Uhud",
+    "tahun_hijrah": 3,
+    "tahun_masihi": 625,
+    "lokasi": "Bukit Uhud, Madinah",
+    "pengajaran": "Akibat mengabaikan arahan kepimpinan."
+  },
+  "15-10": {
+    "tarikh_hijrah": "15 Syawal",
+    "peristiwa": "Perang Bani Sulaim di Al-Kudr",
+    "tahun_hijrah": 2,
+    "tahun_masihi": 624,
+    "lokasi": "Al-Kudr",
+    "pengajaran": "Usaha Rasulullah untuk menjaga keamanan dan kestabilan Madinah."
+  },
+  "01-11": {
+    "tarikh_hijrah": "Zulkaedah",
+    "peristiwa": "Perjanjian Hudaibiyah",
+    "tahun_hijrah": 6,
+    "tahun_masihi": 628,
+    "lokasi": "Hudaibiyah",
+    "pengajaran": "Kemenangan strategik melalui diplomasi dan perdamaian."
+  },
+  "18-11": {
+    "tarikh_hijrah": "18 Zulkaedah",
+    "peristiwa": "Wafatnya Saidina Uthman bin Affan (Riwayat 1)",
+    "tahun_hijrah": 35,
+    "tahun_masihi": 656,
+    "lokasi": "Madinah",
+    "pengajaran": "Peringatan kepada zaman fitnah dan pengorbanan Khulafa ar-Rasyidin ketiga."
+  },
+  "07-12": {
+    "tarikh_hijrah": "7 Zulhijjah",
+    "peristiwa": "Wafatnya Saidina Uthman bin Affan (Riwayat 2)",
+    "tahun_hijrah": 35,
+    "tahun_masihi": 656,
+    "lokasi": "Madinah",
+    "pengajaran": "Peringatan kepada kesabaran dan keikhlasan Khulafa ar-Rasyidin."
+  },
+  "09-12": {
+    "tarikh_hijrah": "9 Zulhijjah",
+    "peristiwa": "Wukuf di Arafah",
+    "tahun_hijrah": 10,
+    "tahun_masihi": 632,
+    "lokasi": "Arafah",
+    "pengajaran": "Puncak ibadah Haji dan khutbah terakhir Rasulullah SAW (Khutbatul Wada')."
+  },
+  "10-12": {
+    "tarikh_hijrah": "10 Zulhijjah",
+    "peristiwa": "Hari Raya Aidiladha",
+    "tahun_hijrah": 2,
+    "tahun_masihi": 624,
+    "lokasi": "Madinah",
+    "pengajaran": "Mengingati pengorbanan Nabi Ibrahim dan Ismail; permulaan ibadah korban."
+  },
+  "11-12": {
+    "tarikh_hijrah": "11 Zulhijjah",
+    "peristiwa": "Hari Tasyrik Pertama",
+    "tahun_hijrah": -
+  ,
+    "tahun_masihi": -
+  ,
+    "lokasi": "Mina",
+    "pengajaran": "Hari untuk makan, minum, dan mengingati Allah (berzikir)."
+  },
+  "12-12": {
+    "tarikh_hijrah": "12 Zulhijjah",
+    "peristiwa": "Hari Tasyrik Kedua (Nafar Awal)",
+    "tahun_hijrah": -
+  ,
+    "tahun_masihi": -
+  ,
+    "lokasi": "Mina",
+    "pengajaran": "Rukhsah (keringanan) untuk jemaah haji meninggalkan Mina."
+  },
+  "13-12": {
+    "tarikh_hijrah": "13 Zulhijjah",
+    "peristiwa": "Hari Tasyrik Ketiga (Nafar Thani)",
+    "tahun_hijrah": -
+  ,
+    "tahun_masihi": -
+  ,
+    "lokasi": "Mina",
+    "pengajaran": "Berakhirnya hari-hari Tasyrik dan ibadah melontar."
+  },
+  "26-12": {
+    "tarikh_hijrah": "26 Zulhijjah",
+    "peristiwa": "Syahidnya Khalifah Umar bin Al-Khattab",
+    "tahun_hijrah": 23,
+    "tahun_masihi": 644,
+    "lokasi": "Madinah",
+    "pengajaran": "Kehilangan besar bagi umat Islam; simbol keadilan dan ketegasan."
+  },
+  "28-01": {
+    "tarikh_hijrah": "28 Muharram",
+    "peristiwa": "Pengepungan Khaibar",
+    "tahun_hijrah": 7,
+    "tahun_masihi": 628,
+    "lokasi": "Khaibar",
+    "pengajaran": "Strategi perang dan runtuhnya kubu kuat Yahudi di utara Madinah."
+  },
+  "11-02": {
+    "tarikh_hijrah": "11 Safar",
+    "peristiwa": "Wafatnya Saidatina Zainab (puteri Rasulullah SAW)",
+    "tahun_hijrah": 8,
+    "tahun_masihi": 629,
+    "lokasi": "Madinah",
+    "pengajaran": "Kesabaran seorang ayah (Nabi) dan seorang isteri dalam hijrah."
+  },
+  "05-03": {
+    "tarikh_hijrah": "5 Rabiulawal",
+    "peristiwa": "Wafatnya Saidatina Zainab binti Jahsy (isteri Nabi)",
+    "tahun_hijrah": 20,
+    "tahun_masihi": 641,
+    "lokasi": "Madinah",
+    "pengajaran": "Kedermawanan dan ketakwaan Ummahatul Mukminin."
+  },
+  "15-04": {
+    "tarikh_hijrah": "15 Rabiulakhir",
+    "peristiwa": "Perang Dumatul Jandal",
+    "tahun_hijrah": 5,
+    "tahun_masihi": 626,
+    "lokasi": "Dumatul Jandal",
+    "pengajaran": "Menunjukkan kekuatan Islam ke sempadan utara."
+  },
+  "10-05": {
+    "tarikh_hijrah": "10 Jamadilawal",
+    "peristiwa": "Kemenangan Khalid al-Walid di Perang Yarmuk",
+    "tahun_hijrah": 15,
+    "tahun_masihi": 636,
+    "lokasi": "Syria",
+    "pengajaran": "Kehebatan strategi perang Khalid al-Walid yang membuka Syria untuk Islam."
+  },
+  "13-06": {
+    "tarikh_hijrah": "13 Jamadilakhir",
+    "peristiwa": "Perang Al-Qadisiyyah (Permulaan)",
+    "tahun_hijrah": 15,
+    "tahun_masihi": 636,
+    "lokasi": "Iraq",
+    "pengajaran": "Permulaan kejatuhan Empayar Parsi Sasan."
+  },
+  "03-07": {
+    "tarikh_hijrah": "3 Rejab",
+    "peristiwa": "Pembukaan Baitul Maqdis oleh Khalifah Umar",
+    "tahun_hijrah": 15,
+    "tahun_masihi": 636,
+    "lokasi": "Baitul Maqdis (Jerusalem)",
+    "pengajaran": "Pembukaan kota suci secara damai dan jaminan keselamatan ('Perjanjian Umariyyah')."
+  },
+  "09-07": {
+    "tarikh_hijrah": "9 Rejab",
+    "peristiwa": "Kelahiran Saidina Ali bin Abi Talib",
+    "tahun_hijrah": -23,
+    "tahun_masihi": 600,
+    "lokasi": "Mekah",
+    "pengajaran": "Pemuda pertama memeluk Islam dan pintu gerbang ilmu."
+  },
+  "04-08": {
+    "tarikh_hijrah": "4 Syaaban",
+    "peristiwa": "Kelahiran Saidina Husain bin Ali",
+    "tahun_hijrah": 4,
+    "tahun_masihi": 626,
+    "lokasi": "Madinah",
+    "pengajaran": "Cucu kesayangan Rasulullah SAW."
+  },
+  "05-08": {
+    "tarikh_hijrah": "5 Syaaban",
+    "peristiwa": "Kelahiran Saidina Ali Zainal Abidin",
+    "tahun_hijrah": 38,
+    "tahun_masihi": 659,
+    "lokasi": "Madinah",
+    "pengajaran": "Penerus keturunan Ali dan Husain yang terselamat di Karbala."
+  },
+  "15-09": {
+    "tarikh_hijrah": "15 Ramadan",
+    "peristiwa": "Kelahiran Saidina Hasan bin Ali",
+    "tahun_hijrah": 3,
+    "tahun_masihi": 625,
+    "lokasi": "Madinah",
+    "pengajaran": "Cucu Nabi yang mendamaikan dua kumpulan besar umat Islam."
+  },
+  "25-09": {
+    "tarikh_hijrah": "25 Ramadan",
+    "peristiwa": "Perang Ain Jalut",
+    "tahun_hijrah": 658,
+    "tahun_masihi": 1260,
+    "lokasi": "Palestin",
+    "pengajaran": "Kemenangan tentera Islam Mamluk (Saifuddin Qutuz) menghentikan kemaraan Mongol."
+  },
+  "05-10": {
+    "tarikh_hijrah": "5 Syawal",
+    "peristiwa": "Perkahwinan Nabi SAW dengan Saidatina Aisyah",
+    "tahun_hijrah": 1,
+    "tahun_masihi": 623,
+    "lokasi": "Madinah",
+    "pengajaran": "Pernikahan yang membawa banyak periwayatan hadis tentang kehidupan Nabi."
+  },
+  "08-10": {
+    "tarikh_hijrah": "8 Syawal",
+    "peristiwa": "Perang Hunain",
+    "tahun_hijrah": 8,
+    "tahun_masihi": 630,
+    "lokasi": "Lembah Hunain",
+    "pengajaran": "Ujian kesombongan (kerana jumlah yang ramai) dan pentingnya tawakal."
+  },
+  "03-11": {
+    "tarikh_hijrah": "3 Zulkaedah",
+    "peristiwa": "Perang Bani Quraizah",
+    "tahun_hijrah": 5,
+    "tahun_masihi": 627,
+    "lokasi": "Madinah",
+    "pengajaran": "Hukuman atas pengkhianatan dalam perang (selepas Perang Khandaq)."
+  },
+  "08-11": {
+    "tarikh_hijrah": "Zulkaedah",
+    "peristiwa": "Haji Pertama Umat Islam (Qada Umrah)",
+    "tahun_hijrah": 7,
+    "tahun_masihi": 629,
+    "lokasi": "Mekah",
+    "pengajaran": "Perlaksanaan umrah pertama selepas Perjanjian Hudaibiyah."
+  },
+  "01-12": {
+    "tarikh_hijrah": "1 Zulhijjah",
+    "peristiwa": "Perkahwinan Saidina Ali dan Saidatina Fatimah",
+    "tahun_hijrah": 2,
+    "tahun_masihi": 624,
+    "lokasi": "Madinah",
+    "pengajaran": "Contoh pernikahan yang penuh kesederhanaan dan keberkatan."
+  },
+  "18-12": {
+    "tarikh_hijrah": "18 Zulhijjah",
+    "peristiwa": "Peristiwa Ghadir Khum",
+    "tahun_hijrah": 10,
+    "tahun_masihi": 632,
+    "lokasi": "Ghadir Khum",
+    "pengajaran": "Peristiwa penting selepas Haji Wada' mengenai kepimpinan Saidina Ali."
+  }
+}

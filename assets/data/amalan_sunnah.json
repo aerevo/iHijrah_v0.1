@@ -1,0 +1,352 @@
+[
+  {
+    "id": "amalan_001",
+    "amalan": "Puasa Isnin",
+    "hari": "Isnin",
+    "huraian": "Berpuasa pada hari Isnin. Nabi SAW bersabda, 'Amal dibentangkan pada hari Isnin dan Khamis. Maka aku suka amalku dibentangkan ketika aku berpuasa.'",
+    "sumber": "Hadis Riwayat Tirmizi"
+  },
+  {
+    "id": "amalan_002",
+    "amalan": "Puasa Khamis",
+    "hari": "Khamis",
+    "huraian": "Berpuasa pada hari Khamis, selari dengan amalan Nabi SAW.",
+    "sumber": "Hadis Riwayat Tirmizi"
+  },
+  {
+    "id": "amalan_003",
+    "amalan": "Solat Dhuha",
+    "hari": "Setiap hari",
+    "huraian": "Solat sunnah 2 rakaat atau lebih pada waktu pagi (selepas matahari naik) sebagai tanda syukur.",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_004",
+    "amalan": "Solat Tahajjud",
+    "hari": "Malam",
+    "huraian": "Solat malam (Qiamullail) selepas tidur, amalan orang-orang soleh.",
+    "sumber": "Al-Quran (Surah Al-Isra: 79)"
+  },
+  {
+    "id": "amalan_005",
+    "amalan": "Bersiwak (Memberus Gigi)",
+    "hari": "Setiap hari",
+    "huraian": "Membersihkan mulut, 'Siwak itu membersihkan mulut dan diredhai oleh Allah.'",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_006",
+    "amalan": "Membaca Surah Al-Kahfi",
+    "hari": "Jumaat",
+    "huraian": "Membaca Surah Al-Kahfi pada malam atau siang hari Jumaat, akan disinari cahaya antara dua Jumaat.",
+    "sumber": "Hadis Riwayat Al-Hakim"
+  },
+  {
+    "id": "amalan_007",
+    "amalan": "Zikir Pagi (Al-Ma'thurat)",
+    "hari": "Setiap hari",
+    "huraian": "Membaca zikir-zikir ma'thurat selepas solat Subuh sehingga terbit matahari.",
+    "sumber": "Al-Quran & Hadis"
+  },
+  {
+    "id": "amalan_008",
+    "amalan": "Zikir Petang (Al-Ma'thurat)",
+    "hari": "Setiap hari",
+    "huraian": "Membaca zikir-zikir ma'thurat selepas solat Asar sehingga terbenam matahari.",
+    "sumber": "Al-Quran & Hadis"
+  },
+  {
+    "id": "amalan_009",
+    "amalan": "Solat Sunat Rawatib (12 Rakaat)",
+    "hari": "Setiap hari",
+    "huraian": "Solat sunat (2 Subuh, 4 Zohor, 2 Maghrib, 2 Isyak). 'Akan dibina rumah baginya di syurga.'",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_010",
+    "amalan": "Berwuduk Sebelum Tidur",
+    "hari": "Malam",
+    "huraian": "Mengambil wuduk dalam keadaan suci sebelum melelapkan mata.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_011",
+    "amalan": "Membaca Surah Al-Mulk",
+    "hari": "Malam",
+    "huraian": "Membaca Surah Al-Mulk sebelum tidur untuk perlindungan dari azab kubur.",
+    "sumber": "Hadis Riwayat Tirmizi"
+  },
+  {
+    "id": "amalan_012",
+    "amalan": "Puasa Ayyamul Bidh (Hari Putih)",
+    "hari": "Ayyamul Bidh",
+    "huraian": "Berpuasa pada 13, 14, dan 15 setiap bulan Hijriah, 'seperti berpuasa sepanjang tahun.'",
+    "sumber": "Hadis Riwayat Tirmizi"
+  },
+  {
+    "id": "amalan_013",
+    "amalan": "Solat Sunat Witir",
+    "hari": "Malam",
+    "huraian": "Solat sunat ganjil (1, 3, 5...) sebagai penutup solat malam.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_014",
+    "amalan": "Banyakkan Selawat & Doa",
+    "hari": "Jumaat",
+    "huraian": "Memperbanyakkan selawat ke atas Nabi SAW dan mencari waktu mustajab (selepas Asar).",
+    "sumber": "Hadis Riwayat Abu Daud & Bukhari"
+  },
+  {
+    "id": "amalan_015",
+    "amalan": "Membaca 3 Qul Sebelum Tidur",
+    "hari": "Malam",
+    "huraian": "Membaca Surah Al-Ikhlas, Al-Falaq, dan An-Nas (3 kali) dan meniup ke tapak tangan, sapu ke badan.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_016",
+    "amalan": "Membaca Ayat Kursi",
+    "hari": "Malam",
+    "huraian": "Membaca Ayat Kursi (Al-Baqarah: 255) sebelum tidur untuk perlindungan.",
+    "sumber": "Hadis (Syarah Sahih Bukhari)"
+  },
+  {
+    "id": "amalan_017",
+    "amalan": "Menjaga Solat Sunat Subuh (Qabliyah)",
+    "hari": "Setiap hari",
+    "huraian": "Dua rakaat solat sunat Fajar (sebelum Subuh) lebih baik dari dunia dan seisinya.",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_018",
+    "amalan": "Berbuat Baik Kepada Ibu Bapa",
+    "hari": "Setiap hari",
+    "huraian": "Menjaga kebajikan dan mendoakan ibu bapa.",
+    "sumber": "Al-Quran (Surah Al-Isra: 23-24)"
+  },
+  {
+    "id": "amalan_019",
+    "amalan": "Solat Sunat Taubat",
+    "hari": "Malam",
+    "huraian": "Menunaikan solat sunat taubat 2 rakaat memohon keampunan Allah atas dosa.",
+    "sumber": "Hadis Riwayat Abu Daud"
+  },
+  {
+    "id": "amalan_020",
+    "amalan": "Membaca Al-Quran Setiap Hari",
+    "hari": "Setiap hari",
+    "huraian": "Berusaha untuk membaca Al-Quran walaupun satu ayat, 'Al-Quran akan menjadi syafaat'.",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_021",
+    "amalan": "Bersedekah",
+    "hari": "Setiap hari",
+    "huraian": "Memberi sedekah, walaupun sedikit, 'Sedekah memadamkan dosa seperti air memadamkan api.'",
+    "sumber": "Hadis Riwayat Tirmizi"
+  },
+  {
+    "id": "amalan_022",
+    "amalan": "Mandi Sunat Jumaat & Berhias",
+    "hari": "Jumaat",
+    "huraian": "Mandi sunat, memakai pakaian terbaik, dan memakai wangian sebelum Solat Jumaat.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_023",
+    "amalan": "Bersegera ke Masjid",
+    "hari": "Jumaat",
+    "huraian": "Datang awal ke masjid untuk Solat Jumaat, 'seperti berkorban seekor unta'.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_024",
+    "amalan": "Solat Sunat Tahiyatul Masjid",
+    "hari": "Setiap hari",
+    "huraian": "Menunaikan solat 2 rakaat sebelum duduk apabila masuk ke masjid.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_025",
+    "amalan": "Memaafkan Orang Lain",
+    "hari": "Malam",
+    "huraian": "Memaafkan kesalahan orang lain sebelum tidur untuk melapangkan hati.",
+    "sumber": "Al-Quran (Surah Asy-Syura: 40)"
+  },
+  {
+    "id": "amalan_026",
+    "amalan": "Menjaga Lidah",
+    "hari": "Setiap hari",
+    "huraian": "Menghindari perkataan sia-sia, mengumpat, dan berbohong. 'Berkata baik atau diam.'",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_027",
+    "amalan": "Tidur Mengiring Sebelah Kanan",
+    "hari": "Malam",
+    "huraian": "Mengamalkan posisi tidur Nabi SAW.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_028",
+    "amalan": "Memberi Salam",
+    "hari": "Setiap hari",
+    "huraian": "Memberi salam apabila bertemu saudara Muslim dan apabila masuk ke rumah.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_029",
+    "amalan": "Senyum",
+    "hari": "Setiap hari",
+    "huraian": "Senyumanmu di hadapan saudaramu adalah sedekah.",
+    "sumber": "Hadis Riwayat Tirmizi"
+  },
+  {
+    "id": "amalan_030",
+    "amalan": "Menahan Marah",
+    "hari": "Setiap hari",
+    "huraian": "Orang yang kuat adalah orang yang dapat menahan amarahnya.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_031",
+    "amalan": "Puasa 'Asyura",
+    "hari": "10 Muharram",
+    "huraian": "Berpuasa pada hari 'Asyura, 'menghapuskan dosa setahun yang lalu'. Digalakkan puasa 9 Muharram juga.",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_032",
+    "amalan": "Puasa Tasu'a",
+    "hari": "9 Muharram",
+    "huraian": "Puasa sunat pada 9 Muharram untuk menyelisihi amalan orang Yahudi (yang puasa 10 sahaja).",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_033",
+    "amalan": "Melebihkan Nafkah Keluarga",
+    "hari": "10 Muharram",
+    "huraian": "Melebihkan perbelanjaan atau memberi kelapangan kepada keluarga pada hari 'Asyura.",
+    "sumber": "Hadis Riwayat Al-Baihaqi (Daif, tetapi diamalkan ulama)"
+  },
+  {
+    "id": "amalan_034",
+    "amalan": "Memperbanyak Ibadah",
+    "hari": "27 Rejab",
+    "huraian": "Mengingati peristiwa Israk Mikraj. Tiada amalan khusus, tetapi digalakkan ibadah umum seperti solat sunat, zikir, dan istighfar.",
+    "sumber": "Peristiwa Israk Mikraj"
+  },
+  {
+    "id": "amalan_035",
+    "amalan": "Menghidupkan Malam Nisfu Syaaban",
+    "hari": "15 Syaaban",
+    "huraian": "Memperbanyak doa, zikir, dan istighfar pada malam ke-15 Syaaban (Malam Nisfu Syaaban).",
+    "sumber": "Hadis (Pelbagai, ada perbahasan status)"
+  },
+  {
+    "id": "amalan_036",
+    "amalan": "Puasa Hari Nisfu Syaaban",
+    "hari": "15 Syaaban",
+    "huraian": "Berpuasa pada siangnya. Boleh digabungkan dengan niat puasa Ayyamul Bidh jika bertepatan.",
+    "sumber": "Hadis (Status diperbahaskan)"
+  },
+  {
+    "id": "amalan_037",
+    "amalan": "Mencari Lailatul Qadar",
+    "hari": "21 Ramadan",
+    "huraian": "Malam ganjil pertama. Memperbanyak Qiamullail, baca Al-Quran, dan doa.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_038",
+    "amalan": "Mencari Lailatul Qadar",
+    "hari": "23 Ramadan",
+    "huraian": "Malam ganjil kedua. Memperbanyak Qiamullail, baca Al-Quran, dan doa.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_039",
+    "amalan": "Mencari Lailatul Qadar",
+    "hari": "25 Ramadan",
+    "huraian": "Malam ganjil ketiga. Memperbanyak Qiamullail, baca Al-Quran, dan doa.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_040",
+    "amalan": "Mencari Lailatul Qadar",
+    "hari": "27 Ramadan",
+    "huraian": "Malam ganjil keempat. Malam yang paling diharapkan sebagai Lailatul Qadar.",
+    "sumber": "Hadis Riwayat Bukhari & Muslim"
+  },
+  {
+    "id": "amalan_041",
+    "amalan": "Mencari Lailatul Qadar",
+    "hari": "29 Ramadan",
+    "huraian": "Malam ganjil terakhir. Memperbanyak Qiamullail, baca Al-Quran, dan doa.",
+    "sumber": "Hadis Riwayat Bukhari"
+  },
+  {
+    "id": "amalan_042",
+    "amalan": "Puasa 6 Hari di Bulan Syawal",
+    "hari": "Syawal",
+    "huraian": "Berpuasa 6 hari di bulan Syawal (selepas 1 Syawal), 'seperti berpuasa setahun penuh'.",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_043",
+    "amalan": "Puasa Hari Arafah",
+    "hari": "9 Zulhijjah",
+    "huraian": "Berpuasa pada hari Arafah (bagi yang tidak wuquf), 'menghapuskan dosa setahun lalu dan setahun akan datang.'",
+    "sumber": "Hadis Riwayat Muslim"
+  },
+  {
+    "id": "amalan_044",
+    "amalan": "Takbir Raya (Mursai)",
+    "hari": "1 Syawal",
+    "huraian": "Bertakbir bermula dari terbenam matahari akhir Ramadan sehingga solat Aidilfitri.",
+    "sumber": "Amalan Salaf"
+  },
+  {
+    "id": "amalan_045",
+    "amalan": "Ibadah Korban",
+    "hari": "10 Zulhijjah",
+    "huraian": "Menyembelih haiwan korban selepas solat Aidiladha.",
+    "sumber": "Al-Quran (Surah Al-Kauthar: 2)"
+  },
+  {
+    "id": "amalan_046",
+    "amalan": "Ibadah Korban (Hari Tasyrik)",
+    "hari": "11 Zulhijjah",
+    "huraian": "Masih dalam waktu dibenarkan untuk menyembelih haiwan korban.",
+    "sumber": "Hadis Riwayat Ahmad"
+  },
+  {
+    "id": "amalan_047",
+    "amalan": "Ibadah Korban (Hari Tasyrik)",
+    "hari": "12 Zulhijjah",
+    "huraian": "Masih dalam waktu dibenarkan untuk menyembelih haiwan korban.",
+    "sumber": "Hadis Riwayat Ahmad"
+  },
+  {
+    "id": "amalan_048",
+    "amalan": "Ibadah Korban (Hari Tasyrik)",
+    "hari": "13 Zulhijjah",
+    "huraian": "Hari terakhir dibenarkan untuk menyembelih haiwan korban (sebelum Maghrib).",
+    "sumber": "Hadis Riwayat Ahmad"
+  },
+  {
+    "id": "amalan_049",
+    "amalan": "Takbir Muqayyad",
+    "hari": "9 Zulhijjah",
+    "huraian": "Mula bertakbir (selepas solat fardhu Subuh) pada Hari Arafah sehingga Asar 13 Zulhijjah.",
+    "sumber": "Amalan Sahabat (Ibn Abbas, Ali)"
+  },
+  {
+    "id": "amalan_050",
+    "amalan": "Doa Mustajab Hari Arafah",
+    "hari": "9 Zulhijjah",
+    "huraian": "'Sebaik-baik doa adalah doa pada hari Arafah.' Perbanyakkan doa di waktu petang.",
+    "sumber": "Hadis Riwayat Tirmizi"
+  }
+]
