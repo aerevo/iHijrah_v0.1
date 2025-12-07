@@ -1,4 +1,4 @@
-﻿// lib/utils/sirah_service.dart (UPGRADED 7.8/10)
+// lib/utils/sirah_service.dart (UPGRADED 7.8/10)
 
 import 'package:flutter/foundation.dart';
 import 'base_data_service.dart';
@@ -133,7 +133,7 @@ class SirahService {
       'title': 'Peringatan Umum',
       'peristiwa': 'Peringatan Harian',
       'event': 'Tiada peristiwa Sirah besar direkodkan hari ini '
-               '(${hijriToday.hDay} ${hijriToday.hMonthName}).',
+               '(${hijriToday.hDay} ${hijriToday.getLongMonthName()}).',
       'hadith': 'Hari yang baik untuk memperbanyakkan amal soleh dan Selawat.',
       'pengajaran': 'Setiap hari adalah peluang untuk mendekatkan diri kepada Allah SWT. '
                     'Jadikan hari ini lebih baik daripada semalam.',
