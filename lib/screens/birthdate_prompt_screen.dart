@@ -1,11 +1,11 @@
-﻿// lib/screens/birthdate_prompt_screen.dart (BETUL)
+// lib/screens/birthdate_prompt_screen.dart (BETUL)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
-import 'home.dart';
+import 'tracker_screen.dart';
 import '../utils/premium_route.dart';
 
 class BirthdatePrompt extends StatefulWidget {
@@ -52,18 +52,15 @@ class _BirthdatePromptState extends State<BirthdatePrompt> {
 
     setState(() => _isLoading = true);
 
-    // 1. Convert Masihi -> Hijri
-    final String hijriDate = HijriService.convertToHijri(_selectedDate!);
-    
-    // 2. Simpan dalam User Model
+    // 1. Simpan Tarikh Lahir (Masihi)
     final user = Provider.of<UserModel>(context, listen: false);
-    user.setBirthDate(hijriDate);
+    user.setBirthDate(_selectedDate!);
     
     // Simulasikan loading sekejap untuk UX
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (mounted) {
-      Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const HomePage()));
+      Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const TrackerScreen()));
     }
   }
 
