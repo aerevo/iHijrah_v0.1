@@ -1,4 +1,4 @@
-﻿// lib/models/user_model.dart (UPGRADED 7.8/10)
+// lib/models/user_model.dart (UPGRADED 7.8/10)
 
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -200,11 +200,15 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
   void updateProfile({required String newName, required DateTime newDate}) {
     name = newName;
     birthdate = newDate;
+    hijriDOB = HijriService.convertToHijri(newDate);
+    save();
+    notifyListeners();
+  }
 
-    // Convert to Hijri
-    final hijriDate = HijriService.fromDate(newDate);
-    hijriDOB = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
-
+  /// Set user's birthdate from a Gregorian DateTime
+  void setBirthDate(DateTime newDate) {
+    birthdate = newDate;
+    hijriDOB = HijriService.convertToHijri(newDate);
     save();
     notifyListeners();
   }
