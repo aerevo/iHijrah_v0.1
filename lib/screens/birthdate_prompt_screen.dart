@@ -118,17 +118,13 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
 
     print('🔵 SUBMIT STARTED');
 
-    // 1. Convert Masihi -> Hijri
-    final hijriDate = HijriService.fromDate(_selectedDate!);
-    final String hijriString = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
-
-    print('📅 Hijri date: $hijriString');
-
-    // 2. Simpan dalam User Model
+    // 1. Simpan dalam User Model (Masihi & Hijri akan diuruskan oleh model)
     final user = Provider.of<UserModel>(context, listen: false);
 
+    print('📅 Saving Masihi date: $_selectedDate');
+
     try {
-      user.setBirthDate(hijriString);
+      user.setBirthDate(_selectedDate!);
       await user.save(); // Force save to Hive
       print('✅ User saved: ${user.hijriDOB}');
     } catch (e) {
