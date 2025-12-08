@@ -125,7 +125,6 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
 
     try {
       user.setBirthDate(_selectedDate!);
-      await user.save(); // Force save to Hive
       print('✅ User saved: ${user.hijriDOB}');
     } catch (e) {
       print('❌ ERROR saving user: $e');
