@@ -11,7 +11,7 @@ class AchievementPopup extends StatefulWidget {
   final String description;
   final IconData icon;
   final VoidCallback? onDismiss;
-  
+
   const AchievementPopup({
     Key? key,
     required this.title,
@@ -19,7 +19,7 @@ class AchievementPopup extends StatefulWidget {
     this.icon = Icons.emoji_events,
     this.onDismiss,
   }) : super(key: key);
-  
+
   static void show(
     BuildContext context, {
     required String title,
@@ -27,7 +27,7 @@ class AchievementPopup extends StatefulWidget {
     IconData icon = Icons.emoji_events,
   }) {
     HapticFeedback.heavyImpact();
-    
+
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -40,17 +40,17 @@ class AchievementPopup extends StatefulWidget {
       ),
     );
   }
-  
+
   @override
   State<AchievementPopup> createState() => _AchievementPopupState();
 }
 
-class _AchievementPopupState extends State<AchievementPopup> 
+class _AchievementPopupState extends State<AchievementPopup>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotationAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -58,30 +58,30 @@ class _AchievementPopupState extends State<AchievementPopup>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.elasticOut,
       ),
     );
-    
+
     _rotationAnimation = Tween<double>(begin: -0.2, end: 0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeOut,
       ),
     );
-    
+
     _controller.forward();
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ScaleTransition(
@@ -127,9 +127,9 @@ class _AchievementPopupState extends State<AchievementPopup>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: AppSpacing.lg),
-                
+
                 // Title
                 Text(
                   widget.title,
@@ -141,9 +141,9 @@ class _AchievementPopupState extends State<AchievementPopup>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: AppSpacing.sm),
-                
+
                 // Description
                 Text(
                   widget.description,
@@ -153,9 +153,9 @@ class _AchievementPopupState extends State<AchievementPopup>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: AppSpacing.xl),
-                
+
                 // Close button
                 GestureDetector(
                   onTap: widget.onDismiss,

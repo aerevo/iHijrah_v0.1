@@ -14,7 +14,7 @@ class FeedPanel extends StatelessWidget {
       'time': '2 jam lepas',
       'avatar': 'assets/images/profile_default.png', // Pastikan aset ini wujud atau guna Icon
       'content': 'Jom hayati sirah Nabi SAW. Banyak pengajaran untuk kita yang sedang berhijrah. Tonton video penuh di sini:',
-      'link': 'https://www.youtube.com/watch?v=Hu1U1rD0oPE', 
+      'link': 'https://www.youtube.com/watch?v=Hu1U1rD0oPE',
       'likes': 120,
       'comments': 45
     },
@@ -23,7 +23,7 @@ class FeedPanel extends StatelessWidget {
       'time': '5 jam lepas',
       'avatar': 'assets/images/profile_default.png',
       'content': 'Ingatlah, setiap kali kita jatuh, Allah sentiasa ada untuk sambut kita. Jangan putus asa. #iHijrah',
-      'link': '', 
+      'link': '',
       'likes': 850,
       'comments': 102
     },
@@ -40,14 +40,14 @@ class FeedPanel extends StatelessWidget {
             "Taman Komuniti",
             style: TextStyle(
               color: Colors.white,
-              fontSize: AppFontSizes.xl, 
+              fontSize: AppFontSizes.xl,
               fontWeight: FontWeight.bold,
               fontFamily: 'Playfair'
             ),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        
+
         // Senarai Posts
         Container(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -106,17 +106,17 @@ class FeedPanel extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: AppSpacing.sm),
-          
+
           // 2. Isi Kandungan (Teks)
           Text(
             post['content'],
             style: const TextStyle(color: kTextPrimary, height: 1.5, fontSize: AppFontSizes.sm + 1),
           ),
-          
+
           // 3. Pautan (Jika ada)
-          if (hasLink) 
+          if (hasLink)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: InkWell(
@@ -135,9 +135,9 @@ class FeedPanel extends StatelessWidget {
                 ),
               ),
             ),
-            
+
           const SizedBox(height: AppSpacing.md),
-          
+
           // 4. Footer (Like & Comment)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
 /// Premium metallic gold shader effect widget
-/// 
+///
 /// Features:
 /// - Animated shimmer effect (gold bergerak)
 /// - Smooth 3-second loop
@@ -12,7 +12,7 @@ import '../utils/constants.dart';
 /// - Optimized performance
 class MetallicGold extends StatefulWidget {
   final Widget child;
-  
+
   const MetallicGold({
     Key? key,
     required this.child,
@@ -22,14 +22,14 @@ class MetallicGold extends StatefulWidget {
   State<MetallicGold> createState() => _MetallicGoldState();
 }
 
-class _MetallicGoldState extends State<MetallicGold> 
+class _MetallicGoldState extends State<MetallicGold>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    
+
     // 3-second shimmer loop
     _controller = AnimationController(
       vsync: this,
@@ -82,7 +82,7 @@ class _MetallicGoldState extends State<MetallicGold>
 /// Static version (no animation) untuk performance critical areas
 class MetallicGoldStatic extends StatelessWidget {
   final Widget child;
-  
+
   const MetallicGoldStatic({
     Key? key,
     required this.child,

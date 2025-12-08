@@ -1,4 +1,4 @@
-// lib/utils/sirah_service.dart (UPGRADED 7.8/10)
+﻿// lib/utils/sirah_service.dart (FIXED - FULL OVERWRITE)
 
 import 'package:flutter/foundation.dart';
 import 'base_data_service.dart';
@@ -7,12 +7,6 @@ import 'hijri_service.dart';
 import 'result.dart';
 
 /// Service untuk manage Sirah Nabi data (peristiwa harian)
-/// 
-/// Features:
-/// - Load JSON data on app start
-/// - Get Sirah untuk hari ini (based on Hijri date)
-/// - Fallback data bila tiada peristiwa khas
-/// - Error handling dengan Result<T, E>
 class SirahService {
   static const String _path = AppAssets.sirahData;
 
@@ -22,11 +16,11 @@ class SirahService {
   static Future<Result<void, String>> load() async {
     try {
       await BaseDataService.load<Map<String, dynamic>>(_path);
-      
+
       if (kDebugMode) {
         print('✅ Sirah data loaded');
       }
-      
+
       return Result.success(null);
     } catch (e) {
       if (kDebugMode) {
@@ -39,10 +33,6 @@ class SirahService {
   // ===== DATA RETRIEVAL =====
 
   /// Get Sirah untuk hari ini (Hijri date based)
-  /// 
-  /// Returns:
-  /// - Entry dari JSON jika wujud
-  /// - Default Sirah jika tiada entry khas
   static Future<Result<Map<String, dynamic>, String>> getSirahForToday() async {
     try {
       final data = BaseDataService.get<Map<String, dynamic>>(_path);
@@ -52,7 +42,7 @@ class SirahService {
         if (kDebugMode) {
           print('⚠️ Sirah cache empty, attempting reload...');
         }
-        
+
         final loadResult = await load();
         if (loadResult.isFailure) {
           // Gagal reload, return default
@@ -83,14 +73,14 @@ class SirahService {
       if (kDebugMode) {
         print('📖 No special Sirah for $todayKey, using default');
       }
-      
+
       return Result.success(_defaultSirah());
 
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error getting Sirah: $e');
       }
-      
+
       // Bila error, return default supaya app tak crash
       return Result.success(_defaultSirah());
     }
@@ -100,7 +90,7 @@ class SirahService {
   static Future<Result<Map<String, dynamic>, String>> getSirahForDate(String hijriKey) async {
     try {
       final data = BaseDataService.get<Map<String, dynamic>>(_path);
-      
+
       if (data.isEmpty) {
         return Result.failure('Data Sirah tidak dimuatkan');
       }
@@ -123,20 +113,20 @@ class SirahService {
     return BaseDataService.get<Map<String, dynamic>>(_path);
   }
 
-  // ===== PRIVATE HELPERS =====
+  // ===== PRIVATE HELPERS ===== ✅ FIXED
 
   /// Data default bila tiada peristiwa khas
   static Map<String, dynamic> _defaultSirah() {
     final hijriToday = HijriService.nowHijri();
-    
+
     return {
       'title': 'Peringatan Umum',
       'peristiwa': 'Peringatan Harian',
       'event': 'Tiada peristiwa Sirah besar direkodkan hari ini '
-               '(${hijriToday.hDay} ${hijriToday.getLongMonthName()}).',
+          '(${hijriToday.hDay} ${hijriToday.getLongMonthName()}).', // ✅ FIXED: getLongMonthName()
       'hadith': 'Hari yang baik untuk memperbanyakkan amal soleh dan Selawat.',
       'pengajaran': 'Setiap hari adalah peluang untuk mendekatkan diri kepada Allah SWT. '
-                    'Jadikan hari ini lebih baik daripada semalam.',
+          'Jadikan hari ini lebih baik daripada semalam.',
       'date_key': HijriService.todayHijriKey(),
     };
   }
@@ -163,13 +153,13 @@ class SirahService {
 
     final data = BaseDataService.get<Map<String, dynamic>>(_path);
     print('📖 Loaded Sirah entries: ${data.length}');
-    
+
     if (data.isNotEmpty) {
       print('First 5 dates:');
       int count = 0;
       for (var key in data.keys) {
         if (count >= 5) break;
-        print('  - $key: ${data[key]['peristiwa'] ?? 'N/A'}');
+        print('   - $key: ${data[key]['peristiwa'] ?? 'N/A'}');
         count++;
       }
     }

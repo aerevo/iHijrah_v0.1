@@ -21,7 +21,7 @@ class TrackerList extends StatelessWidget {
           child: Text(
             "Amalan Fardhu",
             style: TextStyle(
-              fontSize: AppFontSizes.xl, 
+              fontSize: AppFontSizes.xl,
               fontWeight: FontWeight.bold,
               fontFamily: 'Playfair',
               color: Colors.white
@@ -30,14 +30,14 @@ class TrackerList extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         _buildFardhuTracker(context, user),
-        
+
         const SizedBox(height: AppSpacing.xl),
-        
+
         const MetallicGold(
           child: Text(
             "Amalan Sunat Pilihan",
             style: TextStyle(
-              fontSize: AppFontSizes.xl, 
+              fontSize: AppFontSizes.xl,
               fontWeight: FontWeight.bold,
               fontFamily: 'Playfair',
               color: Colors.white
@@ -67,7 +67,7 @@ class TrackerList extends StatelessWidget {
         itemBuilder: (context, index) {
           final amalan = fardhuAmalan[index];
           final isDone = user.isFardhuComplete(amalan);
-          
+
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Row(
@@ -123,7 +123,7 @@ class TrackerList extends StatelessWidget {
         itemCount: sunatAmalan.length,
         itemBuilder: (context, index) {
           final amalan = sunatAmalan[index];
-          
+
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const MetallicGold(child: Icon(Icons.stars_outlined, color: Colors.white, size: AppSizes.iconMd)),

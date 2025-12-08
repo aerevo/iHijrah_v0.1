@@ -1,10 +1,10 @@
-// lib/main.dart (UPGRADED 8.0/10)
+﻿// lib/main.dart (LINE 1-20)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Import Screens & Utils
-import 'screens/splash_screen.dart';
+import 'screens/splash_screen.dart';  // screens/ ada '../' sebab dalam subfolder
 import 'utils/constants.dart';
 import 'utils/storage_service.dart';
 
@@ -20,10 +20,8 @@ void main() async {
   // 1. Ensure Bindings
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Init Services
-  final storageService = StorageService();
-  await storageService.init();
-  await SirahService.load();
+  // 2. Init Storage (Hive / SharedPreferences) ✅ FIXED
+  await StorageService.init();
 
   // 3. Lock Orientation (Optional, untuk design stabil)
   SystemChrome.setPreferredOrientations([
@@ -37,44 +35,40 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  runApp(IHijrahApp(storageService: storageService));
+  runApp(const IHijrahApp());
 }
 
 class IHijrahApp extends StatelessWidget {
-  final StorageService storageService;
-  const IHijrahApp({super.key, required this.storageService});
+  const IHijrahApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     // 5. Setup MultiProvider
     return MultiProvider(
       providers: [
-        // State Management Providers
+        // Data Providers
         ChangeNotifierProvider(create: (_) => UserModel()),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
-        
-        // Service Providers (Logic)
-        Provider<StorageService>.value(value: storageService),
+
+        // Service Providers (Logic) ✅ FIXED: Provide dependencies
         Provider(create: (_) => AudioService()),
-        ChangeNotifierProvider(
-          create: (context) => PrayerService(
-            context.read<StorageService>(),
-            context.read<AudioService>(),
-          ),
+        ProxyProvider2<AudioService, UserModel, PrayerService>(
+          update: (_, audio, user, prev) => PrayerService(StorageService(), audio),
         ),
+        Provider(create: (_) => SirahService()),
       ],
       child: MaterialApp(
         title: 'iHijrah Embun Jiwa',
         debugShowCheckedModeBanner: false,
-        
+
         // 6. Global Theme Definition
         theme: ThemeData(
           brightness: Brightness.dark,
           scaffoldBackgroundColor: kBackgroundDark,
           primaryColor: kPrimaryGold,
           fontFamily: 'Roboto', // Default font body
-          
+
           // Color Scheme
           colorScheme: const ColorScheme.dark(
             primary: kPrimaryGold,
@@ -82,13 +76,13 @@ class IHijrahApp extends StatelessWidget {
             surface: kCardDark,
             background: kBackgroundDark,
           ),
-          
+
           // Text Theme
           textTheme: const TextTheme(
             bodyMedium: TextStyle(color: kTextPrimary),
             bodySmall: TextStyle(color: kTextSecondary),
           ),
-          
+
           // App Bar Theme
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.transparent,
@@ -96,7 +90,7 @@ class IHijrahApp extends StatelessWidget {
             centerTitle: true,
           ),
         ),
-        
+
         // 7. Entry Point
         home: const SplashScreen(),
       ),

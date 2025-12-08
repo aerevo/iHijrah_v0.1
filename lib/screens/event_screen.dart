@@ -39,7 +39,7 @@ class EventScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8)
                   ),
                   child: Text(
-                    e['date']!.split(' ')[0], 
+                    e['date']!.split(' ')[0],
                     style: const TextStyle(color: kPrimaryGold, fontWeight: FontWeight.bold, fontSize: 18),
                     textAlign: TextAlign.center,
                   ),

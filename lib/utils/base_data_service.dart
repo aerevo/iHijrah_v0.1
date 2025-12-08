@@ -20,7 +20,7 @@ abstract class BaseDataService {
     try {
       // 2. Baca fail
       final raw = await rootBundle.loadString(assetPath);
-      
+
       // 3. Parse JSON di Background Thread (Elak Lag)
       final parsed = await compute(_jsonDecodeIsolated, raw);
 
@@ -34,7 +34,7 @@ abstract class BaseDataService {
         return data as T;
       }
       throw Exception('Format data salah: $assetPath');
-      
+
     } catch (e) {
       if (kDebugMode) print('Error Load $assetPath: $e');
       // Return nilai kosong yang selamat

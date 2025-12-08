@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
 /// Shimmer loading effect untuk skeleton screens
-/// 
+///
 /// Guna untuk loading states, locked features, etc
 class ShimmerEffect extends StatefulWidget {
   final Widget child;
   final Duration duration;
-  
+
   const ShimmerEffect({
     Key? key,
     required this.child,
@@ -20,7 +20,7 @@ class ShimmerEffect extends StatefulWidget {
   State<ShimmerEffect> createState() => _ShimmerEffectState();
 }
 
-class _ShimmerEffectState extends State<ShimmerEffect> 
+class _ShimmerEffectState extends State<ShimmerEffect>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 

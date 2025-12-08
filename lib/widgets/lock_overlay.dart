@@ -6,7 +6,7 @@ import '../utils/constants.dart';
 import 'shimmer_effect.dart';
 
 /// Lock overlay untuk premium/locked features
-/// 
+///
 /// Features:
 /// - Blur underlying widget
 /// - Shimmer lock icon
@@ -17,7 +17,7 @@ class LockOverlay extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback? onTap;
-  
+
   const LockOverlay({
     Key? key,
     required this.child,
@@ -29,7 +29,7 @@ class LockOverlay extends StatelessWidget {
   void _handleTap(BuildContext context) {
     // Haptic feedback
     HapticFeedback.mediumImpact();
-    
+
     if (onTap != null) {
       onTap!();
     } else {
@@ -81,9 +81,9 @@ class LockOverlay extends StatelessWidget {
                       size: AppSizes.iconXl,
                     ),
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.sm + 2),
-                  
+
                   // Title
                   Text(
                     title,
@@ -93,9 +93,9 @@ class LockOverlay extends StatelessWidget {
                       fontSize: AppFontSizes.lg,
                     ),
                   ),
-                  
+
                   const SizedBox(height: AppSpacing.xs),
-                  
+
                   // Message
                   Padding(
                     padding: const EdgeInsets.symmetric(

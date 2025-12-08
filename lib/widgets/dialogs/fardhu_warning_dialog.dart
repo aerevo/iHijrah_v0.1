@@ -13,7 +13,7 @@ void showFardhuWarningDialog(BuildContext context, VoidCallback onContinue) {
         side: BorderSide(color: kWarningRed.withOpacity(0.8)),
       ),
       title: const Text(
-        'Amaran Mentor Fardhu', 
+        'Amaran Mentor Fardhu',
         style: TextStyle(color: kWarningRed, fontWeight: FontWeight.bold)
       ),
       content: const Text(

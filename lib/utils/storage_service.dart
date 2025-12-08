@@ -1,4 +1,4 @@
-﻿// lib/utils/storage_service.dart (UPGRADED 7.8/10)
+﻿// lib/utils/storage_service.dart (FIXED - FULL OVERWRITE)
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,13 +8,12 @@ import '../models/user_model.dart';
 import 'result.dart';
 
 /// Service untuk manage persistent storage (Hive + SharedPreferences)
-/// 
-/// Features:
-/// - Centralized storage access
-/// - Error handling dengan Result<T, E>
-/// - Safe initialization
-/// - Latitude/Longitude storage
 class StorageService {
+  // ===== SINGLETON PATTERN ===== ✅ FIXED
+  static final StorageService _instance = StorageService._internal();
+  factory StorageService() => _instance;
+  StorageService._internal();
+
   // ===== CONSTANTS =====
   static const String _userBox = 'userBox';
   static const String _prayerBox = 'prayerBox';
@@ -30,13 +29,14 @@ class StorageService {
   // ===== GETTERS =====
   bool get isInitialized => _initialized;
 
-  // ===== INITIALIZATION =====
+  // ===== STATIC INIT METHOD ===== ✅ FIXED - Untuk dipanggil dalam main.dart
+  static Future<void> init() async {
+    await _instance._init();
+  }
 
-  /// Initialize storage (MUST call before using any method)
-  Future<Result<void, String>> init() async {
-    if (_initialized) {
-      return Result.success(null);
-    }
+  // ===== PRIVATE INITIALIZATION =====
+  Future<void> _init() async {
+    if (_initialized) return;
 
     try {
       // 1. Setup Hive
@@ -56,24 +56,22 @@ class StorageService {
       _prefs = await SharedPreferences.getInstance();
 
       _initialized = true;
-      
+
       if (kDebugMode) {
         print('✅ StorageService initialized successfully');
       }
-
-      return Result.success(null);
     } catch (e) {
       if (kDebugMode) {
         print('❌ StorageService init failed: $e');
       }
-      return Result.failure('Failed to initialize storage: $e');
+      rethrow;
     }
   }
 
   /// Ensure initialized (helper untuk prevent crashes)
   void _ensureInitialized() {
     if (!_initialized) {
-      throw StateError('StorageService not initialized. Call init() first.');
+      throw StateError('StorageService not initialized. Call StorageService.init() first.');
     }
   }
 
@@ -82,18 +80,18 @@ class StorageService {
   /// Get UserModel (always returns valid model)
   UserModel getUserModel() {
     _ensureInitialized();
-    
+
     final userBox = Hive.box<UserModel>(_userBox);
-    
+
     if (userBox.isEmpty) {
       // Create new user
       final newUser = UserModel();
       userBox.add(newUser);
-      
+
       if (kDebugMode) {
         print('📝 Created new UserModel');
       }
-      
+
       return newUser;
     }
 
@@ -253,11 +251,11 @@ class StorageService {
       _ensureInitialized();
       final userBox = Hive.box<UserModel>(_userBox);
       await userBox.clear();
-      
+
       if (kDebugMode) {
         print('🗑️ User data cleared');
       }
-      
+
       return Result.success(null);
     } catch (e) {
       return Result.failure('Failed to reset user data: $e');

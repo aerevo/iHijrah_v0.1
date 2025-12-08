@@ -27,10 +27,10 @@ class AboutView extends StatelessWidget {
         children: [
           const MetallicGold(
             child: Text(
-              "Aplikasi iHijrah", 
+              "Aplikasi iHijrah",
               style: TextStyle(
-                color: kTextPrimary, 
-                fontSize: AppFontSizes.xl, 
+                color: kTextPrimary,
+                fontSize: AppFontSizes.xl,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Playfair'
               )
@@ -38,7 +38,7 @@ class AboutView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            "Versi 1.0.0 (Gold & Dark Theme)", 
+            "Versi 1.0.0 (Gold & Dark Theme)",
             style: TextStyle(color: kPrimaryGold.withOpacity(0.8), fontSize: AppFontSizes.sm)
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -47,7 +47,7 @@ class AboutView extends StatelessWidget {
             style: TextStyle(color: kTextSecondary, height: 1.5, fontSize: AppFontSizes.md),
           ),
           const SizedBox(height: AppSpacing.xl),
-          
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -55,7 +55,7 @@ class AboutView extends StatelessWidget {
               label: const Text("Nilai Aplikasi", style: TextStyle(color: kCardDark, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kAccentOlive,
-                padding: const EdgeInsets.symmetric(vertical: AppSizes.buttonHeightMd * 0.3), 
+                padding: const EdgeInsets.symmetric(vertical: AppSizes.buttonHeightMd * 0.3),
               ),
               onPressed: () => _launchURL('https://play.google.com/store/apps'),
             ),

@@ -22,7 +22,7 @@ class AdhanSettingsPanel extends StatelessWidget {
       child: Consumer<UserModel>(
         builder: (context, user, child) {
           final AdhanMode currentMode = AdhanMode.values[user.adhanModeIndex];
-          
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -39,32 +39,32 @@ class AdhanSettingsPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              
+
               // PILIHAN 1: MATI (OFF)
               _buildRadioTile(
-                context, 
-                user: user, 
-                mode: AdhanMode.off, 
+                context,
+                user: user,
+                mode: AdhanMode.off,
                 currentMode: currentMode,
                 title: 'Mati (Senyap)',
                 subtitle: 'Tiada bunyi Azan dimainkan.',
               ),
-              
+
               // PILIHAN 2: HIDUP PENUH (FULL)
               _buildRadioTile(
-                context, 
-                user: user, 
-                mode: AdhanMode.full, 
+                context,
+                user: user,
+                mode: AdhanMode.full,
                 currentMode: currentMode,
                 title: 'Hidup Penuh',
                 subtitle: 'Azan dimainkan sepenuhnya (seperti biasa).',
               ),
-              
+
               // PILIHAN 3: MAIN RINGKAS (SHORT)
               _buildRadioTile(
-                context, 
-                user: user, 
-                mode: AdhanMode.short, 
+                context,
+                user: user,
+                mode: AdhanMode.short,
                 currentMode: currentMode,
                 title: 'Main Ringkas (15 Saat)',
                 subtitle: 'Azan dimainkan sekejap sahaja untuk notifikasi.',
@@ -96,7 +96,7 @@ class AdhanSettingsPanel extends StatelessWidget {
       onChanged: (newMode) {
         if (newMode != null) {
           user.setAdhanMode(newMode.index);
-          
+
           // Ujian Segera: Mainkan audio (kecuali 'off') untuk demo bila Azan berbunyi
           if (newMode != AdhanMode.off) {
              Provider.of<AudioService>(context, listen: false).playAdhan(context);

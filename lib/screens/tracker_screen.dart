@@ -25,16 +25,16 @@ class TrackerScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text(
-              'Matlamat Wajib Harian', 
+              'Matlamat Wajib Harian',
               style: TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Playfair')
             ),
             SizedBox(height: 15),
             FardhuTracker(), // Tracker Solat Fardhu
-            
+
             SizedBox(height: 30),
-            
+
             Text(
-              'Amalan Sunnah Pilihan', 
+              'Amalan Sunnah Pilihan',
               style: TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Playfair')
             ),
             SizedBox(height: 15),
@@ -43,12 +43,12 @@ class TrackerScreen extends StatelessWidget {
             SizedBox(height: 30),
 
             Text(
-              'Jendela Waktu & Sejarah', 
+              'Jendela Waktu & Sejarah',
               style: TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Playfair')
             ),
             SizedBox(height: 15),
             EventCard(), // Kad Peristiwa
-            
+
             SizedBox(height: 100),
           ],
         ),

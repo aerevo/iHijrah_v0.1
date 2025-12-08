@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 
 /// Model untuk manage sidebar & flyout panel state
-/// 
+///
 /// Features:
 /// - Toggle logic dengan animation support
 /// - Menu history tracking
@@ -19,32 +19,32 @@ class SidebarStateModel extends ChangeNotifier {
   bool _isAnimating = false;
 
   // ===== GETTERS =====
-  
+
   /// Current active menu ID
   String? get activeMenuId => _activeMenuId;
-  
+
   /// Check if any menu is open
   bool get isMenuOpen => _activeMenuId != null;
-  
+
   /// Check if sidebar is closed
   bool get isClosed => _activeMenuId == null;
-  
+
   /// Get sidebar dock width
   double get dockWidth => _defaultDockWidth;
-  
+
   /// Get flyout panel width
   double get flyoutWidth => _defaultFlyoutWidth;
-  
+
   /// Check if currently animating
   bool get isAnimating => _isAnimating;
-  
+
   /// Get last opened menu (for back navigation)
   String? get previousMenu => _menuHistory.isNotEmpty ? _menuHistory.last : null;
 
   // ===== PUBLIC METHODS =====
 
   /// Set active menu dengan toggle logic
-  /// 
+  ///
   /// Rules:
   /// - Tekan menu yang sama → Close
   /// - Tekan menu lain → Switch
@@ -77,7 +77,7 @@ class SidebarStateModel extends ChangeNotifier {
   /// Close menu (public method)
   void closeMenu() {
     if (_activeMenuId == null) return;
-    
+
     _closeMenuInternal();
     notifyListeners();
   }
@@ -89,7 +89,7 @@ class SidebarStateModel extends ChangeNotifier {
   }
 
   /// Toggle menu (for FAB)
-  /// 
+  ///
   /// Logic:
   /// - Jika closed → Open last menu atau default (profil)
   /// - Jika open → Close

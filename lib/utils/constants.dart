@@ -41,7 +41,7 @@ class AppSpacing {
   static const double lg = 24.0;
   static const double xl = 32.0;
   static const double xxl = 40.0;
-  
+
   static const double screenH = 20.0;
   static const double screenV = 20.0;
 }
@@ -53,7 +53,7 @@ class AppSizes {
   static const double iconMd = 24.0;
   static const double iconLg = 32.0;
   static const double iconXl = 40.0;
-  
+
   static const double treeContainer = 350.0;
   static const double treeImage = 300.0;
   static const double treeGlow = 200.0;
@@ -61,7 +61,7 @@ class AppSizes {
   static const double cardRadius = 12.0;
   static const double cardRadiusLg = 16.0;
   static const double cardRadiusXl = 20.0;
-  
+
   static const double buttonHeightSm = 40.0;
   static const double buttonHeightMd = 50.0;
   static const double buttonHeightLg = 55.0;
@@ -118,7 +118,7 @@ class AppAssets {
   // Audio
   static const String intro = '${audioPath}intro.mp3';
   static const String adhan = '${audioPath}adhan.mp3';
-  static const String splash = '${audioPath}siraman.mp3'; 
+  static const String splash = '${audioPath}siraman.mp3';
   static const String suaraAlhamdulillah = '${audioPath}suara_alhamdulillah.mp3';
   static const String suaraInsyaAllah = '${audioPath}suara_insyaaallah.mp3';
   static const String suaraHi = '${audioPath}suara_hi.mp3';

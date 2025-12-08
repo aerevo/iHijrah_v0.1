@@ -25,7 +25,7 @@ class AmalanList extends StatelessWidget {
         for (var a in amalanHarian) {
           if (user.isAmalanDoneToday(a['id'])) completedCount++;
         }
-        
+
         double progress = completedCount / amalanHarian.length;
 
         return Card(
@@ -46,7 +46,7 @@ class AmalanList extends StatelessWidget {
             title: const Text(
               "Senarai Semak Sunnah",
               style: TextStyle(
-                color: kTextPrimary, 
+                color: kTextPrimary,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Playfair',
                 fontSize: AppFontSizes.lg
@@ -63,7 +63,7 @@ class AmalanList extends StatelessWidget {
                   style: const TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Mini Progress Bar
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
@@ -78,11 +78,11 @@ class AmalanList extends StatelessWidget {
             ),
             iconColor: kPrimaryGold,
             collapsedIconColor: kTextSecondary,
-            
+
             // ISI KANDUNGAN
             children: amalanHarian.map((amalan) {
               final isDone = user.isAmalanDoneToday(amalan['id']);
-              
+
               return Container(
                 decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05)))
@@ -90,7 +90,7 @@ class AmalanList extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
                   leading: Icon(
-                    amalan['icon'], 
+                    amalan['icon'],
                     color: isDone ? kPrimaryGold : kTextSecondary,
                     size: AppSizes.iconSm,
                   ),

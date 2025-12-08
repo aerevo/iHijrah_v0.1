@@ -8,7 +8,7 @@ import '../models/animation_controller_model.dart';
 import '../utils/constants.dart';
 
 /// Fardhu prayer tracker dengan interactive buttons
-/// 
+///
 /// Features:
 /// - 5 prayer buttons (Subuh, Zohor, Asar, Maghrib, Isyak)
 /// - Scale animation on press
@@ -55,9 +55,9 @@ class FardhuTracker extends StatelessWidget {
             )
           ],
         ),
-        
+
         const SizedBox(height: AppSpacing.md - 1),
-        
+
         // Prayer buttons
         SizedBox(
           height: 90,
@@ -132,8 +132,8 @@ class _InteractivePrayerBtnState extends State<_InteractivePrayerBtn> {
           color: widget.isDone ? kPrimaryGold : kCardDark,
           borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
           border: Border.all(
-            color: widget.isDone 
-                ? kPrimaryGold 
+            color: widget.isDone
+                ? kPrimaryGold
                 : kTextSecondary.withOpacity(0.1),
             width: 1,
           ),

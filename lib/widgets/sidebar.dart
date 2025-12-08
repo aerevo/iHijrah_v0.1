@@ -1,19 +1,20 @@
-﻿// lib/widgets/sidebar.dart (BONUS UPGRADE)
+﻿// lib/widgets/sidebar.dart (LINE 1-10)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/sidebar_state_model.dart';
-import '../../utils/constants.dart';
-import 'metallic_gold.dart';
-import 'embun_ui/embun_ui.dart'; // ✅ Import Embun UI
+
+import '../models/sidebar_state_model.dart';  // ✅ Naik satu level
+import '../utils/constants.dart';
+import 'metallic_gold.dart';                  // ✅ Same level
+import 'embun_ui/embun_ui.dart';              // ✅ Subfolder dalam widgets/
 
 class Sidebar extends StatelessWidget {
   final double dockWidth;
   final Color backgroundColor;
 
   const Sidebar({
-    Key? key, 
-    this.dockWidth = AppSizes.sidebarWidth, 
+    Key? key,
+    this.dockWidth = AppSizes.sidebarWidth,
     this.backgroundColor = kCardDark
   }) : super(key: key);
 
@@ -23,7 +24,7 @@ class Sidebar extends StatelessWidget {
 
   Future<void> _launchWhatsApp(BuildContext context) async {
     final url = 'whatsapp://send?phone=$_whatsappNumber&text=${Uri.encodeComponent(_whatsappMessage)}';
-    
+
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
@@ -39,7 +40,7 @@ class Sidebar extends StatelessWidget {
       }
     }
   }
-  
+
   void _showInfaqDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -47,7 +48,7 @@ class Sidebar extends StatelessWidget {
         backgroundColor: kCardDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)),
         title: const MetallicGold(
-          child: Text('Infaq Pembangunan', 
+          child: Text('Infaq Pembangunan',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Playfair')
           )
         ),
@@ -60,17 +61,17 @@ class Sidebar extends StatelessWidget {
               style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm, height: 1.5),
             ),
             const SizedBox(height: AppSpacing.md),
-            
+
             const MetallicGold(child: Text("Sila Hubungi Admin:", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
             const SizedBox(height: AppSpacing.sm),
-            
+
             SizedBox(
               width: double.infinity,
               height: AppSizes.buttonHeightMd,
               // ✅ CELEBRATION BUTTON UTK INFAQ
               child: CelebrationButton(
                 onPressed: () => _launchWhatsApp(context),
-                backgroundColor: Colors.green.shade700, 
+                backgroundColor: Colors.green.shade700,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
@@ -90,7 +91,7 @@ class Sidebar extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
+            onPressed: () => Navigator.pop(context),
             child: const Text("Tutup", style: TextStyle(color: kTextSecondary))
           )
         ],
@@ -133,7 +134,7 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: dockWidth + 1, 
+      width: dockWidth + 1,
       height: MediaQuery.of(context).size.height,
       color: backgroundColor,
       child: SafeArea(
@@ -150,9 +151,9 @@ class Sidebar extends StatelessWidget {
             _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
             _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
             _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
-            
+
             const Spacer(),
-            
+
             _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
             _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
             const SizedBox(height: 20),
