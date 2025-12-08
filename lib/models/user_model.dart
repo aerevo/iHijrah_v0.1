@@ -196,9 +196,14 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
     }
   }
 
-  /// ✅ FIXED: Set birth date (hijri format)
-  void setBirthDate(String hijriDateString) {
-    hijriDOB = hijriDateString;
+  /// ✅ FIXED: Set birth date (Masihi & Hijri)
+  void setBirthDate(DateTime masihiDate) {
+    birthdate = masihiDate;
+
+    // Convert to Hijri and save
+    final hijriDate = HijriService.fromDate(masihiDate);
+    hijriDOB = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
+
     save();
     notifyListeners();
   }
