@@ -1,12 +1,12 @@
-﻿// lib/main.dart (LINE 1-20)
+// lib/main.dart (Using SharedPreferences)
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Import Screens & Utils
-import 'screens/splash_screen.dart';  // screens/ ada '../' sebab dalam subfolder
+import 'screens/splash_screen.dart';
 import 'utils/constants.dart';
-import 'utils/storage_service.dart';
 
 // Import Models & Services for Provider
 import 'models/user_model.dart';
@@ -20,10 +20,10 @@ void main() async {
   // 1. Ensure Bindings
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Init Storage (Hive / SharedPreferences) ✅ FIXED
-  await StorageService.init();
+  // 2. Load User Data from SharedPreferences
+  final userModel = await UserModel.load();
 
-  // 3. Lock Orientation (Optional, untuk design stabil)
+  // 3. Lock Orientation
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -35,11 +35,12 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  runApp(const IHijrahApp());
+  runApp(IHijrahApp(userModel: userModel));
 }
 
 class IHijrahApp extends StatelessWidget {
-  const IHijrahApp({super.key});
+  final UserModel userModel;
+  const IHijrahApp({super.key, required this.userModel});
 
   @override
   Widget build(BuildContext context) {
@@ -47,14 +48,16 @@ class IHijrahApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // Data Providers
-        ChangeNotifierProvider(create: (_) => UserModel()),
+        ChangeNotifierProvider.value(value: userModel),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
 
-        // Service Providers (Logic) ✅ FIXED: Provide dependencies
+        // Service Providers (Logic)
         Provider(create: (_) => AudioService()),
-        ProxyProvider2<AudioService, UserModel, PrayerService>(
-          update: (_, audio, user, prev) => PrayerService(StorageService(), audio),
+        // PrayerService now depends on UserModel, so we use a ProxyProvider
+        ChangeNotifierProxyProvider<UserModel, PrayerService>(
+            create: (context) => PrayerService(context.read<UserModel>()),
+            update: (context, user, prayerService) => prayerService!..updateUser(user),
         ),
         Provider(create: (_) => SirahService()),
       ],
@@ -67,9 +70,8 @@ class IHijrahApp extends StatelessWidget {
           brightness: Brightness.dark,
           scaffoldBackgroundColor: kBackgroundDark,
           primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto', // Default font body
+          fontFamily: 'Roboto',
 
-          // Color Scheme
           colorScheme: const ColorScheme.dark(
             primary: kPrimaryGold,
             secondary: kAccentOlive,
@@ -77,13 +79,11 @@ class IHijrahApp extends StatelessWidget {
             background: kBackgroundDark,
           ),
 
-          // Text Theme
           textTheme: const TextTheme(
             bodyMedium: TextStyle(color: kTextPrimary),
             bodySmall: TextStyle(color: kTextSecondary),
           ),
 
-          // App Bar Theme
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.transparent,
             elevation: 0,
