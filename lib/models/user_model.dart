@@ -1,4 +1,4 @@
-// lib/models/user_model.dart (UPGRADED 7.8/10)
+﻿// lib/models/user_model.dart (FIXED - FULL OVERWRITE)
 
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -47,7 +47,7 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
   int adhanModeIndex = 1; // Default: Full
 
   // ===== GETTERS (COMPUTED PROPERTIES) =====
-  
+
   /// XP yang diperlukan untuk naik level seterusnya
   int get nextLevelPoints => treeLevel * 100;
 
@@ -56,8 +56,8 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
 
   /// Check if user has completed daily basics
   bool get hasCompletedDailyBasics {
-    return selawatCountToday >= 1 && 
-           dailyFardhuLog.values.where((v) => v).length >= 3;
+    return selawatCountToday >= 1 &&
+        dailyFardhuLog.values.where((v) => v).length >= 3;
   }
 
   /// Get total fardhu completed today
@@ -116,10 +116,10 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
   /// Rekod solat fardhu (dengan XP reward)
   void recordFardhu(String prayerName) {
     _checkDailyReset();
-    
+
     // Prevent double recording
     if (dailyFardhuLog[prayerName] == true) return;
-    
+
     dailyFardhuLog[prayerName] = true;
     totalPoints += 20; // 20 XP untuk Fardhu
     _checkLevelUp();
@@ -136,10 +136,10 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
   /// Rekod amalan sunnah (dengan XP reward)
   void recordAmalan(String amalanId) {
     _checkDailyReset();
-    
+
     // Prevent double recording
     if (dailyAmalanLog[amalanId] == true) return;
-    
+
     dailyAmalanLog[amalanId] = true;
     totalPoints += 10; // 10 XP untuk Sunnah
     _checkLevelUp();
@@ -196,19 +196,22 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
     }
   }
 
-  /// Update user profile (name & birthdate)
-  void updateProfile({required String newName, required DateTime newDate}) {
-    name = newName;
-    birthdate = newDate;
-    hijriDOB = HijriService.convertToHijri(newDate);
+  /// ✅ FIXED: Set birth date (hijri format)
+  void setBirthDate(String hijriDateString) {
+    hijriDOB = hijriDateString;
     save();
     notifyListeners();
   }
 
-  /// Set user's birthdate from a Gregorian DateTime
-  void setBirthDate(DateTime newDate) {
+  /// Update user profile (name & birthdate)
+  void updateProfile({required String newName, required DateTime newDate}) {
+    name = newName;
     birthdate = newDate;
-    hijriDOB = HijriService.convertToHijri(newDate);
+
+    // Convert to Hijri
+    final hijriDate = HijriService.fromDate(newDate);
+    hijriDOB = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
+
     save();
     notifyListeners();
   }
@@ -244,6 +247,6 @@ class UserModel extends ChangeNotifier with HiveObjectMixin {
   @override
   String toString() {
     return 'UserModel(name: $name, level: $treeLevel, points: $totalPoints/$nextLevelPoints, '
-           'fardhu: $fardhuCompletedToday, amalan: $amalanCompletedToday, selawat: $selawatCountToday)';
+        'fardhu: $fardhuCompletedToday, amalan: $amalanCompletedToday, selawat: $selawatCountToday)';
   }
 }

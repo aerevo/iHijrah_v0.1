@@ -1,7 +1,7 @@
 // lib/utils/result.dart (FAIL BARU - ERROR HANDLING WRAPPER)
 
 /// Generic Result class untuk handle success/failure dengan type-safe
-/// 
+///
 /// Guna macam ni:
 /// ```dart
 /// Result<User, String> result = await getUserData();

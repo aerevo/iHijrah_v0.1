@@ -26,7 +26,7 @@ class FlyoutPanel extends StatelessWidget {
       default: return const Center(child: Text("Sila Pilih Menu", style: TextStyle(color: kTextSecondary)));
     }
   }
-  
+
   String _getTitle(String menuId) {
     switch (menuId) {
       case 'profil': return 'Profil Saya';
@@ -67,7 +67,7 @@ class FlyoutPanel extends StatelessWidget {
               opacity: isActive ? 1.0 : 0.0,
               duration: AppDurations.fast,
               curve: isActive ? Curves.easeIn : Curves.easeOut,
-              child: model.activeMenuId == null 
+              child: model.activeMenuId == null
                   ? const SizedBox.shrink()
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +89,7 @@ class FlyoutPanel extends StatelessWidget {
                               _getTitle(model.activeMenuId!),
                               style: const TextStyle(
                                 fontSize: AppFontSizes.xxl,
-                                fontFamily: 'Playfair', 
+                                fontFamily: 'Playfair',
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.5,
                                 color: Colors.white, // Color overridden by shader
@@ -97,7 +97,7 @@ class FlyoutPanel extends StatelessWidget {
                             ),
                           ),
                         ),
-                        
+
                         // KANDUNGAN
                         Padding(
                           padding: const EdgeInsets.all(AppSpacing.screenH),

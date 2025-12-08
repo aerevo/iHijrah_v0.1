@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
-import 'tracker_screen.dart';
-import 'birthdate_prompt_screen.dart'; // ✅ DIPERBETULKAN (Nama fail betul)
+import '../home.dart'; // ✅ Naik satu level untuk capai home.dart
+import 'birthdate_prompt_screen.dart'; // ✅ Same level dalam screens/
 import '../utils/premium_route.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    
+
     // Setup Animasi Premium
     _controller = AnimationController(
       vsync: this,
@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack)
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn)
     );
@@ -47,14 +47,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   void _checkUserAndNavigate() async {
     final userModel = Provider.of<UserModel>(context, listen: false);
-    
+
     // Semak jika data user (tarikh lahir Hijrah) sudah wujud
     if (userModel.hijriDOB != null && userModel.hijriDOB!.isNotEmpty) {
       // User lama -> Terus ke Home
-      Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const TrackerScreen()));
+      Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const HomePage()));
     } else {
       // User baru -> Setup Tarikh Lahir
-      // ✅ DIPERBETULKAN: Menggunakan nama kelas yang betul 'BirthdatePromptScreen'
       Navigator.of(context).pushReplacement(PremiumRoute.createRoute(const BirthdatePromptScreen()));
     }
   }
@@ -96,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       child: const Icon(Icons.diamond, size: 80, color: kPrimaryGold),
                     ),
                     const SizedBox(height: 30),
-                    
+
                     // TAJUK APP (METALLIC GOLD)
                     const MetallicGold(
                       child: Text(

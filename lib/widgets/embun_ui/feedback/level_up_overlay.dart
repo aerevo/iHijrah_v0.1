@@ -9,25 +9,25 @@ import '../animations/confetti_burst.dart';
 class LevelUpOverlay extends StatefulWidget {
   final int newLevel;
   final VoidCallback? onComplete;
-  
+
   const LevelUpOverlay({
     Key? key,
     required this.newLevel,
     this.onComplete,
   }) : super(key: key);
-  
+
   static void show(
     BuildContext context, {
     required int newLevel,
     VoidCallback? onComplete,
   }) {
     HapticFeedback.heavyImpact();
-    
+
     // Repeat haptic
     Future.delayed(const Duration(milliseconds: 100), () {
       HapticFeedback.heavyImpact();
     });
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -40,7 +40,7 @@ class LevelUpOverlay extends StatefulWidget {
         },
       ),
     );
-    
+
     // Auto dismiss after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (context.mounted) {
@@ -49,25 +49,25 @@ class LevelUpOverlay extends StatefulWidget {
       }
     });
   }
-  
+
   @override
   State<LevelUpOverlay> createState() => _LevelUpOverlayState();
 }
 
-class _LevelUpOverlayState extends State<LevelUpOverlay> 
+class _LevelUpOverlayState extends State<LevelUpOverlay>
     with TickerProviderStateMixin {
   late AnimationController _scaleController;
   late AnimationController _rotationController;
   late AnimationController _pulseController;
-  
+
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotationAnimation;
   late Animation<double> _pulseAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Scale animation
     _scaleController = AnimationController(
       vsync: this,
@@ -79,7 +79,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
         curve: Curves.elasticOut,
       ),
     );
-    
+
     // Rotation animation
     _rotationController = AnimationController(
       vsync: this,
@@ -91,7 +91,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
         curve: Curves.easeOut,
       ),
     );
-    
+
     // Pulse animation (continuous)
     _pulseController = AnimationController(
       vsync: this,
@@ -103,11 +103,11 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
         curve: Curves.easeInOut,
       ),
     );
-    
+
     _scaleController.forward();
     _rotationController.forward();
   }
-  
+
   @override
   void dispose() {
     _scaleController.dispose();
@@ -115,7 +115,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
     _pulseController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -126,7 +126,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
           const Positioned.fill(
             child: ConfettiBurst(particleCount: 50),
           ),
-          
+
           // Main content
           Center(
             child: ScaleTransition(
@@ -152,9 +152,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: AppSpacing.xl),
-                    
+
                     // Level number dengan pulse
                     ScaleTransition(
                       scale: _pulseAnimation,
@@ -186,9 +186,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: AppSpacing.xl),
-                    
+
                     // Subtitle
                     Text(
                       'MasyaAllah! Tahniah! 🎉',
@@ -198,9 +198,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    
+
                     const SizedBox(height: AppSpacing.sm),
-                    
+
                     Text(
                       'Istiqamah anda sungguh membanggakan!',
                       style: TextStyle(
@@ -213,7 +213,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
               ),
             ),
           ),
-          
+
           // Tap to dismiss hint
           Positioned(
             bottom: 40,

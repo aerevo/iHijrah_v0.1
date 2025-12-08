@@ -7,7 +7,7 @@ import 'hijri_service.dart';
 import 'result.dart';
 
 /// Service untuk manage Islamic calendar events
-/// 
+///
 /// Features:
 /// - Load event data dari JSON
 /// - Get event untuk hari ini (Hijri based)
@@ -22,11 +22,11 @@ class EventService {
   static Future<Result<void, String>> load() async {
     try {
       await BaseDataService.load<List<Map<String, dynamic>>>(_path);
-      
+
       if (kDebugMode) {
         print('✅ Event data loaded');
       }
-      
+
       return Result.success(null);
     } catch (e) {
       if (kDebugMode) {
@@ -39,14 +39,14 @@ class EventService {
   // ===== DATA RETRIEVAL =====
 
   /// Get event untuk hari ini sahaja
-  /// 
+  ///
   /// Returns:
   /// - Event entry jika wujud
   /// - null jika tiada event hari ini
   static Future<Result<Map<String, dynamic>?, String>> getEventForToday() async {
     try {
       final data = await BaseDataService.load<List<Map<String, dynamic>>>(_path);
-      
+
       if (data.isEmpty) {
         if (kDebugMode) {
           print('⚠️ Event data is empty');
@@ -60,7 +60,7 @@ class EventService {
       // Cari event yang match dengan hari ini
       for (var event in data) {
         final eventDate = (event['tarikh_hijrah'] as String? ?? '').toLowerCase();
-        
+
         if (eventDate == todayKey) {
           if (kDebugMode) {
             print('📅 Event found: ${event['tajuk']}');
@@ -73,7 +73,7 @@ class EventService {
       if (kDebugMode) {
         print('📅 No event today ($todayKey)');
       }
-      
+
       return Result.success(null);
 
     } catch (e) {
@@ -88,7 +88,7 @@ class EventService {
   static Future<Result<List<Map<String, dynamic>>, String>> getAll() async {
     try {
       final data = await BaseDataService.load<List<Map<String, dynamic>>>(_path);
-      
+
       if (data.isEmpty) {
         return Result.success([]);
       }
@@ -110,7 +110,7 @@ class EventService {
   static Future<Result<List<Map<String, dynamic>>, String>> getEventsForMonth(int month) async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }
@@ -120,12 +120,12 @@ class EventService {
         final dateStr = event['tarikh_hijrah'] as String? ?? '';
         // Format: "1 muharram", "10 ramadan", etc
         final parts = dateStr.toLowerCase().split(' ');
-        
+
         if (parts.length >= 2) {
           final monthName = parts[1];
           return _isMonthMatch(monthName, month);
         }
-        
+
         return false;
       }).toList();
 
@@ -139,7 +139,7 @@ class EventService {
   static Future<Result<List<Map<String, dynamic>>, String>> searchEvents(String keyword) async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }
@@ -149,7 +149,7 @@ class EventService {
       final results = allData.data!.where((event) {
         final tajuk = (event['tajuk'] as String? ?? '').toLowerCase();
         final keterangan = (event['keterangan'] as String? ?? '').toLowerCase();
-        
+
         return tajuk.contains(lowerKeyword) || keterangan.contains(lowerKeyword);
       }).toList();
 
@@ -203,7 +203,7 @@ class EventService {
 
     final data = BaseDataService.get<List<Map<String, dynamic>>>(_path);
     print('📅 Total events: ${data.length}');
-    
+
     if (data.isNotEmpty) {
       print('First 5 events:');
       for (int i = 0; i < data.length && i < 5; i++) {
@@ -217,7 +217,7 @@ class EventService {
   static Future<Result<List<Map<String, dynamic>>, String>> getImportantEvents() async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }

@@ -72,15 +72,15 @@ class ProfileDetailView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xl),
-            
+
             // SECTION HEADER
             const MetallicGold(
-              child: Text("Perjalanan Hijrah", 
+              child: Text("Perjalanan Hijrah",
                 style: TextStyle(color: Colors.white, fontSize: AppFontSizes.lg, fontWeight: FontWeight.bold, fontFamily: 'Playfair')
               )
             ),
             const SizedBox(height: AppSpacing.md),
-            
+
             // DETAILS CARDS
             _buildDetailCard(
               title: 'Umur Hijrah',

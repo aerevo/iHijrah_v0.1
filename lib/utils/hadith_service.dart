@@ -4,7 +4,7 @@ import 'package:hijri/hijri_calendar.dart';
 import 'hijri_service.dart';
 
 /// Service untuk daily Hadith rotation
-/// 
+///
 /// Features:
 /// - Hadith collection (hardcoded, no JSON needed)
 /// - Special hadith for specific dates (Asyura, Ramadan, etc)
@@ -120,7 +120,7 @@ class HadithService {
   // ===== PUBLIC METHODS =====
 
   /// Get hadith untuk hari ini (consistent sepanjang hari)
-  /// 
+  ///
   /// Logic: Guna formula matematik based on Hijri date
   /// supaya hadith kekal sama untuk hari yang sama
   static Map<String, String> getHadithForToday() {
@@ -136,7 +136,7 @@ class HadithService {
     // Formula: (day + month) % collection_length
     // Ini ensures hadith sama untuk tarikh yang sama
     int uniqueIndex = (today.hDay + today.hMonth) % _hadithCollection.length;
-    
+
     return _hadithCollection[uniqueIndex];
   }
 
@@ -208,12 +208,12 @@ class HadithService {
   /// Search hadiths by keyword
   static List<Map<String, String>> search(String keyword) {
     final keywordLower = keyword.toLowerCase();
-    
+
     return _hadithCollection.where((hadith) {
       final text = (hadith['text'] ?? '').toLowerCase();
       final topik = (hadith['topik'] ?? '').toLowerCase();
       final kategori = (hadith['kategori'] ?? '').toLowerCase();
-      
+
       return text.contains(keywordLower) ||
              topik.contains(keywordLower) ||
              kategori.contains(keywordLower);
@@ -223,7 +223,7 @@ class HadithService {
   /// Get hadith statistics
   static Map<String, dynamic> getStatistics() {
     final categories = <String, int>{};
-    
+
     for (var hadith in _hadithCollection) {
       final category = hadith['kategori'] ?? 'Lain-lain';
       categories[category] = (categories[category] ?? 0) + 1;
@@ -242,7 +242,7 @@ class HadithService {
   /// Add custom hadith (for future feature - user can add their own)
   static void addCustomHadith(Map<String, String> hadith) {
     // Validate required fields
-    if (hadith.containsKey('text') && 
+    if (hadith.containsKey('text') &&
         hadith.containsKey('riwayat')) {
       _hadithCollection.add(hadith);
     }
@@ -252,11 +252,11 @@ class HadithService {
   static String formatHadith(Map<String, String> hadith, {bool includeSource = true}) {
     final text = hadith['text'] ?? '';
     final riwayat = hadith['riwayat'] ?? '';
-    
+
     if (includeSource && riwayat.isNotEmpty) {
       return '$text\n\n— $riwayat';
     }
-    
+
     return text;
   }
 }

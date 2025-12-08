@@ -34,7 +34,7 @@ class CalendarScreen extends StatelessWidget {
         // Days of Week
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: ['A','I','S','R','K','J','S'].map((d) => 
+          children: ['A','I','S','R','K','J','S'].map((d) =>
             Text(d, style: const TextStyle(color: kAccentOlive, fontWeight: FontWeight.bold))
           ).toList(),
         ),
@@ -53,7 +53,7 @@ class CalendarScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final day = days[index];
               final isToday = day == today;
-              
+
               return Container(
                 decoration: BoxDecoration(
                   color: isToday ? kPrimaryGold : kCardDark,
@@ -72,14 +72,14 @@ class CalendarScreen extends StatelessWidget {
             },
           ),
         ),
-        
+
         // Footer Info
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: kCardDark, 
+              color: kCardDark,
               borderRadius: BorderRadius.circular(AppSizes.cardRadius),
               border: Border.all(color: kPrimaryGold.withOpacity(0.3))
             ),

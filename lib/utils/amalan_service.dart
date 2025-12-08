@@ -6,7 +6,7 @@ import 'constants.dart';
 import 'result.dart';
 
 /// Service untuk manage Amalan Sunnah data (daily recommendations)
-/// 
+///
 /// Features:
 /// - Load amalan data dari JSON
 /// - Filter by day (Jumaat, Isnin, etc)
@@ -21,11 +21,11 @@ class AmalanService {
   static Future<Result<void, String>> load() async {
     try {
       await BaseDataService.load<List<Map<String, dynamic>>>(_path);
-      
+
       if (kDebugMode) {
         print('✅ Amalan data loaded');
       }
-      
+
       return Result.success(null);
     } catch (e) {
       if (kDebugMode) {
@@ -38,12 +38,12 @@ class AmalanService {
   // ===== DATA RETRIEVAL =====
 
   /// Get amalan untuk hari tertentu
-  /// 
+  ///
   /// Parameters:
   /// - dayName: Nama hari dalam Inggeris (Monday, Friday, etc)
   /// - dayNumber: Nombor hari (1-30)
   /// - textKey: Tarikh Hijri text (contoh: "10 muharram")
-  /// 
+  ///
   /// Returns:
   /// - List of amalan yang sesuai untuk hari ini
   static Future<Result<List<Map<String, dynamic>>, String>> getForDay(
@@ -53,7 +53,7 @@ class AmalanService {
   ) async {
     try {
       final data = await BaseDataService.load<List<Map<String, dynamic>>>(_path);
-      
+
       if (data.isEmpty) {
         if (kDebugMode) {
           print('⚠️ Amalan data is empty');
@@ -106,7 +106,7 @@ class AmalanService {
   static Future<Result<List<Map<String, dynamic>>, String>> getAll() async {
     try {
       final data = await BaseDataService.load<List<Map<String, dynamic>>>(_path);
-      
+
       if (kDebugMode) {
         print('📿 Loaded ${data.length} amalan');
       }
@@ -121,7 +121,7 @@ class AmalanService {
   static Future<Result<List<Map<String, dynamic>>, String>> getDailyAmalan() async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }
@@ -141,7 +141,7 @@ class AmalanService {
   static Future<Result<List<Map<String, dynamic>>, String>> getByCategory(String category) async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }
@@ -163,7 +163,7 @@ class AmalanService {
   static Future<Result<List<Map<String, dynamic>>, String>> search(String keyword) async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }
@@ -173,7 +173,7 @@ class AmalanService {
       final results = allData.data!.where((amalan) {
         final name = (amalan['name'] as String? ?? '').toLowerCase();
         final desc = (amalan['keterangan'] as String? ?? '').toLowerCase();
-        
+
         return name.contains(lowerKeyword) || desc.contains(lowerKeyword);
       }).toList();
 
@@ -218,7 +218,7 @@ class AmalanService {
   static Future<Result<List<String>, String>> getCategories() async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return Result.success([]);
       }
@@ -245,7 +245,7 @@ class AmalanService {
 
     final data = BaseDataService.get<List<Map<String, dynamic>>>(_path);
     print('📿 Total amalan: ${data.length}');
-    
+
     if (data.isNotEmpty) {
       print('First 5 amalan:');
       for (int i = 0; i < data.length && i < 5; i++) {
@@ -259,7 +259,7 @@ class AmalanService {
   static Future<Map<String, dynamic>> getStatistics() async {
     try {
       final allData = await getAll();
-      
+
       if (allData.isFailure || allData.data == null) {
         return {'total': 0, 'daily': 0, 'weekly': 0, 'special': 0};
       }
@@ -270,7 +270,7 @@ class AmalanService {
 
       for (var amalan in allData.data!) {
         final hari = (amalan['hari'] as String? ?? '').toLowerCase();
-        
+
         if (hari.contains('setiap') || hari == 'harian') {
           daily++;
         } else if (_isWeekday(hari)) {

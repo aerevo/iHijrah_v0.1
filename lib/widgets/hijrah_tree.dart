@@ -1,4 +1,4 @@
-﻿// lib/widgets/hijrah_tree.dart (TRANSFORMED: EMBUN UI)
+﻿// lib/widgets/hijrah_tree.dart (LINE 1-15)
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
@@ -7,14 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Imports existing
-import '../models/user_model.dart';
+import '../models/user_model.dart';           // ✅ Naik satu level
 import '../models/animation_controller_model.dart';
 import '../utils/constants.dart';
 import '../utils/audio_service.dart';
-import 'metallic_gold.dart';
-
-// ✅ EMBUN UI IMPORT
-import 'embun_ui/embun_ui.dart';
+import 'metallic_gold.dart';                  // ✅ Same level
+import 'embun_ui/embun_ui.dart';              // ✅ Subfolder
 
 class HijrahTree extends StatefulWidget {
   final Function(int)? onLevelUp;
@@ -30,7 +28,7 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
   late Animation<double> _swingAnimation;
   late AnimationController _tapController;
   late Animation<double> _tapAnimation;
-  
+
   // State Daun Gugur
   Timer? _leafTimer;
   bool _leafFalling = false;
@@ -56,20 +54,20 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
   void _initAnimations() {
     // Animasi Buai Pokok
     _swingController = AnimationController(
-      vsync: this, 
+      vsync: this,
       duration: const Duration(seconds: 6)
     )..repeat(reverse: true);
-    
+
     _swingAnimation = Tween<double>(begin: -0.02, end: 0.02).animate(
       CurvedAnimation(parent: _swingController, curve: Curves.easeInOutSine)
     );
 
     // Animasi Ketuk
     _tapController = AnimationController(
-      vsync: this, 
+      vsync: this,
       duration: AppDurations.fast
     );
-    
+
     _tapAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _tapController, curve: Curves.easeInOut)
     );
@@ -80,10 +78,10 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _leafFalling = true;
-          _leafX = (Random().nextDouble() * 100) - 50; 
+          _leafX = (Random().nextDouble() * 100) - 50;
           _leafAngle = Random().nextDouble() * 2 * pi;
-        }); 
-        
+        });
+
         Future.delayed(AppDurations.leafFall, () {
           if (mounted) setState(() => _leafFalling = false);
         });
@@ -96,10 +94,10 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
     _swingController.dispose();
     _tapController.dispose();
     _leafTimer?.cancel();
-    
+
     // ✅ CLEANUP BARU
     _wateringTimer?.cancel();
-    
+
     super.dispose();
   }
 
@@ -120,31 +118,31 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
   void _executeSelawatEffects(BuildContext context, AudioService audio) {
     final user = Provider.of<UserModel>(context, listen: false);
     final animModel = Provider.of<AnimationControllerModel>(context, listen: false);
-    
+
     // 1. Show watering effect
     setState(() {
       _isWatering = true;
       _lastXpGain = 20; // XP gained
     });
-    
+
     // 2. Audio sequence
     audio.playSiraman();
     Future.delayed(const Duration(milliseconds: 800), () {
       audio.playAlhamdulillah();
     });
-    
+
     // 3. Record action
     user.recordSelawat();
-    
+
     // 4. Show XP counter animation
     setState(() => _showXPCounter = true);
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) setState(() => _showXPCounter = false);
     });
-    
+
     // 5. Particle spray
     animModel.triggerParticleSpray();
-    
+
     // 6. Check if leveled up
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (_lastKnownLevel < user.treeLevel) {
@@ -156,13 +154,13 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
         );
       }
     });
-    
+
     // 7. Stop watering effect
     _wateringTimer?.cancel();
     _wateringTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) setState(() => _isWatering = false);
     });
-    
+
     // 8. Success feedback
     Future.delayed(const Duration(milliseconds: 500), () {
       if (context.mounted) {
@@ -178,7 +176,7 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
   // --- UI: DIALOG PREMIUM ---
   void _showSelawatDialog(BuildContext context) {
     final audioService = Provider.of<AudioService>(context, listen: false);
-    audioService.playHi(); 
+    audioService.playHi();
 
     showGeneralDialog(
       context: context,
@@ -197,12 +195,12 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
               child: AlertDialog(
                 backgroundColor: kCardDark.withOpacity(0.95),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.cardRadiusXl), 
+                  borderRadius: BorderRadius.circular(AppSizes.cardRadiusXl),
                   side: const BorderSide(color: kPrimaryGold, width: 1)
                 ),
                 title: const MetallicGold(
-                  child: Text('Siraman Rohani', 
-                    style: TextStyle(fontFamily: 'Playfair', fontWeight: FontWeight.bold), 
+                  child: Text('Siraman Rohani',
+                    style: TextStyle(fontFamily: 'Playfair', fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center
                   )
                 ),
@@ -211,8 +209,8 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                   children: const [
                     Icon(Icons.water_drop, size: AppSizes.iconXl, color: Colors.cyanAccent),
                     SizedBox(height: AppSpacing.md),
-                    Text('Assalamualaikum, dah selawat ke belum hari ini?', 
-                      style: TextStyle(color: kTextPrimary, fontSize: AppFontSizes.md), 
+                    Text('Assalamualaikum, dah selawat ke belum hari ini?',
+                      style: TextStyle(color: kTextPrimary, fontSize: AppFontSizes.md),
                       textAlign: TextAlign.center
                     ),
                   ],
@@ -230,9 +228,9 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                       style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.md),
                     ),
                   ),
-                  
+
                   const SizedBox(width: AppSpacing.sm),
-                  
+
                   // BUTTON SUDAH (CELEBRATION)
                   CelebrationButton(
                     onPressed: () {
@@ -266,8 +264,8 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
           _lastKnownLevel = user.treeLevel;
         }
 
-        final double progress = (user.nextLevelPoints > 0) 
-            ? user.totalPoints / user.nextLevelPoints 
+        final double progress = (user.nextLevelPoints > 0)
+            ? user.totalPoints / user.nextLevelPoints
             : 0.0;
         final bool isLowSelawat = user.selawatCountToday < 1;
         final String treeAsset = _getTreeAsset(user.treeLevel);
@@ -275,7 +273,7 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
         return Column(
           children: [
             SizedBox(
-              height: AppSizes.treeContainer, 
+              height: AppSizes.treeContainer,
               width: AppSizes.treeContainer,
               child: Stack(
                 alignment: Alignment.center,
@@ -285,21 +283,21 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                   Positioned(
                     bottom: 50,
                     child: Container(
-                      width: AppSizes.treeGlow, 
+                      width: AppSizes.treeGlow,
                       height: AppSizes.treeGlow,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: kPrimaryGold.withOpacity(0.15), 
-                            blurRadius: 60, 
+                            color: kPrimaryGold.withOpacity(0.15),
+                            blurRadius: 60,
                             spreadRadius: 20
                           ),
                         ],
                       ),
                     ),
                   ),
-                  
+
                   // ✅ WATER DROPS EFFECT
                   if (_isWatering)
                     Positioned.fill(
@@ -309,7 +307,7 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                         size: 6,
                       ),
                     ),
-                  
+
                   // ✅ XP COUNTER TERBANG
                   if (_showXPCounter)
                     Positioned(
@@ -319,7 +317,7 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                         prefix: '+',
                       ),
                     ),
-                  
+
                   // 2. Daun Gugur
                   AnimatedPositioned(
                     duration: AppDurations.leafFall,
@@ -347,7 +345,7 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                           child: Transform.rotate(
                             angle: _swingAnimation.value,
                             child: SizedBox(
-                              height: AppSizes.treeImage, 
+                              height: AppSizes.treeImage,
                               width: AppSizes.treeImage,
                               child: Image.asset(treeAsset, fit: BoxFit.contain),
                             ),
@@ -369,17 +367,17 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       MetallicGold(
-                        child: Text("Level ${user.treeLevel}", 
+                        child: Text("Level ${user.treeLevel}",
                           style: const TextStyle(fontWeight: FontWeight.bold)
                         )
                       ),
-                      Text("${user.totalPoints} / ${user.nextLevelPoints} XP", 
+                      Text("${user.totalPoints} / ${user.nextLevelPoints} XP",
                         style: const TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm)
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  
+
                   // ✅ ANIMATED PROGRESS BAR BARU
                   AnimatedProgressBar(
                     progress: progress,

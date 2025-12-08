@@ -9,7 +9,7 @@ class CalendarView extends StatelessWidget {
   Widget build(BuildContext context) {
     // Membungkus skrin kalendar dalam container yang sesuai untuk Flyout Panel
     return const SizedBox(
-      height: 700, 
+      height: 700,
       child: CalendarScreen(),
     );
   }

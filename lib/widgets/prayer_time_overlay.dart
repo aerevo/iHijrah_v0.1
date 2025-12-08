@@ -6,7 +6,7 @@ import '../utils/prayer_service.dart';
 import '../utils/constants.dart';
 
 /// Bottom overlay showing next prayer time & countdown
-/// 
+///
 /// Features:
 /// - Auto-updating countdown
 /// - Premium glass morphism design

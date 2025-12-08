@@ -1,25 +1,26 @@
-﻿// lib/screens/home.dart (UPGRADED 8.0/10)
+﻿// lib/home.dart (FIXED - IMPORT PATH BETUL)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 
-// Models & Services
-import '../models/user_model.dart';
-import '../models/sidebar_state_model.dart';
-import '../models/animation_controller_model.dart';
-import '../utils/constants.dart';
-import '../utils/audio_service.dart';
+// Models & Services (ROOT LEVEL, GUNA 'models/' DIRECT)
+import 'models/user_model.dart';
+import 'models/sidebar_state_model.dart';
+import 'models/animation_controller_model.dart';
+import 'utils/constants.dart';
+import 'utils/audio_service.dart';
 
-// Widgets
-import '../widgets/sidebar.dart';
-import '../widgets/flyout_panel.dart';
-import '../widgets/hijrah_tree.dart';
-import '../widgets/tracker_list.dart';
-import '../widgets/feed_panel.dart';
-import '../widgets/sirah_card.dart';
-import '../widgets/zikir_prompt.dart';
-import '../widgets/metallic_gold.dart';
-import '../widgets/prayer_time_overlay.dart';
+// Widgets (ROOT LEVEL, GUNA 'widgets/' DIRECT)
+import 'widgets/sidebar.dart';
+import 'widgets/flyout_panel.dart';
+import 'widgets/hijrah_tree.dart';
+import 'widgets/tracker_list.dart';
+import 'widgets/feed_panel.dart';
+import 'widgets/sirah_card.dart';
+import 'widgets/zikir_prompt.dart';
+import 'widgets/metallic_gold.dart';
+import 'widgets/prayer_time_overlay.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -36,7 +37,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     // Controller untuk Lottie Particles (Confetti)
     _particleController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
-    
+
     // Mainkan audio intro
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AudioService>(context, listen: false).playBismillah();
@@ -116,7 +117,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           // 2. FLYOUT PANEL (Sliding Overlay)
           // Panel ini akan slide keluar dari tepi sidebar bila menu ditekan
           Positioned(
-            left: AppSizes.sidebarWidth, 
+            left: AppSizes.sidebarWidth,
             top: 0,
             bottom: 0,
             child: const FlyoutPanel(),

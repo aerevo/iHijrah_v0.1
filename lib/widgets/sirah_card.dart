@@ -12,7 +12,7 @@ class SirahCard extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>( // Ubah Result kepada Map direct atau handle result
       future: SirahService.getSirahForToday().then((res) => res.dataOr({})), // Helper untuk extract data
       builder: (context, snapshot) {
-        
+
         // 1. Loading State
         if (snapshot.connectionState == ConnectionState.waiting) {
              return Container(
@@ -48,11 +48,11 @@ class SirahCard extends StatelessWidget {
                   Expanded(
                     child: MetallicGold(
                       child: Text(
-                        title, 
+                        title,
                         style: const TextStyle(
-                          color: Colors.white, 
-                          fontWeight: FontWeight.bold, 
-                          fontFamily: 'Playfair', 
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Playfair',
                           fontSize: AppFontSizes.lg
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -62,15 +62,15 @@ class SirahCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              
+
               // Huraian
               Text(
                 content,
                 style: const TextStyle(color: kTextPrimary, height: 1.5, fontSize: AppFontSizes.sm + 1),
               ),
-              
+
               const SizedBox(height: AppSpacing.sm),
-              
+
               // Footer / Sumber
               if (footer.isNotEmpty)
                 Padding(

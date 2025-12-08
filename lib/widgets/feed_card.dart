@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
 /// Reusable card untuk feed/event/sirah display
-/// 
+///
 /// Features:
 /// - Consistent styling
 /// - Icon + Title + Subtitle layout
@@ -14,7 +14,7 @@ class FeedCard extends StatelessWidget {
   final String subtitle;
   final IconData leadingIcon;
   final VoidCallback? onTap;
-  
+
   const FeedCard({
     Key? key,
     required this.title,
@@ -57,9 +57,9 @@ class FeedCard extends StatelessWidget {
               size: AppSizes.iconMd,
             ),
           ),
-          
+
           const SizedBox(width: AppSpacing.md),
-          
+
           // Text Content
           Expanded(
             child: Column(

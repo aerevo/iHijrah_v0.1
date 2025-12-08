@@ -17,12 +17,12 @@ class NotificationSettingsScreen extends StatelessWidget {
             style: TextStyle(color: kTextSecondary, fontWeight: FontWeight.bold, fontSize: AppFontSizes.md),
           ),
           const SizedBox(height: AppSpacing.md),
-          
+
           // Panel Azan
           const AdhanSettingsPanel(),
-          
+
           const SizedBox(height: AppSpacing.lg),
-          
+
           // Toggle Lain (Dummy visual)
           _buildToggleTile("Peringatan Pagi & Petang", true),
           _buildToggleTile("Info Sirah Harian", true),

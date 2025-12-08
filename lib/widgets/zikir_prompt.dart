@@ -25,7 +25,7 @@ class _ZikirPromptState extends State<ZikirPrompt> with SingleTickerProviderStat
     super.initState();
     // Animasi Masuk: SlideUp + FadeIn
     _enterController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    
+
     if (!widget.zikirDone) {
       // Mainkan audio prompt jika belum zikir
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,7 +68,7 @@ class _ZikirPromptState extends State<ZikirPrompt> with SingleTickerProviderStat
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH, vertical: AppSpacing.screenV),
           child: Container(
             decoration: BoxDecoration(
-              color: kCardDark, 
+              color: kCardDark,
               borderRadius: BorderRadius.circular(AppSizes.cardRadiusXl),
               border: Border.all(color: kPrimaryGold.withOpacity(0.15)),
               boxShadow: [
@@ -86,15 +86,15 @@ class _ZikirPromptState extends State<ZikirPrompt> with SingleTickerProviderStat
                 const Text(
                   'Assalamualaikum,\nDah zikir pagi/petang hari ni?',
                   style: TextStyle(
-                    color: kTextPrimary, 
-                    fontSize: AppFontSizes.lg, 
-                    height: 1.5, 
+                    color: kTextPrimary,
+                    fontSize: AppFontSizes.lg,
+                    height: 1.5,
                     fontFamily: 'Playfair'
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                
+
                 Row(
                   children: [
                     Expanded(
