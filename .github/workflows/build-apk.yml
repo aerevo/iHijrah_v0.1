@@ -24,6 +24,10 @@ jobs:
       with:
         flutter-version: '3.24.0'
         channel: 'stable'
+
+    - name: Fix dependencies
+      run: |
+        flutter pub add adhan:^2.0.0+1
     
     - name: Get dependencies
       run: flutter pub get
