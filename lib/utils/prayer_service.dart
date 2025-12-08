@@ -1,4 +1,4 @@
-﻿// lib/utils/prayer_service.dart (FINAL - OFFICIAL ADHAN ENGINE)
+// lib/utils/prayer_service.dart (FINAL - OFFICIAL ADHAN ENGINE)
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:adhan/adhan.dart';
