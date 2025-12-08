@@ -1,7 +1,7 @@
 ﻿// lib/utils/prayer_service.dart (FINAL - OFFICIAL ADHAN ENGINE)
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:adhan/adhan.dart'; // Menggunakan official package
+import 'package:adhan_dart/adhan_dart.dart';
 import 'package:intl/intl.dart';
 import 'storage_service.dart';
 import 'constants.dart';
