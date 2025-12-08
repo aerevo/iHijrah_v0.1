@@ -27,25 +27,14 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Decode Keystore
-        id: decode_keystore
-        uses: timheuer/base64-to-file@v1.2
-        with:
-          fileName: ${{ github.workspace }}/android/app/upload-keystore.jks
-          encodedString: ${{ secrets.KEYSTORE_BASE64 }}
-
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build APK Release
-        run: flutter build apk --release
-        env:
-                  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Build APK Debug
+        run: flutter build apk --debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
