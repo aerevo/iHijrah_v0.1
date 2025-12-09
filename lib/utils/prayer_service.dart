@@ -1,16 +1,17 @@
-// lib/utils/prayer_service.dart (FINAL - OFFICIAL ADHAN ENGINE)
+// lib/utils/prayer_service.dart (Refactored for SharedPreferences)
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart';
-import 'storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'constants.dart';
-import 'audio_service.dart';
+import '../models/user_model.dart';
 import 'settings_enums.dart';
 
 class PrayerService with ChangeNotifier {
-  final StorageService storage;
-  final AudioService audioService;
+  UserModel _userModel;
 
   late PrayerTimes _prayerTimes;
   Coordinates? _coordinates;
@@ -24,30 +25,21 @@ class PrayerService with ChangeNotifier {
   double _currentLat = DEFAULT_LATITUDE;
   double _currentLng = DEFAULT_LONGITUDE;
 
-  final Map<PrayerType, bool> _alarmStatus = {
-    PrayerType.subuh: true,
-    PrayerType.zohor: true,
-    PrayerType.asar: true,
-    PrayerType.maghrib: true,
-    PrayerType.isyak: true,
-  };
-
-  PrayerService(this.storage, this.audioService) {
+  PrayerService(this._userModel) {
     _loadSettings();
     _startTimers();
   }
 
-  Future<void> _loadSettings() async {
-    final lat = storage.getLatitude();
-    final lng = storage.getLongitude();
-    if (lat != null && lng != null) {
-      _currentLat = lat;
-      _currentLng = lng;
-    }
+  void updateUser(UserModel newUserModel) {
+    _userModel = newUserModel;
+    // Potentially re-load settings if they can change
+    // notifyListeners();
+  }
 
-    for (var prayer in PrayerType.values) {
-      _alarmStatus[prayer] = storage.getAlarmStatus(prayer.name) ?? true;
-    }
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _currentLat = prefs.getDouble('latitude') ?? DEFAULT_LATITUDE;
+    _currentLng = prefs.getDouble('longitude') ?? DEFAULT_LONGITUDE;
 
     _initPrayerTimes();
   }
@@ -56,20 +48,12 @@ class PrayerService with ChangeNotifier {
     try {
       _coordinates = Coordinates(_currentLat, _currentLng);
       final now = DateTime.now();
-
-      // ✅ SETUP OFFICIAL ADHAN
       final dateComps = DateComponents.from(now);
       final params = CalculationMethod.muslim_world_league.getParameters();
       params.madhab = Madhab.shafi;
-
       _prayerTimes = PrayerTimes(_coordinates!, dateComps, params);
-
       _updateNextPrayer();
       notifyListeners();
-
-      if (kDebugMode) {
-        print('✅ Prayer times initialized (Official Adhan Engine)');
-      }
     } catch (e) {
       if (kDebugMode) {
         print('❌ Failed to init prayer times: $e');
@@ -96,11 +80,9 @@ class PrayerService with ChangeNotifier {
   }
 
   void _updateNextPrayer() {
-    try {
+    // ... (logic remains the same)
+        try {
       final now = DateTime.now();
-
-      // Dapatkan waktu solat sebenar dari library
-      // Library adhan return DateTime local, jadi boleh banding terus
 
       if (now.isBefore(_prayerTimes.fajr)) {
         nextPrayerName = 'Subuh';
@@ -119,14 +101,11 @@ class PrayerService with ChangeNotifier {
         timeUntilNextPrayer = _prayerTimes.isha.difference(now);
       } else {
         nextPrayerName = 'Subuh (Esok)';
-
         final tomorrow = now.add(const Duration(days: 1));
         final dateComps = DateComponents.from(tomorrow);
         final params = CalculationMethod.muslim_world_league.getParameters();
         params.madhab = Madhab.shafi;
-
         final prayerTomorrow = PrayerTimes(_coordinates!, dateComps, params);
-
         timeUntilNextPrayer = prayerTomorrow.fajr.difference(now);
       }
       notifyListeners();
@@ -136,7 +115,8 @@ class PrayerService with ChangeNotifier {
   }
 
   String? getPrayerTimeByName(String prayerName) {
-    final name = prayerName.toLowerCase().trim();
+    // ... (logic remains the same)
+        final name = prayerName.toLowerCase().trim();
     try {
       switch (name) {
         case 'subuh':
@@ -162,6 +142,7 @@ class PrayerService with ChangeNotifier {
   }
 
   Map<String, String> getAllPrayerTimes() {
+    // ... (logic remains the same)
     try {
       return {
         'Subuh': DateFormat.jm().format(_prayerTimes.fajr),
@@ -184,39 +165,12 @@ class PrayerService with ChangeNotifier {
     return '${h}j ${m}m';
   }
 
-  bool getAlarmStatus(String prayerName) {
-    final key = _stringToPrayerType(prayerName);
-    if (key == null) return true;
-    return _alarmStatus[key] ?? true;
-  }
-
-  void setAlarmStatus(String prayerName, bool isEnabled) {
-    final key = _stringToPrayerType(prayerName);
-    if (key != null) {
-      _alarmStatus[key] = isEnabled;
-      storage.setAlarmStatus(key.name, isEnabled);
-      notifyListeners();
-    }
-  }
-
-  PrayerType? _stringToPrayerType(String prayerName) {
-    final name = prayerName.toLowerCase().trim();
-    for (var p in PrayerType.values) {
-      if (p.name == name) return p;
-    }
-    switch (name) {
-      case 'fajr': return PrayerType.subuh;
-      case 'dhuhr': return PrayerType.zohor;
-      case 'asr': return PrayerType.asar;
-      case 'isha': return PrayerType.isyak;
-      default: return null;
-    }
-  }
-
   Future<void> updateLocation(double lat, double lng) async {
     _currentLat = lat;
     _currentLng = lng;
-    await storage.setLocation(lat, lng);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('latitude', lat);
+    await prefs.setDouble('longitude', lng);
     _initPrayerTimes();
   }
 
