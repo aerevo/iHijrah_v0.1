@@ -89,8 +89,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         // Section 2: Zikir Prompt (Jika belum buat)
                         Consumer<UserModel>(
                           builder: (ctx, user, _) => ZikirPrompt(
-                            zikirDone: user.isOptionalComplete('Selawat 100x'),
-                            onDone: () => user.toggleOptionalCompletion('Selawat 100x'),
+                            zikirDone: user.isAmalanDoneToday('Selawat 100x'),
+                            onDone: () => user.recordAmalan('Selawat 100x'),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),

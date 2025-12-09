@@ -66,7 +66,7 @@ class TrackerList extends StatelessWidget {
         itemCount: fardhuAmalan.length,
         itemBuilder: (context, index) {
           final amalan = fardhuAmalan[index];
-          final isDone = user.isFardhuComplete(amalan);
+          final isDone = user.isFardhuDoneToday(amalan);
 
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -86,7 +86,7 @@ class TrackerList extends StatelessWidget {
                 // ✅ LIVING ICON BUTTON untuk Fardhu
                 LivingButton(
                   onPressed: () {
-                    user.toggleFardhuCompletion(amalan);
+                    user.recordFardhu(amalan);
                     if (!isDone) {
                        Provider.of<AnimationControllerModel>(context, listen: false)
                         .triggerParticleSpray();
@@ -130,9 +130,9 @@ class TrackerList extends StatelessWidget {
             title: Text(amalan, style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.bold)),
             subtitle: Text('Ganjaran tambahan', style: TextStyle(color: kTextSecondary.withOpacity(0.7), fontSize: AppFontSizes.xs)),
             trailing: Switch(
-              value: user.isOptionalComplete(amalan),
+              value: user.isAmalanDoneToday(amalan),
               onChanged: (val) {
-                user.toggleOptionalCompletion(amalan);
+                user.recordAmalan(amalan);
               },
               activeColor: kAccentOlive,
               inactiveThumbColor: Colors.white30,
