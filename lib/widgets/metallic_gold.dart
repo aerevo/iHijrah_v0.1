@@ -1,75 +1,71 @@
+// lib/widgets/metallic_gold.dart (HIGH-GLOSS LUXURY)
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
 
-class MetallicGold extends StatefulWidget {
+class MetallicGold extends StatelessWidget {
   final Widget child;
-  final bool isShimmering;
+  final bool isSheer; // TRUE = Separa Lutsinar (Glassy), FALSE = Solid Gold
 
   const MetallicGold({
-    Key? key,
+    Key? key, 
     required this.child,
-    this.isShimmering = true,
+    this.isSheer = false, // Default: Solid Gold (Macam Screenshot)
   }) : super(key: key);
 
   @override
-  State<MetallicGold> createState() => _MetallicGoldState();
-}
-
-class _MetallicGoldState extends State<MetallicGold> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4), // Slow luxury shimmer
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (!widget.isShimmering) {
+    if (isSheer) {
+      // MODE 2: SEPARA LUTSINAR (GLASS GOLD)
+      // Nampak macam kaca emas nipis
       return ShaderMask(
-        shaderCallback: (bounds) => kGoldLinear.createShader(bounds),
-        child: widget.child,
+        shaderCallback: (bounds) {
+          return LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFFFE5B4).withOpacity(0.9), // Putih Emas (Atas)
+              const Color(0xFFD4AF37).withOpacity(0.3), // Tengah Lutsinar
+              const Color(0xFFAA771C).withOpacity(0.9), // Bawah Emas Gelap
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ).createShader(bounds);
+        },
+        blendMode: BlendMode.srcATop,
+        child: child,
+      );
+    } else {
+      // MODE 1: SOLID LUXURY (HIGH CONTRAST)
+      // Ini teknik 'Horizon Line'. Ada garis pantulan tajam.
+      return ShaderMask(
+        shaderCallback: (bounds) {
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFBF953F), // 1. Emas Medium
+              Color(0xFFFCF6BA), // 2. HIGHLIGHT PUTIH (Kilat Tajam)
+              Color(0xFFB38728), // 3. Emas Pekat
+              Color(0xFFFBF5B7), // 4. Pantulan Bawah (Glow)
+              Color(0xFFAA771C), // 5. Emas Gelap Dasar
+            ],
+            // STOPS ini penting! Ia buat garis kilat tu tajam, bukan kabur.
+            stops: [0.0, 0.45, 0.5, 0.55, 1.0], 
+          ).createShader(bounds);
+        },
+        blendMode: BlendMode.srcIn,
+        child: Container(
+          // Tambah shadow sikit supaya teks timbul 3D
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 2,
+                offset: const Offset(1, 1),
+              ),
+            ],
+          ),
+          child: child,
+        ),
       );
     }
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: const [
-                Color(0xFFBF953F),
-                Color(0xFFFCF6BA),
-                Color(0xFFBF953F),
-                Color(0xFFAA771C),
-                Color(0xFFFCF6BA),
-              ],
-              stops: [
-                0.0,
-                0.3 + (0.4 * _controller.value) - 0.2,
-                0.5 + (0.4 * _controller.value) - 0.2,
-                0.7 + (0.4 * _controller.value) - 0.2,
-                1.0,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              tileMode: TileMode.mirror,
-            ).createShader(bounds);
-          },
-          child: widget.child,
-        );
-      },
-    );
   }
 }

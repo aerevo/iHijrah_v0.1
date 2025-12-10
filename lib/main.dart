@@ -1,97 +1,64 @@
-// lib/main.dart (Using SharedPreferences)
-
+// lib/main.dart (INSTANT LAUNCH - NO WAITING)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-// Import Screens & Utils
+// Screens & Utils
 import 'screens/splash_screen.dart';
 import 'utils/constants.dart';
 
-// Import Models & Services for Provider
+// Models & Services
 import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
-import 'models/animation_controller_model.dart';
 import 'utils/audio_service.dart';
 import 'utils/prayer_service.dart';
 import 'utils/sirah_service.dart';
 
-void main() async {
-  // 1. Ensure Bindings
+void main() {
+  // 1. Setup Asas Pantas
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Load User Data from SharedPreferences
-  final userModel = await UserModel.load();
-
-  // 3. Lock Orientation
+  
+  // 2. Kunci Orientasi Portrait
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 4. Set Status Bar Color
+  // 3. UI System Lutsinar (Status Bar)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
 
-  runApp(IHijrahApp(userModel: userModel));
+  // 4. TERUS RUN APP (Jangan tunggu database load di sini!)
+  runApp(const IHijrahApp());
 }
 
 class IHijrahApp extends StatelessWidget {
-  final UserModel userModel;
-  const IHijrahApp({super.key, required this.userModel});
+  const IHijrahApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 5. Setup MultiProvider
     return MultiProvider(
       providers: [
-        // Data Providers
-        ChangeNotifierProvider.value(value: userModel),
+        // Create Instance Kosong Dulu (Isi data kemudian di Splash Screen)
+        ChangeNotifierProvider(create: (_) => UserModel()), 
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
-        ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
-
-        // Service Providers (Logic)
-        Provider(create: (_) => AudioService()),
-        // PrayerService now depends on UserModel, so we use a ProxyProvider
-        ChangeNotifierProxyProvider<UserModel, PrayerService>(
-            create: (context) => PrayerService(context.read<UserModel>()),
-            update: (context, user, prayerService) => prayerService!..updateUser(user),
-        ),
-        Provider(create: (_) => SirahService()),
+        ChangeNotifierProvider(create: (_) => AudioService()),
+        ChangeNotifierProvider(create: (_) => PrayerService()),
+        ChangeNotifierProvider(create: (_) => SirahService()),
       ],
       child: MaterialApp(
-        title: 'iHijrah Embun Jiwa',
         debugShowCheckedModeBanner: false,
-
-        // 6. Global Theme Definition
+        title: 'iHijrah',
         theme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: kBackgroundDark,
           primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto',
-
-          colorScheme: const ColorScheme.dark(
-            primary: kPrimaryGold,
-            secondary: kAccentOlive,
-            surface: kCardDark,
-            background: kBackgroundDark,
-          ),
-
-          textTheme: const TextTheme(
-            bodyMedium: TextStyle(color: kTextPrimary),
-            bodySmall: TextStyle(color: kTextSecondary),
-          ),
-
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-          ),
+          scaffoldBackgroundColor: Colors.black,
+          fontFamily: 'Poppins', 
+          useMaterial3: true,
         ),
-
-        // 7. Entry Point
+        // PINTU MASUK UTAMA
         home: const SplashScreen(),
       ),
     );
