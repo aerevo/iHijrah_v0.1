@@ -14,6 +14,8 @@ import 'utils/audio_service.dart';
 // Widgets (Components)
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
+import 'widgets/hijrah_tree_aaa.dart';
+import 'widgets/embun_spirit_aaa.dart';
 import 'widgets/tracker_list.dart';
 import 'widgets/feed_panel.dart';
 import 'widgets/sirah_card.dart';
