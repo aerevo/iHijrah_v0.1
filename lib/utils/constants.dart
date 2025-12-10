@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 // ===== WARNA TERAS (AAA PREMIUM DARK THEME) =====
 const kBackgroundDark = Color(0xFF0F0F0F);
@@ -9,6 +9,8 @@ const kAccentOlive = Color(0xFF9DBA7F);
 const kWarningRed = Color(0xFFCF6679);
 const kSuccessGreen = Color(0xFF4CAF50);
 const kPrimaryGold = Color(0xFFFCF6BA); // Helper untuk gold biasa
+const kGoldDark = Color(0xFFBF953F);
+
 
 // ===== THE REAL GOLD (GRADIENTS) =====
 const List<Color> kGoldGradientColors = [
@@ -33,6 +35,7 @@ class AppSpacing {
   static const double lg = 24.0;
   static const double xl = 32.0;
   static const double xxl = 40.0;
+  static const double screenH = 16.0;
 }
 
 class AppSizes {
@@ -41,8 +44,11 @@ class AppSizes {
   static const double iconLg = 32.0;
   static const double cardRadius = 16.0;
   static const double cardRadiusLg = 24.0;
+  static const double cardRadiusXl = 32.0;
   static const double buttonHeight = 55.0;
+  static const double buttonHeightMd = 45.0;
   static const double sidebarWidth = 80.0;
+  static const double flyoutWidth = 250.0;
 }
 
 class AppFontSizes {
@@ -54,9 +60,15 @@ class AppFontSizes {
   static const double xxl = 32.0;
 }
 
+class AppDurations {
+  static const Duration fast = Duration(milliseconds: 300);
+  static const Duration buttonPress = Duration(milliseconds: 150);
+}
+
 // ===== ASSETS (RE-MAPPED IKUT FAIL KAPTEN) =====
 class AppAssets {
   static const String logo = 'assets/images/logo.png';
+  static const String sirahData = 'assets/data/sirah.json';
   
   // Audio Files (Pastikan nama fail sebiji dengan fail Kapten)
   static const String intro = 'assets/sounds/intro.mp3';
@@ -67,3 +79,6 @@ class AppAssets {
   static const String suaraInsyaAllah = 'assets/sounds/suara_insyaaallah.mp3';
   static const String suaraHi = 'assets/sounds/suara_hi.mp3';
 }
+
+const DEFAULT_LATITUDE = 3.1390;
+const DEFAULT_LONGITUDE = 101.6869;
