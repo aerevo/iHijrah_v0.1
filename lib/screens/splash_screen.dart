@@ -1,11 +1,8 @@
-// lib/screens/splash_screen.dart
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/user_model.dart';
-import '../utils/constants.dart';
+import 'package:flutter/services.dart';
 import '../home.dart';
-import 'birthdate_prompt_screen.dart';
+import '../utils/constants.dart';
+import '../widgets/metallic_gold.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -14,98 +11,110 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+  late AnimationController _mainController;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _opacityAnim;
+  late Animation<double> _glitchAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    // Setup Fullscreen Immersive
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+
+    _mainController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(milliseconds: 3500),
     );
 
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    // 1. Scale dari kecil ke besar (Impact)
+    _scaleAnim = TweenSequence([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.2).chain(CurveTween(curve: Curves.easeOutExpo)), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.elasticOut)), weight: 60),
+    ]).animate(_mainController);
+
+    // 2. Opacity pantas
+    _opacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _mainController, curve: const Interval(0.0, 0.3)),
     );
 
-    _controller.forward();
-
-    // Navigasi Selepas 3.5 Saat
-    Future.delayed(const Duration(milliseconds: 3500), () {
-      _checkUserAndNavigate();
+    // Mula animasi & Navigasi
+    _mainController.forward();
+    
+    // TODO: Masukkan AudioService.playIntro() di sini untuk bunyi 'BASS DROP'
+    
+    Future.delayed(const Duration(milliseconds: 4000), () {
+       // Reset UI overlay
+       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+       Navigator.of(context).pushReplacement(
+         PageRouteBuilder(
+           pageBuilder: (_, __, ___) => const HomePage(),
+           transitionDuration: const Duration(milliseconds: 800),
+           transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+         )
+       );
     });
-  }
-
-  void _checkUserAndNavigate() {
-    final user = Provider.of<UserModel>(context, listen: false);
-
-    // [PEMBAIKAN] Semak 'birthdate'. Jika null, bermakna user belum set tarikh lahir (User Baru).
-    // Jika ada birthdate, bermakna profil asas dah lengkap.
-    if (user.birthdate != null) {
-      // User dah wujud
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage())
-      );
-    } else {
-      // User baru atau data tak lengkap
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const BirthdatePromptScreen())
-      );
-    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Latar Gelap (Cinematic)
+      backgroundColor: Colors.black,
       body: Center(
-        child: FadeTransition(
-          opacity: _opacityAnimation,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 1. Logo Ikon
-              Icon(
-                Icons.diamond_outlined,
-                size: 60,
-                color: kPrimaryGold.withOpacity(0.8),
-              ),
-              const SizedBox(height: 20),
-
-              // 2. Nama Studio
-              const Text(
-                "ZYAMINA STUDIO",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 6.0,
-                  fontFamily: 'Poppins',
+        child: AnimatedBuilder(
+          animation: _mainController,
+          builder: (context, child) {
+            // Efek bergegar sedikit (Glitch vibe)
+            double shake = (_mainController.value > 0.8) ? 0 : (0.5 - _mainController.value).abs() * 5;
+            
+            return Transform.translate(
+              offset: Offset(shake * (DateTime.now().millisecond % 2 == 0 ? 1 : -1), 0),
+              child: Transform.scale(
+                scale: _scaleAnim.value,
+                child: Opacity(
+                  opacity: _opacityAnim.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // LOGO EMAS METALIK
+                      const MetallicGold(
+                        child: Icon(Icons.diamond_outlined, size: 80, color: Colors.white),
+                      ),
+                      const SizedBox(height: 20),
+                      // TEXT ZYAMINA STUDIO (Cinematic Spacing)
+                      Text(
+                        "ZYAMINA STUDIO",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 8.0 + (2 * _mainController.value), // Huruf meregang
+                          fontFamily: 'Roboto', // Guna font tebal jika ada
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "CRAFTING DIGITAL BARAKAH",
+                        style: TextStyle(
+                          color: kTextSecondary.withOpacity(0.5),
+                          fontSize: 10,
+                          letterSpacing: 4.0,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
-              // 3. Slogan Kecil
-              const SizedBox(height: 8),
-              const Text(
-                "Crafting Digital Barakah",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 10,
-                  letterSpacing: 2.0,
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

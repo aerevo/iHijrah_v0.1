@@ -14,7 +14,6 @@ import 'utils/audio_service.dart';
 // Widgets (Components)
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
-// import 'widgets/hijrah_tree_aaa.dart'; // ✅ NEW AAA VERSION
 import 'widgets/tracker_list.dart';
 import 'widgets/feed_panel.dart';
 import 'widgets/sirah_card.dart';
@@ -22,7 +21,6 @@ import 'widgets/zikir_prompt.dart';
 import 'widgets/prayer_time_overlay.dart';
 import 'widgets/gift_overlay.dart';
 import 'widgets/atmospheric_sky.dart';
-// import 'widgets/embun_spirit_aaa.dart'; // ✅ NEW AAA MASCOT
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -39,20 +37,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
+    
     // Page entrance animation
     _pageController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-
+    
     _fadeInAnimation = CurvedAnimation(
       parent: _pageController,
       curve: Curves.easeOut,
     );
-
+    
     _pageController.forward();
-
+    
     // Audio
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AudioService>(context, listen: false).playBismillah();
@@ -107,16 +105,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               const SizedBox(height: 30),
 
                               // 2. AAA CENTERPIECE: HIJRAH TREE + EMBUN SPIRIT
-                              // const Center(
-                              //   child: HijrahTreeAAA(), // ✅ NEW PREMIUM TREE
-                              // ),
-
+                              const Center(
+                                child: HijrahTreeAAA(), // ✅ NEW PREMIUM TREE
+                              ),
+                              
                               const SizedBox(height: 20),
-
+                              
                               // Embun Spirit Guardian (floating below tree)
-                              // const Center(
-                              //   child: EmbunSpiritAAA(), // ✅ NEW AAA MASCOT
-                              // ),
+                              const Center(
+                                child: EmbunSpiritAAA(), // ✅ NEW AAA MASCOT
+                              ),
 
                               const SizedBox(height: 35),
 
