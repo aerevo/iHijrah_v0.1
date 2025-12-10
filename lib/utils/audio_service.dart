@@ -17,7 +17,7 @@ class AudioService extends ChangeNotifier {
   bool _isMuted = false;
 
   AudioService() {
-    AudioContext audioContext = const AudioContext(
+    AudioContext audioContext = AudioContext(
       android: AudioContextAndroid(
         isSpeakerphoneOn: true,
         stayAwake: true,
