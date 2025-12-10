@@ -1,4 +1,3 @@
-﻿// lib/home.dart (CLEAN HOME FEED + TREE IN SIDEBAR ONLY)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -72,8 +71,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       Provider.of<AudioService>(context, listen: false).playBismillah();
     });
   }
-
-  @override
+@override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -127,8 +125,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-          // (POKOK DIBUANG DARI SINI - IA DUDUK DALAM SIDEBAR SAHAJA)
-
           // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
           Positioned.fill(
             child: ListView.builder(
@@ -149,9 +145,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
           // === LAYER 3: WAKTU SOLAT HUD (FIXED TOP) ===
           const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
-
-          // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
-          // Ini yang Kapten nak: Klik baru expand/fade in
+// === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
             child: _isMenuExpanded 
@@ -160,7 +154,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
 
           // === LAYER 5: FLOATING DOCK ===
-          // Dock hilang bila menu buka
           if (!_isMenuExpanded)
             Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
         ],
@@ -215,7 +208,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
                 ),
                 const SizedBox(height: 12),
-                // Action Buttons
                 Row(
                   children: [
                     Icon(Icons.favorite_border, color: Colors.white54, size: 18),
@@ -234,13 +226,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
     );
   }
-
-  // === WIDGET: FULLSCREEN SIDEBAR MENU (POKOK ADA SINI) ===
+// === WIDGET: FULLSCREEN SIDEBAR MENU (POKOK ADA SINI) ===
   Widget _buildFullscreenMenu(UserModel user) {
     return Positioned.fill(
       key: const ValueKey("MenuOverlay"),
       child: GestureDetector(
-        onTap: _toggleMenu, // Tekan luar tutup
+        onTap: _toggleMenu,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black,
@@ -260,7 +251,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    // Tombol Tutup
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
@@ -274,7 +264,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 20),
                     
-                    // === HERO: MASKOT POKOK (DI SINI TEMPATNYA) ===
                     Container(
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
@@ -285,7 +274,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                       child: const CircleAvatar(
-                        radius: 80, // Besar!
+                        radius: 80,
                         backgroundColor: Colors.black,
                         backgroundImage: AssetImage('assets/images/logo.png'), 
                       ),
@@ -293,7 +282,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 25),
                     
-                    // NAMA USER
                     MetallicGold(
                       child: Text(
                         user.name.toUpperCase(),
@@ -307,7 +295,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 8),
 
-                    // UMUR HIJRAH
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
@@ -325,7 +312,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     Divider(color: Colors.white.withOpacity(0.1), indent: 50, endIndent: 50),
                     const SizedBox(height: 20),
 
-                    // MENU ITEMS
                     _buildMenuItem("Panduan Sirah", Icons.menu_book),
                     _buildMenuItem("Jejak Amalan", Icons.track_changes),
                     _buildMenuItem("Statistik Ibadah", Icons.bar_chart),
@@ -348,30 +334,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: GestureDetector(
         onTap: () => Provider.of<AudioService>(context, listen: false).playClick(),
-        child: Container(
-          color: Colors.transparent, 
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center, // Centerkan menu
-            children: [
-              Icon(icon, color: Colors.white54, size: 26),
-              const SizedBox(width: 20),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.5,
-                ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white54, size: 26),
+            const SizedBox(width: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w300,
+                letterSpacing: 1.5,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // === DOCK ===
   Widget _buildGlassDock() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
@@ -394,7 +376,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildDockIcon(2, Icons.calendar_month),
               IconButton(
                 icon: const Icon(Icons.menu, color: Colors.white54, size: 28),
-                onPressed: _toggleMenu, 
+                onPressed: _toggleMenu,
               ),
             ],
           ),
@@ -433,3 +415,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 }
+
+
+
