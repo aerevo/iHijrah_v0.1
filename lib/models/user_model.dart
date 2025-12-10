@@ -19,8 +19,13 @@ class UserModel extends ChangeNotifier {
   Map<String, bool> dailyFardhuLog = {};
   DateTime? lastResetDate;
 
+  // ===== SETTINGS =====
+  int adhanModeIndex = 0;
+
   // ===== COMPUTED GETTERS =====
   int get nextLevelPoints => treeLevel * 100;
+  int get fardhuCompletedToday => dailyFardhuLog.values.where((done) => done).length;
+  double get progressPercentage => (totalPoints / nextLevelPoints).clamp(0.0, 1.0);
   
   // ===== FUNGSI UTAMA: LOAD DATA (PANGGIL DI SPLASH SCREEN) =====
   Future<void> loadData() async {
@@ -50,6 +55,9 @@ class UserModel extends ChangeNotifier {
       
       // 4. Reset Harian (Jika tarikh dah berubah)
       _checkDailyReset();
+
+      // 5. Load Settings
+      adhanModeIndex = prefs.getInt('adhanModeIndex') ?? 0;
 
       notifyListeners(); // Update UI
     } catch (e) {
@@ -85,6 +93,7 @@ class UserModel extends ChangeNotifier {
     await prefs.setInt('treeLevel', treeLevel);
     await prefs.setInt('totalPoints', totalPoints);
     await prefs.setString('dailyFardhuLog', jsonEncode(dailyFardhuLog));
+    await prefs.setInt('adhanModeIndex', adhanModeIndex);
     
     if (lastResetDate != null) {
       await prefs.setString('lastResetDate', lastResetDate!.toIso8601String());
