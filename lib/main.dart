@@ -15,22 +15,24 @@ import 'utils/prayer_service.dart';
 import 'utils/sirah_service.dart';
 
 void main() {
-  // 1. Setup Asas Pantas
+  // ✅ Catch semua errors
+  FlutterError.onError = (details) {
+    print('❌ Flutter Error: ${details.exception}');
+    print('Stack: ${details.stack}');
+  };
+
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 2. Kunci Orientasi Portrait
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 3. UI System Lutsinar (Status Bar)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
 
-  // 4. TERUS RUN APP (Jangan tunggu database load di sini!)
   runApp(const IHijrahApp());
 }
 
@@ -41,14 +43,20 @@ class IHijrahApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Create Instance Kosong Dulu (Isi data kemudian di Splash Screen)
-        ChangeNotifierProvider(create: (_) => UserModel()), 
+        ChangeNotifierProvider(create: (_) => UserModel()),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AudioService()),
+
+        // ✅ PENTING: PrayerService perlu UserModel dulu
         ChangeNotifierProxyProvider<UserModel, PrayerService>(
-          create: (context) => PrayerService(context.read<UserModel>()),
-          update: (_, user, prayerService) => prayerService!..updateUser(user),
+          create: (context) => PrayerService(
+            Provider.of<UserModel>(context, listen: false),
+          ),
+          update: (context, user, prayerService) =>
+              prayerService!..updateUser(user),
         ),
+
+        ChangeNotifierProvider(create: (_) => SirahService()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

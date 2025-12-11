@@ -81,24 +81,37 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   void _checkAndNavigate() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    final userModel = Provider.of<UserModel>(context, listen: false);
-    
-    Widget nextScreen;
-    if (userModel.birthdate == null) {
-       nextScreen = const OnboardingDOB(); 
-    } else {
-       nextScreen = const HomePage();
+
+    // ✅ PENTING: Check mounted sebelum navigate
+    if (!mounted) {
+      print('⚠️ Widget not mounted, skipping navigation');
+      return;
     }
 
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => nextScreen,
-          transitionDuration: const Duration(milliseconds: 500),
-          transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-        )
-      );
+    final userModel = Provider.of<UserModel>(context, listen: false);
+
+    Widget nextScreen;
+    if (userModel.birthdate == null) {
+      print('🔵 No birthdate → OnboardingDOB');
+      nextScreen = const OnboardingDOB();
+    } else {
+      print('🔵 Birthdate found → HomePage');
+      nextScreen = const HomePage();
     }
+
+    // ✅ Delay sikit untuk ensure widget tree ready
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => nextScreen,
+            transitionDuration: const Duration(milliseconds: 500),
+            transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+          ),
+        );
+        print('✅ Navigation completed');
+      }
+    });
   }
 
   @override

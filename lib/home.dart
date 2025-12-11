@@ -13,6 +13,7 @@ import 'utils/hijri_service.dart';
 // Widgets
 import 'widgets/metallic_gold.dart';
 import 'widgets/prayer_time_overlay.dart';
+import 'screens/onboarding_dob.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -101,62 +102,99 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Builder(
+          builder: (context) {
+            try {
+              return _buildMainContent(); // Function asal kau
+            } catch (e, stackTrace) {
+              print('❌ HomePage ERROR: $e');
+              print('Stack: $stackTrace');
+
+              // Fallback UI
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error, color: Colors.red, size: 60),
+                    const SizedBox(height: 20),
+                    Text('Error: $e',
+                      style: const TextStyle(color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const OnboardingDOB()),
+                      ),
+                      child: const Text('Reset'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
     final user = Provider.of<UserModel>(context);
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // === LAYER 1: DYNAMIC BACKGROUND (OPACITY DIUBAH) ===
-          Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 1000),
-              child: Container(
-                key: ValueKey(_getBackgroundImage()),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(_getBackgroundImage()),
-                    fit: BoxFit.cover,
-                  ),
+    return Stack(
+      children: [
+        // === LAYER 1: DYNAMIC BACKGROUND (OPACITY DIUBAH) ===
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 1000),
+            child: Container(
+              key: ValueKey(_getBackgroundImage()),
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(_getBackgroundImage()),
+                  fit: BoxFit.cover,
                 ),
-                // OPACITY DIKURANGKAN DARI 0.4 KE 0.2
-                child: Container(color: Colors.black.withOpacity(0.2)), 
               ),
+              // OPACITY DIKURANGKAN DARI 0.4 KE 0.2
+              child: Container(color: Colors.black.withOpacity(0.2)),
             ),
           ),
+        ),
 
-          // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
-          Positioned.fill(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 120),
-              itemCount: _dummyPosts.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return const SizedBox(height: 160);
-                }
+        // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
+        Positioned.fill(
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: 120),
+            itemCount: _dummyPosts.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return const SizedBox(height: 160);
+              }
 
-                final post = _dummyPosts[index - 1];
-                return _buildSocialPostCard(post);
-              },
-            ),
+              final post = _dummyPosts[index - 1];
+              return _buildSocialPostCard(post);
+            },
           ),
+        ),
 
-          // === LAYER 3: WAKTU SOLAT HUD (MINIMALIS) ===
-          const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
+        // === LAYER 3: WAKTU SOLAT HUD (MINIMALIS) ===
+        const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
 
-          // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: _isMenuExpanded 
+        // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: _isMenuExpanded
               ? _buildFullscreenMenu(user)
               : const SizedBox.shrink(),
-          ),
+        ),
 
-          // === LAYER 5: FLOATING DOCK ===
-          if (!_isMenuExpanded)
-            Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
-        ],
-      ),
+        // === LAYER 5: FLOATING DOCK ===
+        if (!_isMenuExpanded)
+          Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
+      ],
     );
   }
 
