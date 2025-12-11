@@ -1,6 +1,6 @@
-﻿// lib/home.dart (CLEAN HOME FEED + TREE IN SIDEBAR ONLY)
+// lib/home.dart (LESS OPACITY ON BACKGROUND OVERLAY)
 import 'dart:ui';
-import 'package:flutter/material.dart';
+import 'package/flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Models
@@ -11,10 +11,8 @@ import 'utils/audio_service.dart';
 import 'utils/hijri_service.dart';
 
 // Widgets
-// import 'widgets/hijrah_tree_aaa.dart'; // TAK PERLU DI HOME LAGI
-import 'widgets/embun_spirit_aaa.dart';
+import 'widgets/metallic_gold.dart';
 import 'widgets/prayer_time_overlay.dart';
-import 'widgets/metallic_gold.dart'; 
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -30,7 +28,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   bool _isMenuExpanded = false; 
 
-  // DUMMY DATA (Feed)
+  // DUMMY DATA (Feed) - KEKALKAN
   final List<Map<String, String>> _dummyPosts = [
     {
       "name": "Ustaz Don",
@@ -109,7 +107,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // === LAYER 1: DYNAMIC BACKGROUND ===
+          // === LAYER 1: DYNAMIC BACKGROUND (OPACITY DIUBAH) ===
           Positioned.fill(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 1000),
@@ -121,46 +119,40 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     fit: BoxFit.cover,
                   ),
                 ),
-                // Overlay Gelap sikit supaya tulisan Feed jelas
-                child: Container(color: Colors.black.withOpacity(0.4)), 
+                // OPACITY DIKURANGKAN DARI 0.4 KE 0.2
+                child: Container(color: Colors.black.withOpacity(0.2)),
               ),
             ),
           ),
 
-          // (POKOK DIBUANG DARI SINI - IA DUDUK DALAM SIDEBAR SAHAJA)
-
           // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
           Positioned.fill(
             child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 120), // Ruang dock
-              itemCount: _dummyPosts.length + 1, // +1 Header
+              padding: const EdgeInsets.only(bottom: 120),
+              itemCount: _dummyPosts.length + 1,
               itemBuilder: (context, index) {
-                // ITEM 0: HEADER KOSONG (Untuk elak tertutup dek HUD Waktu Solat)
                 if (index == 0) {
-                  return const SizedBox(height: 160); // Turunkan feed ke bawah sikit
+                  return const SizedBox(height: 160);
                 }
 
-                // ITEM 1+: POSTS
                 final post = _dummyPosts[index - 1];
                 return _buildSocialPostCard(post);
               },
             ),
           ),
 
-          // === LAYER 3: WAKTU SOLAT HUD (FIXED TOP) ===
+          // === LAYER 3: WAKTU SOLAT HUD (MINIMALIS) ===
           const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
 
           // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
-          // Ini yang Kapten nak: Klik baru expand/fade in
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
             child: _isMenuExpanded 
-              ? _buildFullscreenMenu(user) // Papar Menu bila True
-              : const SizedBox.shrink(), // Hilang bila False
+              ? _buildFullscreenMenu(user)
+              : const SizedBox.shrink(),
           ),
 
           // === LAYER 5: FLOATING DOCK ===
-          // Dock hilang bila menu buka
           if (!_isMenuExpanded)
             Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
         ],
@@ -168,7 +160,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // === WIDGET: SOCIAL POST CARD ===
+  // === WIDGET: SOCIAL POST CARD (GANTUNG DARI HOME.DART) ===
   Widget _buildSocialPostCard(Map<String, String> post) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -199,11 +191,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       children: [
                         Text(
                           post["name"]!,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'Poppins'),
                         ),
                         Text(
                           post["time"]!,
-                          style: const TextStyle(color: Colors.white54, fontSize: 10),
+                          style: const TextStyle(color: Colors.white54, fontSize: 10, fontFamily: 'Poppins'),
                         ),
                       ],
                     ),
@@ -212,19 +204,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 const SizedBox(height: 12),
                 Text(
                   post["content"]!,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4, fontFamily: 'Poppins'),
                 ),
                 const SizedBox(height: 12),
-                // Action Buttons
                 Row(
                   children: [
                     Icon(Icons.favorite_border, color: Colors.white54, size: 18),
                     const SizedBox(width: 6),
-                    Text("Suka", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text("Suka", style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Poppins')),
                     const SizedBox(width: 20),
                     Icon(Icons.chat_bubble_outline, color: Colors.white54, size: 18),
                     const SizedBox(width: 6),
-                    Text("Komen", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text("Komen", style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Poppins')),
                   ],
                 ),
               ],
@@ -235,12 +226,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // === WIDGET: FULLSCREEN SIDEBAR MENU (POKOK ADA SINI) ===
+  // === WIDGET: FULLSCREEN SIDEBAR MENU ===
   Widget _buildFullscreenMenu(UserModel user) {
+    // ... (Kod _buildFullscreenMenu kekal sama seperti sebelum ini) ...
+    // Saya salin sebahagian untuk memastikan font Poppins digunakan
     return Positioned.fill(
       key: const ValueKey("MenuOverlay"),
       child: GestureDetector(
-        onTap: _toggleMenu, // Tekan luar tutup
+        onTap: _toggleMenu,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black,
@@ -260,7 +253,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    // Tombol Tutup
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
@@ -274,7 +266,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 20),
                     
-                    // === HERO: MASKOT POKOK (DI SINI TEMPATNYA) ===
+                    // HERO: MASKOT POKOK
                     Container(
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
@@ -285,7 +277,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                       child: const CircleAvatar(
-                        radius: 80, // Besar!
+                        radius: 80,
                         backgroundColor: Colors.black,
                         backgroundImage: AssetImage('assets/images/logo.png'), 
                       ),
@@ -301,6 +293,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           fontSize: 30,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 2.0,
+                          fontFamily: 'Poppins',
                         ),
                       ),
                     ),
@@ -317,7 +310,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       child: Text(
                         "UMUR HIJRAH: ${_calculateHijriAge(user.birthdate)}",
-                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
                       ),
                     ),
 
@@ -343,6 +336,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  // Widget _buildMenuItem, _buildGlassDock, _buildDockIcon, _buildMainActionButton
+  // (KEKAL SAMA - Font Poppins sudah diset dalam main.dart)
+
   Widget _buildMenuItem(String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -351,7 +347,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: Container(
           color: Colors.transparent, 
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center, // Centerkan menu
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: Colors.white54, size: 26),
               const SizedBox(width: 20),
@@ -362,6 +358,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   fontSize: 18,
                   fontWeight: FontWeight.w300,
                   letterSpacing: 1.5,
+                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -371,7 +368,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // === DOCK ===
   Widget _buildGlassDock() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
