@@ -11,7 +11,8 @@ import 'utils/audio_service.dart';
 import 'utils/hijri_service.dart';
 
 // Widgets
-import 'widgets/metallic_gold.dart'; 
+import 'widgets/metallic_gold.dart';
+import 'widgets/prayer_time_overlay.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -93,7 +94,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String _calculateHijriAge(DateTime? birthDate) {
     if (birthDate == null) return "Unknown";
     final hijriBirth = HijriService.fromDate(birthDate);
-    final hijriNow = HijriService.now();
+    final hijriNow = HijriService.nowHijri();
     final age = hijriNow.hYear - hijriBirth.hYear;
     return "$age Tahun";
   }
