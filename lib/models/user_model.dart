@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../utils/hijri_service.dart'; // Pastikan path betul
+import '../utils/hijri_service.dart';
 
 class UserModel extends ChangeNotifier {
   // ===== BASIC INFO =====
-  String name = 'Pengguna iHijrah'; // Default
+  String name = 'Pengguna iHijrah'; 
   DateTime? birthdate; 
   String? hijriDOB;
   String? avatarPath;
@@ -19,15 +19,11 @@ class UserModel extends ChangeNotifier {
   Map<String, bool> dailyFardhuLog = {};
   DateTime? lastResetDate;
 
-  // ===== COMPUTED GETTERS =====
-  int get nextLevelPoints => treeLevel * 100;
-  
   // ===== FUNGSI UTAMA: LOAD DATA (PANGGIL DI SPLASH SCREEN) =====
   Future<void> loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       
-      // 1. Load Info Asas
       name = prefs.getString('name') ?? 'Pengguna iHijrah';
       
       final birthdateStr = prefs.getString('birthdate');
@@ -38,20 +34,17 @@ class UserModel extends ChangeNotifier {
       hijriDOB = prefs.getString('hijriDOB');
       avatarPath = prefs.getString('avatarPath');
 
-      // 2. Load Progress
       treeLevel = prefs.getInt('treeLevel') ?? 1;
       totalPoints = prefs.getInt('totalPoints') ?? 0;
       
-      // 3. Load Logs
       final fardhuStr = prefs.getString('dailyFardhuLog');
       if (fardhuStr != null) {
         dailyFardhuLog = Map<String, bool>.from(jsonDecode(fardhuStr));
       }
       
-      // 4. Reset Harian (Jika tarikh dah berubah)
       _checkDailyReset();
 
-      notifyListeners(); // Update UI
+      notifyListeners();
     } catch (e) {
       debugPrint("⚠️ Error Loading User Data: $e");
     }
@@ -62,11 +55,10 @@ class UserModel extends ChangeNotifier {
     name = newName;
     birthdate = newDate;
     
-    // Auto convert Hijrah
     final hijriDate = HijriService.fromDate(newDate);
     hijriDOB = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
     
-    save(); // Simpan kekal
+    save(); 
     notifyListeners();
   }
 

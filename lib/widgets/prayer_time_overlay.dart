@@ -17,35 +17,34 @@ class PrayerTimeOverlay extends StatelessWidget {
           child: Align(
             alignment: Alignment.topCenter,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(30), // Bujur penuh (Capsule)
+              borderRadius: BorderRadius.circular(30),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5), // Blur ringan
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Padding nipis
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3), // Hitam nipis
+                    color: Colors.black.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.1), // Garis sangat halus
+                      color: Colors.white.withOpacity(0.1),
                       width: 0.5,
                     ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min, // Saiz ikut teks je (Tak penuh skrin)
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Ikon Kecil Emas
                       const Icon(Icons.access_time_filled, color: kPrimaryGold, size: 14),
                       
                       const SizedBox(width: 8),
                       
-                      // Teks: "ISYAK . 01:20:00"
                       Text(
                         "${service.nextPrayerName?.toUpperCase() ?? 'LOADING'} ",
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12, // Font Halus
+                          fontSize: 12, 
                           letterSpacing: 1.0,
+                          fontFamily: 'Poppins',
                         ),
                       ),
                       
@@ -53,7 +52,7 @@ class PrayerTimeOverlay extends StatelessWidget {
                         "• ${service.formattedTimeUntilNextPrayer}",
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.8),
-                          fontFamily: 'monospace', // Font jam
+                          fontFamily: 'monospace',
                           fontSize: 12,
                         ),
                       ),

@@ -1,9 +1,9 @@
-// lib/main.dart (INSTANT LAUNCH - NO WAITING)
+// lib/main.dart (INSTANT LAUNCHER - FONT POPPINS)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-// Screens & Utils
+// Import Screens & Utils
 import 'screens/splash_screen.dart';
 import 'utils/constants.dart';
 
@@ -30,7 +30,7 @@ void main() {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  // 4. TERUS RUN APP (Jangan tunggu database load di sini!)
+  // 4. TERUS RUN APP
   runApp(const IHijrahApp());
 }
 
@@ -41,7 +41,6 @@ class IHijrahApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Create Instance Kosong Dulu (Isi data kemudian di Splash Screen)
         ChangeNotifierProvider(create: (_) => UserModel()), 
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AudioService()),
@@ -55,10 +54,9 @@ class IHijrahApp extends StatelessWidget {
           brightness: Brightness.dark,
           primaryColor: kPrimaryGold,
           scaffoldBackgroundColor: Colors.black,
-          fontFamily: 'Poppins', 
+          fontFamily: 'Poppins', // PENTING: Guna Font Poppins
           useMaterial3: true,
         ),
-        // PINTU MASUK UTAMA
         home: const SplashScreen(),
       ),
     );

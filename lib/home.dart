@@ -1,4 +1,4 @@
-ï»¿// lib/home.dart (CLEAN HOME FEED + TREE IN SIDEBAR ONLY)
+// lib/home.dart (FINAL FIX: HIJRI SERVICE & OPACITY)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,164 +11,157 @@ import 'utils/audio_service.dart';
 import 'utils/hijri_service.dart';
 
 // Widgets
-// import 'widgets/hijrah_tree_aaa.dart'; // TAK PERLU DI HOME LAGI
-import 'widgets/embun_spirit_aaa.dart';
+import 'widgets/metallic_gold.dart';
 import 'widgets/prayer_time_overlay.dart';
-import 'widgets/metallic_gold.dart'; 
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({Key? key}) : super(key: key);
 
-  @override
-  State<HomePage> createState() => _HomePageState();
+  @override
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late AnimationController _pageController;
-  
-  // State
-  int _selectedIndex = 0;
-  bool _isMenuExpanded = false; 
+  late AnimationController _pageController;
+  
+  // State
+  int _selectedIndex = 0;
+  bool _isMenuExpanded = false; 
 
-  // DUMMY DATA (Feed)
-  final List<Map<String, String>> _dummyPosts = [
-    {
-      "name": "Ustaz Don",
-      "time": "2 minit lepas",
-      "content": "Jangan lupa Al-Kahfi hari ini sahabat semua. Cahaya di antara dua Jumaat.",
-    },
-    {
-      "name": "Komuniti iHijrah",
-      "time": "15 minit lepas",
-      "content": "Ramai yang dah berjaya penuhkan solat 5 waktu minggu ini. Teruskan istiqamah! ðŸ”¥",
-    },
-    {
-      "name": "Sarah",
-      "time": "1 jam lepas",
-      "content": "Subhanallah, tenang hati dengar zikir pagi tadi.",
-    },
-    {
-      "name": "Admin",
-      "time": "3 jam lepas",
-      "content": "Update baru: Kami telah menambah ciri 'Jejak Amalan'. Cuba sekarang di menu profil.",
-    },
-    {
-      "name": "Haziq",
-      "time": "4 jam lepas",
-      "content": "Alhamdulillah selesai qadha solat subuh yang tertinggal.",
-    },
-  ];
+  // DUMMY DATA (Feed) - KEKALKAN
+  final List<Map<String, String>> _dummyPosts = [
+    {
+      "name": "Ustaz Don",
+      "time": "2 minit lepas",
+      "content": "Jangan lupa Al-Kahfi hari ini sahabat semua. Cahaya di antara dua Jumaat.",
+    },
+    {
+      "name": "Komuniti iHijrah",
+      "time": "15 minit lepas",
+      "content": "Ramai yang dah berjaya penuhkan solat 5 waktu minggu ini. Teruskan istiqamah! ",
+    },
+    {
+      "name": "Sarah",
+      "time": "1 jam lepas",
+      "content": "Subhanallah, tenang hati dengar zikir pagi tadi.",
+    },
+    {
+      "name": "Admin",
+      "time": "3 jam lepas",
+      "content": "Update baru: Kami telah menambah ciri 'Jejak Amalan'. Cuba sekarang di menu profil.",
+    },
+    {
+      "name": "Haziq",
+      "time": "4 jam lepas",
+      "content": "Alhamdulillah selesai qadha solat subuh yang tertinggal.",
+    },
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _pageController.forward();
+  @override
+  void initState() {
+    super.initState();
+    _pageController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _pageController.forward();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AudioService>(context, listen: false).playBismillah();
-    });
-  }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AudioService>(context, listen: false).playBismillah();
+    });
+  }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
-  // Logic Tukar Wallpaper Siang/Malam
-  String _getBackgroundImage() {
-    final hour = DateTime.now().hour;
-    bool isDay = hour >= 6 && hour < 19;
-    return isDay 
-        ? 'assets/images/masjid_nabawi.png' 
-        : 'assets/images/sunnah_mekah.png';
-  }
+  // Logic Tukar Wallpaper Siang/Malam
+  String _getBackgroundImage() {
+    final hour = DateTime.now().hour;
+    bool isDay = hour >= 6 && hour < 19;
+    return isDay 
+        ? 'assets/images/masjid_nabawi.png' 
+        : 'assets/images/sunnah_mekah.png';
+  }
 
-  void _toggleMenu() {
-    setState(() => _isMenuExpanded = !_isMenuExpanded);
-    Provider.of<AudioService>(context, listen: false).playClick();
-  }
+  void _toggleMenu() {
+    setState(() => _isMenuExpanded = !_isMenuExpanded);
+    Provider.of<AudioService>(context, listen: false).playClick();
+  }
 
-  String _calculateHijriAge(DateTime? birthDate) {
-    if (birthDate == null) return "Unknown";
-    final hijriBirth = HijriService.fromDate(birthDate);
-    final hijriNow = HijriService.now();
-    final age = hijriNow.hYear - hijriBirth.hYear;
-    return "$age Tahun";
-  }
+  // FIX: Menggunakan fromDate(DateTime.now())
+  String _calculateHijriAge(DateTime? birthDate) {
+    if (birthDate == null) return "Unknown";
+    final hijriBirth = HijriService.fromDate(birthDate);
+    final hijriNow = HijriService.fromDate(DateTime.now()); 
+    final age = hijriNow.hYear - hijriBirth.hYear;
+    return "$age Tahun";
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final user = Provider.of<UserModel>(context);
+  @override
+  Widget build(BuildContext context) {
+    final user = Provider.of<UserModel>(context);
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // === LAYER 1: DYNAMIC BACKGROUND ===
-          Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 1000),
-              child: Container(
-                key: ValueKey(_getBackgroundImage()),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(_getBackgroundImage()),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                // Overlay Gelap sikit supaya tulisan Feed jelas
-                child: Container(color: Colors.black.withOpacity(0.4)), 
-              ),
-            ),
-          ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // === LAYER 1: DYNAMIC BACKGROUND (0.2 OPACITY) ===
+          Positioned.fill(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 1000),
+              child: Container(
+                key: ValueKey(_getBackgroundImage()),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(_getBackgroundImage()),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                // FIX: Opacity dikurangkan ke 0.2 untuk nampak wallpaper malam
+                child: Container(color: Colors.black.withOpacity(0.2)), 
+              ),
+            ),
+          ),
 
-          // (POKOK DIBUANG DARI SINI - IA DUDUK DALAM SIDEBAR SAHAJA)
+          // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
+          Positioned.fill(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 120),
+              itemCount: _dummyPosts.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return const SizedBox(height: 160);
+                }
 
-          // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
-          Positioned.fill(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 120), // Ruang dock
-              itemCount: _dummyPosts.length + 1, // +1 Header
-              itemBuilder: (context, index) {
-                // ITEM 0: HEADER KOSONG (Untuk elak tertutup dek HUD Waktu Solat)
-                if (index == 0) {
-                  return const SizedBox(height: 160); // Turunkan feed ke bawah sikit
-                }
+                final post = _dummyPosts[index - 1];
+                return _buildSocialPostCard(post);
+              },
+            ),
+          ),
 
-                // ITEM 1+: POSTS
-                final post = _dummyPosts[index - 1];
-                return _buildSocialPostCard(post);
-              },
-            ),
-          ),
+          // === LAYER 3: WAKTU SOLAT HUD (MINIMALIS) ===
+          const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
 
-          // === LAYER 3: WAKTU SOLAT HUD (FIXED TOP) ===
-          const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
+          // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            child: _isMenuExpanded 
+              ? _buildFullscreenMenu(user)
+              : const SizedBox.shrink(),
+          ),
 
-          // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
-          // Ini yang Kapten nak: Klik baru expand/fade in
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: _isMenuExpanded 
-              ? _buildFullscreenMenu(user) // Papar Menu bila True
-              : const SizedBox.shrink(), // Hilang bila False
-          ),
+          // === LAYER 5: FLOATING DOCK ===
+          if (!_isMenuExpanded)
+            Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
+        ],
+      ),
+    );
+  }
 
-          // === LAYER 5: FLOATING DOCK ===
-          // Dock hilang bila menu buka
-          if (!_isMenuExpanded)
-            Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
-        ],
-      ),
-    );
-  }
-
-  // === WIDGET: SOCIAL POST CARD ===
+  // --- WIDGET HELPER KEKAL SAMA (Menggunakan Poppins) ---
   Widget _buildSocialPostCard(Map<String, String> post) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -199,11 +192,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       children: [
                         Text(
                           post["name"]!,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'Poppins'),
                         ),
                         Text(
                           post["time"]!,
-                          style: const TextStyle(color: Colors.white54, fontSize: 10),
+                          style: const TextStyle(color: Colors.white54, fontSize: 10, fontFamily: 'Poppins'),
                         ),
                       ],
                     ),
@@ -212,19 +205,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 const SizedBox(height: 12),
                 Text(
                   post["content"]!,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4, fontFamily: 'Poppins'),
                 ),
                 const SizedBox(height: 12),
-                // Action Buttons
                 Row(
                   children: [
                     Icon(Icons.favorite_border, color: Colors.white54, size: 18),
                     const SizedBox(width: 6),
-                    Text("Suka", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text("Suka", style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Poppins')),
                     const SizedBox(width: 20),
                     Icon(Icons.chat_bubble_outline, color: Colors.white54, size: 18),
                     const SizedBox(width: 6),
-                    Text("Komen", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text("Komen", style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Poppins')),
                   ],
                 ),
               ],
@@ -235,12 +227,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // === WIDGET: FULLSCREEN SIDEBAR MENU (POKOK ADA SINI) ===
   Widget _buildFullscreenMenu(UserModel user) {
     return Positioned.fill(
       key: const ValueKey("MenuOverlay"),
       child: GestureDetector(
-        onTap: _toggleMenu, // Tekan luar tutup
+        onTap: _toggleMenu,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black,
@@ -260,7 +251,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    // Tombol Tutup
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
@@ -274,7 +264,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 20),
                     
-                    // === HERO: MASKOT POKOK (DI SINI TEMPATNYA) ===
                     Container(
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
@@ -285,7 +274,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                       child: const CircleAvatar(
-                        radius: 80, // Besar!
+                        radius: 80,
                         backgroundColor: Colors.black,
                         backgroundImage: AssetImage('assets/images/logo.png'), 
                       ),
@@ -293,7 +282,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     
                     const SizedBox(height: 25),
                     
-                    // NAMA USER
                     MetallicGold(
                       child: Text(
                         user.name.toUpperCase(),
@@ -301,13 +289,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           fontSize: 30,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 2.0,
+                          fontFamily: 'Poppins',
                         ),
                       ),
                     ),
                     
                     const SizedBox(height: 8),
 
-                    // UMUR HIJRAH
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
@@ -317,7 +305,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       child: Text(
                         "UMUR HIJRAH: ${_calculateHijriAge(user.birthdate)}",
-                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
                       ),
                     ),
 
@@ -325,7 +313,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     Divider(color: Colors.white.withOpacity(0.1), indent: 50, endIndent: 50),
                     const SizedBox(height: 20),
 
-                    // MENU ITEMS
                     _buildMenuItem("Panduan Sirah", Icons.menu_book),
                     _buildMenuItem("Jejak Amalan", Icons.track_changes),
                     _buildMenuItem("Statistik Ibadah", Icons.bar_chart),
@@ -351,7 +338,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: Container(
           color: Colors.transparent, 
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center, // Centerkan menu
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: Colors.white54, size: 26),
               const SizedBox(width: 20),
@@ -362,6 +349,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   fontSize: 18,
                   fontWeight: FontWeight.w300,
                   letterSpacing: 1.5,
+                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -371,7 +359,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // === DOCK ===
   Widget _buildGlassDock() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
