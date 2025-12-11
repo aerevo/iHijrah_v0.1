@@ -41,11 +41,13 @@ class IHijrahApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserModel()), 
+        ChangeNotifierProvider(create: (_) => UserModel()),
+        ChangeNotifierProxyProvider<UserModel, PrayerService>(
+          create: (context) => PrayerService(context.read<UserModel>()),
+          update: (_, user, prayerService) => prayerService!..updateUser(user),
+        ),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AudioService()),
-        ChangeNotifierProvider(create: (_) => PrayerService()),
-        ChangeNotifierProvider(create: (_) => SirahService()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

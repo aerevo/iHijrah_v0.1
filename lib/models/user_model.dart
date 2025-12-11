@@ -15,6 +15,9 @@ class UserModel extends ChangeNotifier {
   int treeLevel = 1;
   int totalPoints = 0;
 
+  // ===== SETTINGS =====
+  int adhanModeIndex = 0; // 0: Off, 1: Short, 2: Full
+
   // ===== LOGGING =====
   Map<String, bool> dailyFardhuLog = {};
   DateTime? lastResetDate;
@@ -36,6 +39,7 @@ class UserModel extends ChangeNotifier {
 
       treeLevel = prefs.getInt('treeLevel') ?? 1;
       totalPoints = prefs.getInt('totalPoints') ?? 0;
+      adhanModeIndex = prefs.getInt('adhanModeIndex') ?? 0;
       
       final fardhuStr = prefs.getString('dailyFardhuLog');
       if (fardhuStr != null) {
@@ -76,6 +80,7 @@ class UserModel extends ChangeNotifier {
     
     await prefs.setInt('treeLevel', treeLevel);
     await prefs.setInt('totalPoints', totalPoints);
+    await prefs.setInt('adhanModeIndex', adhanModeIndex);
     await prefs.setString('dailyFardhuLog', jsonEncode(dailyFardhuLog));
     
     if (lastResetDate != null) {
