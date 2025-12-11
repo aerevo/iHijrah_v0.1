@@ -1,38 +1,35 @@
-// lib/utils/prayer_service.dart (Refactored for SharedPreferences)
-
+// lib/utils/prayer_service.dart (SYNCED WITH USERMODEL)
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'constants.dart';
 import '../models/user_model.dart';
-import 'settings_enums.dart';
+// import 'settings_enums.dart'; // Uncomment jika enum dipindahkan ke fail asing
 
 class PrayerService with ChangeNotifier {
   UserModel _userModel;
 
   late PrayerTimes _prayerTimes;
   Coordinates? _coordinates;
-
   String? nextPrayerName;
   Duration? timeUntilNextPrayer;
-
   Timer? _ticker;
   Timer? _dailyRefreshTimer;
-
   double _currentLat = DEFAULT_LATITUDE;
   double _currentLng = DEFAULT_LONGITUDE;
 
+  // Constructor menerima UserModel
   PrayerService(this._userModel) {
     _loadSettings();
     _startTimers();
   }
 
+  // Dipanggil oleh ProxyProvider bila UserModel berubah
   void updateUser(UserModel newUserModel) {
     _userModel = newUserModel;
-    // Potentially re-load settings if they can change
+    // Boleh trigger logic tambahan jika setting user berubah (cth: kaedah kiraan)
     // notifyListeners();
   }
 
@@ -40,7 +37,6 @@ class PrayerService with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _currentLat = prefs.getDouble('latitude') ?? DEFAULT_LATITUDE;
     _currentLng = prefs.getDouble('longitude') ?? DEFAULT_LONGITUDE;
-
     _initPrayerTimes();
   }
 
@@ -49,8 +45,11 @@ class PrayerService with ChangeNotifier {
       _coordinates = Coordinates(_currentLat, _currentLng);
       final now = DateTime.now();
       final dateComps = DateComponents.from(now);
+
+      // MWL standard, boleh ubah ikut user setting nanti
       final params = CalculationMethod.muslim_world_league.getParameters();
       params.madhab = Madhab.shafi;
+
       _prayerTimes = PrayerTimes(_coordinates!, dateComps, params);
       _updateNextPrayer();
       notifyListeners();
@@ -80,8 +79,8 @@ class PrayerService with ChangeNotifier {
   }
 
   void _updateNextPrayer() {
-    // ... (logic remains the same)
-        try {
+    if (_coordinates == null) return;
+    try {
       final now = DateTime.now();
 
       if (now.isBefore(_prayerTimes.fajr)) {
@@ -114,27 +113,17 @@ class PrayerService with ChangeNotifier {
     }
   }
 
+  // Getters & Formatters
   String? getPrayerTimeByName(String prayerName) {
-    // ... (logic remains the same)
-        final name = prayerName.toLowerCase().trim();
+    final name = prayerName.toLowerCase().trim();
     try {
       switch (name) {
-        case 'subuh':
-        case 'fajr':
-          return DateFormat.jm().format(_prayerTimes.fajr);
-        case 'zohor':
-        case 'dhuhr':
-          return DateFormat.jm().format(_prayerTimes.dhuhr);
-        case 'asar':
-        case 'asr':
-          return DateFormat.jm().format(_prayerTimes.asr);
-        case 'maghrib':
-          return DateFormat.jm().format(_prayerTimes.maghrib);
-        case 'isyak':
-        case 'isha':
-          return DateFormat.jm().format(_prayerTimes.isha);
-        default:
-          return '--:--';
+        case 'subuh': case 'fajr': return DateFormat.jm().format(_prayerTimes.fajr);
+        case 'zohor': case 'dhuhr': return DateFormat.jm().format(_prayerTimes.dhuhr);
+        case 'asar': case 'asr': return DateFormat.jm().format(_prayerTimes.asr);
+        case 'maghrib': return DateFormat.jm().format(_prayerTimes.maghrib);
+        case 'isyak': case 'isha': return DateFormat.jm().format(_prayerTimes.isha);
+        default: return '--:--';
       }
     } catch (e) {
       return '--:--';
@@ -142,7 +131,6 @@ class PrayerService with ChangeNotifier {
   }
 
   Map<String, String> getAllPrayerTimes() {
-    // ... (logic remains the same)
     try {
       return {
         'Subuh': DateFormat.jm().format(_prayerTimes.fajr),
@@ -152,9 +140,7 @@ class PrayerService with ChangeNotifier {
         'Isyak': DateFormat.jm().format(_prayerTimes.isha),
       };
     } catch (e) {
-      return {
-        'Subuh': '--:--', 'Zohor': '--:--', 'Asar': '--:--', 'Maghrib': '--:--', 'Isyak': '--:--'
-      };
+      return {'Subuh': '--:--', 'Zohor': '--:--', 'Asar': '--:--', 'Maghrib': '--:--', 'Isyak': '--:--'};
     }
   }
 
