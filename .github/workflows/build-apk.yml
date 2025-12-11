@@ -42,3 +42,5 @@ jobs:
       with:
         name: iHijrah-APK
         path: build/app/outputs/flutter-apk/app-release.apk
+
+# Force re-evaluation
