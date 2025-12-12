@@ -37,25 +37,38 @@ class PrayerTimeOverlay extends StatelessWidget {
                       
                       const SizedBox(width: 8),
                       
-                      Text(
-                        "${service.nextPrayerName?.toUpperCase() ?? 'LOADING'} ",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12, 
-                          letterSpacing: 1.0,
-                          fontFamily: 'Poppins',
+                      if (!service.isReady)
+                        const Text(
+                          "MEMUATKAN...",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            letterSpacing: 1.0,
+                            fontFamily: 'Poppins',
+                          ),
+                        )
+                      else ...[
+                        Text(
+                          "${service.nextPrayerName?.toUpperCase() ?? 'RALAT'} ",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            letterSpacing: 1.0,
+                            fontFamily: 'Poppins',
+                          ),
                         ),
-                      ),
-                      
-                      Text(
-                        "• ${service.formattedTimeUntilNextPrayer}",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontFamily: 'monospace',
-                          fontSize: 12,
+
+                        Text(
+                          "• ${service.formattedTimeUntilNextPrayer}",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

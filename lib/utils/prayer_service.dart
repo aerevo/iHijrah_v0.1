@@ -24,6 +24,7 @@ class PrayerService with ChangeNotifier {
 
   double _currentLat = DEFAULT_LATITUDE;
   double _currentLng = DEFAULT_LONGITUDE;
+  bool isReady = false;
 
   PrayerService(this._userModel) {
     _loadSettings();
@@ -52,6 +53,7 @@ class PrayerService with ChangeNotifier {
       final params = CalculationMethod.muslim_world_league.getParameters();
       params.madhab = Madhab.shafi;
       _prayerTimes = PrayerTimes(_coordinates!, dateComps, params);
+      isReady = true;
       _updateNextPrayer();
       notifyListeners();
     } catch (e) {
