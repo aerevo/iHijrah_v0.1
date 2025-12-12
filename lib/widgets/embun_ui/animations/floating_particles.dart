@@ -1,4 +1,3 @@
-
 // lib/widgets/embun_ui/animations/floating_particles.dart
 
 import 'dart:math';

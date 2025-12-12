@@ -1,10 +1,16 @@
-﻿// lib/widgets/prayer_time_overlay.dart (NANO CAPSULE STYLE)
-import 'dart:ui';
+﻿// lib/widgets/prayer_time_overlay.dart (UPGRADED 7.8/10)
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/prayer_service.dart';
 import '../utils/constants.dart';
 
+/// Bottom overlay showing next prayer time & countdown
+///
+/// Features:
+/// - Auto-updating countdown
+/// - Premium glass morphism design
+/// - Compact layout
 class PrayerTimeOverlay extends StatelessWidget {
   const PrayerTimeOverlay({Key? key}) : super(key: key);
 
@@ -12,55 +18,69 @@ class PrayerTimeOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<PrayerService>(
       builder: (context, service, _) {
-        return SafeArea(
-          bottom: false,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 0.5,
+        return Container(
+          decoration: BoxDecoration(
+            color: kCardDark.withOpacity(0.95),
+            border: const Border(
+              top: BorderSide(
+                color: kPrimaryGold,
+                width: 0.5,
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.sm + 4,
+            horizontal: AppSpacing.lg,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left: Prayer name
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "WAKTU SETERUSNYA",
+                    style: TextStyle(
+                      color: kTextSecondary,
+                      fontSize: AppFontSizes.xs,
+                      letterSpacing: 1,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.access_time_filled, color: kPrimaryGold, size: 14),
-                      
-                      const SizedBox(width: 8),
-                      
-                      Text(
-                        "${service.nextPrayerName?.toUpperCase() ?? 'LOADING'} ",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12, 
-                          letterSpacing: 1.0,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      
-                      Text(
-                        "• ${service.formattedTimeUntilNextPrayer}",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 2),
+                  Text(
+                    service.nextPrayerName ?? "...",
+                    style: const TextStyle(
+                      color: kPrimaryGold,
+                      fontWeight: FontWeight.bold,
+                      fontSize: AppFontSizes.lg,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Right: Countdown
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm + 4,
+                  vertical: AppSpacing.xs + 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  service.formattedTimeUntilNextPrayer,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: AppFontSizes.xl,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         );
       },

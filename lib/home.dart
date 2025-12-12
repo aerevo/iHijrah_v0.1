@@ -1,421 +1,142 @@
-// lib/home.dart (FINAL FIX: HIJRI SERVICE & OPACITY)
-import 'dart:ui';
+ï»¿// lib/home.dart (FIXED - IMPORT PATH BETUL)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
 
-// Models
+// Models & Services (ROOT LEVEL, GUNA 'models/' DIRECT)
 import 'models/user_model.dart';
-// Utils
+import 'models/sidebar_state_model.dart';
+import 'models/animation_controller_model.dart';
 import 'utils/constants.dart';
 import 'utils/audio_service.dart';
-import 'utils/hijri_service.dart';
 
-// Widgets
+// Widgets (ROOT LEVEL, GUNA 'widgets/' DIRECT)
+import 'widgets/sidebar.dart';
+import 'widgets/flyout_panel.dart';
+import 'widgets/hijrah_tree.dart';
+import 'widgets/tracker_list.dart';
+import 'widgets/feed_panel.dart';
+import 'widgets/sirah_card.dart';
+import 'widgets/zikir_prompt.dart';
 import 'widgets/metallic_gold.dart';
 import 'widgets/prayer_time_overlay.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
 
-  @override
-  State<HomePage> createState() => _HomePageState();
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late AnimationController _pageController;
-  
-  // State
-  int _selectedIndex = 0;
-  bool _isMenuExpanded = false; 
+  late AnimationController _particleController;
 
-  // DUMMY DATA (Feed) - KEKALKAN
-  final List<Map<String, String>> _dummyPosts = [
-    {
-      "name": "Ustaz Don",
-      "time": "2 minit lepas",
-      "content": "Jangan lupa Al-Kahfi hari ini sahabat semua. Cahaya di antara dua Jumaat.",
-    },
-    {
-      "name": "Komuniti iHijrah",
-      "time": "15 minit lepas",
-      "content": "Ramai yang dah berjaya penuhkan solat 5 waktu minggu ini. Teruskan istiqamah! ",
-    },
-    {
-      "name": "Sarah",
-      "time": "1 jam lepas",
-      "content": "Subhanallah, tenang hati dengar zikir pagi tadi.",
-    },
-    {
-      "name": "Admin",
-      "time": "3 jam lepas",
-      "content": "Update baru: Kami telah menambah ciri 'Jejak Amalan'. Cuba sekarang di menu profil.",
-    },
-    {
-      "name": "Haziq",
-      "time": "4 jam lepas",
-      "content": "Alhamdulillah selesai qadha solat subuh yang tertinggal.",
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Controller untuk Lottie Particles (Confetti)
+    _particleController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _pageController.forward();
+    // Mainkan audio intro
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AudioService>(context, listen: false).playBismillah();
+    });
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AudioService>(context, listen: false).playBismillah();
-    });
-  }
+  @override
+  void dispose() {
+    _particleController.dispose();
+    super.dispose();
+  }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
+  @override
+  Widget build(BuildContext context) {
+    // Listener untuk trigger particle effect dari mana-mana widget
+    final animModel = Provider.of<AnimationControllerModel>(context);
+    if (animModel.shouldSprayParticles) {
+      _particleController.forward(from: 0.0).then((_) {
+        animModel.resetParticleSpray(); // Reset flag lepas main
+      });
+    }
 
-  // Logic Tukar Wallpaper Siang/Malam
-  String _getBackgroundImage() {
-    final hour = DateTime.now().hour;
-    bool isDay = hour >= 6 && hour < 19;
-    return isDay 
-        ? 'assets/images/masjid_nabawi.png' 
-        : 'assets/images/sunnah_mekah.png';
-  }
+    return Scaffold(
+      backgroundColor: kBackgroundDark,
+      body: Stack(
+        children: [
+          // 1. MAIN LAYOUT (Sidebar + Content)
+          Row(
+            children: [
+              // A. Sidebar (Kiri - Fixed)
+              const Sidebar(),
 
-  void _toggleMenu() {
-    setState(() => _isMenuExpanded = !_isMenuExpanded);
-    Provider.of<AudioService>(context, listen: false).playClick();
-  }
-
-  // FIX: Menggunakan fromDate(DateTime.now())
-  String _calculateHijriAge(DateTime? birthDate) {
-    if (birthDate == null) return "Unknown";
-    final hijriBirth = HijriService.fromDate(birthDate);
-    final hijriNow = HijriService.fromDate(DateTime.now()); 
-    final age = hijriNow.hYear - hijriBirth.hYear;
-    return "$age Tahun";
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final user = Provider.of<UserModel>(context);
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // === LAYER 1: DYNAMIC BACKGROUND (0.2 OPACITY) ===
-          Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 1000),
-              child: Container(
-                key: ValueKey(_getBackgroundImage()),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(_getBackgroundImage()),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                // FIX: Opacity dikurangkan ke 0.2 untuk nampak wallpaper malam
-                child: Container(color: Colors.black.withOpacity(0.2)), 
-              ),
-            ),
-          ),
-
-          // === LAYER 2: SOCIAL FEED (SCROLLABLE) ===
-          Positioned.fill(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 120),
-              itemCount: _dummyPosts.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return const SizedBox(height: 160);
-                }
-
-                final post = _dummyPosts[index - 1];
-                return _buildSocialPostCard(post);
-              },
-            ),
-          ),
-
-          // === LAYER 3: WAKTU SOLAT HUD (MINIMALIS) ===
-          const Positioned(top: 60, left: 20, right: 20, child: PrayerTimeOverlay()),
-
-          // === LAYER 4: SIDEBAR MENU (FULLSCREEN OVERLAY) ===
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: _isMenuExpanded 
-              ? _buildFullscreenMenu(user)
-              : const SizedBox.shrink(),
-          ),
-
-          // === LAYER 5: FLOATING DOCK ===
-          if (!_isMenuExpanded)
-            Positioned(bottom: 30, left: 20, right: 20, child: _buildGlassDock()),
-        ],
-      ),
-    );
-  }
-
-  // --- WIDGET HELPER KEKAL SAMA (Menggunakan Poppins) ---
-  Widget _buildSocialPostCard(Map<String, String> post) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: kPrimaryGold.withOpacity(0.2),
-                      child: const Icon(Icons.person, color: kPrimaryGold, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              // B. Body Content (Kanan - Expanded)
+              Expanded(
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                    child: Column(
                       children: [
-                        Text(
-                          post["name"]!,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'Poppins'),
+                        // Header: Waktu Solat
+                        const PrayerTimeOverlay(),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Section 1: Pokok Hijrah (Centerpiece)
+                        const HijrahTree(),
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // Section 2: Zikir Prompt (Jika belum buat)
+                        Consumer<UserModel>(
+                          builder: (ctx, user, _) => ZikirPrompt(
+                            zikirDone: user.isAmalanDoneToday('Selawat 100x'),
+                            onDone: () => user.recordAmalan('Selawat 100x'),
+                          ),
                         ),
-                        Text(
-                          post["time"]!,
-                          style: const TextStyle(color: Colors.white54, fontSize: 10, fontFamily: 'Poppins'),
-                        ),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Section 3: Sirah Harian
+                        const SirahCard(),
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // Section 4: Tracker List (Checklist)
+                        const TrackerList(),
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // Section 5: Feed Komuniti
+                        const FeedPanel(),
+                        const SizedBox(height: 100), // Padding bawah
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  post["content"]!,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4, fontFamily: 'Poppins'),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.favorite_border, color: Colors.white54, size: 18),
-                    const SizedBox(width: 6),
-                    Text("Suka", style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Poppins')),
-                    const SizedBox(width: 20),
-                    Icon(Icons.chat_bubble_outline, color: Colors.white54, size: 18),
-                    const SizedBox(width: 6),
-                    Text("Komen", style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Poppins')),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFullscreenMenu(UserModel user) {
-    return Positioned.fill(
-      key: const ValueKey("MenuOverlay"),
-      child: GestureDetector(
-        onTap: _toggleMenu,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            image: DecorationImage(
-              image: const AssetImage('assets/images/latar_corak.png'),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.85),
-                BlendMode.darken,
-              ),
-            ),
-          ),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 20),
-                        child: IconButton(
-                          onPressed: _toggleMenu,
-                          icon: const Icon(Icons.close, color: Colors.white54, size: 35),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: kPrimaryGold, width: 2),
-                        boxShadow: [
-                          BoxShadow(color: kPrimaryGold.withOpacity(0.3), blurRadius: 40, spreadRadius: 5),
-                        ],
-                      ),
-                      child: const CircleAvatar(
-                        radius: 80,
-                        backgroundColor: Colors.black,
-                        backgroundImage: AssetImage('assets/images/logo.png'), 
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 25),
-                    
-                    MetallicGold(
-                      child: Text(
-                        user.name.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.0,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 8),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: Text(
-                        "UMUR HIJRAH: ${_calculateHijriAge(user.birthdate)}",
-                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-                    Divider(color: Colors.white.withOpacity(0.1), indent: 50, endIndent: 50),
-                    const SizedBox(height: 20),
-
-                    _buildMenuItem("Panduan Sirah", Icons.menu_book),
-                    _buildMenuItem("Jejak Amalan", Icons.track_changes),
-                    _buildMenuItem("Statistik Ibadah", Icons.bar_chart),
-                    _buildMenuItem("Tetapan", Icons.settings),
-                    _buildMenuItem("Log Keluar", Icons.logout),
-
-                    const SizedBox(height: 50),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: GestureDetector(
-        onTap: () => Provider.of<AudioService>(context, listen: false).playClick(),
-        child: Container(
-          color: Colors.transparent, 
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white54, size: 26),
-              const SizedBox(width: 20),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.5,
-                  fontFamily: 'Poppins',
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildGlassDock() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          height: 80,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.4),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.0),
+          // 2. FLYOUT PANEL (Sliding Overlay)
+          // Panel ini akan slide keluar dari tepi sidebar bila menu ditekan
+          Positioned(
+            left: AppSizes.sidebarWidth,
+            top: 0,
+            bottom: 0,
+            child: const FlyoutPanel(),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildDockIcon(0, Icons.home_filled),
-              _buildDockIcon(1, Icons.history_edu),
-              _buildMainActionButton(),
-              _buildDockIcon(2, Icons.calendar_month),
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white54, size: 28),
-                onPressed: _toggleMenu, 
+
+          // 3. PARTICLE EFFECTS OVERLAY (Lottie)
+          // Layer paling atas untuk kesan visual 'celebration'
+          Positioned.fill(
+            child: IgnorePointer( // Biar user boleh click through
+              child: Lottie.asset(
+                'assets/animations/confetti.json', // Pastikan fail ni ada atau ganti dengan dummy container
+                controller: _particleController,
+                repeat: false,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, stack) => const SizedBox.shrink(), // Silent fail kalau asset tiada
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDockIcon(int index, IconData icon) {
-    final bool isSelected = _selectedIndex == index;
-    return IconButton(
-      icon: Icon(icon, color: isSelected ? kPrimaryGold : Colors.white54, size: 28),
-      onPressed: () {
-        setState(() => _selectedIndex = index);
-        Provider.of<AudioService>(context, listen: false).playClick();
-      },
-    );
-  }
-
-  Widget _buildMainActionButton() {
-    return Transform.translate(
-      offset: const Offset(0, -20),
-      child: Container(
-        width: 65,
-        height: 65,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(colors: [kPrimaryGold, Color(0xFFAA771C)]),
-          boxShadow: [BoxShadow(color: kPrimaryGold.withOpacity(0.4), blurRadius: 20)],
-        ),
-        child: IconButton(
-          icon: const Icon(Icons.check, color: Colors.black, size: 32),
-          onPressed: () => Provider.of<AudioService>(context, listen: false).playClick(),
-        ),
+        ],
       ),
     );
   }

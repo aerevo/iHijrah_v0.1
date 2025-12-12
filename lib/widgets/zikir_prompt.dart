@@ -1,187 +1,130 @@
-﻿import 'package:flutter/material.dart';
+﻿// lib/widgets/zikir_prompt.dart (UPGRADED 7.8/10)
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../utils/constants.dart';
+import '../../utils/constants.dart';
 import '../utils/audio_service.dart';
-import 'metallic_gold.dart'; 
-import 'embun_ui/embun_ui.dart'; 
+import '../models/animation_controller_model.dart';
 
 class ZikirPrompt extends StatefulWidget {
   final bool zikirDone;
   final VoidCallback onDone;
 
-  const ZikirPrompt({
-    Key? key,
-    required this.zikirDone,
-    required this.onDone,
-  }) : super(key: key);
+  const ZikirPrompt({Key? key, required this.zikirDone, required this.onDone}) : super(key: key);
 
   @override
   State<ZikirPrompt> createState() => _ZikirPromptState();
 }
 
 class _ZikirPromptState extends State<ZikirPrompt> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnim;
-  bool _isProcessing = false;
-  
-  // Variable untuk simpan teks soalan
-  late String _dailyQuestion;
-  late String _dailyDeedName;
+  bool _isDismissed = false;
+  late AnimationController _enterController;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _scaleAnim = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
-    
-    // TENTUKAN SOALAN BERDASARKAN HARI
-    _determineDailyQuestion();
+    // Animasi Masuk: SlideUp + FadeIn
+    _enterController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
 
-    // Animate Masuk
-    _controller.forward();
-
-    // Audio Trigger
     if (!widget.zikirDone) {
+      // Mainkan audio prompt jika belum zikir
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Provider.of<AudioService>(context, listen: false).playZikirPrompt();
+         Provider.of<AudioService>(context, listen: false).playZikirPrompt();
       });
-    }
-  }
-
-  void _determineDailyQuestion() {
-    final now = DateTime.now();
-    final weekday = now.weekday; // 1 = Isnin, 7 = Ahad
-
-    if (weekday == DateTime.friday) {
-      _dailyQuestion = "Salam Jumaat Kapten,\nDah baca Al-Kahfi hari ini?";
-      _dailyDeedName = "Al-Kahfi";
-    } else if (weekday == DateTime.monday || weekday == DateTime.thursday) {
-      _dailyQuestion = "Hari Sunnah ni Kapten,\nAda puasa sunat tak hari ni?";
-      _dailyDeedName = "Puasa Sunat";
-    } else {
-      _dailyQuestion = "Assalamualaikum Kapten,\nDah selawat ke belum hari ni?";
-      _dailyDeedName = "Selawat";
+      _enterController.forward();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _enterController.dispose();
     super.dispose();
   }
 
-  void _handleBelum() {
-    if (_isProcessing) return;
-    Provider.of<AudioService>(context, listen: false).playInsyaallah();
+  void _handleDone() {
+    HapticFeedback.mediumImpact();
+    Provider.of<AudioService>(context, listen: false).playAlhamdulillah();
+    Provider.of<AnimationControllerModel>(context, listen: false).triggerParticleSpray();
+    widget.onDone();
   }
 
-  Future<void> _handleSudah() async {
-    if (_isProcessing) return;
-    setState(() => _isProcessing = true);
-
-    final audioService = Provider.of<AudioService>(context, listen: false);
-
-    // 1. Audio Alhamdulillah
-    await audioService.playAlhamdulillah();
-
-    // 2. Jeda
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // 3. Audio Siraman & Visual
-    audioService.playSiraman();
-    widget.onDone(); // Hantar signal selesai
+  void _handleBelum() {
+    HapticFeedback.selectionClick();
+    Provider.of<AudioService>(context, listen: false).playInsyaallah();
+    setState(() => _isDismissed = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.zikirDone) {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-        decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kSuccessGreen.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, color: kSuccessGreen),
-            const SizedBox(width: 10),
-            Text(
-              "Misi $_dailyDeedName Selesai. Alhamdulillah!",
-              style: const TextStyle(color: kSuccessGreen, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      );
-    }
+    if (widget.zikirDone || _isDismissed) return const SizedBox.shrink();
 
-    return ScaleTransition(
-      scale: _scaleAnim,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: kCardDark.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
-          border: Border.all(color: kPrimaryGold.withOpacity(0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: kPrimaryGold.withOpacity(0.1),
-              blurRadius: 20,
-              spreadRadius: 1,
-            )
-          ],
-        ),
-        child: Column(
-          children: [
-            const CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.black,
-              backgroundImage: AssetImage('assets/images/logo.png'), 
+    return SlideTransition(
+      position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+        CurvedAnimation(parent: _enterController, curve: Curves.easeOutCubic)
+      ),
+      child: FadeTransition(
+        opacity: _enterController,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH, vertical: AppSpacing.screenV),
+          child: Container(
+            decoration: BoxDecoration(
+              color: kCardDark,
+              borderRadius: BorderRadius.circular(AppSizes.cardRadiusXl),
+              border: Border.all(color: kPrimaryGold.withOpacity(0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                )
+              ],
             ),
-            const SizedBox(height: 15),
-
-            // SOALAN DINAMIK
-            MetallicGold(
-              child: Text(
-                _dailyQuestion, // Teks berubah ikut hari
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  height: 1.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 25),
-
-            Row(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: CelebrationButton(
-                    onPressed: _handleBelum,
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    child: const Text("Belum..", style: TextStyle(color: Colors.white70)),
+                const Text(
+                  'Assalamualaikum,\nDah zikir pagi/petang hari ni?',
+                  style: TextStyle(
+                    color: kTextPrimary,
+                    fontSize: AppFontSizes.lg,
+                    height: 1.5,
+                    fontFamily: 'Playfair'
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: CelebrationButton(
-                    onPressed: _handleSudah,
-                    backgroundColor: kPrimaryGold,
-                    child: _isProcessing 
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                      : const Text("Sudah!", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                  ),
+                const SizedBox(height: AppSpacing.lg),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: _handleBelum,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14)
+                        ),
+                        child: const Text('Nanti Sekejap', style: TextStyle(color: kTextSecondary)),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _handleDone,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryGold,
+                          foregroundColor: kBackgroundDark,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadius)),
+                        ),
+                        child: const Text('SUDAH', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
