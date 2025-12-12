@@ -25,13 +25,18 @@ class UserModel extends ChangeNotifier {
   // ===== FUNGSI UTAMA: LOAD DATA (PANGGIL DI SPLASH SCREEN) =====
   Future<void> loadData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      debugPrint('🔵 START: UserModel.loadData()');
+
+      final prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 2)); // Add timeout
       
       name = prefs.getString('name') ?? 'Pengguna iHijrah';
+      debugPrint('✅ Name loaded: $name');
       
       final birthdateStr = prefs.getString('birthdate');
       if (birthdateStr != null) {
         birthdate = DateTime.parse(birthdateStr);
+        debugPrint('✅ Birthdate loaded: $birthdate');
       }
       
       hijriDOB = prefs.getString('hijriDOB');
@@ -42,15 +47,26 @@ class UserModel extends ChangeNotifier {
       adhanModeIndex = prefs.getInt('adhanModeIndex') ?? 0;
       
       final fardhuStr = prefs.getString('dailyFardhuLog');
-      if (fardhuStr != null) {
-        dailyFardhuLog = Map<String, bool>.from(jsonDecode(fardhuStr));
+      if (fardhuStr != null && fardhuStr.isNotEmpty) {
+        try {
+          dailyFardhuLog = Map<String, bool>.from(jsonDecode(fardhuStr));
+        } catch (e) {
+          debugPrint('⚠️ Error parsing dailyFardhuLog: $e');
+          dailyFardhuLog = {};
+        }
       }
       
       _checkDailyReset();
 
+      debugPrint('✅ COMPLETE: UserModel.loadData()');
       notifyListeners();
     } catch (e) {
-      debugPrint("⚠️ Error Loading User Data: $e");
+      debugPrint('❌ CRITICAL ERROR in loadData: $e');
+      // Set default values bila error
+      name = 'Pengguna iHijrah';
+      treeLevel = 1;
+      totalPoints = 0;
+      notifyListeners();
     }
   }
 

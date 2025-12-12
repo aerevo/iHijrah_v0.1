@@ -62,21 +62,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await Future.delayed(const Duration(milliseconds: 200));
     _mainController.forward(); 
     
-    // ✅ FIX: Add timeout protection
-    try {
-      await Future.wait([
-        Future.delayed(const Duration(milliseconds: 2500)),
-        dataLoading.timeout(
-          const Duration(seconds: 3), // Max 3 saat je
-          onTimeout: () {
-            debugPrint('⚠️ UserModel.loadData() TIMEOUT - Proceed anyway');
-          },
-        ),
-      ]);
-    } catch (e) {
-      debugPrint('❌ Error during splash: $e');
-      // Proceed anyway - better than stuck
-    }
+    await Future.wait([
+      Future.delayed(const Duration(milliseconds: 2500)),
+      dataLoading,
+    ]);
     
     _checkAndNavigate();
   }

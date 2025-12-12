@@ -11,14 +11,12 @@ import 'utils/constants.dart';
 import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'utils/audio_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'utils/prayer_service.dart';
 import 'utils/sirah_service.dart';
 
-void main() async {
+void main() {
   // 1. Setup Asas Pantas
   WidgetsFlutterBinding.ensureInitialized();
-  await SharedPreferences.getInstance();
   
   // 2. Kunci Orientasi Portrait
   SystemChrome.setPreferredOrientations([
@@ -44,12 +42,10 @@ class IHijrahApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserModel()),
-        ChangeNotifierProxyProvider<UserModel, PrayerService>(
-          create: (context) => PrayerService(context.read<UserModel>()),
-          update: (_, user, prayerService) => prayerService!..updateUser(user),
-        ),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AudioService()),
+        ChangeNotifierProvider(create: (_) => PrayerService()),
+        ChangeNotifierProvider(create: (_) => SirahService()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
