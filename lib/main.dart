@@ -11,12 +11,14 @@ import 'utils/constants.dart';
 import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'utils/audio_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'utils/prayer_service.dart';
 import 'utils/sirah_service.dart';
 
-void main() {
+void main() async {
   // 1. Setup Asas Pantas
   WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance();
   
   // 2. Kunci Orientasi Portrait
   SystemChrome.setPreferredOrientations([
