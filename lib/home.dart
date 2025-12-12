@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String _calculateHijriAge(DateTime? birthDate) {
     if (birthDate == null) return "Unknown";
     final hijriBirth = HijriService.fromDate(birthDate);
-    final hijriNow = HijriService.fromDate(DateTime.now());
+    final hijriNow = HijriService.nowHijri();
     final age = hijriNow.hYear - hijriBirth.hYear;
     return "$age Tahun";
   }
