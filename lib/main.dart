@@ -1,4 +1,4 @@
-// lib/main.dart (Using SharedPreferences)
+// lib/main.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,11 +54,13 @@ class IHijrahApp extends StatelessWidget {
 
         // Service Providers (Logic)
         Provider(create: (_) => AudioService()),
-        // PrayerService now depends on UserModel, so we use a ProxyProvider
+        
+        // PrayerService bergantung pada UserModel (Proxy)
         ChangeNotifierProxyProvider<UserModel, PrayerService>(
             create: (context) => PrayerService(context.read<UserModel>()),
             update: (context, user, prayerService) => prayerService!..updateUser(user),
         ),
+        
         Provider(create: (_) => SirahService()),
       ],
       child: MaterialApp(
@@ -68,9 +70,9 @@ class IHijrahApp extends StatelessWidget {
         // 6. Global Theme Definition
         theme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: kBackgroundDark,
+          scaffoldBackgroundColor: const Color(0xFF17203A), // Guna warna sidebar/umum
           primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto',
+          fontFamily: 'Roboto', // Atau font pilihan Kapten
 
           colorScheme: const ColorScheme.dark(
             primary: kPrimaryGold,
@@ -91,7 +93,7 @@ class IHijrahApp extends StatelessWidget {
           ),
         ),
 
-        // 7. Entry Point
+        // 7. Entry Point -> Bermula di Splash Screen
         home: const SplashScreen(),
       ),
     );
