@@ -7,7 +7,7 @@ import 'package:rive/rive.dart'; // Pastikan package rive ada
 import '../components/side_menu.dart'; // Import menu baru tadi
 import '../models/sidebar_state_model.dart';
 import '../utils/constants.dart';
-import 'home/home_screen.dart'; // Pastikan path ke HomeScreen betul
+import '../../home.dart';
 
 class EntryPoint extends StatefulWidget {
   const EntryPoint({super.key});
@@ -147,4 +147,5 @@ class _EntryPointState extends State<EntryPoint> with SingleTickerProviderStateM
       ),
     );
   }
+
 }
