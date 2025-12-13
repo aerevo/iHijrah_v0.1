@@ -1,100 +1,107 @@
-// lib/main.dart
+// lib/screens/splash_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-// Import Screens & Utils
-import 'screens/splash_screen.dart';
-import 'utils/constants.dart';
+// Perhatikan penggunaan '../' kerana fail ini berada di dalam folder screens
+import '../models/user_model.dart';
+import '../utils/constants.dart';
+import '../home.dart'; // Navigasi ke Home (Sidebar Tepi)
+import 'birthdate_prompt_screen.dart';
 
-// Import Models & Services for Provider
-import 'models/user_model.dart';
-import 'models/sidebar_state_model.dart';
-import 'models/animation_controller_model.dart';
-import 'utils/audio_service.dart';
-import 'utils/prayer_service.dart';
-import 'utils/sirah_service.dart';
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
-void main() async {
-  // 1. Ensure Bindings
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Load User Data from SharedPreferences
-  final userModel = await UserModel.load();
-
-  // 3. Lock Orientation
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // 4. Set Status Bar Color
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-  ));
-
-  runApp(IHijrahApp(userModel: userModel));
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class IHijrahApp extends StatelessWidget {
-  final UserModel userModel;
-  const IHijrahApp({super.key, required this.userModel});
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+
+    // Navigasi
+    Future.delayed(const Duration(milliseconds: 3500), () {
+      if (mounted) {
+        _checkUserAndNavigate();
+      }
+    });
+  }
+
+  void _checkUserAndNavigate() {
+    final user = Provider.of<UserModel>(context, listen: false);
+
+    if (user.birthdate != null) {
+       Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()), 
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const BirthdatePromptScreen()),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 5. Setup MultiProvider
-    return MultiProvider(
-      providers: [
-        // Data Providers
-        ChangeNotifierProvider.value(value: userModel),
-        ChangeNotifierProvider(create: (_) => SidebarStateModel()),
-        ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
-
-        // Service Providers (Logic)
-        Provider(create: (_) => AudioService()),
-        
-        // PrayerService bergantung pada UserModel (Proxy)
-        ChangeNotifierProxyProvider<UserModel, PrayerService>(
-            create: (context) => PrayerService(context.read<UserModel>()),
-            update: (context, user, prayerService) => prayerService!..updateUser(user),
-        ),
-        
-        Provider(create: (_) => SirahService()),
-      ],
-      child: MaterialApp(
-        title: 'iHijrah Embun Jiwa',
-        debugShowCheckedModeBanner: false,
-
-        // 6. Global Theme Definition
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF17203A), // Guna warna sidebar/umum
-          primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto', // Atau font pilihan Kapten
-
-          colorScheme: const ColorScheme.dark(
-            primary: kPrimaryGold,
-            secondary: kAccentOlive,
-            surface: kCardDark,
-            background: kBackgroundDark,
-          ),
-
-          textTheme: const TextTheme(
-            bodyMedium: TextStyle(color: kTextPrimary),
-            bodySmall: TextStyle(color: kTextSecondary),
-          ),
-
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: FadeTransition(
+          opacity: _opacityAnimation,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.diamond_outlined,
+                size: 60,
+                color: kPrimaryGold.withOpacity(0.8),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "ZYAMINA STUDIO",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 6.0,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Crafting Digital Barakah",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 10,
+                  letterSpacing: 2.0,
+                ),
+              ),
+            ],
           ),
         ),
-
-        // 7. Entry Point -> Bermula di Splash Screen
-        home: const SplashScreen(),
       ),
     );
   }
