@@ -10,8 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   rive: ^0.13.4
-  hijri: ^3.0.0
-  
+  # (Padam hijri di sini)
+   
   # --- UI & Icons ---
   cupertino_icons: ^1.0.2
 
@@ -42,8 +42,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  
-  # --- Launcher Icons (WAJIB ADA UNTUK ICON) ---
+   
+  # --- Launcher Icons ---
   flutter_launcher_icons: ^0.13.1
 
 flutter:
