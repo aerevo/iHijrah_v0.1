@@ -10,9 +10,8 @@ import '../models/user_model.dart';
 import '../models/sidebar_state_model.dart';
 import '../utils/constants.dart';
 
-// Import Widget UI Embun (Jika Kapten ada folder ni)
+// Import Widget UI Embun (Jika ada)
 import '../widgets/metallic_gold.dart'; 
-// import '../widgets/embun_ui/embun_ui.dart'; // Un-comment jika perlu
 
 class SideMenu extends StatefulWidget {
   const SideMenu({super.key});
@@ -22,7 +21,7 @@ class SideMenu extends StatefulWidget {
 }
 
 class _SideMenuState extends State<SideMenu> {
-  // --- LOGIK WHATSAPP & INFAQ (Dari fail asal Kapten) ---
+  // --- LOGIK WHATSAPP & INFAQ ---
   final String _whatsappNumber = '+60133662440';
   final String _whatsappMessage = 'Assalamualaikum Admin, saya berminat untuk membuat Infaq Pembangunan iHijrah.';
 
@@ -92,7 +91,7 @@ class _SideMenuState extends State<SideMenu> {
     );
   }
 
-  // --- LOGIK BARU: UMUR HIJRAH ---
+  // --- LOGIK UMUR HIJRAH ---
   String _calculateHijrahAge(DateTime? dob) {
     if (dob == null) return "0";
     final HijriCalendar todayHijri = HijriCalendar.now();
@@ -131,11 +130,12 @@ class _SideMenuState extends State<SideMenu> {
                       border: Border.all(color: kPrimaryGold, width: 2),
                       boxShadow: [BoxShadow(color: kPrimaryGold.withOpacity(0.3), blurRadius: 10)],
                     ),
-                    child: const CircleAvatar(
+                    // [FIX] Buang 'const' di sini sebab ada onBackgroundImageError
+                    child: CircleAvatar(
                       radius: 35,
                       backgroundColor: Colors.white10,
-                      backgroundImage: AssetImage('assets/images/profile_default.png'),
-                      onBackgroundImageError: (_,__) {},
+                      backgroundImage: const AssetImage('assets/images/profile_default.png'),
+                      onBackgroundImageError: (_,__) {}, // Ini fungsi, tak boleh const
                     ),
                   ),
                   const SizedBox(height: 15),
