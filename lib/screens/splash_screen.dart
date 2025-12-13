@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-import '../home.dart';
-import 'birthdate_prompt_screen.dart';
+
+// NAVIGATION TARGETS
+import 'entry_point.dart'; // <--- Sasaran Baru (Menu + Home)
+import 'birthdate_prompt_screen.dart'; // Sasaran User Baru
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -34,26 +36,29 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     // Navigasi Selepas 3.5 Saat
     Future.delayed(const Duration(milliseconds: 3500), () {
-      _checkUserAndNavigate();
+      if (mounted) {
+        _checkUserAndNavigate();
+      }
     });
   }
 
+  // LOGIK NAVIGASI PINTAR
   void _checkUserAndNavigate() {
     final user = Provider.of<UserModel>(context, listen: false);
 
-    // [PEMBAIKAN] Semak 'birthdate'. Jika null, bermakna user belum set tarikh lahir (User Baru).
-    // Jika ada birthdate, bermakna profil asas dah lengkap.
-    if (user.birthdate != null) {
-      // User dah wujud
-      Navigator.pushReplacement(
+    // Semak 'birthdate'. 
+    // Jika NULL -> User Baru -> Pergi set tarikh lahir
+    // Jika ADA -> User Lama -> Terus ke EntryPoint (Menu System)
+    
+    if (user.dateOfBirth != null) { // Pastikan field match dengan UserModel (dateOfBirth/birthdate)
+       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage())
+        MaterialPageRoute(builder: (_) => const EntryPoint()), 
       );
     } else {
-      // User baru atau data tak lengkap
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const BirthdatePromptScreen())
+        MaterialPageRoute(builder: (_) => const BirthdatePromptScreen()),
       );
     }
   }
