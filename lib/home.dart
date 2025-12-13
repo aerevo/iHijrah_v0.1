@@ -1,26 +1,23 @@
-﻿// lib/home.dart (FIXED - IMPORT PATH BETUL)
+// lib/home.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 
-// Models & Services (ROOT LEVEL, GUNA 'models/' DIRECT)
+// Models & Services
 import 'models/user_model.dart';
-import 'models/sidebar_state_model.dart';
 import 'models/animation_controller_model.dart';
 import 'utils/constants.dart';
 import 'utils/audio_service.dart';
 
-// Widgets (ROOT LEVEL, GUNA 'widgets/' DIRECT)
-import 'widgets/sidebar.dart';
-import 'widgets/flyout_panel.dart';
+// Widgets (Hanya widget konten, SIDEBAR DIBUANG sebab EntryPoint dah handle)
 import 'widgets/hijrah_tree.dart';
 import 'widgets/tracker_list.dart';
 import 'widgets/feed_panel.dart';
 import 'widgets/sirah_card.dart';
 import 'widgets/zikir_prompt.dart';
-import 'widgets/metallic_gold.dart';
 import 'widgets/prayer_time_overlay.dart';
-
+// import 'widgets/flyout_panel.dart'; // Jika perlu panel kanan, boleh un-comment
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -35,12 +32,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // Controller untuk Lottie Particles (Confetti)
+    // Setup Lottie Controller
     _particleController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
 
-    // Mainkan audio intro
+    // Audio Intro
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AudioService>(context, listen: false).playBismillah();
+      // Pastikan AudioService wujud dalam provider sebelum panggil
+      try {
+        Provider.of<AudioService>(context, listen: false).playBismillah();
+      } catch (e) {
+        debugPrint("Audio Service Error: $e");
+      }
     });
   }
 
@@ -52,87 +54,70 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // Listener untuk trigger particle effect dari mana-mana widget
+    // Listener Particle
     final animModel = Provider.of<AnimationControllerModel>(context);
     if (animModel.shouldSprayParticles) {
       _particleController.forward(from: 0.0).then((_) {
-        animModel.resetParticleSpray(); // Reset flag lepas main
+        animModel.resetParticleSpray();
       });
     }
 
     return Scaffold(
-      backgroundColor: kBackgroundDark,
+      backgroundColor: kBackgroundDark, // Warna latar belakang Home
       body: Stack(
         children: [
-          // 1. MAIN LAYOUT (Sidebar + Content)
-          Row(
-            children: [
-              // A. Sidebar (Kiri - Fixed)
-              const Sidebar(),
+          // 1. KANDUNGAN UTAMA (Tanpa Sidebar Statik)
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              child: Column(
+                children: [
+                  // Jarak untuk Butang Menu di atas (Supaya tak tertindih)
+                  const SizedBox(height: 60), 
 
-              // B. Body Content (Kanan - Expanded)
-              Expanded(
-                child: SafeArea(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                    child: Column(
-                      children: [
-                        // Header: Waktu Solat
-                        const PrayerTimeOverlay(),
-                        const SizedBox(height: AppSpacing.lg),
+                  // Header: Waktu Solat
+                  const PrayerTimeOverlay(),
+                  const SizedBox(height: AppSpacing.lg),
 
-                        // Section 1: Pokok Hijrah (Centerpiece)
-                        const HijrahTree(),
-                        const SizedBox(height: AppSpacing.xl),
+                  // Section 1: Pokok Hijrah
+                  const HijrahTree(),
+                  const SizedBox(height: AppSpacing.xl),
 
-                        // Section 2: Zikir Prompt (Jika belum buat)
-                        Consumer<UserModel>(
-                          builder: (ctx, user, _) => ZikirPrompt(
-                            zikirDone: user.isAmalanDoneToday('Selawat 100x'),
-                            onDone: () => user.recordAmalan('Selawat 100x'),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-
-                        // Section 3: Sirah Harian
-                        const SirahCard(),
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Section 4: Tracker List (Checklist)
-                        const TrackerList(),
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Section 5: Feed Komuniti
-                        const FeedPanel(),
-                        const SizedBox(height: 100), // Padding bawah
-                      ],
+                  // Section 2: Zikir Prompt
+                  Consumer<UserModel>(
+                    builder: (ctx, user, _) => ZikirPrompt(
+                      zikirDone: user.isAmalanDoneToday('Selawat 100x'),
+                      onDone: () => user.recordAmalan('Selawat 100x'),
                     ),
                   ),
-                ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Section 3: Sirah Harian
+                  const SirahCard(),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Section 4: Tracker List
+                  const TrackerList(),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Section 5: Feed Komuniti
+                  const FeedPanel(),
+                  const SizedBox(height: 100), // Padding bawah
+                ],
               ),
-            ],
+            ),
           ),
 
-          // 2. FLYOUT PANEL (Sliding Overlay)
-          // Panel ini akan slide keluar dari tepi sidebar bila menu ditekan
-          Positioned(
-            left: AppSizes.sidebarWidth,
-            top: 0,
-            bottom: 0,
-            child: const FlyoutPanel(),
-          ),
-
-          // 3. PARTICLE EFFECTS OVERLAY (Lottie)
-          // Layer paling atas untuk kesan visual 'celebration'
+          // 2. PARTICLE EFFECTS (Layer Atas)
           Positioned.fill(
-            child: IgnorePointer( // Biar user boleh click through
+            child: IgnorePointer(
               child: Lottie.asset(
-                'assets/animations/confetti.json', // Pastikan fail ni ada atau ganti dengan dummy container
+                'assets/animations/confetti.json',
                 controller: _particleController,
                 repeat: false,
                 fit: BoxFit.cover,
-                errorBuilder: (ctx, err, stack) => const SizedBox.shrink(), // Silent fail kalau asset tiada
+                errorBuilder: (ctx, err, stack) => const SizedBox.shrink(),
               ),
             ),
           ),
