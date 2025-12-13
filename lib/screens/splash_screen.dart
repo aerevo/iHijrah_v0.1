@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     // Jika NULL -> User Baru -> Pergi set tarikh lahir
     // Jika ADA -> User Lama -> Terus ke EntryPoint (Menu System)
     
-    if (user.dateOfBirth != null) { // Pastikan field match dengan UserModel (dateOfBirth/birthdate)
+    if (user.birthdate != null) {
        Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const EntryPoint()), 
