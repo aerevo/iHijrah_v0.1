@@ -1,15 +1,13 @@
-// lib/screens/birthdate_prompt_screen.dart (INTEGRATED VERSION)
+// lib/screens/birthdate_prompt_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart'; // ✅ UNTUK CUPERTINO CALENDAR
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
 import '../home.dart';
 import '../utils/premium_route.dart';
-// Pastikan import ini wujud untuk akses fungsi statik jika perlu, 
-// walaupun model user yang buat kerja berat.
-import '../utils/hijri_service.dart'; 
 
 class BirthdatePromptScreen extends StatefulWidget {
   const BirthdatePromptScreen({Key? key}) : super(key: key);
@@ -19,6 +17,7 @@ class BirthdatePromptScreen extends StatefulWidget {
 }
 
 class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
+  // ✅ TAMBAH CONTROLLER UNTUK NAMA
   final TextEditingController _nameController = TextEditingController();
   DateTime? _selectedDate;
   bool _isLoading = false;
@@ -48,6 +47,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
           ),
           child: Column(
             children: [
+              // Header dengan button Done
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -84,7 +84,10 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                   ],
                 ),
               ),
+
               const Divider(color: Colors.white10, height: 1),
+
+              // Cupertino Date Picker (RODA PUSING-PUSING MACAM APPLE!)
               Expanded(
                 child: CupertinoTheme(
                   data: const CupertinoThemeData(
@@ -100,7 +103,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
                     initialDateTime: pickedDate,
-                    minimumDate: DateTime(1900), // Logik: User mungkin lebih tua
+                    minimumDate: DateTime(1900), // Updated: Cover lebih banyak range umur
                     maximumDate: DateTime.now(),
                     onDateTimeChanged: (DateTime newDate) {
                       pickedDate = newDate;
@@ -117,57 +120,71 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
   }
 
   void _submit() async {
+    // ✅ VALIDATION - Check nama & tarikh lahir
     final namaTrim = _nameController.text.trim();
     
-    // Validation
     if (namaTrim.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sila masukkan nama anda'), backgroundColor: kWarningRed),
+        const SnackBar(
+          content: Text('Sila masukkan nama anda'),
+          backgroundColor: kWarningRed,
+        ),
       );
       return;
     }
     
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sila pilih tarikh lahir'), backgroundColor: kWarningRed),
+        const SnackBar(
+          content: Text('Sila pilih tarikh lahir'),
+          backgroundColor: kWarningRed,
+        ),
       );
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // Integrasi dengan Model
+    print('🔵 SUBMIT STARTED');
+
+    // 1. Simpan dalam User Model (Masihi & Hijri akan diuruskan oleh model)
     final user = Provider.of<UserModel>(context, listen: false);
 
+    print('📅 Saving name: $namaTrim, date: $_selectedDate');
+
     try {
-      print('🔵 Mula Simpan Data Pengguna...');
-      
-      // 1. Simpan Nama
+      // ✅ SIMPAN NAMA & TARIKH LAHIR
       user.name = namaTrim;
       
-      // 2. Simpan Tarikh (Ini akan trigger HijriService dalam model)
-      // Pastikan User Model memanggil HijriService.fromDate(_selectedDate!) di dalamnya
-      user.setBirthDate(_selectedDate!); 
+      // Pastikan setBirthDate dipanggil. Dalam UserModel, ini akan trigger HijriService.fromDate()
+      user.setBirthDate(_selectedDate!);
       
-      // 3. Double Confirm Data Wujud (Debug)
-      print('✅ Data Disimpan: Nama=${user.name}, HijriDOB=${user.hijriDOB}');
-
-      // Delay sedikit untuk UX smooth
+      print('✅ User saved: ${user.name}, ${user.hijriDOB}');
+      
+      // Tambahan safety delay untuk pastikan I/O selesai (optional tapi digalakkan)
       await Future.delayed(const Duration(milliseconds: 500));
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PremiumRoute.createRoute(const HomePage())
-        );
-      }
+      
     } catch (e) {
       print('❌ ERROR saving user: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ralat: $e'), backgroundColor: kWarningRed),
+          const SnackBar(
+            content: Text('Ralat menyimpan data. Cuba lagi.'),
+            backgroundColor: kWarningRed,
+          ),
         );
       }
+      return;
+    }
+
+    print('🚀 Navigating to HomePage...');
+
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        PremiumRoute.createRoute(const HomePage())
+      );
+      print('✅ Navigation completed');
     }
   }
 
@@ -176,13 +193,14 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
     return Scaffold(
       backgroundColor: kBackgroundDark,
       body: SafeArea(
-        child: SingleChildScrollView( // Tambah Scroll supaya tak overflow bila keyboard naik
+        // Tambah SingleChildScrollView untuk elak overflow bila keyboard naik
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.xxl),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 20), // Spacer atas
                 const MetallicGold(
                   child: Icon(Icons.calendar_month_outlined, size: 60, color: Colors.white),
                 ),
@@ -206,7 +224,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
-                // INPUT NAMA
+                // ✅ INPUT NAMA (BARU)
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: kPrimaryGold),
@@ -232,7 +250,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // INPUT TARIKH
+                // INPUT DISPLAY (Tap untuk buka calendar)
                 InkWell(
                   onTap: () => _selectDate(context),
                   borderRadius: BorderRadius.circular(AppSizes.cardRadius),
@@ -270,7 +288,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                   width: double.infinity,
                   height: AppSizes.buttonHeightLg,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
+                    onPressed: _isLoading ? null : _submit, // ✅ Validation dalam _submit()
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPrimaryGold,
                       foregroundColor: kBackgroundDark,
@@ -297,6 +315,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                           ),
                   ),
                 ),
+                const SizedBox(height: 20), // Spacer bawah untuk keyboard
               ],
             ),
           ),
