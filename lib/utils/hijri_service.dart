@@ -34,11 +34,10 @@ class HijriService {
     return "${today.hDay} ${today.getLongMonthName()}".toLowerCase();
   }
 
-  // ✅ FIXED LOGIC: Handle empty string & format error gracefully
+  // ✅ UPDATED: Added Safety Checks & Debug Prints
   static String calculateHijriAge(String hijriDOB) {
-    // Debug print untuk tengok apa data yang masuk
     if (kDebugMode) {
-      print('🔍 DEBUG HijriAge Input: "$hijriDOB"');
+      print('🔍 DEBUG HijriAge: Input DOB = "$hijriDOB"');
     }
 
     if (hijriDOB.isEmpty) return "-- Tahun";
@@ -46,11 +45,9 @@ class HijriService {
 
     try {
       final parts = hijriDOB.split('/');
-      
-      // Jika format tak kena (bukan 3 bahagian), return error
       if (parts.length != 3) {
-        print('⚠️ Format Tarikh Salah: $hijriDOB');
-        return "-- Tahun";
+        if (kDebugMode) print('⚠️ Format Tarikh Salah: $hijriDOB');
+        return "Format Salah";
       }
 
       final dobDay = int.parse(parts[0]);
@@ -62,17 +59,15 @@ class HijriService {
       int ageMonths = today.hMonth - dobMonth;
       int ageDays = today.hDay - dobDay;
 
-      // Logic standard kira umur (adjust bulan/hari)
       if (ageDays < 0) {
         ageMonths--;
         final prevMonth = today.hMonth - 1 == 0 ? 12 : today.hMonth - 1;
-        
+
         HijriCalendar prevDate = HijriCalendar();
         prevDate.hYear = today.hYear;
         prevDate.hMonth = prevMonth;
-        
-        // Handle lengthOfMonth dengan selamat
-        ageDays += prevDate.lengthOfMonth; 
+
+        ageDays += prevDate.lengthOfMonth;
       }
 
       if (ageMonths < 0) {
@@ -81,12 +76,11 @@ class HijriService {
       }
       
       String result = "$ageYears Tahun $ageMonths Bulan";
-      if (kDebugMode) print('✅ Calculated Age: $result');
+      if (kDebugMode) print('✅ Umur Berjaya Dikira: $result');
       
       return result;
-
     } catch (e) {
-      print('❌ Error Kira Umur: $e');
+      if (kDebugMode) print('❌ Error Kira Umur: $e');
       return "-- Tahun";
     }
   }
