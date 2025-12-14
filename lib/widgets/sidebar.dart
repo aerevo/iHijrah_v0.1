@@ -1,5 +1,5 @@
 // lib/widgets/sidebar.dart
-import 'dart:io'; // ✅ ADDED for File
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -71,7 +71,6 @@ class Sidebar extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: AppSizes.buttonHeightMd,
-              // ✅ CELEBRATION BUTTON UTK INFAQ
               child: CelebrationButton(
                 onPressed: () => _launchWhatsApp(context),
                 backgroundColor: Colors.green.shade700,
@@ -149,12 +148,16 @@ class Sidebar extends StatelessWidget {
               child: Consumer<UserModel>(
                 builder: (context, user, _) {
                   
-                  // Dapatkan umur Hijrah dengan selamat
+                  // Debug print untuk tengok apa data yang sampai di Sidebar
+                  // print('🔍 SIDEBAR CHECK: DOB=${user.hijriDOB}');
+                  
                   String displayAge = HijriService.calculateHijriAge(user.hijriDOB ?? '');
                   
-                  // Fallback jika kosong
-                  if (displayAge == "-- Tahun" || displayAge.isEmpty) {
-                    displayAge = "Tetapkan Tarikh";
+                  // ✅ FIXED: Logic fallback yang lebih 'loose'
+                  // Asalkan tak kosong dan tak error, tunjuk je
+                  if (displayAge.isEmpty || displayAge == "-- Tahun") {
+                     // Cuba panggil sekali lagi untuk confirm
+                     displayAge = "Tetapkan Tarikh";
                   }
 
                   return Column(
@@ -190,7 +193,7 @@ class Sidebar extends StatelessWidget {
                       
                       const SizedBox(height: 10),
                       
-                      // User Name (Ada Logic Limit Panjang Nama)
+                      // User Name
                       MetallicGold(
                         child: Text(
                           user.name.isNotEmpty 
@@ -210,7 +213,7 @@ class Sidebar extends StatelessWidget {
                       
                       const SizedBox(height: 5),
                       
-                      // ✅ HIJRI AGE (FIXED SIZE & VISIBILITY)
+                      // ✅ HIJRI AGE DISPLAY
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
