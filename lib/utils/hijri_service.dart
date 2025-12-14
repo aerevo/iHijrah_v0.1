@@ -1,6 +1,6 @@
-// lib/utils/hijri_service.dart (DEBUG VERSION)
+// lib/utils/hijri_service.dart
 import 'package:hijri/hijri_calendar.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; // Untuk kDebugMode
 
 class HijriService {
   static void _ensureLocale() {
@@ -22,8 +22,20 @@ class HijriService {
     return "${today.hDay} ${today.getLongMonthName()} ${today.hYear}H";
   }
 
+  static String todayHijriKey() {
+    final today = nowHijri();
+    final month = today.hMonth.toString().padLeft(2, '0');
+    final day = today.hDay.toString().padLeft(2, '0');
+    return "$month-$day";
+  }
+
+  static String todayHijriTextKey() {
+    final today = nowHijri();
+    return "${today.hDay} ${today.getLongMonthName()}".toLowerCase();
+  }
+
+  // ✅ UPDATED: Added Safety Checks & Debug Prints
   static String calculateHijriAge(String hijriDOB) {
-    // 🔍 DEBUG: Lihat apa data yang masuk
     if (kDebugMode) {
       print('🔍 DEBUG HijriAge: Input DOB = "$hijriDOB"');
     }
@@ -33,7 +45,7 @@ class HijriService {
     try {
       final parts = hijriDOB.split('/');
       if (parts.length != 3) {
-        print('⚠️ Format Tarikh Salah: $hijriDOB');
+        if (kDebugMode) print('⚠️ Format Tarikh Salah: $hijriDOB');
         return "Format Salah";
       }
 
@@ -49,9 +61,11 @@ class HijriService {
       if (ageDays < 0) {
         ageMonths--;
         final prevMonth = today.hMonth - 1 == 0 ? 12 : today.hMonth - 1;
+
         HijriCalendar prevDate = HijriCalendar();
         prevDate.hYear = today.hYear;
         prevDate.hMonth = prevMonth;
+
         ageDays += prevDate.lengthOfMonth;
       }
 
@@ -61,16 +75,15 @@ class HijriService {
       }
       
       String result = "$ageYears Tahun $ageMonths Bulan";
-      print('✅ Umur Berjaya Dikira: $result');
+      if (kDebugMode) print('✅ Umur Berjaya Dikira: $result');
+      
       return result;
-
     } catch (e) {
-      print('❌ Error Kira Umur: $e');
+      if (kDebugMode) print('❌ Error Kira Umur: $e');
       return "-- Tahun";
     }
   }
-  
-  // ... (Kekalkan fungsi propheticAgeComparison, getDaysUntilNextBirthday, getDaysInCurrentMonth seperti sedia ada)
+
   static String propheticAgeComparison(String? hijriDOB) {
     if (hijriDOB == null || hijriDOB.isEmpty) return 'Belum disahkan.';
     try {
