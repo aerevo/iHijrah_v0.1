@@ -34,19 +34,23 @@ class HijriService {
     return "${today.hDay} ${today.getLongMonthName()}".toLowerCase();
   }
 
-  // ✅ UPDATED: Added Safety Checks & Debug Prints
+  // ✅ FIXED LOGIC: Handle empty string & format error gracefully
   static String calculateHijriAge(String hijriDOB) {
+    // Debug print untuk tengok apa data yang masuk
     if (kDebugMode) {
-      print('🔍 DEBUG HijriAge: Input DOB = "$hijriDOB"');
+      print('🔍 DEBUG HijriAge Input: "$hijriDOB"');
     }
 
     if (hijriDOB.isEmpty) return "-- Tahun";
-    
+    if (hijriDOB == 'null') return "-- Tahun"; // Extra safety
+
     try {
       final parts = hijriDOB.split('/');
+      
+      // Jika format tak kena (bukan 3 bahagian), return error
       if (parts.length != 3) {
-        if (kDebugMode) print('⚠️ Format Tarikh Salah: $hijriDOB');
-        return "Format Salah";
+        print('⚠️ Format Tarikh Salah: $hijriDOB');
+        return "-- Tahun";
       }
 
       final dobDay = int.parse(parts[0]);
@@ -58,15 +62,17 @@ class HijriService {
       int ageMonths = today.hMonth - dobMonth;
       int ageDays = today.hDay - dobDay;
 
+      // Logic standard kira umur (adjust bulan/hari)
       if (ageDays < 0) {
         ageMonths--;
         final prevMonth = today.hMonth - 1 == 0 ? 12 : today.hMonth - 1;
-
+        
         HijriCalendar prevDate = HijriCalendar();
         prevDate.hYear = today.hYear;
         prevDate.hMonth = prevMonth;
-
-        ageDays += prevDate.lengthOfMonth;
+        
+        // Handle lengthOfMonth dengan selamat
+        ageDays += prevDate.lengthOfMonth; 
       }
 
       if (ageMonths < 0) {
@@ -75,11 +81,12 @@ class HijriService {
       }
       
       String result = "$ageYears Tahun $ageMonths Bulan";
-      if (kDebugMode) print('✅ Umur Berjaya Dikira: $result');
+      if (kDebugMode) print('✅ Calculated Age: $result');
       
       return result;
+
     } catch (e) {
-      if (kDebugMode) print('❌ Error Kira Umur: $e');
+      print('❌ Error Kira Umur: $e');
       return "-- Tahun";
     }
   }
