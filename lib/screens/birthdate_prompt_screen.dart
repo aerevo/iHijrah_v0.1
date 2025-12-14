@@ -1,4 +1,4 @@
-﻿// lib/screens/birthdate_prompt_screen.dart (FIXED + CANTIK CALENDAR)
+// lib/screens/birthdate_prompt_screen.dart (FIXED + CANTIK CALENDAR + NAMA)
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart'; // ✅ UNTUK CUPERTINO CALENDAR
 import 'package:provider/provider.dart';
@@ -17,8 +17,16 @@ class BirthdatePromptScreen extends StatefulWidget {
 }
 
 class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
+  // ✅ TAMBAH CONTROLLER UNTUK NAMA
+  final TextEditingController _nameController = TextEditingController();
   DateTime? _selectedDate;
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     DateTime? pickedDate = _selectedDate ?? DateTime(1995);
@@ -112,7 +120,28 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
   }
 
   void _submit() async {
-    if (_selectedDate == null) return;
+    // ✅ VALIDATION - Check nama & tarikh lahir
+    final namaTrim = _nameController.text.trim();
+    
+    if (namaTrim.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sila masukkan nama anda'),
+          backgroundColor: kWarningRed,
+        ),
+      );
+      return;
+    }
+    
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sila pilih tarikh lahir'),
+          backgroundColor: kWarningRed,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -121,11 +150,13 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
     // 1. Simpan dalam User Model (Masihi & Hijri akan diuruskan oleh model)
     final user = Provider.of<UserModel>(context, listen: false);
 
-    print('📅 Saving Masihi date: $_selectedDate');
+    print('📅 Saving name: $namaTrim, date: $_selectedDate');
 
     try {
+      // ✅ SIMPAN NAMA & TARIKH LAHIR
+      user.name = namaTrim;
       user.setBirthDate(_selectedDate!);
-      print('✅ User saved: ${user.hijriDOB}');
+      print('✅ User saved: ${user.name}, ${user.hijriDOB}');
     } catch (e) {
       print('❌ ERROR saving user: $e');
       if (mounted) {
@@ -186,6 +217,32 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
+              // ✅ INPUT NAMA (BARU)
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: kPrimaryGold),
+                  borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+                  color: kPrimaryGold.withOpacity(0.05),
+                ),
+                child: TextField(
+                  controller: _nameController,
+                  style: const TextStyle(
+                    color: kPrimaryGold,
+                    fontSize: AppFontSizes.lg,
+                    fontWeight: FontWeight.bold
+                  ),
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(
+                    hintText: 'Nama Penuh Anda',
+                    hintStyle: TextStyle(color: kTextSecondary),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
               // INPUT DISPLAY (Tap untuk buka calendar)
               InkWell(
                 onTap: () => _selectDate(context),
@@ -224,7 +281,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                 width: double.infinity,
                 height: AppSizes.buttonHeightLg,
                 child: ElevatedButton(
-                  onPressed: _selectedDate == null || _isLoading ? null : _submit,
+                  onPressed: _isLoading ? null : _submit, // ✅ Validation dalam _submit()
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimaryGold,
                     foregroundColor: kBackgroundDark,
