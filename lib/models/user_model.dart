@@ -1,5 +1,4 @@
-// lib/models/user_model.dart (Using SharedPreferences)
-
+// lib/models/user_model.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -9,9 +8,10 @@ import '../utils/hijri_service.dart';
 class UserModel extends ChangeNotifier {
   // ===== BASIC INFO =====
   String name = 'Pengguna iHijrah';
-  DateTime?  birthdate;
+  DateTime? birthdate;
   String? hijriDOB;
   String? avatarPath;
+  String? gender; // Added safety based on previous context
 
   // ===== LEVEL & POINTS SYSTEM =====
   int treeLevel = 1;
@@ -24,7 +24,7 @@ class UserModel extends ChangeNotifier {
   DateTime? lastResetDate;
 
   // ===== SETTINGS =====
-  int adhanModeIndex = 1; // Default:  Full
+  int adhanModeIndex = 1; // Default: Full
   bool isFajrAlarmEnabled = true;
   bool isDhuhrAlarmEnabled = true;
   bool isAsrAlarmEnabled = true;
@@ -32,7 +32,13 @@ class UserModel extends ChangeNotifier {
   bool isIshaAlarmEnabled = true;
 
   // ===== CONSTRUCTOR =====
-  UserModel();
+  UserModel({
+    this.name = 'Pengguna iHijrah',
+    this.birthdate,
+    this.hijriDOB,
+    this.avatarPath,
+    this.gender,
+  });
 
   // ===== GETTERS (COMPUTED PROPERTIES) =====
   int get nextLevelPoints => treeLevel * 100;
@@ -45,7 +51,7 @@ class UserModel extends ChangeNotifier {
 
   int get fardhuCompletedToday {
     _checkDailyReset();
-    return dailyFardhuLog.values. where((v) => v).length;
+    return dailyFardhuLog.values.where((v) => v).length;
   }
 
   int get amalanCompletedToday {
@@ -56,7 +62,7 @@ class UserModel extends ChangeNotifier {
   // ===== PRIVATE HELPERS =====
   void _checkDailyReset() {
     final today = DateTime.now();
-    if (lastResetDate == null || ! _isSameDay(lastResetDate!, today)) {
+    if (lastResetDate == null || !_isSameDay(lastResetDate!, today)) {
       dailyFardhuLog.clear();
       dailyAmalanLog.clear();
       selawatCountToday = 0;
@@ -116,7 +122,7 @@ class UserModel extends ChangeNotifier {
 
   bool isFardhuDoneToday(String prayerName) {
     _checkDailyReset();
-    return dailyFardhuLog[prayerName] ??  false;
+    return dailyFardhuLog[prayerName] ?? false;
   }
 
   /// Check if a fardhu prayer is completed today
@@ -131,7 +137,7 @@ class UserModel extends ChangeNotifier {
     final isCurrentlyDone = dailyFardhuLog[prayerName] ?? false;
     if (isCurrentlyDone) {
       // If already done, remove it (undo)
-      dailyFardhuLog. remove(prayerName);
+      dailyFardhuLog.remove(prayerName);
       totalPoints -= 20;
     } else {
       // If not done, mark as done
@@ -155,7 +161,7 @@ class UserModel extends ChangeNotifier {
 
   bool isAmalanDoneToday(String amalanId) {
     _checkDailyReset();
-    return dailyAmalanLog[amalanId] ??  false;
+    return dailyAmalanLog[amalanId] ?? false;
   }
 
   /// Check if an optional/amalan activity is completed today
@@ -198,10 +204,17 @@ class UserModel extends ChangeNotifier {
     }
   }
 
+  // ✅ FIX: Logic Set Tarikh Lahir & Auto-Save Hijrah
   void setBirthDate(DateTime masihiDate) {
     birthdate = masihiDate;
-    final hijriDate = HijriService. fromDate(masihiDate);
+    
+    // Auto-calculate Hijri bila set Masihi
+    final hijriDate = HijriService.fromDate(masihiDate);
+    
+    // Format standard: DD/MM/YYYY
     hijriDOB = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
+    
+    print('🔄 Recalculated HijriDOB: $hijriDOB');
     save();
   }
 
@@ -211,42 +224,56 @@ class UserModel extends ChangeNotifier {
     save();
   }
 
-  void setAvatarPath(String?  path) {
+  void setAvatarPath(String? path) {
     avatarPath = path;
     save();
   }
 
-  // ===== DATA PERSISTENCE =====
+  // ===== DATA PERSISTENCE (FIXED WITH DEBUG) =====
 
   Future<void> save() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('name', name);
+      
       if (birthdate != null) {
-        await prefs.setString('birthdate', birthdate! .toIso8601String());
+        await prefs.setString('birthdate', birthdate!.toIso8601String());
       }
+      
+      // ✅ Simpan HijriDOB secara eksplisit
       if (hijriDOB != null) {
         await prefs.setString('hijriDOB', hijriDOB!);
       }
+      
       if (avatarPath != null) {
         await prefs.setString('avatarPath', avatarPath!);
       }
+      
+      if (gender != null) {
+        await prefs.setString('user_gender', gender!);
+      }
+
       await prefs.setInt('treeLevel', treeLevel);
       await prefs.setInt('totalPoints', totalPoints);
       await prefs.setString('dailyFardhuLog', jsonEncode(dailyFardhuLog));
-      await prefs. setString('dailyAmalanLog', jsonEncode(dailyAmalanLog));
+      await prefs.setString('dailyAmalanLog', jsonEncode(dailyAmalanLog));
       await prefs.setInt('selawatCountToday', selawatCountToday);
+      
       if (lastResetDate != null) {
         await prefs.setString('lastResetDate', lastResetDate!.toIso8601String());
       }
+      
       await prefs.setInt('adhanModeIndex', adhanModeIndex);
       await prefs.setBool('isFajrAlarmEnabled', isFajrAlarmEnabled);
-      await prefs. setBool('isDhuhrAlarmEnabled', isDhuhrAlarmEnabled);
+      await prefs.setBool('isDhuhrAlarmEnabled', isDhuhrAlarmEnabled);
       await prefs.setBool('isAsrAlarmEnabled', isAsrAlarmEnabled);
       await prefs.setBool('isMaghribAlarmEnabled', isMaghribAlarmEnabled);
       await prefs.setBool('isIshaAlarmEnabled', isIshaAlarmEnabled);
 
-      print('✅ Data saved successfully via SharedPreferences');
+      print('💾 SAVING USER DATA...');
+      print('   - Name: $name');
+      print('   - HijriDOB: $hijriDOB');
+      
       notifyListeners();
     } catch (e) {
       print('❌ Error saving data: $e');
@@ -256,15 +283,26 @@ class UserModel extends ChangeNotifier {
 
   static Future<UserModel> load() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Kita create instance baru
     final user = UserModel();
 
     user.name = prefs.getString('name') ?? 'Pengguna iHijrah';
+    
     final birthdateStr = prefs.getString('birthdate');
     if (birthdateStr != null) {
-      user.birthdate = DateTime.parse(birthdateStr);
+      try {
+        user.birthdate = DateTime.parse(birthdateStr);
+      } catch (e) {
+        print('❌ Error parsing birthdate: $e');
+      }
     }
+    
+    // ✅ Load HijriDOB
     user.hijriDOB = prefs.getString('hijriDOB');
-    user.avatarPath = prefs. getString('avatarPath');
+    user.avatarPath = prefs.getString('avatarPath');
+    user.gender = prefs.getString('user_gender');
+    
     user.treeLevel = prefs.getInt('treeLevel') ?? 1;
     user.totalPoints = prefs.getInt('totalPoints') ?? 0;
 
@@ -275,22 +313,25 @@ class UserModel extends ChangeNotifier {
 
     final amalanStr = prefs.getString('dailyAmalanLog');
     if (amalanStr != null) {
-      user.dailyAmalanLog = Map<String, bool>. from(jsonDecode(amalanStr));
+      user.dailyAmalanLog = Map<String, bool>.from(jsonDecode(amalanStr));
     }
 
     user.selawatCountToday = prefs.getInt('selawatCountToday') ?? 0;
-    final lastResetStr = prefs. getString('lastResetDate');
+    final lastResetStr = prefs.getString('lastResetDate');
     if (lastResetStr != null) {
       user.lastResetDate = DateTime.parse(lastResetStr);
     }
     user.adhanModeIndex = prefs.getInt('adhanModeIndex') ?? 1;
-    user.isFajrAlarmEnabled = prefs. getBool('isFajrAlarmEnabled') ?? true;
+    user.isFajrAlarmEnabled = prefs.getBool('isFajrAlarmEnabled') ?? true;
     user.isDhuhrAlarmEnabled = prefs.getBool('isDhuhrAlarmEnabled') ?? true;
     user.isAsrAlarmEnabled = prefs.getBool('isAsrAlarmEnabled') ?? true;
     user.isMaghribAlarmEnabled = prefs.getBool('isMaghribAlarmEnabled') ?? true;
     user.isIshaAlarmEnabled = prefs.getBool('isIshaAlarmEnabled') ?? true;
 
-    print('✅ User data loaded from SharedPreferences');
+    print('📖 LOADING USER DATA...');
+    print('   - Name: ${user.name}');
+    print('   - HijriDOB (Raw): ${user.hijriDOB}');
+    
     return user;
   }
 }
