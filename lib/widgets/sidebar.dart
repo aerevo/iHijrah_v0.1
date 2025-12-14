@@ -148,15 +148,11 @@ class Sidebar extends StatelessWidget {
               child: Consumer<UserModel>(
                 builder: (context, user, _) {
                   
-                  // Debug print untuk tengok apa data yang sampai di Sidebar
-                  // print('🔍 SIDEBAR CHECK: DOB=${user.hijriDOB}');
-                  
+                  // Panggil service baru yang lebih selamat
                   String displayAge = HijriService.calculateHijriAge(user.hijriDOB ?? '');
                   
-                  // ✅ FIXED: Logic fallback yang lebih 'loose'
-                  // Asalkan tak kosong dan tak error, tunjuk je
-                  if (displayAge.isEmpty || displayAge == "-- Tahun") {
-                     // Cuba panggil sekali lagi untuk confirm
+                  // Logic fallback: Jika kosong/error, ajak user set tarikh
+                  if (displayAge.isEmpty || displayAge == "-- Tahun" || displayAge == "Format Salah") {
                      displayAge = "Tetapkan Tarikh";
                   }
 
@@ -213,7 +209,7 @@ class Sidebar extends StatelessWidget {
                       
                       const SizedBox(height: 5),
                       
-                      // ✅ HIJRI AGE DISPLAY
+                      // ✅ HIJRI AGE DISPLAY (Paling Penting)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
