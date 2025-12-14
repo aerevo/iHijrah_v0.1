@@ -1,13 +1,15 @@
-// lib/screens/birthdate_prompt_screen.dart (FIXED + CANTIK CALENDAR + NAMA)
+// lib/screens/birthdate_prompt_screen.dart (INTEGRATED VERSION)
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // ✅ UNTUK CUPERTINO CALENDAR
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
 import '../home.dart';
 import '../utils/premium_route.dart';
+// Pastikan import ini wujud untuk akses fungsi statik jika perlu, 
+// walaupun model user yang buat kerja berat.
+import '../utils/hijri_service.dart'; 
 
 class BirthdatePromptScreen extends StatefulWidget {
   const BirthdatePromptScreen({Key? key}) : super(key: key);
@@ -17,7 +19,6 @@ class BirthdatePromptScreen extends StatefulWidget {
 }
 
 class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
-  // ✅ TAMBAH CONTROLLER UNTUK NAMA
   final TextEditingController _nameController = TextEditingController();
   DateTime? _selectedDate;
   bool _isLoading = false;
@@ -47,7 +48,6 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
           ),
           child: Column(
             children: [
-              // Header dengan button Done
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -84,10 +84,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                   ],
                 ),
               ),
-
               const Divider(color: Colors.white10, height: 1),
-
-              // Cupertino Date Picker (RODA PUSING-PUSING MACAM APPLE!)
               Expanded(
                 child: CupertinoTheme(
                   data: const CupertinoThemeData(
@@ -103,7 +100,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
                     initialDateTime: pickedDate,
-                    minimumDate: DateTime(1950),
+                    minimumDate: DateTime(1900), // Logik: User mungkin lebih tua
                     maximumDate: DateTime.now(),
                     onDateTimeChanged: (DateTime newDate) {
                       pickedDate = newDate;
@@ -120,67 +117,57 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
   }
 
   void _submit() async {
-    // ✅ VALIDATION - Check nama & tarikh lahir
     final namaTrim = _nameController.text.trim();
     
+    // Validation
     if (namaTrim.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sila masukkan nama anda'),
-          backgroundColor: kWarningRed,
-        ),
+        const SnackBar(content: Text('Sila masukkan nama anda'), backgroundColor: kWarningRed),
       );
       return;
     }
     
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sila pilih tarikh lahir'),
-          backgroundColor: kWarningRed,
-        ),
+        const SnackBar(content: Text('Sila pilih tarikh lahir'), backgroundColor: kWarningRed),
       );
       return;
     }
 
     setState(() => _isLoading = true);
 
-    print('🔵 SUBMIT STARTED');
-
-    // 1. Simpan dalam User Model (Masihi & Hijri akan diuruskan oleh model)
+    // Integrasi dengan Model
     final user = Provider.of<UserModel>(context, listen: false);
 
-    print('📅 Saving name: $namaTrim, date: $_selectedDate');
-
     try {
-      // ✅ SIMPAN NAMA & TARIKH LAHIR
+      print('🔵 Mula Simpan Data Pengguna...');
+      
+      // 1. Simpan Nama
       user.name = namaTrim;
-      user.setBirthDate(_selectedDate!);
-      print('✅ User saved: ${user.name}, ${user.hijriDOB}');
+      
+      // 2. Simpan Tarikh (Ini akan trigger HijriService dalam model)
+      // Pastikan User Model memanggil HijriService.fromDate(_selectedDate!) di dalamnya
+      user.setBirthDate(_selectedDate!); 
+      
+      // 3. Double Confirm Data Wujud (Debug)
+      print('✅ Data Disimpan: Nama=${user.name}, HijriDOB=${user.hijriDOB}');
+
+      // Delay sedikit untuk UX smooth
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PremiumRoute.createRoute(const HomePage())
+        );
+      }
     } catch (e) {
       print('❌ ERROR saving user: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ralat menyimpan data. Cuba lagi.'),
-            backgroundColor: kWarningRed,
-          ),
+          SnackBar(content: Text('Ralat: $e'), backgroundColor: kWarningRed),
         );
       }
-      return;
-    }
-
-    // Simulasi loading untuk UX
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    print('🚀 Navigating to HomePage...');
-
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        PremiumRoute.createRoute(const HomePage())
-      );
-      print('✅ Navigation completed');
     }
   }
 
@@ -189,126 +176,129 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
     return Scaffold(
       backgroundColor: kBackgroundDark,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const MetallicGold(
-                child: Icon(Icons.calendar_month_outlined, size: 60, color: Colors.white),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              const Text(
-                "Bilakah Tarikh Lahir Anda?",
-                style: TextStyle(
-                  color: kTextPrimary,
-                  fontSize: AppFontSizes.xl,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Playfair'
+        child: SingleChildScrollView( // Tambah Scroll supaya tak overflow bila keyboard naik
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                const MetallicGold(
+                  child: Icon(Icons.calendar_month_outlined, size: 60, color: Colors.white),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                "Kami gunakan tarikh ini untuk mengira umur Hijrah dan membandingkan fasa hidup anda dengan Sirah Nabi SAW.",
-                style: TextStyle(color: kTextSecondary, height: 1.5),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.xl),
 
-              // ✅ INPUT NAMA (BARU)
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: kPrimaryGold),
-                  borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-                  color: kPrimaryGold.withOpacity(0.05),
-                ),
-                child: TextField(
-                  controller: _nameController,
-                  style: const TextStyle(
-                    color: kPrimaryGold,
-                    fontSize: AppFontSizes.lg,
-                    fontWeight: FontWeight.bold
+                const Text(
+                  "Bilakah Tarikh Lahir Anda?",
+                  style: TextStyle(
+                    color: kTextPrimary,
+                    fontSize: AppFontSizes.xl,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Playfair'
                   ),
                   textAlign: TextAlign.center,
-                  decoration: const InputDecoration(
-                    hintText: 'Nama Penuh Anda',
-                    hintStyle: TextStyle(color: kTextSecondary),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
-                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.md),
+                const Text(
+                  "Kami gunakan tarikh ini untuk mengira umur Hijrah dan membandingkan fasa hidup anda dengan Sirah Nabi SAW.",
+                  style: TextStyle(color: kTextSecondary, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
 
-              const SizedBox(height: AppSpacing.lg),
-
-              // INPUT DISPLAY (Tap untuk buka calendar)
-              InkWell(
-                onTap: () => _selectDate(context),
-                borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+                // INPUT NAMA
+                Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: kPrimaryGold),
                     borderRadius: BorderRadius.circular(AppSizes.cardRadius),
                     color: kPrimaryGold.withOpacity(0.05),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _selectedDate == null
-                            ? "Pilih Tarikh (Masihi)"
-                            : "${_selectedDate!.day} / ${_selectedDate!.month} / ${_selectedDate!.year}",
-                        style: TextStyle(
-                          color: _selectedDate == null ? kTextSecondary : kPrimaryGold,
-                          fontSize: AppFontSizes.lg,
-                          fontWeight: FontWeight.bold
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.edit, size: 16, color: kTextSecondary),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // BUTTON SUBMIT
-              SizedBox(
-                width: double.infinity,
-                height: AppSizes.buttonHeightLg,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit, // ✅ Validation dalam _submit()
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryGold,
-                    foregroundColor: kBackgroundDark,
-                    disabledBackgroundColor: Colors.grey.shade800,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.cardRadius)
+                  child: TextField(
+                    controller: _nameController,
+                    style: const TextStyle(
+                      color: kPrimaryGold,
+                      fontSize: AppFontSizes.lg,
+                      fontWeight: FontWeight.bold
+                    ),
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      hintText: 'Nama Penuh Anda',
+                      hintStyle: TextStyle(color: kTextSecondary),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: kBackgroundDark,
-                            strokeWidth: 2
-                          )
-                        )
-                      : const Text(
-                          "MULAKAN PERJALANAN",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1
-                          )
-                        ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // INPUT TARIKH
+                InkWell(
+                  onTap: () => _selectDate(context),
+                  borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: kPrimaryGold),
+                      borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+                      color: kPrimaryGold.withOpacity(0.05),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _selectedDate == null
+                              ? "Pilih Tarikh (Masihi)"
+                              : "${_selectedDate!.day} / ${_selectedDate!.month} / ${_selectedDate!.year}",
+                          style: TextStyle(
+                            color: _selectedDate == null ? kTextSecondary : kPrimaryGold,
+                            fontSize: AppFontSizes.lg,
+                            fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Icon(Icons.edit, size: 16, color: kTextSecondary),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                // BUTTON SUBMIT
+                SizedBox(
+                  width: double.infinity,
+                  height: AppSizes.buttonHeightLg,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryGold,
+                      foregroundColor: kBackgroundDark,
+                      disabledBackgroundColor: Colors.grey.shade800,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSizes.cardRadius)
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: kBackgroundDark,
+                              strokeWidth: 2
+                            )
+                          )
+                        : const Text(
+                            "MULAKAN PERJALANAN",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1
+                            )
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
