@@ -1,6 +1,8 @@
-// lib/widgets/flyout_panel.dart (UPDATED MENU MAPPING)
+// lib/widgets/flyout_panel.dart (FIXED: Added dart:ui import)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui'; // ✅ IMPORT BARU: Untuk ImageFilter.blur
+
 import '../models/sidebar_state_model.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
@@ -79,6 +81,7 @@ class FlyoutPanel extends StatelessWidget {
                 ],
               ),
               child: ClipRRect(
+                // ✅ ImageFilter.blur sekarang berfungsi
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                   child: Column(
@@ -130,7 +133,7 @@ class FlyoutPanel extends StatelessWidget {
                       Expanded(
                         child: SingleChildScrollView(
                           child: Padding(
-                            padding: const EdgeInsets.only(top: AppSpacing.md, left: AppSpacing.screenH, right: AppSpacing.screenH, bottom: 100), // Padding bawah untuk elak bertindih dengan Prayer Overlay
+                            padding: const EdgeInsets.only(top: AppSpacing.md, left: AppSpacing.screenH, right: AppSpacing.screenH, bottom: 100),
                             child: _buildContent(model.activeMenuId!),
                           ),
                         ),
