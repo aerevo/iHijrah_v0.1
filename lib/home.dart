@@ -1,4 +1,4 @@
-// lib/home.dart (FINAL CLEANED VERSION)
+// lib/home.dart (FIXED: Feed Panel Clean + Using DummyFeedPanel)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
@@ -15,7 +15,7 @@ import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
 import 'widgets/prayer_time_overlay.dart';
-import 'widgets/dummy_feed_panel.dart'; // ✅ KONTEN BERSIH BARU
+import 'widgets/dummy_feed_panel.dart'; // ✅ FEED BERSIH
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -31,22 +31,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // Controller untuk Lottie Particles (Confetti)
-    _particleController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2)
+    );
 
-    // Mainkan audio intro (Ralat di sini dibaiki di audio_service.dart)
+    // Mainkan audio intro
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AudioService>(context, listen: false).playIntroAudio(); // ✅ METHOD WUJUD
+      Provider.of<AudioService>(context, listen: false).playIntroAudio();
     });
   }
-  
-  // PENTING: Kita perlukan dispose untuk controller
+
   @override
   void dispose() {
     _particleController.dispose();
     super.dispose();
   }
 
-  // Fungsi untuk trigger confetti (biasanya dipanggil dari UserModel bila level up)
+  // Fungsi untuk trigger confetti
   void _startParticleAnimation(AnimationControllerModel animModel) {
     if (animModel.shouldSprayParticles) {
       _particleController.forward(from: 0.0);
@@ -57,60 +59,55 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final model = Provider.of<SidebarStateModel>(context);
     final animModel = Provider.of<AnimationControllerModel>(context);
-    final user = Provider.of<UserModel>(context); // Ambil user model di sini
+    final user = Provider.of<UserModel>(context);
 
     // Trigger animasi selepas render
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startParticleAnimation(animModel);
     });
-    
-    // Safety check untuk memastikan ZikirPrompt dipaparkan
-    // ✅ GETTER DIBETULKAN
+
+    // Safety check untuk Zikir Prompt
     final bool showZikirPrompt = user.name.isNotEmpty && !user.zikirDoneToday;
 
     return Scaffold(
       backgroundColor: kBackgroundDark,
       body: Stack(
         children: [
-          // 1. MAIN CONTENT AREA (Sidebar + Feed)
+          // ===== 1. MAIN CONTENT AREA (Sidebar + Feed) =====
           Row(
             children: [
               // Sidebar (Kekal di kiri)
               const Sidebar(),
 
-              // FEED CONTENT AREA (KONTEN DUMMY)
+              // ✅ FEED CONTENT AREA (GUNA DUMMY FEED SAHAJA)
               Expanded(
-                child: Container(
-                  // KITA GUNA DUMMY FEED JIKA FLYOUT TUTUP
-                  child: model.isClosed 
-                      ? const DummyFeedPanel() // ✅ KONTEN BERSIH
-                      : const SizedBox.shrink(), // HIDE FEED BILA FLYOUT BUKA (optimizasi)
-                ),
+                child: model.isClosed
+                    ? const DummyFeedPanel() // ✅ KONTEN BERSIH DARI dummy_feed_panel.dart
+                    : const SizedBox.shrink(), // Hide bila Flyout buka
               ),
             ],
           ),
 
-          // 2. FLYOUT PANEL (Sliding Overlay)
-          // Panel ini akan slide keluar dari tepi sidebar bila menu ditekan
+          // ===== 2. FLYOUT PANEL (Sliding Overlay) =====
           Positioned(
             left: AppSizes.sidebarWidth,
             top: 0,
             bottom: 0,
             child: const FlyoutPanel(),
           ),
-          
-          // 3. ZIKIR PROMPT (Overlay)
+
+          // ===== 3. ZIKIR PROMPT (Overlay) =====
           if (showZikirPrompt)
             Positioned.fill(
               child: ZikirPrompt(
-                zikirDone: user.zikirDoneToday, // ✅ GETTER DIBETULKAN
+                zikirDone: user.zikirDoneToday,
                 onDone: () {
-                  user.recordZikir(); // ✅ METHOD DIBETULKAN
+                  user.recordZikir();
                 },
               ),
             ),
 
-          // 4. PRAYER TIME OVERLAY (Bottom Bar)
+          // ===== 4. PRAYER TIME OVERLAY (Bottom Bar) =====
           const Positioned(
             left: 0,
             right: 0,
@@ -118,11 +115,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             child: PrayerTimeOverlay(),
           ),
 
-          // 5. PARTICLE EFFECTS OVERLAY (Lottie)
+          // ===== 5. PARTICLE EFFECTS OVERLAY (Lottie) =====
           Positioned.fill(
             child: IgnorePointer(
               child: Lottie.asset(
-                'assets/animations/confetti.json', 
+                'assets/animations/confetti.json',
                 controller: _particleController,
                 repeat: false,
                 fit: BoxFit.cover,
