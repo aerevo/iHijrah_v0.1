@@ -1,4 +1,4 @@
-﻿// lib/home.dart (FIXED - IMPORT PATH BETUL)
+// lib/home.dart (CLEANED FEED AREA)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
@@ -13,14 +13,13 @@ import 'utils/audio_service.dart';
 // Widgets (ROOT LEVEL, GUNA 'widgets/' DIRECT)
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
-import 'widgets/hijrah_tree.dart';
-import 'widgets/tracker_list.dart';
-import 'widgets/feed_panel.dart';
-import 'widgets/sirah_card.dart';
 import 'widgets/zikir_prompt.dart';
-import 'widgets/metallic_gold.dart';
 import 'widgets/prayer_time_overlay.dart';
 
+// ✅ IMPORT BARU
+import 'widgets/dummy_feed_panel.dart'; // Import Panel Bersih
+
+// ❌ OLD WIDGETS REMOVED: hijrah_tree.dart, tracker_list.dart, feed_panel.dart, sirah_card.dart, metallic_gold.dart
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -40,75 +39,57 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     // Mainkan audio intro
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AudioService>(context, listen: false).playBismillah();
+      Provider.of<AudioService>(context, listen: false).playIntroAudio();
     });
   }
-
+  
+  // ✅ PENTING: Kita perlukan dispose untuk controller
   @override
   void dispose() {
     _particleController.dispose();
     super.dispose();
   }
 
+  // Fungsi untuk trigger confetti (biasanya dipanggil dari UserModel bila level up)
+  void _startParticleAnimation(AnimationControllerModel animModel) {
+    if (animModel.shouldSprayParticles) {
+      _particleController.forward(from: 0.0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Listener untuk trigger particle effect dari mana-mana widget
+    final model = Provider.of<SidebarStateModel>(context);
     final animModel = Provider.of<AnimationControllerModel>(context);
-    if (animModel.shouldSprayParticles) {
-      _particleController.forward(from: 0.0).then((_) {
-        animModel.resetParticleSpray(); // Reset flag lepas main
-      });
-    }
+
+    // Trigger animasi selepas render
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startParticleAnimation(animModel);
+    });
+    
+    // Safety check untuk memastikan ZikirPrompt dipaparkan
+    final user = Provider.of<UserModel>(context);
+    final bool showZikirPrompt = user.name.isNotEmpty && !user.zikirDoneToday;
 
     return Scaffold(
       backgroundColor: kBackgroundDark,
       body: Stack(
         children: [
-          // 1. MAIN LAYOUT (Sidebar + Content)
+          // 1. MAIN CONTENT AREA (Sidebar + Feed)
           Row(
             children: [
-              // A. Sidebar (Kiri - Fixed)
+              // Sidebar (Kekal di kiri)
               const Sidebar(),
 
-              // B. Body Content (Kanan - Expanded)
+              // FEED CONTENT AREA (KONTEN DUMMY)
               Expanded(
-                child: SafeArea(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                    child: Column(
-                      children: [
-                        // Header: Waktu Solat
-                        const PrayerTimeOverlay(),
-                        const SizedBox(height: AppSpacing.lg),
-
-                        // Section 1: Pokok Hijrah (Centerpiece)
-                        const HijrahTree(),
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Section 2: Zikir Prompt (Jika belum buat)
-                        Consumer<UserModel>(
-                          builder: (ctx, user, _) => ZikirPrompt(
-                            zikirDone: user.isAmalanDoneToday('Selawat 100x'),
-                            onDone: () => user.recordAmalan('Selawat 100x'),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-
-                        // Section 3: Sirah Harian
-                        const SirahCard(),
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Section 4: Tracker List (Checklist)
-                        const TrackerList(),
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Section 5: Feed Komuniti
-                        const FeedPanel(),
-                        const SizedBox(height: 100), // Padding bawah
-                      ],
-                    ),
-                  ),
+                child: Container(
+                  // Biar Feed Panel sahaja yang berada di sini.
+                  // Semua content lama dibuang.
+                  // KITA GUNA DUMMY FEED JIKA FLYOUT TUTUP
+                  child: model.isClosed 
+                      ? const DummyFeedPanel() // ✅ KONTEN BARU, BERSIH
+                      : const SizedBox.shrink(), // HIDE FEED BILA FLYOUT BUKA (optimizasi)
                 ),
               ),
             ],
@@ -122,17 +103,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             bottom: 0,
             child: const FlyoutPanel(),
           ),
+          
+          // 3. ZIKIR PROMPT (Overlay)
+          if (showZikirPrompt)
+            Positioned.fill(
+              child: ZikirPrompt(
+                zikirDone: user.zikirDoneToday,
+                onDone: () {
+                  user.recordZikir();
+                },
+              ),
+            ),
 
-          // 3. PARTICLE EFFECTS OVERLAY (Lottie)
-          // Layer paling atas untuk kesan visual 'celebration'
+          // 4. PRAYER TIME OVERLAY (Bottom Bar)
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: PrayerTimeOverlay(),
+          ),
+
+          // 5. PARTICLE EFFECTS OVERLAY (Lottie)
           Positioned.fill(
-            child: IgnorePointer( // Biar user boleh click through
+            child: IgnorePointer(
               child: Lottie.asset(
-                'assets/animations/confetti.json', // Pastikan fail ni ada atau ganti dengan dummy container
+                'assets/animations/confetti.json', 
                 controller: _particleController,
                 repeat: false,
                 fit: BoxFit.cover,
-                errorBuilder: (ctx, err, stack) => const SizedBox.shrink(), // Silent fail kalau asset tiada
+                errorBuilder: (ctx, err, stack) => const SizedBox.shrink(),
               ),
             ),
           ),
