@@ -1,4 +1,4 @@
-// lib/models/user_model.dart (UPGRADED: Zikir & Reset Logic)
+// lib/models/user_model.dart (UPGRADED: Zikir, setBirthDate, recordSelawat Logic)
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -23,7 +23,6 @@ class UserModel extends ChangeNotifier {
   int selawatCountToday = 0;
   DateTime? lastResetDate;
   
-  // ✅ DITAMBAH: ZIKIR LOGIC
   bool _zikirDoneToday = false; 
 
   // ===== SETTINGS =====
@@ -46,7 +45,6 @@ class UserModel extends ChangeNotifier {
   // ===== GETTERS (COMPUTED PROPERTIES) =====
   int get nextLevelPoints => treeLevel * 100;
   double get progressPercentage => totalPoints / nextLevelPoints;
-  // ✅ DITAMBAH GETTER: Untuk home.dart
   bool get zikirDoneToday => _zikirDoneToday; 
 
 
@@ -145,8 +143,15 @@ class UserModel extends ChangeNotifier {
     save();
     notifyListeners();
   }
+  
+  // ✅ DITAMBAH METHOD: setBirthDate (Untuk birthdate_prompt_screen.dart)
+  void setBirthDate(DateTime newDate) {
+    birthdate = newDate;
+    hijriDOB = HijriService.fromDate(newDate).toString(); // Kira dan simpan Hijri
+    save();
+    notifyListeners();
+  }
 
-  // ✅ DITAMBAH METHOD: Untuk home.dart
   Future<void> recordZikir() async {
     _zikirDoneToday = true;
     // Beri sedikit mata ganjaran
@@ -225,6 +230,12 @@ class UserModel extends ChangeNotifier {
     save();
     notifyListeners();
   }
+  
+  // ✅ DITAMBAH METHOD: recordSelawat (Untuk hijrah_tree.dart)
+  void recordSelawat() {
+    incrementSelawat();
+    // incrementSelawat sudah save() dan notifyListeners()
+  }
 
   // ===== SETTINGS MUTATORS =====
 
@@ -281,7 +292,7 @@ class UserModel extends ChangeNotifier {
       dailyAmalanLog.clear();
       selawatCountToday = 0;
       lastResetDate = now;
-      _zikirDoneToday = false; // ✅ RESET ZIKIR
+      _zikirDoneToday = false; 
       save(); // Save the reset state
       // Tidak perlu notifyListeners di sini jika dipanggil semasa load()
     }
