@@ -1,9 +1,9 @@
-﻿// lib/utils/constants.dart
-// FINAL SAFE + EMBUN ORIGINAL
+// lib/utils/constants.dart
+// FINAL SAFE + EMBUN ORIGINAL + TREE ASSETS
 import 'package:flutter/material.dart';
 
-// ===== WARNA TERAS (EMBUN JIWA) =====
-const Color kPrimaryGold = Color(0xFFF6E7C1);
+// ===== WARNA TERAS (EMBUN JIWA - KEKAL) =====
+const Color kPrimaryGold = Color(0xFFF6E7C1); // Original User Color
 const Color kGoldDark = Color(0xFFC5A059);
 const Color kBackgroundDark = Color(0xFF1A1A1A);
 const Color kCardDark = Color(0xFF252525);
@@ -34,61 +34,40 @@ const double DEFAULT_LONGITUDE = 101.693207;
 // ===== CONFIG =====
 const int MIN_SELAWAT_DAILY = 100;
 
-// ===== SPACING =====
-class AppSpacing {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 16;
-  static const double lg = 24;
-  static const double xl = 32;
-  static const double xxl = 40;
-
-  static const double screenH = 20;
-  static const double screenV = 20;
-}
-
-// ===== SIZES =====
+// ===== SIZES (Ditambah untuk support Sidebar) =====
 class AppSizes {
-  static const double iconXs = 16;
-  static const double iconSm = 20;
-  static const double iconMd = 24;
-  static const double iconLg = 32;
-  static const double iconXl = 40;
-
-  static const double treeContainer = 350;
-  static const double treeImage = 300;
-  static const double treeGlow = 200;
-
-  static const double cardRadius = 12;
-  static const double cardRadiusLg = 16;
-  static const double cardRadiusXl = 20;
-
-  static const double buttonHeightSm = 40;
-  static const double buttonHeightMd = 50;
-  static const double buttonHeightLg = 55;
-
-  static const double sidebarWidth = 70;
-  static const double flyoutWidth = 300;
+  static const double sidebarWidth = 70.0;
+  static const double flyoutWidth = 300.0;
+  static const double cardRadius = 12.0;
+  static const double cardRadiusLg = 20.0;
+  static const double buttonHeightMd = 45.0;
+  static const double buttonHeightLg = 55.0;
 }
 
-// ===== FONT SIZES =====
+class AppSpacing {
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 16.0;
+  static const double lg = 24.0;
+  static const double xl = 32.0;
+  static const double xxl = 48.0;
+}
+
 class AppFontSizes {
-  static const double xs = 10;
-  static const double sm = 12;
-  static const double md = 14;
-  static const double lg = 16;
-  static const double xl = 18;
-  static const double xxl = 24;
-  static const double xxxl = 28;
+  static const double xs = 10.0;
+  static const double sm = 12.0;
+  static const double md = 14.0;
+  static const double lg = 16.0;
+  static const double xl = 20.0;
+  static const double xxl = 24.0;
 }
 
 // ===== DURATIONS =====
 class AppDurations {
-  static const Duration instant = Duration(milliseconds: 100);
-  static const Duration fast = Duration(milliseconds: 200);
-  static const Duration normal = Duration(milliseconds: 300);
-  static const Duration slow = Duration(milliseconds: 500);
-  static const Duration verySlow = Duration(seconds: 1);
+  static const Duration fast = Duration(milliseconds: 300);
+  static const Duration medium = Duration(milliseconds: 600);
+  static const Duration slow = Duration(milliseconds: 1200);
+  static const Duration pageTransition = Duration(milliseconds: 800);
   static const Duration leafFall = Duration(seconds: 6);
 
   static const Duration buttonPress = Duration(milliseconds: 200);
@@ -112,8 +91,16 @@ class AppAssets {
   static const String dataPath = 'assets/data/';
 
   // Images
+  static const String logo = '${imagesPath}logo.png';
   static const String marakesh = '${imagesPath}marakesh.jpg';
   static const String profileDefault = '${imagesPath}profile_default.png';
+
+  // ✅ INTEGRATED: POKOK ASSETS (pokok_level#.png)
+  static const String treePhase1 = '${imagesPath}pokok_level1.png'; // Benih
+  static const String treePhase2 = '${imagesPath}pokok_level2.png';
+  static const String treePhase3 = '${imagesPath}pokok_level3.png';
+  static const String treePhase4 = '${imagesPath}pokok_level4.png';
+  static const String treePhase5 = '${imagesPath}pokok_level5.png'; // Matang
 
   // Audio
   static const String intro = '${audioPath}intro.mp3';
@@ -125,6 +112,12 @@ class AppAssets {
 
   // JSON
   static const String sirahData = '${dataPath}sirah_data.json';
-  static const String eventData = '${dataPath}event_data.json';
-  static const String amalanSunnahData = '${dataPath}amalan_sunnah.json';
+  static const String eventData = '${dataPath}events.json';
+}
+
+// ===== ENUMS =====
+enum AdhanMode {
+  Silent,
+  Beep,
+  Full,
 }
