@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart
+// lib/widgets/sidebar.dart (BULLETPROOF VERSION)
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -125,6 +125,9 @@ class Sidebar extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(color: isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7), fontSize: 10),
+                textAlign: TextAlign.center,
+                maxLines: 1, // Limit 1 line
+                overflow: TextOverflow.ellipsis, // Elak layout pecah
               ),
             ],
           ),
@@ -142,18 +145,37 @@ class Sidebar extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // ✅ PROFILE SECTION (UPDATED & FIXED)
+            // ✅ PROFILE SECTION (BULLETPROOF VERSION)
             Padding(
               padding: const EdgeInsets.only(top: 25, bottom: 15),
               child: Consumer<UserModel>(
                 builder: (context, user, _) {
                   
-                  // Panggil service baru yang lebih selamat
-                  String displayAge = HijriService.calculateHijriAge(user.hijriDOB ?? '');
+                  // 🔥 LOGIC FAIL-SAFE: 
+                  // 1. Cuba ambil HijriDOB
+                  // 2. Jika gagal, tapi birthdate (Masihi) ada, KIRA TERUS kat sini!
                   
-                  // Logic fallback: Jika kosong/error, ajak user set tarikh
+                  String displayAge = "";
+                  
+                  if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
+                    // Plan A: Guna data sedia ada
+                    displayAge = HijriService.calculateHijriAge(user.hijriDOB!);
+                  } 
+                  
+                  // Plan B: Backup jika Plan A gagal (Contoh: return "-- Tahun")
                   if (displayAge.isEmpty || displayAge == "-- Tahun" || displayAge == "Format Salah") {
-                     displayAge = "Tetapkan Tarikh";
+                    if (user.birthdate != null) {
+                      // Kira on-the-fly dari tarikh Masihi
+                      try {
+                        final hijri = HijriService.fromDate(user.birthdate!);
+                        final manualHijriString = '${hijri.hDay}/${hijri.hMonth}/${hijri.hYear}';
+                        displayAge = HijriService.calculateHijriAge(manualHijriString);
+                      } catch (e) {
+                        displayAge = "Ralat";
+                      }
+                    } else {
+                      displayAge = "Tetapkan Tarikh";
+                    }
                   }
 
                   return Column(
@@ -191,40 +213,46 @@ class Sidebar extends StatelessWidget {
                       
                       // User Name
                       MetallicGold(
-                        child: Text(
-                          user.name.isNotEmpty 
-                            ? (user.name.length > 10 ? '${user.name.substring(0, 9)}...' : user.name)
-                            : "Pengguna",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Playfair',
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            user.name.isNotEmpty 
+                              ? (user.name.length > 8 ? '${user.name.substring(0, 7)}...' : user.name)
+                              : "Pengguna",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Playfair',
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       
                       const SizedBox(height: 5),
                       
-                      // ✅ HIJRI AGE DISPLAY (Paling Penting)
+                      // ✅ HIJRI AGE DISPLAY (DENGAN LAYOUT PROTECTION)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), // Kurangkan padding tepi
+                        margin: const EdgeInsets.symmetric(horizontal: 2), // Elak langgar tepi sidebar
                         decoration: BoxDecoration(
                            color: Colors.white.withOpacity(0.05),
                            borderRadius: BorderRadius.circular(4)
                         ),
-                        child: Text(
-                          displayAge,
-                          style: TextStyle(
-                            color: kPrimaryGold.withOpacity(0.9), 
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
+                        child: FittedBox( // 🔥 AUTO-SHRINK FONT kalau text panjang sangat
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            displayAge,
+                            style: TextStyle(
+                              color: kPrimaryGold.withOpacity(0.9), 
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
                         ),
                       ),
                     ],
