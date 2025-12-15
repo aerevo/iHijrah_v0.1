@@ -1,4 +1,4 @@
-// lib/models/user_model.dart
+// lib/models/user_model.dart (UPGRADED: Zikir & Reset Logic)
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -22,6 +22,9 @@ class UserModel extends ChangeNotifier {
   Map<String, bool> dailyAmalanLog = {};
   int selawatCountToday = 0;
   DateTime? lastResetDate;
+  
+  // ✅ DITAMBAH: ZIKIR LOGIC
+  bool _zikirDoneToday = false; 
 
   // ===== SETTINGS =====
   int adhanModeIndex = 1; // Default: Full
@@ -43,258 +46,23 @@ class UserModel extends ChangeNotifier {
   // ===== GETTERS (COMPUTED PROPERTIES) =====
   int get nextLevelPoints => treeLevel * 100;
   double get progressPercentage => totalPoints / nextLevelPoints;
+  // ✅ DITAMBAH GETTER: Untuk home.dart
+  bool get zikirDoneToday => _zikirDoneToday; 
 
-  bool get hasCompletedDailyBasics {
-    return selawatCountToday >= 1 &&
-        dailyFardhuLog.values.where((v) => v).length >= 3;
-  }
 
-  int get fardhuCompletedToday {
-    _checkDailyReset();
-    return dailyFardhuLog.values.where((v) => v).length;
-  }
-
-  int get amalanCompletedToday {
-    _checkDailyReset();
-    return dailyAmalanLog.values.where((v) => v).length;
-  }
-
-  // ===== PRIVATE HELPERS =====
-  void _checkDailyReset() {
-    final today = DateTime.now();
-    if (lastResetDate == null || !_isSameDay(lastResetDate!, today)) {
-      dailyFardhuLog.clear();
-      dailyAmalanLog.clear();
-      selawatCountToday = 0;
-      lastResetDate = today;
-      save();
-    }
-  }
-
-  void setPrayerAlarm(String prayerName, bool isEnabled) {
-    switch (prayerName) {
-      case 'Subuh':
-        isFajrAlarmEnabled = isEnabled;
-        break;
-      case 'Zohor':
-        isDhuhrAlarmEnabled = isEnabled;
-        break;
-      case 'Asar':
-        isAsrAlarmEnabled = isEnabled;
-        break;
-      case 'Maghrib':
-        isMaghribAlarmEnabled = isEnabled;
-        break;
-      case 'Isyak':
-        isIshaAlarmEnabled = isEnabled;
-        break;
-    }
-    save();
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  void _checkLevelUp() {
-    int requiredPoints = nextLevelPoints;
-    bool leveledUp = false;
-    while (totalPoints >= requiredPoints) {
-      treeLevel++;
-      totalPoints -= requiredPoints;
-      requiredPoints = nextLevelPoints;
-      leveledUp = true;
-    }
-    if (leveledUp) {
-      save();
-    }
-  }
-
-  // ===== PUBLIC ACTIONS =====
-  void recordFardhu(String prayerName) {
-    _checkDailyReset();
-    if (dailyFardhuLog[prayerName] == true) return;
-    dailyFardhuLog[prayerName] = true;
-    totalPoints += 20;
-    _checkLevelUp();
-    save();
-  }
-
-  bool isFardhuDoneToday(String prayerName) {
-    _checkDailyReset();
-    return dailyFardhuLog[prayerName] ?? false;
-  }
-
-  /// Check if a fardhu prayer is completed today
-  bool isFardhuComplete(String prayerName) {
-    _checkDailyReset();
-    return dailyFardhuLog[prayerName] ?? false;
-  }
-
-  /// Toggle fardhu prayer completion status
-  void toggleFardhuCompletion(String prayerName) {
-    _checkDailyReset();
-    final isCurrentlyDone = dailyFardhuLog[prayerName] ?? false;
-    if (isCurrentlyDone) {
-      // If already done, remove it (undo)
-      dailyFardhuLog.remove(prayerName);
-      totalPoints -= 20;
-    } else {
-      // If not done, mark as done
-      dailyFardhuLog[prayerName] = true;
-      totalPoints += 20;
-    }
-    // Ensure totalPoints doesn't go negative
-    if (totalPoints < 0) totalPoints = 0;
-    _checkLevelUp();
-    save();
-  }
-
-  void recordAmalan(String amalanId) {
-    _checkDailyReset();
-    if (dailyAmalanLog[amalanId] == true) return;
-    dailyAmalanLog[amalanId] = true;
-    totalPoints += 10;
-    _checkLevelUp();
-    save();
-  }
-
-  bool isAmalanDoneToday(String amalanId) {
-    _checkDailyReset();
-    return dailyAmalanLog[amalanId] ?? false;
-  }
-
-  /// Check if an optional/amalan activity is completed today
-  bool isOptionalComplete(String amalanId) {
-    _checkDailyReset();
-    return dailyAmalanLog[amalanId] ?? false;
-  }
-
-  /// Toggle optional/amalan activity completion status
-  void toggleOptionalCompletion(String amalanId) {
-    _checkDailyReset();
-    final isCurrentlyDone = dailyAmalanLog[amalanId] ?? false;
-    if (isCurrentlyDone) {
-      // If already done, remove it (undo)
-      dailyAmalanLog.remove(amalanId);
-      totalPoints -= 10;
-    } else {
-      // If not done, mark as done
-      dailyAmalanLog[amalanId] = true;
-      totalPoints += 10;
-    }
-    // Ensure totalPoints doesn't go negative
-    if (totalPoints < 0) totalPoints = 0;
-    _checkLevelUp();
-    save();
-  }
-
-  void recordSelawat() {
-    _checkDailyReset();
-    selawatCountToday++;
-    totalPoints += 5;
-    _checkLevelUp();
-    save();
-  }
-
-  void setAdhanMode(int index) {
-    if (index >= 0 && index < AdhanMode.values.length) {
-      adhanModeIndex = index;
-      save();
-    }
-  }
-
-  // ✅ FIX: Logic Set Tarikh Lahir & Auto-Save Hijrah
-  void setBirthDate(DateTime masihiDate) {
-    birthdate = masihiDate;
-    
-    // Auto-calculate Hijri bila set Masihi
-    final hijriDate = HijriService.fromDate(masihiDate);
-    
-    // Format standard: DD/MM/YYYY
-    hijriDOB = '${hijriDate.hDay}/${hijriDate.hMonth}/${hijriDate.hYear}';
-    
-    print('🔄 Recalculated HijriDOB: $hijriDOB');
-    save();
-  }
-
-  void updateProfile({required String newName, required DateTime newDate}) {
-    name = newName;
-    setBirthDate(newDate); // Reuse setBirthDate logic
-    save();
-  }
-
-  void setAvatarPath(String? path) {
-    avatarPath = path;
-    save();
-  }
-
-  // ===== DATA PERSISTENCE (FIXED WITH DEBUG) =====
-
-  Future<void> save() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('name', name);
-      
-      if (birthdate != null) {
-        await prefs.setString('birthdate', birthdate!.toIso8601String());
-      }
-      
-      // ✅ Simpan HijriDOB secara eksplisit
-      if (hijriDOB != null) {
-        await prefs.setString('hijriDOB', hijriDOB!);
-      }
-      
-      if (avatarPath != null) {
-        await prefs.setString('avatarPath', avatarPath!);
-      }
-      
-      if (gender != null) {
-        await prefs.setString('user_gender', gender!);
-      }
-
-      await prefs.setInt('treeLevel', treeLevel);
-      await prefs.setInt('totalPoints', totalPoints);
-      await prefs.setString('dailyFardhuLog', jsonEncode(dailyFardhuLog));
-      await prefs.setString('dailyAmalanLog', jsonEncode(dailyAmalanLog));
-      await prefs.setInt('selawatCountToday', selawatCountToday);
-      
-      if (lastResetDate != null) {
-        await prefs.setString('lastResetDate', lastResetDate!.toIso8601String());
-      }
-      
-      await prefs.setInt('adhanModeIndex', adhanModeIndex);
-      await prefs.setBool('isFajrAlarmEnabled', isFajrAlarmEnabled);
-      await prefs.setBool('isDhuhrAlarmEnabled', isDhuhrAlarmEnabled);
-      await prefs.setBool('isAsrAlarmEnabled', isAsrAlarmEnabled);
-      await prefs.setBool('isMaghribAlarmEnabled', isMaghribAlarmEnabled);
-      await prefs.setBool('isIshaAlarmEnabled', isIshaAlarmEnabled);
-
-      print('💾 SAVING USER DATA...');
-      print('   - Name: $name');
-      print('   - HijriDOB: $hijriDOB');
-      
-      notifyListeners();
-    } catch (e) {
-      print('❌ Error saving data: $e');
-      rethrow;
-    }
-  }
+  // ===== INIT & SAVE =====
 
   static Future<UserModel> load() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Kita create instance baru
     final user = UserModel();
-
-    user.name = prefs.getString('name') ?? 'Pengguna iHijrah';
     
+    user.name = prefs.getString('name') ?? user.name;
     final birthdateStr = prefs.getString('birthdate');
     if (birthdateStr != null) {
       try {
         user.birthdate = DateTime.parse(birthdateStr);
       } catch (e) {
-        print('❌ Error parsing birthdate: $e');
+        debugPrint('Error parsing birthdate: $e');
       }
     }
     
@@ -327,11 +95,195 @@ class UserModel extends ChangeNotifier {
     user.isAsrAlarmEnabled = prefs.getBool('isAsrAlarmEnabled') ?? true;
     user.isMaghribAlarmEnabled = prefs.getBool('isMaghribAlarmEnabled') ?? true;
     user.isIshaAlarmEnabled = prefs.getBool('isIshaAlarmEnabled') ?? true;
-
-    print('📖 LOADING USER DATA...');
-    print('   - Name: ${user.name}');
-    print('   - HijriDOB (Raw): ${user.hijriDOB}');
     
+    // ✅ LOAD ZIKIR
+    user._zikirDoneToday = prefs.getBool('zikirDoneToday') ?? false; 
+
+    user._checkAndResetDailyData();
+
     return user;
+  }
+
+  Future<void> save() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('name', name);
+    if (birthdate != null) {
+      prefs.setString('birthdate', birthdate!.toIso8601String());
+    }
+    prefs.setString('hijriDOB', hijriDOB ?? '');
+    prefs.setString('avatarPath', avatarPath ?? '');
+    prefs.setString('user_gender', gender ?? '');
+    
+    prefs.setInt('treeLevel', treeLevel);
+    prefs.setInt('totalPoints', totalPoints);
+
+    prefs.setString('dailyFardhuLog', jsonEncode(dailyFardhuLog));
+    prefs.setString('dailyAmalanLog', jsonEncode(dailyAmalanLog));
+
+    prefs.setInt('selawatCountToday', selawatCountToday);
+    prefs.setString('lastResetDate', lastResetDate!.toIso8601String());
+    
+    prefs.setInt('adhanModeIndex', adhanModeIndex);
+    prefs.setBool('isFajrAlarmEnabled', isFajrAlarmEnabled);
+    prefs.setBool('isDhuhrAlarmEnabled', isDhuhrAlarmEnabled);
+    prefs.setBool('isAsrAlarmEnabled', isAsrAlarmEnabled);
+    prefs.setBool('isMaghribAlarmEnabled', isMaghribAlarmEnabled);
+    prefs.setBool('isIshaAlarmEnabled', isIshaAlarmEnabled);
+    
+    // ✅ SAVE ZIKIR
+    prefs.setBool('zikirDoneToday', _zikirDoneToday);
+
+  }
+
+  // ===== USER MUTATORS =====
+
+  void setProfile({required String newName, required DateTime newBirthdate, String? newGender}) {
+    name = newName;
+    birthdate = newBirthdate;
+    hijriDOB = HijriService.fromDate(newBirthdate).toString(); // Simpan string Hijri
+    gender = newGender;
+    save();
+    notifyListeners();
+  }
+
+  // ✅ DITAMBAH METHOD: Untuk home.dart
+  Future<void> recordZikir() async {
+    _zikirDoneToday = true;
+    // Beri sedikit mata ganjaran
+    addPoints(5);
+    await save();
+    notifyListeners();
+  }
+
+  void setAvatarPath(String path) {
+    avatarPath = path;
+    save();
+    notifyListeners();
+  }
+
+  // ===== POINT & LEVELING =====
+
+  void addPoints(int points) {
+    totalPoints += points;
+    if (totalPoints >= nextLevelPoints) {
+      _levelUp();
+    }
+    save();
+    notifyListeners();
+  }
+
+  void _levelUp() {
+    treeLevel++;
+    totalPoints = totalPoints - (treeLevel - 1) * 100; // Reset points based on new level
+    // In production, trigger animation/notification here
+  }
+
+  // ===== TRACKER LOGIC =====
+
+  void toggleFardhu(String prayerName) {
+    dailyFardhuLog[prayerName] = !(dailyFardhuLog[prayerName] ?? false);
+    
+    // Beri 10 point untuk setiap solat
+    if (dailyFardhuLog[prayerName] == true) {
+      addPoints(10);
+    } else {
+      // Tolak balik kalau uncheck
+      totalPoints = (totalPoints - 10).clamp(0, totalPoints); 
+    }
+    save();
+    notifyListeners();
+  }
+
+  bool isFardhuDoneToday(String prayerName) {
+    return dailyFardhuLog[prayerName] ?? false;
+  }
+  
+  void recordAmalan(String amalanId) {
+    dailyAmalanLog[amalanId] = !(dailyAmalanLog[amalanId] ?? false);
+    
+    // Beri 5 point untuk setiap amalan sunat
+    if (dailyAmalanLog[amalanId] == true) {
+      addPoints(5);
+    } else {
+      // Tolak balik kalau uncheck
+      totalPoints = (totalPoints - 5).clamp(0, totalPoints);
+    }
+    save();
+    notifyListeners();
+  }
+
+  bool isAmalanDoneToday(String amalanId) {
+    return dailyAmalanLog[amalanId] ?? false;
+  }
+
+  void incrementSelawat() {
+    selawatCountToday++;
+    // Setiap 100 selawat, bagi point tambahan
+    if (selawatCountToday % 100 == 0) {
+      addPoints(2);
+    }
+    save();
+    notifyListeners();
+  }
+
+  // ===== SETTINGS MUTATORS =====
+
+  void setAdhanMode(int modeIndex) {
+    adhanModeIndex = modeIndex;
+    save();
+    notifyListeners();
+  }
+
+  void setPrayerAlarm(String prayerName, bool isEnabled) {
+    // Logic setting alarm berdasarkan nama solat
+    switch (prayerName) {
+      case 'Subuh':
+        isFajrAlarmEnabled = isEnabled;
+        break;
+      case 'Zohor':
+        isDhuhrAlarmEnabled = isEnabled;
+        break;
+      case 'Asar':
+        isAsrAlarmEnabled = isEnabled;
+        break;
+      case 'Maghrib':
+        isMaghribAlarmEnabled = isEnabled;
+        break;
+      case 'Isyak':
+        isIshaAlarmEnabled = isEnabled;
+        break;
+    }
+    save();
+    notifyListeners();
+  }
+
+  // ===== DAILY RESET =====
+
+  void _checkAndResetDailyData() {
+    final now = DateTime.now();
+    
+    // Reset setiap hari pada waktu tertentu (contoh: 3 pagi)
+    final resetTime = DateTime(now.year, now.month, now.day, 3, 0, 0); 
+
+    bool needsReset = false;
+    
+    if (lastResetDate == null) {
+      needsReset = true;
+    } else {
+      // Jika reset time hari ini sudah berlalu DAN reset terakhir sebelum hari ini
+      if (now.isAfter(resetTime) && lastResetDate!.isBefore(resetTime)) {
+        needsReset = true;
+      }
+    }
+
+    if (needsReset) {
+      dailyFardhuLog.clear();
+      dailyAmalanLog.clear();
+      selawatCountToday = 0;
+      lastResetDate = now;
+      _zikirDoneToday = false; // ✅ RESET ZIKIR
+      save(); // Save the reset state
+      // Tidak perlu notifyListeners di sini jika dipanggil semasa load()
+    }
   }
 }
