@@ -1,85 +1,54 @@
-// lib/widgets/metallic_gold.dart (UPGRADED 7.8/10)
-
+// lib/widgets/metallic_gold.dart (OPTIMIZED: STATIC LUXURY)
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
-/// Premium metallic gold shader effect widget
+/// Premium Static Gold Effect
 ///
 /// Features:
-/// - Animated shimmer effect (gold bergerak)
-/// - Smooth 3-second loop
-/// - Auto-dispose controller
-/// - Optimized performance
-class MetallicGold extends StatefulWidget {
+/// - Zero GPU Animation Load (Battery Friendly)
+/// - Luxury "Gold Bar" Gradient Style
+/// - Mimics vertical light reflection (Adobe Stock Style)
+class MetallicGold extends StatelessWidget {
   final Widget child;
+  final bool isLightMode; // Opsyen jika nak tone lebih cerah
 
   const MetallicGold({
     Key? key,
     required this.child,
+    this.isLightMode = false,
   }) : super(key: key);
 
   @override
-  State<MetallicGold> createState() => _MetallicGoldState();
-}
-
-class _MetallicGoldState extends State<MetallicGold>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // 3-second shimmer loop
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        // Calculate gradient offset (-1 to 1)
-        final offset = _controller.value * 2 - 1;
-
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: const [
-                Color(0xFF8E793E), // Dark bronze
-                Color(0xFFAD9C72), // Matte gold
-                Color(0xFFFDF6D5), // Pearl white (highlight)
-                Color(0xFFC6A664), // Standard gold
-                Color(0xFF8E793E), // Dark bronze
-              ],
-              stops: [
-                (0.0 + offset * 0.5).clamp(0.0, 1.0),
-                (0.3 + offset * 0.5).clamp(0.0, 1.0),
-                (0.5 + offset * 0.5).clamp(0.0, 1.0), // Center highlight
-                (0.7 + offset * 0.5).clamp(0.0, 1.0),
-                (1.0 + offset * 0.5).clamp(0.0, 1.0),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds);
-          },
-          child: widget.child,
-        );
+    return ShaderMask(
+      shaderCallback: (bounds) {
+        return const LinearGradient(
+          // Arah gradient dari Atas ke Bawah (Vertical Sheen)
+          // Meniru pantulan cahaya pada permukaan emas fizikal
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFC6A664), // 0% - Emas Standard (Atas)
+            Color(0xFFFDF6D5), // 45% - Highlight Putih (Pantulan Cahaya)
+            Color(0xFFFDF6D5), // 55% - Kekal Putih sekejap
+            Color(0xFF8E793E), // 100% - Emas Gelap/Bronze (Bawah/Bayang)
+          ],
+          stops: [
+            0.0,
+            0.45,
+            0.55,
+            1.0,
+          ],
+        ).createShader(bounds);
       },
+      blendMode: BlendMode.srcIn, // Pastikan ia 'paint' di atas text/icon sahaja
+      child: child,
     );
   }
 }
 
-/// Static version (no animation) untuk performance critical areas
+/// Backward Compatibility Wrapper
+/// (Disimpan supaya kod lama yang panggil kelas ini tidak crash)
 class MetallicGoldStatic extends StatelessWidget {
   final Widget child;
 
@@ -90,22 +59,7 @@ class MetallicGoldStatic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (bounds) {
-        return const LinearGradient(
-          colors: [
-            Color(0xFF8E793E),
-            Color(0xFFAD9C72),
-            Color(0xFFFDF6D5),
-            Color(0xFFC6A664),
-            Color(0xFF8E793E),
-          ],
-          stops: [0.0, 0.3, 0.5, 0.7, 1.0],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ).createShader(bounds);
-      },
-      child: child,
-    );
+    // Redirect terus ke MetallicGold utama yang kini sudah optimum
+    return MetallicGold(child: child);
   }
 }
