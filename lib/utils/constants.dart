@@ -1,9 +1,9 @@
 // lib/utils/constants.dart
-// FINAL SAFE + EMBUN ORIGINAL + TREE ASSETS
+// MASTER VERSION: Sidebar Support + Tree Fix + No Enum Conflict
 import 'package:flutter/material.dart';
 
-// ===== WARNA TERAS (EMBUN JIWA - KEKAL) =====
-const Color kPrimaryGold = Color(0xFFF6E7C1); // Original User Color
+// ===== WARNA TERAS (EMBUN JIWA) =====
+const Color kPrimaryGold = Color(0xFFF6E7C1);
 const Color kGoldDark = Color(0xFFC5A059);
 const Color kBackgroundDark = Color(0xFF1A1A1A);
 const Color kCardDark = Color(0xFF252525);
@@ -34,14 +34,31 @@ const double DEFAULT_LONGITUDE = 101.693207;
 // ===== CONFIG =====
 const int MIN_SELAWAT_DAILY = 100;
 
-// ===== SIZES (Ditambah untuk support Sidebar) =====
+// ===== SIZES =====
 class AppSizes {
+  // Sidebar & Flyout
   static const double sidebarWidth = 70.0;
   static const double flyoutWidth = 300.0;
+  
+  // Card & Radius
   static const double cardRadius = 12.0;
   static const double cardRadiusLg = 20.0;
+  static const double cardRadiusXl = 30.0; // ✅ RESTORED
+  
+  // Buttons
   static const double buttonHeightMd = 45.0;
   static const double buttonHeightLg = 55.0;
+
+  // Icons (RESTORED MISSING SIZES)
+  static const double iconSm = 16.0; // ✅ RESTORED
+  static const double iconMd = 24.0; // ✅ RESTORED
+  static const double iconLg = 32.0;
+  static const double iconXl = 48.0; // ✅ RESTORED
+
+  // Tree Animation Sizes (RESTORED FOR HIJRAH_TREE.DART)
+  static const double treeContainer = 320.0; // ✅ RESTORED
+  static const double treeGlow = 300.0;      // ✅ RESTORED
+  static const double treeImage = 250.0;     // ✅ RESTORED
 }
 
 class AppSpacing {
@@ -51,6 +68,10 @@ class AppSpacing {
   static const double lg = 24.0;
   static const double xl = 32.0;
   static const double xxl = 48.0;
+
+  // Screen Padding (RESTORED)
+  static const double screenH = 20.0; // ✅ RESTORED
+  static const double screenV = 20.0; // ✅ RESTORED
 }
 
 class AppFontSizes {
@@ -64,6 +85,7 @@ class AppFontSizes {
 
 // ===== DURATIONS =====
 class AppDurations {
+  static const Duration normal = Duration(milliseconds: 300); // ✅ RESTORED
   static const Duration fast = Duration(milliseconds: 300);
   static const Duration medium = Duration(milliseconds: 600);
   static const Duration slow = Duration(milliseconds: 1200);
@@ -95,12 +117,12 @@ class AppAssets {
   static const String marakesh = '${imagesPath}marakesh.jpg';
   static const String profileDefault = '${imagesPath}profile_default.png';
 
-  // ✅ INTEGRATED: POKOK ASSETS (pokok_level#.png)
-  static const String treePhase1 = '${imagesPath}pokok_level1.png'; // Benih
+  // POKOK (NEW ASSETS)
+  static const String treePhase1 = '${imagesPath}pokok_level1.png';
   static const String treePhase2 = '${imagesPath}pokok_level2.png';
   static const String treePhase3 = '${imagesPath}pokok_level3.png';
   static const String treePhase4 = '${imagesPath}pokok_level4.png';
-  static const String treePhase5 = '${imagesPath}pokok_level5.png'; // Matang
+  static const String treePhase5 = '${imagesPath}pokok_level5.png';
 
   // Audio
   static const String intro = '${audioPath}intro.mp3';
@@ -115,9 +137,5 @@ class AppAssets {
   static const String eventData = '${dataPath}events.json';
 }
 
-// ===== ENUMS =====
-enum AdhanMode {
-  Silent,
-  Beep,
-  Full,
-}
+// ❌ ENUM REMOVED FROM HERE
+// AdhanMode should only be in lib/utils/settings_enums.dart to avoid conflict.
