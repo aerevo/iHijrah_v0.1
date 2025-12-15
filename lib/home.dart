@@ -1,25 +1,21 @@
-// lib/home.dart (CLEANED FEED AREA)
+// lib/home.dart (FINAL CLEANED VERSION)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 
-// Models & Services (ROOT LEVEL, GUNA 'models/' DIRECT)
+// Models & Services
 import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'models/animation_controller_model.dart';
 import 'utils/constants.dart';
 import 'utils/audio_service.dart';
 
-// Widgets (ROOT LEVEL, GUNA 'widgets/' DIRECT)
+// Widgets
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
 import 'widgets/prayer_time_overlay.dart';
-
-// ✅ IMPORT BARU
-import 'widgets/dummy_feed_panel.dart'; // Import Panel Bersih
-
-// ❌ OLD WIDGETS REMOVED: hijrah_tree.dart, tracker_list.dart, feed_panel.dart, sirah_card.dart, metallic_gold.dart
+import 'widgets/dummy_feed_panel.dart'; // ✅ KONTEN BERSIH BARU
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -37,13 +33,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     // Controller untuk Lottie Particles (Confetti)
     _particleController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
 
-    // Mainkan audio intro
+    // Mainkan audio intro (Ralat di sini dibaiki di audio_service.dart)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AudioService>(context, listen: false).playIntroAudio();
+      Provider.of<AudioService>(context, listen: false).playIntroAudio(); // ✅ METHOD WUJUD
     });
   }
   
-  // ✅ PENTING: Kita perlukan dispose untuk controller
+  // PENTING: Kita perlukan dispose untuk controller
   @override
   void dispose() {
     _particleController.dispose();
@@ -61,6 +57,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final model = Provider.of<SidebarStateModel>(context);
     final animModel = Provider.of<AnimationControllerModel>(context);
+    final user = Provider.of<UserModel>(context); // Ambil user model di sini
 
     // Trigger animasi selepas render
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,7 +65,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
     
     // Safety check untuk memastikan ZikirPrompt dipaparkan
-    final user = Provider.of<UserModel>(context);
+    // ✅ GETTER DIBETULKAN
     final bool showZikirPrompt = user.name.isNotEmpty && !user.zikirDoneToday;
 
     return Scaffold(
@@ -84,11 +81,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               // FEED CONTENT AREA (KONTEN DUMMY)
               Expanded(
                 child: Container(
-                  // Biar Feed Panel sahaja yang berada di sini.
-                  // Semua content lama dibuang.
                   // KITA GUNA DUMMY FEED JIKA FLYOUT TUTUP
                   child: model.isClosed 
-                      ? const DummyFeedPanel() // ✅ KONTEN BARU, BERSIH
+                      ? const DummyFeedPanel() // ✅ KONTEN BERSIH
                       : const SizedBox.shrink(), // HIDE FEED BILA FLYOUT BUKA (optimizasi)
                 ),
               ),
@@ -108,9 +103,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           if (showZikirPrompt)
             Positioned.fill(
               child: ZikirPrompt(
-                zikirDone: user.zikirDoneToday,
+                zikirDone: user.zikirDoneToday, // ✅ GETTER DIBETULKAN
                 onDone: () {
-                  user.recordZikir();
+                  user.recordZikir(); // ✅ METHOD DIBETULKAN
                 },
               ),
             ),
