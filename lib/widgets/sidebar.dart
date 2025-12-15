@@ -1,15 +1,15 @@
-// lib/widgets/sidebar.dart
+// lib/widgets/sidebar.dart (FIXED: Golden Shimmering Icons)
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/sidebar_state_model.dart';
-import '../models/user_model.dart'; 
+import '../models/user_model.dart';
 import '../utils/constants.dart';
-import '../utils/hijri_service.dart'; 
-import 'metallic_gold.dart';                  
-import 'embun_ui/embun_ui.dart';              
+import '../utils/hijri_service.dart';
+import 'metallic_gold.dart';
+import 'embun_ui/embun_ui.dart';
 
 class Sidebar extends StatelessWidget {
   final double dockWidth;
@@ -37,7 +37,7 @@ class Sidebar extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(content: Text("Ralat: Tidak dapat buka WhatsApp."), backgroundColor: kWarningRed)
+            const SnackBar(content: Text("Ralat: Tidak dapat buka WhatsApp."), backgroundColor: kWarningRed)
           );
         }
       }
@@ -102,7 +102,6 @@ class Sidebar extends StatelessWidget {
   }
 
   // --- HELPER: GET TREE IMAGE ---
-  // Mapping level user kepada fail pokok_level#.png dari AppAssets
   String _getTreeAsset(int level) {
     if (level <= 1) return AppAssets.treePhase1;
     if (level <= 3) return AppAssets.treePhase2;
@@ -111,8 +110,13 @@ class Sidebar extends StatelessWidget {
     return AppAssets.treePhase5;
   }
 
-  // --- UI COMPONENTS ---
-  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
+  // ✅ UI COMPONENTS (FIXED: ICONS NOW SHIMMER GOLD)
+  Widget _buildMenuItem(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String id,
+    bool isComingSoon = false
+  }) {
     final model = Provider.of<SidebarStateModel>(context);
     final isActive = model.activeMenuId == id;
 
@@ -130,21 +134,28 @@ class Sidebar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon, 
-                color: isComingSoon ? Colors.grey.withOpacity(0.5) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)), 
-                size: 24
+              // ✅ IKON EMAS BERKILAU (Guna MetallicGold Wrapper)
+              MetallicGold(
+                child: Icon(
+                  icon,
+                  color: isComingSoon 
+                    ? Colors.grey.withOpacity(0.5) 
+                    : (isActive ? Colors.white : Colors.white.withOpacity(0.7)),
+                  size: 24
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 title,
                 style: TextStyle(
-                  color: isComingSoon ? Colors.grey.withOpacity(0.5) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)), 
+                  color: isComingSoon 
+                    ? Colors.grey.withOpacity(0.5) 
+                    : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)),
                   fontSize: 9
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 1, 
-                overflow: TextOverflow.ellipsis, 
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -173,7 +184,7 @@ class Sidebar extends StatelessWidget {
                     String displayAge = "";
                     if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
                       displayAge = HijriService.calculateHijriAge(user.hijriDOB!);
-                    } 
+                    }
                     if (displayAge.isEmpty || displayAge == "-- Tahun" || displayAge == "Format Salah") {
                       if (user.birthdate != null) {
                         try {
@@ -204,29 +215,29 @@ class Sidebar extends StatelessWidget {
                           ),
                           child: ClipOval(
                             child: user.avatarPath != null
-                                ? Image.file(
-                                    File(user.avatarPath!),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Image.asset(
-                                      AppAssets.profileDefault,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                : Image.asset(
+                              ? Image.file(
+                                  File(user.avatarPath!),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Image.asset(
                                     AppAssets.profileDefault,
                                     fit: BoxFit.cover,
                                   ),
+                                )
+                              : Image.asset(
+                                  AppAssets.profileDefault,
+                                  fit: BoxFit.cover,
+                                ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 5),
-                        
+
                         // User Name
                         MetallicGold(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Text(
-                              user.name.isNotEmpty 
+                              user.name.isNotEmpty
                                 ? (user.name.length > 8 ? '${user.name.substring(0, 7)}...' : user.name)
                                 : "Pengguna",
                               style: const TextStyle(
@@ -241,16 +252,16 @@ class Sidebar extends StatelessWidget {
                             ),
                           ),
                         ),
-                        
+
                         // Hijri Age
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: FittedBox( 
+                          child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
                               displayAge,
                               style: TextStyle(
-                                color: kPrimaryGold.withOpacity(0.9), 
+                                color: kPrimaryGold.withOpacity(0.9),
                                 fontSize: 9,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -269,8 +280,7 @@ class Sidebar extends StatelessWidget {
                 builder: (context, user, _) {
                   return InkWell(
                     onTap: () {
-                       // Buka menu pokok/dashboard
-                       Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress');
+                      Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress');
                     },
                     child: Container(
                       height: 80,
@@ -294,7 +304,7 @@ class Sidebar extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // Tree Image (from Constants)
+                          // Tree Image
                           Image.asset(
                             _getTreeAsset(user.treeLevel),
                             fit: BoxFit.contain,
@@ -319,10 +329,10 @@ class Sidebar extends StatelessWidget {
                   );
                 },
               ),
-              
+
               const Divider(color: Colors.white10, height: 1, thickness: 1),
 
-              // ✅ 3. MENU ICONS (Full List)
+              // ✅ 3. MENU ICONS (Full List) - NOW WITH GOLDEN SHIMMER
               _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
               _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
               _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
@@ -331,7 +341,7 @@ class Sidebar extends StatelessWidget {
               _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
 
               const SizedBox(height: 10),
-              
+
               // Coming Soon
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -345,16 +355,16 @@ class Sidebar extends StatelessWidget {
               // Bottom Actions
               _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
               _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
-              
+
               const SizedBox(height: 20),
 
               Consumer<SidebarStateModel>(
                 builder: (ctx, model, child) {
                   if (model.activeMenuId == 'infaq') {
-                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                       model.closeMenu();
-                       _showInfaqDialog(context);
-                     });
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      model.closeMenu();
+                      _showInfaqDialog(context);
+                    });
                   }
                   return const SizedBox.shrink();
                 },
@@ -363,6 +373,3 @@ class Sidebar extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
