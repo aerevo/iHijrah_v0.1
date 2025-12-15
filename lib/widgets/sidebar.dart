@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (FULL MENU VERSION)
+// lib/widgets/sidebar.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -102,6 +102,7 @@ class Sidebar extends StatelessWidget {
   }
 
   // --- HELPER: GET TREE IMAGE ---
+  // Mapping level user kepada fail pokok_level#.png dari AppAssets
   String _getTreeAsset(int level) {
     if (level <= 1) return AppAssets.treePhase1;
     if (level <= 3) return AppAssets.treePhase2;
@@ -159,16 +160,16 @@ class Sidebar extends StatelessWidget {
       height: MediaQuery.of(context).size.height,
       color: backgroundColor,
       child: SafeArea(
-        child: SingleChildScrollView( // ✅ Scrollable kalau menu panjang
+        child: SingleChildScrollView(
           child: Column(
             children: [
-              // ✅ 1. PROFILE SECTION (KEKAL)
+              // ✅ 1. PROFILE SECTION
               Padding(
                 padding: const EdgeInsets.only(top: 25, bottom: 5),
                 child: Consumer<UserModel>(
                   builder: (context, user, _) {
                     
-                    // Logic Umur Hijrah Bulletproof
+                    // Logic Umur Hijrah Bulletproof (Plan B)
                     String displayAge = "";
                     if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
                       displayAge = HijriService.calculateHijriAge(user.hijriDOB!);
@@ -263,13 +264,12 @@ class Sidebar extends StatelessWidget {
                 ),
               ),
 
-              // ✅ 2. TREE SECTION (VISUAL ANCHOR)
-              // Pokok duduk antara Profil dan Menu
+              // ✅ 2. TREE SECTION (INTEGRATED)
               Consumer<UserModel>(
                 builder: (context, user, _) {
                   return InkWell(
                     onTap: () {
-                       // Tekan pokok buka 'dashboard' atau statistik pokok
+                       // Buka menu pokok/dashboard
                        Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress');
                     },
                     child: Container(
@@ -279,7 +279,7 @@ class Sidebar extends StatelessWidget {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Glow halus
+                          // Glow Effect
                           Container(
                             width: 40,
                             height: 40,
@@ -294,14 +294,14 @@ class Sidebar extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // Imej Pokok
+                          // Tree Image (from Constants)
                           Image.asset(
                             _getTreeAsset(user.treeLevel),
                             fit: BoxFit.contain,
                             height: 60,
                             errorBuilder: (ctx, _, __) => const Icon(Icons.forest, color: kPrimaryGold, size: 40),
                           ),
-                          // Level Indicator
+                          // Level Text
                           Positioned(
                             bottom: 0,
                             child: Text(
@@ -322,9 +322,7 @@ class Sidebar extends StatelessWidget {
               
               const Divider(color: Colors.white10, height: 1, thickness: 1),
 
-              // ✅ 3. MENU LIST (SEMUA IKON DI SINI)
-              // Bila user tekan ikon ni, Panel Utama akan expand
-              
+              // ✅ 3. MENU ICONS (Full List)
               _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
               _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
               _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
@@ -334,7 +332,7 @@ class Sidebar extends StatelessWidget {
 
               const SizedBox(height: 10),
               
-              // Features Akan Datang (Visual sahaja, disabled)
+              // Coming Soon
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text("COMING SOON", style: TextStyle(fontSize: 7, color: Colors.white.withOpacity(0.2), letterSpacing: 1)),
