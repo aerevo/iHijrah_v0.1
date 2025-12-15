@@ -1,4 +1,3 @@
-// lib/home.dart (FIXED: Feed Panel Clean + Using DummyFeedPanel)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
@@ -9,19 +8,18 @@ import 'models/sidebar_state_model.dart';
 import 'models/animation_controller_model.dart';
 import 'utils/constants.dart';
 import 'utils/audio_service.dart';
-
 // Widgets
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
 import 'widgets/prayer_time_overlay.dart';
-import 'widgets/dummy_feed_panel.dart'; // ✅ FEED BERSIH
+import 'widgets/dummy_feed_panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
@@ -30,13 +28,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // Controller untuk Lottie Particles (Confetti)
     _particleController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2)
+      duration: const Duration(seconds: 2),
     );
 
-    // Mainkan audio intro
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AudioService>(context, listen: false).playIntroAudio();
     });
@@ -48,7 +44,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // Fungsi untuk trigger confetti
   void _startParticleAnimation(AnimationControllerModel animModel) {
     if (animModel.shouldSprayParticles) {
       _particleController.forward(from: 0.0);
@@ -61,34 +56,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final animModel = Provider.of<AnimationControllerModel>(context);
     final user = Provider.of<UserModel>(context);
 
-    // Trigger animasi selepas render
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startParticleAnimation(animModel);
     });
 
-    // Safety check untuk Zikir Prompt
     final bool showZikirPrompt = user.name.isNotEmpty && !user.zikirDoneToday;
 
     return Scaffold(
       backgroundColor: kBackgroundDark,
       body: Stack(
         children: [
-          // ===== 1. MAIN CONTENT AREA (Sidebar + Feed) =====
+          // 1. MAIN CONTENT AREA (Sidebar + Feed)
           Row(
             children: [
-              // Sidebar (Kekal di kiri)
               const Sidebar(),
 
-              // ✅ FEED CONTENT AREA (GUNA DUMMY FEED SAHAJA)
+              // FEED CONTENT AREA (DUMMY POSTS ONLY)
               Expanded(
                 child: model.isClosed
-                    ? const DummyFeedPanel() // ✅ KONTEN BERSIH DARI dummy_feed_panel.dart
-                    : const SizedBox.shrink(), // Hide bila Flyout buka
+                    ? const DummyFeedPanel()
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
 
-          // ===== 2. FLYOUT PANEL (Sliding Overlay) =====
+          // 2. FLYOUT PANEL (Sliding Overlay)
           Positioned(
             left: AppSizes.sidebarWidth,
             top: 0,
@@ -96,7 +88,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             child: const FlyoutPanel(),
           ),
 
-          // ===== 3. ZIKIR PROMPT (Overlay) =====
+          // 3. ZIKIR PROMPT (Overlay)
           if (showZikirPrompt)
             Positioned.fill(
               child: ZikirPrompt(
@@ -107,7 +99,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
 
-          // ===== 4. PRAYER TIME OVERLAY (Bottom Bar) =====
+          // 4. PRAYER TIME OVERLAY (Bottom Bar)
           const Positioned(
             left: 0,
             right: 0,
@@ -115,7 +107,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             child: PrayerTimeOverlay(),
           ),
 
-          // ===== 5. PARTICLE EFFECTS OVERLAY (Lottie) =====
+          // 5. PARTICLE EFFECTS OVERLAY (Lottie)
           Positioned.fill(
             child: IgnorePointer(
               child: Lottie.asset(
