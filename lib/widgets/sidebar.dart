@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (BULLETPROOF VERSION)
+// lib/widgets/sidebar.dart (FULL MENU VERSION)
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -101,15 +101,24 @@ class Sidebar extends StatelessWidget {
     );
   }
 
+  // --- HELPER: GET TREE IMAGE ---
+  String _getTreeAsset(int level) {
+    if (level <= 1) return AppAssets.treePhase1;
+    if (level <= 3) return AppAssets.treePhase2;
+    if (level <= 5) return AppAssets.treePhase3;
+    if (level <= 8) return AppAssets.treePhase4;
+    return AppAssets.treePhase5;
+  }
+
   // --- UI COMPONENTS ---
-  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id}) {
+  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
     final model = Provider.of<SidebarStateModel>(context);
     final isActive = model.activeMenuId == id;
 
     return Tooltip(
-      message: title,
+      message: isComingSoon ? "$title (Akan Datang)" : title,
       child: InkWell(
-        onTap: () => model.setActiveMenu(id),
+        onTap: isComingSoon ? null : () => model.setActiveMenu(id),
         child: Container(
           width: dockWidth,
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -120,14 +129,21 @@ class Sidebar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7), size: 24),
+              Icon(
+                icon, 
+                color: isComingSoon ? Colors.grey.withOpacity(0.5) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)), 
+                size: 24
+              ),
               const SizedBox(height: 4),
               Text(
                 title,
-                style: TextStyle(color: isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7), fontSize: 10),
+                style: TextStyle(
+                  color: isComingSoon ? Colors.grey.withOpacity(0.5) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)), 
+                  fontSize: 9
+                ),
                 textAlign: TextAlign.center,
-                maxLines: 1, // Limit 1 line
-                overflow: TextOverflow.ellipsis, // Elak layout pecah
+                maxLines: 1, 
+                overflow: TextOverflow.ellipsis, 
               ),
             ],
           ),
@@ -143,150 +159,210 @@ class Sidebar extends StatelessWidget {
       height: MediaQuery.of(context).size.height,
       color: backgroundColor,
       child: SafeArea(
-        child: Column(
-          children: [
-            // ✅ PROFILE SECTION (BULLETPROOF VERSION)
-            Padding(
-              padding: const EdgeInsets.only(top: 25, bottom: 15),
-              child: Consumer<UserModel>(
-                builder: (context, user, _) {
-                  
-                  // 🔥 LOGIC FAIL-SAFE: 
-                  // 1. Cuba ambil HijriDOB
-                  // 2. Jika gagal, tapi birthdate (Masihi) ada, KIRA TERUS kat sini!
-                  
-                  String displayAge = "";
-                  
-                  if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
-                    // Plan A: Guna data sedia ada
-                    displayAge = HijriService.calculateHijriAge(user.hijriDOB!);
-                  } 
-                  
-                  // Plan B: Backup jika Plan A gagal (Contoh: return "-- Tahun")
-                  if (displayAge.isEmpty || displayAge == "-- Tahun" || displayAge == "Format Salah") {
-                    if (user.birthdate != null) {
-                      // Kira on-the-fly dari tarikh Masihi
-                      try {
-                        final hijri = HijriService.fromDate(user.birthdate!);
-                        final manualHijriString = '${hijri.hDay}/${hijri.hMonth}/${hijri.hYear}';
-                        displayAge = HijriService.calculateHijriAge(manualHijriString);
-                      } catch (e) {
-                        displayAge = "Ralat";
+        child: SingleChildScrollView( // ✅ Scrollable kalau menu panjang
+          child: Column(
+            children: [
+              // ✅ 1. PROFILE SECTION (KEKAL)
+              Padding(
+                padding: const EdgeInsets.only(top: 25, bottom: 5),
+                child: Consumer<UserModel>(
+                  builder: (context, user, _) {
+                    
+                    // Logic Umur Hijrah Bulletproof
+                    String displayAge = "";
+                    if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
+                      displayAge = HijriService.calculateHijriAge(user.hijriDOB!);
+                    } 
+                    if (displayAge.isEmpty || displayAge == "-- Tahun" || displayAge == "Format Salah") {
+                      if (user.birthdate != null) {
+                        try {
+                          final hijri = HijriService.fromDate(user.birthdate!);
+                          final manualHijriString = '${hijri.hDay}/${hijri.hMonth}/${hijri.hYear}';
+                          displayAge = HijriService.calculateHijriAge(manualHijriString);
+                        } catch (e) {
+                          displayAge = "Ralat";
+                        }
+                      } else {
+                        displayAge = "Tetapkan Tarikh";
                       }
-                    } else {
-                      displayAge = "Tetapkan Tarikh";
                     }
-                  }
 
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Profile Picture
-                      Container(
-                        width: 58, 
-                        height: 58,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: kPrimaryGold, width: 2),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 5)
-                          ]
-                        ),
-                        child: ClipOval(
-                          child: user.avatarPath != null
-                              ? Image.file(
-                                  File(user.avatarPath!),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Image.asset(
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Profile Picture
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: kPrimaryGold, width: 2),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 5)
+                            ]
+                          ),
+                          child: ClipOval(
+                            child: user.avatarPath != null
+                                ? Image.file(
+                                    File(user.avatarPath!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Image.asset(
+                                      AppAssets.profileDefault,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Image.asset(
                                     AppAssets.profileDefault,
                                     fit: BoxFit.cover,
                                   ),
-                                )
-                              : Image.asset(
-                                  AppAssets.profileDefault,
-                                  fit: BoxFit.cover,
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 5),
+                        
+                        // User Name
+                        MetallicGold(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              user.name.isNotEmpty 
+                                ? (user.name.length > 8 ? '${user.name.substring(0, 7)}...' : user.name)
+                                : "Pengguna",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Playfair',
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        
+                        // Hijri Age
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: FittedBox( 
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              displayAge,
+                              style: TextStyle(
+                                color: kPrimaryGold.withOpacity(0.9), 
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+
+              // ✅ 2. TREE SECTION (VISUAL ANCHOR)
+              // Pokok duduk antara Profil dan Menu
+              Consumer<UserModel>(
+                builder: (context, user, _) {
+                  return InkWell(
+                    onTap: () {
+                       // Tekan pokok buka 'dashboard' atau statistik pokok
+                       Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress');
+                    },
+                    child: Container(
+                      height: 80,
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(vertical: 5),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Glow halus
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: kPrimaryGold.withOpacity(0.15),
+                                  blurRadius: 15,
+                                  spreadRadius: 2,
                                 ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 10),
-                      
-                      // User Name
-                      MetallicGold(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            user.name.isNotEmpty 
-                              ? (user.name.length > 8 ? '${user.name.substring(0, 7)}...' : user.name)
-                              : "Pengguna",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Playfair',
+                              ],
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 5),
-                      
-                      // ✅ HIJRI AGE DISPLAY (DENGAN LAYOUT PROTECTION)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), // Kurangkan padding tepi
-                        margin: const EdgeInsets.symmetric(horizontal: 2), // Elak langgar tepi sidebar
-                        decoration: BoxDecoration(
-                           color: Colors.white.withOpacity(0.05),
-                           borderRadius: BorderRadius.circular(4)
-                        ),
-                        child: FittedBox( // 🔥 AUTO-SHRINK FONT kalau text panjang sangat
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            displayAge,
-                            style: TextStyle(
-                              color: kPrimaryGold.withOpacity(0.9), 
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
+                          // Imej Pokok
+                          Image.asset(
+                            _getTreeAsset(user.treeLevel),
+                            fit: BoxFit.contain,
+                            height: 60,
+                            errorBuilder: (ctx, _, __) => const Icon(Icons.forest, color: kPrimaryGold, size: 40),
+                          ),
+                          // Level Indicator
+                          Positioned(
+                            bottom: 0,
+                            child: Text(
+                              "LVL ${user.treeLevel}",
+                              style: TextStyle(
+                                color: kPrimaryGold.withOpacity(0.8),
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   );
                 },
               ),
-            ),
-            
-            const Divider(color: Colors.white10, height: 1, thickness: 1),
-            const SizedBox(height: 10),
+              
+              const Divider(color: Colors.white10, height: 1, thickness: 1),
 
-            _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
-            _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
-            _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
-            _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
+              // ✅ 3. MENU LIST (SEMUA IKON DI SINI)
+              // Bila user tekan ikon ni, Panel Utama akan expand
+              
+              _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
+              _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
+              _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
+              _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
+              _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
+              _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
 
-            const Spacer(),
+              const SizedBox(height: 10),
+              
+              // Features Akan Datang (Visual sahaja, disabled)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text("COMING SOON", style: TextStyle(fontSize: 7, color: Colors.white.withOpacity(0.2), letterSpacing: 1)),
+              ),
+              _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
+              _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
 
-            _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
-            _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            Consumer<SidebarStateModel>(
-              builder: (ctx, model, child) {
-                if (model.activeMenuId == 'infaq') {
-                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                     model.closeMenu();
-                     _showInfaqDialog(context);
-                   });
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
+              // Bottom Actions
+              _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
+              _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
+              
+              const SizedBox(height: 20),
+
+              Consumer<SidebarStateModel>(
+                builder: (ctx, model, child) {
+                  if (model.activeMenuId == 'infaq') {
+                     WidgetsBinding.instance.addPostFrameCallback((_) {
+                       model.closeMenu();
+                       _showInfaqDialog(context);
+                     });
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
