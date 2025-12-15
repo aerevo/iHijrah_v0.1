@@ -1,4 +1,4 @@
-// lib/utils/audio_service.dart (UPGRADED: Intro Audio Fix)
+// lib/utils/audio_service.dart (UPGRADED: Intro Audio & Siraman Fix)
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -62,11 +62,13 @@ class AudioService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ DITAMBAH METHOD: Untuk home.dart
   Future<bool> playIntroAudio() async {
      // Intro audio guna introPlayer dan volume rendah
     return await _playAudio(_introPlayer, AppAssets.intro, volume: 0.2, autoStopAfter: const Duration(milliseconds: 3000));
   }
+  
+  // ✅ DITAMBAH METHOD: playSiraman (Untuk hijrah_tree.dart)
+  Future<bool> playSiraman() async => playSplashAudio();
 
 
   // ===== SPECIFIC AUDIO PLAYERS (DIPANGGIL OLEH WIDGET) =====
@@ -79,7 +81,6 @@ class AudioService extends ChangeNotifier {
 
   Future<bool> playAdhan(BuildContext context) async {
     try {
-      // Pastikan context di-handle dengan betul di luar scope method
       final user = Provider.of<UserModel>(context, listen: false);
       final AdhanMode currentMode = AdhanMode.values[user.adhanModeIndex];
 
