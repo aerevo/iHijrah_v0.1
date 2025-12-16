@@ -1,4 +1,4 @@
-// lib/widgets/dynamic_background.dart (FIXED: Visible Pattern Background)
+// lib/widgets/dynamic_background.dart (MENU: CRYSTAL CLEAR)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/sidebar_state_model.dart';
@@ -50,21 +50,17 @@ class DynamicBackground extends StatelessWidget {
                     fit: BoxFit.cover, // Penuhkan skrin
                   ),
                 ),
-                // Fallback kalau gambar tak jumpa, tunjuk warna asas gelap
+                // Fallback
                 child: Container(color: Colors.transparent), 
               ),
             ),
 
-            // LAPISAN 2: GELAP (DIMMING OVERLAY) - DIPERBETULKAN
+            // LAPISAN 2: GELAP (DIMMING OVERLAY)
             AnimatedContainer(
               duration: const Duration(milliseconds: 800),
               color: isMenuOpen 
-                  // FIX: Kurangkan gelap bila menu buka (Dulu 0.85 -> Sekarang 0.3)
-                  // Supaya corak nampak jelas, tapi teks menu masih boleh baca
-                  ? Colors.black.withOpacity(0.3) 
-                  
-                  // Bila mode biasa (Feed), kita gelapkan sikit (0.6) supaya tulisan putih status nampak
-                  : Colors.black.withOpacity(0.6), 
+                  ? Colors.transparent // ✅ 0% GELAP: Corak terpampang jelas, suci bersih!
+                  : Colors.black.withOpacity(0.6), // 60% GELAP: Hanya untuk Feed (Siang/Malam) supaya teks boleh baca
             ),
           ],
         );
