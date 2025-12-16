@@ -1,4 +1,4 @@
-// lib/widgets/metallic_gold.dart (OPTIMIZED: STATIC LUXURY)
+// lib/widgets/metallic_gold.dart (OPTIMIZED: SHUTTERSTOCK LUXURY PALETTE)
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
@@ -7,7 +7,7 @@ import '../utils/constants.dart';
 /// Features:
 /// - Zero GPU Animation Load (Battery Friendly)
 /// - Luxury "Gold Bar" Gradient Style
-/// - Mimics vertical light reflection (Adobe Stock Style)
+/// - Uses specific Hex Palette from Shutterstock "100 Gradient Styles"
 class MetallicGold extends StatelessWidget {
   final Widget child;
   final bool isLightMode; // Opsyen jika nak tone lebih cerah
@@ -28,16 +28,18 @@ class MetallicGold extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFC6A664), // 0% - Emas Standard (Atas)
-            Color(0xFFFDF6D5), // 45% - Highlight Putih (Pantulan Cahaya)
-            Color(0xFFFDF6D5), // 55% - Kekal Putih sekejap
-            Color(0xFF8E793E), // 100% - Emas Gelap/Bronze (Bawah/Bayang)
+            Color(0xFF996900), // Dark Olive Gold (Bayang Atas)
+            Color(0xFFFFDE62), // Bright Gold (Emas Terang)
+            Color(0xFFFFF5C2), // HIGHLIGHT (Putih Mutiara - Kilauan Utama)
+            Color(0xFF8A500E), // Deep Rich Gold (Emas Pekat)
+            Color(0xFF521D00), // Dark Brown (Bayang Bawah - 3D Depth)
           ],
           stops: [
-            0.0,
-            0.45,
-            0.55,
-            1.0,
+            0.0,  // Gelap di hujung atas
+            0.25, // Mula terang
+            0.5,  // KILAUAN DI TENGAH (Titik Fokus)
+            0.75, // Kembali pekat
+            1.0,  // Gelap di hujung bawah
           ],
         ).createShader(bounds);
       },
