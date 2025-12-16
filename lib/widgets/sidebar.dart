@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (SLIM MODE: 72px WIDTH)
+// lib/widgets/sidebar.dart (FIX: FILL GAP + SLIM UI PRESERVED)
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,8 +17,10 @@ class Sidebar extends StatelessWidget {
 
   const Sidebar({
     Key? key,
-    // FRANCOIS UPDATE: Force slim width (72.0) untuk maksimalkan ruang Feed
-    this.dockWidth = 72.0, 
+    // KEMBALIKAN KEPADA APPSIZES:
+    // Kita guna lebar asal sistem untuk tutup lompong 'gap' tersebut.
+    // (Content dalaman kekal slim & elegant).
+    this.dockWidth = AppSizes.sidebarWidth, 
     this.backgroundColor = kCardDark
   }) : super(key: key);
 
@@ -146,7 +148,7 @@ class Sidebar extends StatelessWidget {
     return AppAssets.treePhase5;
   }
 
-  // --- BUILD MENU ITEM (SLIM VERSION) ---
+  // --- BUILD MENU ITEM (ELEGANT SLIM STYLE) ---
   Widget _buildMenuItem(
     BuildContext context, {
     required IconData icon,
@@ -162,8 +164,9 @@ class Sidebar extends StatelessWidget {
       child: InkWell(
         onTap: isComingSoon ? null : () => model.setActiveMenu(id),
         child: Container(
-          width: dockWidth,
-          padding: const EdgeInsets.symmetric(vertical: 10), // Reduced vertical padding
+          // Gunakan width penuh parent, tapi content centered
+          width: dockWidth, 
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isActive ? kPrimaryGold.withOpacity(0.15) : Colors.transparent,
             border: isActive 
@@ -173,14 +176,14 @@ class Sidebar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ✅ SLIM MODE ICON SIZE
+              // Icon size kekal kecil (22) untuk nampak 'classy'
               MetallicGold(
                 child: Icon(
                   icon,
                   color: isComingSoon 
                     ? Colors.grey.withOpacity(0.5) 
                     : (isActive ? Colors.white : Colors.white.withOpacity(0.7)),
-                  size: 22 // Resize from 24 -> 22
+                  size: 22 
                 ),
               ),
               const SizedBox(height: 3),
@@ -190,7 +193,7 @@ class Sidebar extends StatelessWidget {
                   color: isComingSoon 
                     ? Colors.grey.withOpacity(0.5) 
                     : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)),
-                  fontSize: 8.5, // Resize from 9 -> 8.5
+                  fontSize: 8.5,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -213,7 +216,7 @@ class Sidebar extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // === 1. PROFILE SECTION (SLIM ADJUSTED) ===
+              // === 1. PROFILE SECTION ===
               Padding(
                 padding: const EdgeInsets.only(top: 25, bottom: 5),
                 child: Consumer<UserModel>(
@@ -248,9 +251,9 @@ class Sidebar extends StatelessWidget {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Profile Picture - Dikecilkan sikit
+                        // Profile Picture
                         Container(
-                          width: 42, // Resize from 50 -> 42
+                          width: 42,
                           height: 42,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -281,7 +284,7 @@ class Sidebar extends StatelessWidget {
 
                         const SizedBox(height: 5),
 
-                        // User Name (Shortened)
+                        // User Name
                         MetallicGold(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -291,7 +294,7 @@ class Sidebar extends StatelessWidget {
                                 : "User",
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10, // Smaller Font
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Playfair',
                               ),
@@ -304,13 +307,13 @@ class Sidebar extends StatelessWidget {
 
                         const SizedBox(height: 4),
 
-                        // --- DISPLAY UMUR ---
+                        // --- DISPLAY UMUR (2 BARIS KEMAS) ---
                         isValidAge 
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                "$ageYearOnly Thn", // Shortened "Tahun" -> "Thn"
+                                "$ageYearOnly Thn",
                                 style: TextStyle(
                                   color: kPrimaryGold.withOpacity(0.9),
                                   fontSize: 9,
@@ -349,7 +352,7 @@ class Sidebar extends StatelessWidget {
                 ),
               ),
 
-              // === 2. TREE SECTION (SLIM ADJUSTED) ===
+              // === 2. TREE SECTION ===
               Consumer<UserModel>(
                 builder: (context, user, _) {
                   return InkWell(
@@ -358,14 +361,14 @@ class Sidebar extends StatelessWidget {
                         .setActiveMenu('tree_progress');
                     },
                     child: Container(
-                      height: 70, // Reduced height
+                      height: 70,
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(vertical: 5),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           Container(
-                            width: 35, // Smaller glow
+                            width: 35,
                             height: 35,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -381,7 +384,7 @@ class Sidebar extends StatelessWidget {
                           Image.asset(
                             _getTreeAsset(user.treeLevel),
                             fit: BoxFit.contain,
-                            height: 50, // Smaller tree
+                            height: 50,
                             errorBuilder: (ctx, _, __) => const Icon(
                               Icons.forest,
                               color: kPrimaryGold,
