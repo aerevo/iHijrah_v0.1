@@ -1,5 +1,5 @@
 // lib/utils/constants.dart
-// MASTER VERSION: Sidebar Support + Tree Fix + No Enum Conflict
+// MASTER VERSION: Sidebar 72px + Minimal Gap (12px)
 import 'package:flutter/material.dart';
 
 // ===== WARNA TERAS (EMBUN JIWA) =====
@@ -37,7 +37,8 @@ const int MIN_SELAWAT_DAILY = 100;
 // ===== SIZES =====
 class AppSizes {
   // Sidebar & Flyout
-  static const double sidebarWidth = 70.0;
+  // FRANCOIS UPDATE: Diset ke 72.0 untuk padan dengan rekaan Sidebar Slim
+  static const double sidebarWidth = 72.0; 
   static const double flyoutWidth = 300.0;
   
   // Card & Radius
@@ -69,9 +70,10 @@ class AppSpacing {
   static const double xl = 32.0;
   static const double xxl = 48.0;
 
-  // Screen Padding (RESTORED)
-  static const double screenH = 20.0; // ✅ RESTORED
-  static const double screenV = 20.0; // ✅ RESTORED
+  // Screen Padding (OPTIMIZED)
+  // FRANCOIS UPDATE: Dikurangkan ke 12.0 (Dari 20.0) untuk tutup gap & luaskan Feed
+  static const double screenH = 12.0; 
+  static const double screenV = 20.0; 
 }
 
 class AppFontSizes {
@@ -136,6 +138,3 @@ class AppAssets {
   static const String sirahData = '${dataPath}sirah_data.json';
   static const String eventData = '${dataPath}events.json';
 }
-
-// ❌ ENUM REMOVED FROM HERE
-// AdhanMode should only be in lib/utils/settings_enums.dart to avoid conflict.
