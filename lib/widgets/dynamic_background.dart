@@ -1,3 +1,4 @@
+// lib/widgets/dynamic_background.dart (FIXED: Visible Pattern Background)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/sidebar_state_model.dart';
@@ -17,13 +18,12 @@ class DynamicBackground extends StatelessWidget {
       builder: (context, sidebarState, child) {
         // 2. Logik Pemilihan Gambar & Menu State
         String targetImage;
-        bool isMenuOpen = false; // Variable untuk detect menu buka/tutup
+        bool isMenuOpen = false;
 
         // PRIORITI 1: Jika Sidebar/Menu sedang aktif (Expand)
-        // Kita anggap jika ada activeMenuId, maksudnya user sedang 'klik' sidebar
         if (sidebarState.activeMenuId != null && sidebarState.activeMenuId!.isNotEmpty) {
-          targetImage = AppAssets.bgPattern; // Gambar Corak bila menu buka
-          isMenuOpen = true; // Tandakan menu sedang dibuka
+          targetImage = AppAssets.bgPattern; // Gambar Corak
+          isMenuOpen = true; // Menu Buka
         } 
         // PRIORITI 2: Jika Siang
         else if (isDaytime) {
@@ -39,27 +39,32 @@ class DynamicBackground extends StatelessWidget {
           children: [
             // LAPISAN 1: GAMBAR LATAR (Animated Switcher)
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 1000), // Fade perlahan (1 saat)
+              duration: const Duration(milliseconds: 800), // Fade perlahan
               switchInCurve: Curves.easeInOut,
               switchOutCurve: Curves.easeInOut,
               child: Container(
-                key: ValueKey<String>(targetImage), // Key penting untuk detect perubahan
+                key: ValueKey<String>(targetImage), 
                 decoration: BoxDecoration(
                   image: DecorationImage(
                     image: AssetImage(targetImage),
                     fit: BoxFit.cover, // Penuhkan skrin
                   ),
                 ),
+                // Fallback kalau gambar tak jumpa, tunjuk warna asas gelap
+                child: Container(color: Colors.transparent), 
               ),
             ),
 
-            // LAPISAN 2: GELAP (DIMMING OVERLAY)
-            // Kita gelapkan sikit gambar supaya tulisan putih/emas nampak jelas
+            // LAPISAN 2: GELAP (DIMMING OVERLAY) - DIPERBETULKAN
             AnimatedContainer(
               duration: const Duration(milliseconds: 800),
               color: isMenuOpen 
-                  ? Colors.black.withOpacity(0.85) // Gelap sangat bila buka menu (Fokus Menu)
-                  : Colors.black.withOpacity(0.6), // Gelap sikit bila biasa (Supaya Feed nampak)
+                  // FIX: Kurangkan gelap bila menu buka (Dulu 0.85 -> Sekarang 0.3)
+                  // Supaya corak nampak jelas, tapi teks menu masih boleh baca
+                  ? Colors.black.withOpacity(0.3) 
+                  
+                  // Bila mode biasa (Feed), kita gelapkan sikit (0.6) supaya tulisan putih status nampak
+                  : Colors.black.withOpacity(0.6), 
             ),
           ],
         );
