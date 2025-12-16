@@ -1,8 +1,6 @@
 // lib/widgets/dummy_feed_panel.dart
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-// MetallicGold tidak lagi digunakan pada avatar, tapi kita simpan import 
-// jika perlu untuk elemen lain di masa depan.
 import 'metallic_gold.dart'; 
 
 class DummyFeedPanel extends StatelessWidget {
@@ -11,11 +9,11 @@ class DummyFeedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      // Padding Feed
+      // Padding Feed: Dikurangkan untuk efek "Wide Screen"
       padding: const EdgeInsets.only(
         top: AppSpacing.md, 
-        left: AppSpacing.screenH,
-        right: AppSpacing.screenH,
+        left: 12, // Kurangkan dari screenH (biasanya 20+) ke 12px
+        right: 12,
         bottom: 100,
       ),
       child: Column(
@@ -79,7 +77,6 @@ class _SocialPostCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        // Border halus sekadar hiasan
         border: Border.all(
           color: Colors.white.withOpacity(0.05),
           width: 1,
@@ -92,17 +89,17 @@ class _SocialPostCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar Gaya "WhatsApp Unknown" (Latar Putih, Ikon Kelabu)
+              // Avatar WhatsApp Style
               Container(
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(
-                  color: Colors.white, // Latar Putih Bersih
+                  color: Colors.white, 
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.person, // Ikon Orang (Bayang)
-                  color: Colors.grey[400], // Kelabu pudar
+                  Icons.person, 
+                  color: Colors.grey[400], 
                   size: 28,
                 ),
               ),
@@ -133,7 +130,6 @@ class _SocialPostCard extends StatelessWidget {
                 ),
               ),
               
-              // Menu Icon
               Icon(Icons.more_horiz, color: Colors.grey[700], size: 20),
             ],
           ),
@@ -152,11 +148,10 @@ class _SocialPostCard extends StatelessWidget {
 
           const SizedBox(height: 16),
           
-          // Garis Halus
           Divider(color: Colors.white.withOpacity(0.05), height: 1),
           const SizedBox(height: 12),
 
-          // 3. Footer Actions (Minimalist)
+          // 3. Footer Actions
           Row(
             children: [
               _buildAction(Icons.favorite_border, '$initialLikes'),
