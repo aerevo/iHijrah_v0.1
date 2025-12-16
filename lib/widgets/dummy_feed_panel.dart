@@ -1,4 +1,5 @@
-// lib/widgets/dummy_feed_panel.dart
+// lib/widgets/dummy_feed_panel.dart (GLASSMORPHISM STYLE)
+import 'dart:ui'; // Wajib untuk efek Blur
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart'; 
@@ -9,10 +10,10 @@ class DummyFeedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      // Padding Feed: Dikurangkan untuk efek "Wide Screen"
+      // Padding Feed: Edge-to-Edge
       padding: const EdgeInsets.only(
         top: AppSpacing.md, 
-        left: 12, // Kurangkan dari screenH (biasanya 20+) ke 12px
+        left: 12, 
         right: 12,
         bottom: 100,
       ),
@@ -46,7 +47,7 @@ class DummyFeedPanel extends StatelessWidget {
   }
 }
 
-// --- PRIVATE WIDGET: STYLISH POST CARD (CLEAN AVATAR) ---
+// --- PRIVATE WIDGET: GLASS POST CARD ---
 class _SocialPostCard extends StatelessWidget {
   final String userName;
   final String timeAgo;
@@ -65,103 +66,109 @@ class _SocialPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF222222), // Dark grey yang elegan
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.05),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Header Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar WhatsApp Style
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Colors.white, 
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person, 
-                  color: Colors.grey[400], 
-                  size: 28,
-                ),
-              ),
-              
-              const SizedBox(width: 12),
-              
-              // Nama & Masa
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: AppFontSizes.md,
-                      ),
-                    ),
-                    Text(
-                      timeAgo,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              Icon(Icons.more_horiz, color: Colors.grey[700], size: 20),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // 2. Content
-          Text(
-            content,
-            style: TextStyle(
-              color: Colors.grey[300],
-              fontSize: 14,
-              height: 1.5,
+    // 1. ClipRRect untuk potong blur ikut bucu bulat
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        // 2. Kuasa Blur (Semakin tinggi, semakin kabur latar belakang)
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            // 3. Warna Kaca (Hitam Pudar)
+            color: Colors.black.withOpacity(0.4), 
+            // 4. Border Kaca Halus
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1), // Putih pudar di tepi
+              width: 1,
             ),
+            borderRadius: BorderRadius.circular(16),
           ),
-
-          const SizedBox(height: 16),
-          
-          Divider(color: Colors.white.withOpacity(0.05), height: 1),
-          const SizedBox(height: 12),
-
-          // 3. Footer Actions
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAction(Icons.favorite_border, '$initialLikes'),
-              const SizedBox(width: 24),
-              _buildAction(Icons.chat_bubble_outline, '$initialComments'),
-              const Spacer(),
-              _buildAction(Icons.share_outlined, '', isIconOnly: true),
+              // HEADER ROW
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Avatar WhatsApp Style
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Colors.white, 
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.person, 
+                      color: Colors.grey[400], 
+                      size: 28,
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 12),
+                  
+                  // Nama & Masa
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: AppFontSizes.md,
+                            shadows: [Shadow(color: Colors.black, blurRadius: 2)], // Shadow supaya teks timbul
+                          ),
+                        ),
+                        Text(
+                          timeAgo,
+                          style: TextStyle(
+                            color: Colors.grey[400], // Terang sikit dari grey[600]
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  Icon(Icons.more_horiz, color: Colors.grey[400], size: 20),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // CONTENT
+              Text(
+                content,
+                style: const TextStyle(
+                  color: Color(0xFFEEEEEE), // Putih susu
+                  fontSize: 14,
+                  height: 1.5,
+                  shadows: [Shadow(color: Colors.black45, blurRadius: 2)],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              
+              // Garis Halus
+              Divider(color: Colors.white.withOpacity(0.1), height: 1),
+              const SizedBox(height: 12),
+
+              // FOOTER ACTIONS
+              Row(
+                children: [
+                  _buildAction(Icons.favorite_border, '$initialLikes'),
+                  const SizedBox(width: 24),
+                  _buildAction(Icons.chat_bubble_outline, '$initialComments'),
+                  const Spacer(),
+                  _buildAction(Icons.share_outlined, '', isIconOnly: true),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -169,13 +176,13 @@ class _SocialPostCard extends StatelessWidget {
   Widget _buildAction(IconData icon, String label, {bool isIconOnly = false}) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey[500]),
+        Icon(icon, size: 20, color: Colors.grey[400]),
         if (!isIconOnly) ...[
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey[500],
+              color: Colors.grey[400],
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
