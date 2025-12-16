@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (UMUR HIJRAH FIXED: VERTICAL STACK)
+// lib/widgets/sidebar.dart (SLIM MODE: 72px WIDTH)
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +17,8 @@ class Sidebar extends StatelessWidget {
 
   const Sidebar({
     Key? key,
-    this.dockWidth = AppSizes.sidebarWidth,
+    // FRANCOIS UPDATE: Force slim width (72.0) untuk maksimalkan ruang Feed
+    this.dockWidth = 72.0, 
     this.backgroundColor = kCardDark
   }) : super(key: key);
 
@@ -145,7 +146,7 @@ class Sidebar extends StatelessWidget {
     return AppAssets.treePhase5;
   }
 
-  // --- BUILD MENU ITEM (WITH GOLDEN SHIMMER ICONS) ---
+  // --- BUILD MENU ITEM (SLIM VERSION) ---
   Widget _buildMenuItem(
     BuildContext context, {
     required IconData icon,
@@ -162,7 +163,7 @@ class Sidebar extends StatelessWidget {
         onTap: isComingSoon ? null : () => model.setActiveMenu(id),
         child: Container(
           width: dockWidth,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10), // Reduced vertical padding
           decoration: BoxDecoration(
             color: isActive ? kPrimaryGold.withOpacity(0.15) : Colors.transparent,
             border: isActive 
@@ -172,24 +173,24 @@ class Sidebar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ✅ GOLDEN SHIMMER ICON
+              // ✅ SLIM MODE ICON SIZE
               MetallicGold(
                 child: Icon(
                   icon,
                   color: isComingSoon 
                     ? Colors.grey.withOpacity(0.5) 
                     : (isActive ? Colors.white : Colors.white.withOpacity(0.7)),
-                  size: 24
+                  size: 22 // Resize from 24 -> 22
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 title,
                 style: TextStyle(
                   color: isComingSoon 
                     ? Colors.grey.withOpacity(0.5) 
                     : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.7)),
-                  fontSize: 9
+                  fontSize: 8.5, // Resize from 9 -> 8.5
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -212,12 +213,11 @@ class Sidebar extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // === 1. PROFILE SECTION ===
+              // === 1. PROFILE SECTION (SLIM ADJUSTED) ===
               Padding(
                 padding: const EdgeInsets.only(top: 25, bottom: 5),
                 child: Consumer<UserModel>(
                   builder: (context, user, _) {
-                    // Logic Dapatkan Umur Penuh (String Asal)
                     String rawAgeString = "";
                     if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
                       rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
@@ -236,11 +236,9 @@ class Sidebar extends StatelessWidget {
                       }
                     }
 
-                    // --- NEW LOGIC: EXTRACT TAHUN SAHAJA ---
                     String ageYearOnly = "--";
-                    bool isValidAge = rawAgeString.contains(RegExp(r'\d')); // Check ada nombor tak?
+                    bool isValidAge = rawAgeString.contains(RegExp(r'\d')); 
                     if (isValidAge) {
-                      // Ambil nombor pertama jumpa (Contoh: "37 Tahun 9 Bulan" -> ambil "37")
                       final match = RegExp(r'(\d+)').firstMatch(rawAgeString);
                       if (match != null) {
                         ageYearOnly = match.group(1)!;
@@ -250,10 +248,10 @@ class Sidebar extends StatelessWidget {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Profile Picture
+                        // Profile Picture - Dikecilkan sikit
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 42, // Resize from 50 -> 42
+                          height: 42,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: kPrimaryGold, width: 2),
@@ -283,17 +281,17 @@ class Sidebar extends StatelessWidget {
 
                         const SizedBox(height: 5),
 
-                        // User Name
+                        // User Name (Shortened)
                         MetallicGold(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
                             child: Text(
                               user.name.isNotEmpty
-                                ? (user.name.length > 8 ? '${user.name.substring(0, 7)}...' : user.name)
-                                : "Pengguna",
+                                ? (user.name.length > 7 ? '${user.name.substring(0, 6)}..' : user.name)
+                                : "User",
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
+                                fontSize: 10, // Smaller Font
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Playfair',
                               ),
@@ -306,16 +304,16 @@ class Sidebar extends StatelessWidget {
 
                         const SizedBox(height: 4),
 
-                        // --- DISPLAY UMUR (2 BARIS KEMAS) ---
+                        // --- DISPLAY UMUR ---
                         isValidAge 
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                "$ageYearOnly Tahun",
+                                "$ageYearOnly Thn", // Shortened "Tahun" -> "Thn"
                                 style: TextStyle(
                                   color: kPrimaryGold.withOpacity(0.9),
-                                  fontSize: 10,
+                                  fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
@@ -324,23 +322,22 @@ class Sidebar extends StatelessWidget {
                                 "Hijriah",
                                 style: TextStyle(
                                   color: kTextSecondary.withOpacity(0.6),
-                                  fontSize: 8,
-                                  letterSpacing: 1.0, // Nampak lebar & premium sikit
+                                  fontSize: 7,
+                                  letterSpacing: 0.5,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
                           )
                         : Container(
-                            // Fallback kalau tak ada tarikh lahir lagi
                             padding: const EdgeInsets.symmetric(horizontal: 2),
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                rawAgeString, // "Tetapkan Tarikh"
+                                rawAgeString, 
                                 style: TextStyle(
                                   color: kTextSecondary.withOpacity(0.7),
-                                  fontSize: 9,
+                                  fontSize: 8,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -352,7 +349,7 @@ class Sidebar extends StatelessWidget {
                 ),
               ),
 
-              // === 2. TREE SECTION ===
+              // === 2. TREE SECTION (SLIM ADJUSTED) ===
               Consumer<UserModel>(
                 builder: (context, user, _) {
                   return InkWell(
@@ -361,46 +358,43 @@ class Sidebar extends StatelessWidget {
                         .setActiveMenu('tree_progress');
                     },
                     child: Container(
-                      height: 80,
+                      height: 70, // Reduced height
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(vertical: 5),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Glow Effect
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 35, // Smaller glow
+                            height: 35,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: kPrimaryGold.withOpacity(0.15),
-                                  blurRadius: 15,
-                                  spreadRadius: 2,
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
                                 ),
                               ],
                             ),
                           ),
-                          // Tree Image
                           Image.asset(
                             _getTreeAsset(user.treeLevel),
                             fit: BoxFit.contain,
-                            height: 60,
+                            height: 50, // Smaller tree
                             errorBuilder: (ctx, _, __) => const Icon(
                               Icons.forest,
                               color: kPrimaryGold,
-                              size: 40
+                              size: 30
                             ),
                           ),
-                          // Level Text
                           Positioned(
                             bottom: 0,
                             child: Text(
                               "LVL ${user.treeLevel}",
                               style: TextStyle(
                                 color: kPrimaryGold.withOpacity(0.8),
-                                fontSize: 8,
+                                fontSize: 7,
                                 fontWeight: FontWeight.bold
                               ),
                             ),
@@ -430,7 +424,7 @@ class Sidebar extends StatelessWidget {
                 child: Text(
                   "COMING SOON",
                   style: TextStyle(
-                    fontSize: 7,
+                    fontSize: 6,
                     color: Colors.white.withOpacity(0.2),
                     letterSpacing: 1
                   )
