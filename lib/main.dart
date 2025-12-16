@@ -1,12 +1,11 @@
-// lib/main.dart (MOD: STYLE SURVEY MODE)
+// lib/main.dart (RESTORED: ORIGINAL FLOW)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Import Screens & Utils
-import 'screens/splash_screen.dart';
-import 'screens/style_survey.dart'; // ✅ IMPORT BARU (Untuk Pilih Gaya)
+import 'screens/splash_screen.dart'; // ✅ Pintu masuk sebenar
 import 'utils/constants.dart';
 
 // Import Models & Services for Provider
@@ -93,8 +92,7 @@ class IHijrahApp extends StatelessWidget {
         ),
 
         // 7. Entry Point
-        // home: const SplashScreen(), // <-- KOD ASAL (DISIMPAN SEKEJAP)
-        home: const StyleSurvey(),   // <-- MOD SURVEY (AKTIF)
+        home: const SplashScreen(), // ✅ KEMBALI ASAL
       ),
     );
   }
