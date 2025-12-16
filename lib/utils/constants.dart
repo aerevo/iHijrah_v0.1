@@ -1,5 +1,5 @@
 // lib/utils/constants.dart
-// MASTER VERSION: Sidebar 72px + Minimal Gap (12px)
+// MASTER VERSION: Added Dynamic Background Assets
 import 'package:flutter/material.dart';
 
 // ===== WARNA TERAS (EMBUN JIWA) =====
@@ -37,29 +37,28 @@ const int MIN_SELAWAT_DAILY = 100;
 // ===== SIZES =====
 class AppSizes {
   // Sidebar & Flyout
-  // FRANCOIS UPDATE: Diset ke 72.0 untuk padan dengan rekaan Sidebar Slim
   static const double sidebarWidth = 72.0; 
   static const double flyoutWidth = 300.0;
   
   // Card & Radius
   static const double cardRadius = 12.0;
   static const double cardRadiusLg = 20.0;
-  static const double cardRadiusXl = 30.0; // ✅ RESTORED
+  static const double cardRadiusXl = 30.0; 
   
   // Buttons
   static const double buttonHeightMd = 45.0;
   static const double buttonHeightLg = 55.0;
 
-  // Icons (RESTORED MISSING SIZES)
-  static const double iconSm = 16.0; // ✅ RESTORED
-  static const double iconMd = 24.0; // ✅ RESTORED
+  // Icons 
+  static const double iconSm = 16.0;
+  static const double iconMd = 24.0;
   static const double iconLg = 32.0;
-  static const double iconXl = 48.0; // ✅ RESTORED
+  static const double iconXl = 48.0; 
 
-  // Tree Animation Sizes (RESTORED FOR HIJRAH_TREE.DART)
-  static const double treeContainer = 320.0; // ✅ RESTORED
-  static const double treeGlow = 300.0;      // ✅ RESTORED
-  static const double treeImage = 250.0;     // ✅ RESTORED
+  // Tree Animation Sizes
+  static const double treeContainer = 320.0; 
+  static const double treeGlow = 300.0;      
+  static const double treeImage = 250.0;     
 }
 
 class AppSpacing {
@@ -71,7 +70,6 @@ class AppSpacing {
   static const double xxl = 48.0;
 
   // Screen Padding (OPTIMIZED)
-  // FRANCOIS UPDATE: Dikurangkan ke 12.0 (Dari 20.0) untuk tutup gap & luaskan Feed
   static const double screenH = 12.0; 
   static const double screenV = 20.0; 
 }
@@ -87,7 +85,7 @@ class AppFontSizes {
 
 // ===== DURATIONS =====
 class AppDurations {
-  static const Duration normal = Duration(milliseconds: 300); // ✅ RESTORED
+  static const Duration normal = Duration(milliseconds: 300);
   static const Duration fast = Duration(milliseconds: 300);
   static const Duration medium = Duration(milliseconds: 600);
   static const Duration slow = Duration(milliseconds: 1200);
@@ -114,12 +112,16 @@ class AppAssets {
   static const String audioPath = 'assets/sounds/';
   static const String dataPath = 'assets/data/';
 
-  // Images
+  // Images General
   static const String logo = '${imagesPath}logo.png';
-  static const String marakesh = '${imagesPath}marakesh.jpg';
   static const String profileDefault = '${imagesPath}profile_default.png';
 
-  // POKOK (NEW ASSETS)
+  // --- DYNAMIC BACKGROUNDS (NEW) ---
+  static const String bgDay = '${imagesPath}masjid_nabawi.png';
+  static const String bgNight = '${imagesPath}sunnah_mekah.png';
+  static const String bgPattern = '${imagesPath}latar_corak.png';
+
+  // POKOK
   static const String treePhase1 = '${imagesPath}pokok_level1.png';
   static const String treePhase2 = '${imagesPath}pokok_level2.png';
   static const String treePhase3 = '${imagesPath}pokok_level3.png';
