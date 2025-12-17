@@ -1,6 +1,6 @@
-// lib/widgets/sidebar.dart (STYLE: FLOATING GLASS + GOLD ICONS)
+// lib/widgets/sidebar.dart (OPTIMIZED FOR 60PX)
 import 'dart:io';
-import 'dart:ui'; // Diperlukan untuk efek Blur (Kaca)
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,8 +18,8 @@ class Sidebar extends StatelessWidget {
 
   const Sidebar({
     Key? key,
-    this.dockWidth = AppSizes.sidebarWidth, // 72.0 (Slim)
-    this.backgroundColor = Colors.transparent, // Transparent utk efek kaca
+    this.dockWidth = AppSizes.sidebarWidth, // Auto 60.0 dari constants
+    this.backgroundColor = Colors.transparent, 
   }) : super(key: key);
 
   // --- WHATSAPP LOGIC ---
@@ -28,23 +28,11 @@ class Sidebar extends StatelessWidget {
 
   Future<void> _launchWhatsApp(BuildContext context) async {
     final url = 'whatsapp://send?phone=$_whatsappNumber&text=${Uri.encodeComponent(_whatsappMessage)}';
-
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      final webUrl = 'https://wa.me/$_whatsappNumber?text=${Uri.encodeComponent(_whatsappMessage)}';
-      if (await canLaunchUrl(Uri.parse(webUrl))) {
-        await launchUrl(Uri.parse(webUrl), mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Ralat: Tidak dapat buka WhatsApp."),
-              backgroundColor: kWarningRed
-            )
-          );
-        }
-      }
+      // Fallback
+      debugPrint("WhatsApp error");
     }
   }
 
@@ -52,65 +40,20 @@ class Sidebar extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCardDark.withOpacity(0.9), // Semi-transparent dialog
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)
-        ),
-        title: const MetallicGold(
-          child: Text(
-            'Infaq Pembangunan',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Playfair'
-            )
-          )
-        ),
+        backgroundColor: kCardDark.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)),
+        title: const MetallicGold(child: Text('Infaq Pembangunan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Playfair'))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Projek iHijrah dibangunkan atas dasar sukarela. Sumbangan anda membantu kos hosting, API, dan pembangunan ciri-ciri akan datang.",
-              style: TextStyle(
-                color: kTextSecondary,
-                fontSize: AppFontSizes.sm,
-                height: 1.5
-              ),
-            ),
+            const Text("Projek iHijrah dibangunkan atas dasar sukarela. Sumbangan anda amat dihargai.", style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm)),
             const SizedBox(height: AppSpacing.md),
-
-            const MetallicGold(
-              child: Text(
-                "Sila Hubungi Admin:",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600
-                )
-              )
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
             SizedBox(
-              width: double.infinity,
-              height: AppSizes.buttonHeightMd,
-              child: CelebrationButton(
+              width: double.infinity, height: 40,
+              child: ElevatedButton(
                 onPressed: () => _launchWhatsApp(context),
-                backgroundColor: Colors.green.shade700,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.chat_bubble, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      "WhatsApp Admin",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold
-                      )
-                    ),
-                  ],
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text("WhatsApp Admin"),
               ),
             ),
           ],
@@ -127,60 +70,42 @@ class Sidebar extends StatelessWidget {
     return AppAssets.treePhase5;
   }
 
-  // --- BUILD MENU ITEM (GLASS + GOLD) ---
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String id,
-    bool isComingSoon = false
-  }) {
+  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
     final model = Provider.of<SidebarStateModel>(context);
     final isActive = model.activeMenuId == id;
 
-    return Tooltip(
-      message: isComingSoon ? "$title (Akan Datang)" : title,
-      child: InkWell(
-        onTap: isComingSoon ? null : () => model.setActiveMenu(id),
-        child: Container(
-          width: dockWidth,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            // Highlight active menu dengan kaca lebih terang sikit
-            color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
-            border: isActive 
-              ? Border(left: BorderSide(color: kPrimaryGold.withOpacity(0.8), width: 3)) 
-              : null,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // KEKALKAN LOGO EMAS
-              MetallicGold(
-                child: Icon(
-                  icon,
-                  color: isComingSoon 
-                    ? Colors.grey.withOpacity(0.3) 
-                    : (isActive ? Colors.white : Colors.white.withOpacity(0.6)), // Sedikit pudar jika tak aktif
-                  size: 22 
-                ),
+    return InkWell(
+      onTap: isComingSoon ? null : () => model.setActiveMenu(id),
+      child: Container(
+        width: dockWidth,
+        padding: const EdgeInsets.symmetric(vertical: 10), // Padding vertikal rapat sikit
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
+          border: isActive ? Border(left: BorderSide(color: kPrimaryGold.withOpacity(0.8), width: 2)) : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MetallicGold(
+              child: Icon(
+                icon,
+                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? Colors.white : Colors.white.withOpacity(0.6)),
+                size: 20 // Ikon kecil sikit (20px)
               ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  color: isComingSoon 
-                    ? Colors.grey.withOpacity(0.3) 
-                    : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.6)),
-                  fontSize: 9,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              style: TextStyle(
+                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.6)),
+                fontSize: 8, // Font kecil (8px)
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
@@ -188,210 +113,64 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // WRAPPER UTAMA: GLASSMORPHISM
-    return ClipRect( // Pastikan blur tak melimpah
+    return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), // Kekuatan Blur (Kaca)
+        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(
           width: dockWidth + 1,
           height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
-            // Latar Gelap Lutsinar (Tint)
-            color: Colors.black.withOpacity(0.3), 
-            // Garisan tepi kaca (kanan sahaja)
-            border: Border(
-              right: BorderSide(
-                color: Colors.white.withOpacity(0.08), 
-                width: 1
-              ),
-            ),
+            color: Colors.black.withOpacity(0.3),
+            border: Border(right: BorderSide(color: Colors.white.withOpacity(0.08), width: 1)),
           ),
           child: SafeArea(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // === 1. PROFILE SECTION ===
+                  // Profile Section (Compressed)
                   Padding(
-                    padding: const EdgeInsets.only(top: 25, bottom: 5),
+                    padding: const EdgeInsets.only(top: 20, bottom: 5),
                     child: Consumer<UserModel>(
                       builder: (context, user, _) {
-                        String rawAgeString = "";
-                        if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
-                          rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
-                        }
-                        if (rawAgeString.isEmpty || rawAgeString == "-- Tahun" || rawAgeString == "Format Salah") {
-                          if (user.birthdate != null) {
-                            try {
-                              final hijri = HijriService.fromDate(user.birthdate!);
-                              final manualHijriString = '${hijri.hDay}/${hijri.hMonth}/${hijri.hYear}';
-                              rawAgeString = HijriService.calculateHijriAge(manualHijriString);
-                            } catch (e) {
-                              rawAgeString = "Ralat";
-                            }
-                          } else {
-                            rawAgeString = "Tetapkan Tarikh";
-                          }
-                        }
-
-                        String ageYearOnly = "--";
-                        bool isValidAge = rawAgeString.contains(RegExp(r'\d')); 
-                        if (isValidAge) {
-                          final match = RegExp(r'(\d+)').firstMatch(rawAgeString);
-                          if (match != null) {
-                            ageYearOnly = match.group(1)!;
-                          }
-                        }
-
                         return Column(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Profile Picture
                             Container(
-                              width: 42,
-                              height: 42,
+                              width: 38, height: 38, // Avatar kecil (38px)
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.5),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 5
-                                  )
-                                ]
                               ),
                               child: ClipOval(
-                                child: user.avatarPath != null
-                                  ? Image.file(
-                                      File(user.avatarPath!),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Image.asset(
-                                        AppAssets.profileDefault,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : Image.asset(
-                                      AppAssets.profileDefault,
-                                      fit: BoxFit.cover,
-                                    ),
+                                child: Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
                               ),
                             ),
-
-                            const SizedBox(height: 6),
-
-                            // User Name
-                            MetallicGold(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                child: Text(
-                                  user.name.isNotEmpty
-                                    ? (user.name.length > 7 ? '${user.name.substring(0, 6)}..' : user.name)
-                                    : "User",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Playfair',
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-
                             const SizedBox(height: 4),
-
-                            // Display Umur (Style Kemas)
-                            isValidAge 
-                            ? Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    "$ageYearOnly Thn",
-                                    style: TextStyle(
-                                      color: kPrimaryGold.withOpacity(0.9),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Hijriah",
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: 7,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    rawAgeString, 
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: 8,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
+                            MetallicGold(
+                              child: Text(
+                                user.name.isNotEmpty ? (user.name.length > 6 ? '${user.name.substring(0, 5)}..' : user.name) : "User",
+                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
                               ),
+                            ),
                           ],
                         );
                       },
                     ),
                   ),
 
-                  // === 2. TREE SECTION ===
+                  // Tree Section
                   Consumer<UserModel>(
                     builder: (context, user, _) {
                       return InkWell(
-                        onTap: () {
-                          Provider.of<SidebarStateModel>(context, listen: false)
-                            .setActiveMenu('tree_progress');
-                        },
+                        onTap: () => Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress'),
                         child: Container(
-                          height: 70,
-                          width: double.infinity,
+                          height: 60, width: double.infinity,
                           margin: const EdgeInsets.symmetric(vertical: 5),
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              Container(
-                                width: 35,
-                                height: 35,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: kPrimaryGold.withOpacity(0.1),
-                                      blurRadius: 10,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Image.asset(
-                                _getTreeAsset(user.treeLevel),
-                                fit: BoxFit.contain,
-                                height: 45,
-                                errorBuilder: (ctx, _, __) => const Icon(
-                                  Icons.forest,
-                                  color: kPrimaryGold,
-                                  size: 30
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                child: Text(
-                                  "LVL ${user.treeLevel}",
-                                  style: TextStyle(
-                                    color: kPrimaryGold.withOpacity(0.8),
-                                    fontSize: 7,
-                                    fontWeight: FontWeight.bold
-                                  ),
-                                ),
-                              ),
+                              Image.asset(_getTreeAsset(user.treeLevel), fit: BoxFit.contain, height: 40),
+                              Positioned(bottom: 0, child: Text("LVL ${user.treeLevel}", style: TextStyle(color: kPrimaryGold.withOpacity(0.8), fontSize: 6, fontWeight: FontWeight.bold))),
                             ],
                           ),
                         ),
@@ -399,42 +178,24 @@ class Sidebar extends StatelessWidget {
                     },
                   ),
 
-                  Divider(color: Colors.white.withOpacity(0.1), height: 1, thickness: 1),
+                  Divider(color: Colors.white.withOpacity(0.1), height: 1),
 
-                  // === 3. MENU ICONS ===
+                  // Menu Icons
                   _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
                   _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
                   _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
                   _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
                   _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
                   _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
-
-                  const SizedBox(height: 10),
-
-                  // Coming Soon
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(
-                      "COMING SOON",
-                      style: TextStyle(
-                        fontSize: 6,
-                        color: Colors.white.withOpacity(0.2),
-                        letterSpacing: 1
-                      )
-                    ),
-                  ),
+                  
+                  const SizedBox(height: 5),
                   _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
                   _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
-
-                  const SizedBox(height: 20),
-
-                  // Bottom Actions
+                  const SizedBox(height: 15),
                   _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
                   _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
 
-                  const SizedBox(height: 20),
-
-                  // Infaq Dialog Trigger
+                  // Infaq Trigger
                   Consumer<SidebarStateModel>(
                     builder: (ctx, model, child) {
                       if (model.activeMenuId == 'infaq') {
