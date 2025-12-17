@@ -6,7 +6,7 @@ import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'constants.dart'; // Import yang betul
+import 'constants.dart'; // ✅ INI YANG MESTI ADA
 import '../models/user_model.dart';
 import 'settings_enums.dart';
 
@@ -33,12 +33,11 @@ class PrayerService with ChangeNotifier {
 
   void updateUser(UserModel newUserModel) {
     _userModel = newUserModel;
-    // Potentially re-load settings if they can change
-    // notifyListeners();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    
     // ✅ Penggunaan DEFAULT_LATITUDE/LONGITUDE kini merujuk kepada constants.dart
     _currentLat = prefs.getDouble('latitude') ?? DEFAULT_LATITUDE;
     _currentLng = prefs.getDouble('longitude') ?? DEFAULT_LONGITUDE;
@@ -52,7 +51,6 @@ class PrayerService with ChangeNotifier {
       final now = DateTime.now();
       final dateComps = DateComponents.from(now);
       
-      // Menggunakan CalculationMethod yang sesuai (Singapore/MuslimWorldLeague for Malaysia)
       final params = CalculationMethod.singapore.getParameters();
       params.madhab = Madhab.shafi;
       
@@ -67,7 +65,6 @@ class PrayerService with ChangeNotifier {
     }
   }
   
-  // Logic untuk kira waktu solat seterusnya
   void _updateNextPrayer() {
     if (_prayerTimes == null) return;
     
@@ -83,7 +80,6 @@ class PrayerService with ChangeNotifier {
     notifyListeners();
   }
   
-  // Update lokasi jika user ubah
   Future<void> updateLocation(double lat, double lng) async {
     _currentLat = lat;
     _currentLng = lng;
@@ -92,7 +88,7 @@ class PrayerService with ChangeNotifier {
     await prefs.setDouble('latitude', lat);
     await prefs.setDouble('longitude', lng);
     
-    _initPrayerTimes(); // Re-calculate with new location
+    _initPrayerTimes(); 
     notifyListeners();
   }
   
@@ -102,7 +98,6 @@ class PrayerService with ChangeNotifier {
     }
   }
 
-  // Helper untuk namakan waktu solat
   String _getPrayerName(Prayer prayer) {
     switch (prayer) {
       case Prayer.fajr: return "Subuh";
@@ -116,26 +111,21 @@ class PrayerService with ChangeNotifier {
     }
   }
   
-  // Timer untuk update waktu solat (setiap saat)
   void _startTimers() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateNextPrayer();
     });
 
-    // Refresh waktu solat setiap hari (supaya tarikh sentiasa betul)
     _dailyRefreshTimer?.cancel();
     _dailyRefreshTimer = Timer.periodic(const Duration(hours: 1), (timer) {
       _initPrayerTimes();
     });
   }
 
-  // Getter format masa (dipanggil oleh widgets)
   String getPrayerTime(String prayerName) {
     try {
       if (_prayerTimes == null) return '--:--';
-
-      // ... (logic remains the same)
       switch (prayerName.toLowerCase()) {
         case 'subuh':
         case 'fajr':
@@ -163,7 +153,6 @@ class PrayerService with ChangeNotifier {
   }
 
   Map<String, String> getAllPrayerTimes() {
-    // ... (logic remains the same)
     try {
       if (_prayerTimes == null) return {
         'Subuh': '--:--', 'Zohor': '--:--', 'Asar': '--:--', 'Maghrib': '--:--', 'Isyak': '--:--'
