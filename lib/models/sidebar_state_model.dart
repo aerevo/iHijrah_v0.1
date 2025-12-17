@@ -1,4 +1,4 @@
-﻿// lib/models/sidebar_state_model.dart (UPGRADED 7.8/10)
+// lib/models/sidebar_state_model.dart (FIXED: Added menuTitle getter)
 
 import 'package:flutter/material.dart';
 
@@ -41,6 +41,25 @@ class SidebarStateModel extends ChangeNotifier {
   /// Get last opened menu (for back navigation)
   String? get previousMenu => _menuHistory.isNotEmpty ? _menuHistory.last : null;
 
+  // ✅ GETTER BARU (UNTUK FLYOUT PANEL)
+  String get menuTitle {
+    switch (_activeMenuId) {
+      case 'profil': return 'Profil Pengguna';
+      case 'kalendar': return 'Kalendar Islam';
+      case 'sirah': return 'Sirah Nabi';
+      case 'peristiwa': return 'Peristiwa Penting';
+      case 'notifikasi': return 'Tetapan Notifikasi';
+      case 'info': return 'Tentang Aplikasi';
+      case 'tree_progress': return 'Pohon Amal';
+      case 'birthday': return 'Hari Lahir';
+      case 'qiblat': return 'Arah Qiblat';
+      case 'quran': return 'Al-Quran';
+      case 'infaq': return 'Infaq Pembangunan';
+      default: return 'Menu';
+    }
+  }
+  // ✅ END GETTER BARU
+
   // ===== PUBLIC METHODS =====
 
   /// Set active menu dengan toggle logic
@@ -48,44 +67,36 @@ class SidebarStateModel extends ChangeNotifier {
   /// Rules:
   /// - Tekan menu yang sama → Close
   /// - Tekan menu lain → Switch
-  void setActiveMenu(String menuId) {
-    // Prevent spam during animation
-    if (_isAnimating) return;
-
-    _isAnimating = true;
-
-    // Toggle logic
-    if (_activeMenuId == menuId) {
-      // Sama menu → Close
-      _closeMenuInternal();
-    } else {
-      // Lain menu → Switch
-      if (_activeMenuId != null) {
-        _menuHistory.add(_activeMenuId!);
-      }
-      _activeMenuId = menuId;
+  void setActiveMenu(String id) {
+    if (_activeMenuId != null && _activeMenuId != id) {
+      // Record current menu before switching
+      _menuHistory.add(_activeMenuId!);
     }
-
-    notifyListeners();
-
-    // Reset animation flag after animation duration
-    Future.delayed(const Duration(milliseconds: 400), () {
-      _isAnimating = false;
-    });
+    
+    if (_activeMenuId == id) {
+      closeMenu();
+    } else {
+      _activeMenuId = id;
+      notifyListeners();
+    }
   }
 
-  /// Close menu (public method)
+  /// Close the menu
   void closeMenu() {
-    if (_activeMenuId == null) return;
-
-    _closeMenuInternal();
+    _activeMenuId = null;
     notifyListeners();
   }
 
-  /// Internal close (no notify)
-  void _closeMenuInternal() {
-    _activeMenuId = null;
-    _menuHistory.clear();
+  /// Start animation
+  void startAnimation() {
+    _isAnimating = true;
+    notifyListeners();
+  }
+
+  /// Stop animation
+  void stopAnimation() {
+    _isAnimating = false;
+    notifyListeners();
   }
 
   /// Toggle menu (for FAB)
@@ -145,11 +156,5 @@ class SidebarStateModel extends ChangeNotifier {
     _menuHistory.clear();
     _isAnimating = false;
     notifyListeners();
-  }
-
-  @override
-  String toString() {
-    return 'SidebarStateModel(active: $_activeMenuId, '
-           'open: $isMenuOpen, history: ${_menuHistory.length})';
   }
 }
