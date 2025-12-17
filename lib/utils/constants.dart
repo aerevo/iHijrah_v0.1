@@ -1,4 +1,4 @@
-// lib/utils/constants.dart (MASTER CHECK: Has Default Location)
+// lib/utils/constants.dart
 import 'package:flutter/material.dart';
 
 // ===== WARNA TERAS =====
@@ -26,14 +26,12 @@ const LinearGradient kBackgroundGradient = LinearGradient(
   end: Alignment.bottomCenter,
 );
 
-// ===== DEFAULT LOCATION (WAJIB ADA UNTUK PRAYER SERVICE) =====
-const double DEFAULT_LATITUDE = 3.140853; // Masjid Negara KL
-const double DEFAULT_LONGITUDE = 101.693207; // WAJIB ada di luar class
-// =============================================================
+// ===== DEFAULT LOCATION =====
+const double DEFAULT_LATITUDE = 3.140853; 
+const double DEFAULT_LONGITUDE = 101.693207;
 
 // ===== SIZES =====
 class AppSizes {
-  // Sidebar (ULTRA SLIM)
   static const double sidebarWidth = 60.0; 
   static const double flyoutWidth = 300.0;
   
@@ -75,11 +73,27 @@ class AppFontSizes {
   static const double xxl = 24.0;
 }
 
-// ===== DURATIONS =====
+// ===== DURATIONS (DIPERLENGKAPKAN) =====
 class AppDurations {
   static const Duration normal = Duration(milliseconds: 300);
   static const Duration fast = Duration(milliseconds: 300);
   static const Duration medium = Duration(milliseconds: 600);
+  
+  // ✅ DURATION YANG HILANG (Dipakai oleh Button & Tree Widget)
+  static const Duration leafFall = Duration(seconds: 6);
+  static const Duration buttonPress = Duration(milliseconds: 200);
+  static const Duration buttonRelease = Duration(milliseconds: 200);
+  static const Duration celebration = Duration(milliseconds: 1500);
+  static const Duration levelUp = Duration(milliseconds: 3000);
+}
+
+// ===== CURVES (Disertakan juga supaya tiada ralat lain) =====
+class AppCurves {
+  static const Curve buttonPress = Curves.easeOut;
+  static const Curve buttonRelease = Curves.easeInOut;
+  static const Curve bounce = Curves.elasticOut;
+  static const Curve smooth = Curves.easeOutCubic;
+  static const Curve springy = Curves.elasticOut;
 }
 
 // ===== ASSETS =====
@@ -92,8 +106,8 @@ class AppAssets {
   static const String profileDefault = '${imagesPath}profile_default.png';
 
   // --- DYNAMIC BACKGROUNDS ---
-  static const String bgDay = '${imagesPath}sunnah_mekah.png'; // Siang: Mekah
-  static const String bgNight = '${imagesPath}masjid_nabawi.png'; // Malam: Nabawi
+  static const String bgDay = '${imagesPath}sunnah_mekah.png'; 
+  static const String bgNight = '${imagesPath}masjid_nabawi.png';
   static const String bgPattern = '${imagesPath}latar_corak.png';
 
   // POKOK
