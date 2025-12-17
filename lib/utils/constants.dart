@@ -1,4 +1,4 @@
-// lib/utils/constants.dart (FIXED: Ultra Slim Sidebar + Swapped Backgrounds)
+// lib/utils/constants.dart (MASTER CHECK: Has Default Location)
 import 'package:flutter/material.dart';
 
 // ===== WARNA TERAS =====
@@ -26,10 +26,14 @@ const LinearGradient kBackgroundGradient = LinearGradient(
   end: Alignment.bottomCenter,
 );
 
+// ===== DEFAULT LOCATION (WAJIB ADA UNTUK PRAYER SERVICE) =====
+const double DEFAULT_LATITUDE = 3.140853; // Masjid Negara KL
+const double DEFAULT_LONGITUDE = 101.693207; // WAJIB ada di luar class
+// =============================================================
+
 // ===== SIZES =====
 class AppSizes {
-  // Sidebar (ULTRA SLIM MODE)
-  // Dikecilkan dari 72.0 -> 60.0 untuk luaskan Feed
+  // Sidebar (ULTRA SLIM)
   static const double sidebarWidth = 60.0; 
   static const double flyoutWidth = 300.0;
   
@@ -58,8 +62,6 @@ class AppSpacing {
   static const double xl = 32.0;
   static const double xxl = 48.0;
 
-  // Screen Padding (ZERO GAP MODE)
-  // Dikurangkan ke 0.0 atau sangat kecil supaya Feed rapat ke tepi
   static const double screenH = 4.0; 
   static const double screenV = 20.0; 
 }
@@ -73,25 +75,11 @@ class AppFontSizes {
   static const double xxl = 24.0;
 }
 
-// ===== DURATIONS & CURVES =====
+// ===== DURATIONS =====
 class AppDurations {
   static const Duration normal = Duration(milliseconds: 300);
   static const Duration fast = Duration(milliseconds: 300);
   static const Duration medium = Duration(milliseconds: 600);
-  static const Duration slow = Duration(milliseconds: 1200);
-  static const Duration pageTransition = Duration(milliseconds: 800);
-  static const Duration leafFall = Duration(seconds: 6);
-  static const Duration buttonPress = Duration(milliseconds: 200);
-  static const Duration celebration = Duration(milliseconds: 1500);
-  static const Duration levelUp = Duration(milliseconds: 3000);
-}
-
-class AppCurves {
-  static const Curve buttonPress = Curves.easeOut;
-  static const Curve buttonRelease = Curves.easeInOut;
-  static const Curve bounce = Curves.elasticOut;
-  static const Curve smooth = Curves.easeOutCubic;
-  static const Curve springy = Curves.elasticOut;
 }
 
 // ===== ASSETS =====
@@ -103,11 +91,9 @@ class AppAssets {
   static const String logo = '${imagesPath}logo.png';
   static const String profileDefault = '${imagesPath}profile_default.png';
 
-  // --- DYNAMIC BACKGROUNDS (SWAPPED!) ---
-  // Tuan minta Siang = Mekah, Malam = Nabawi (atau lain), jadi saya tukar mapping di sini.
-  // bgDay kini point ke MEKAH.
-  static const String bgDay = '${imagesPath}sunnah_mekah.png'; 
-  static const String bgNight = '${imagesPath}masjid_nabawi.png';
+  // --- DYNAMIC BACKGROUNDS ---
+  static const String bgDay = '${imagesPath}sunnah_mekah.png'; // Siang: Mekah
+  static const String bgNight = '${imagesPath}masjid_nabawi.png'; // Malam: Nabawi
   static const String bgPattern = '${imagesPath}latar_corak.png';
 
   // POKOK
@@ -117,13 +103,15 @@ class AppAssets {
   static const String treePhase4 = '${imagesPath}pokok_level4.png';
   static const String treePhase5 = '${imagesPath}pokok_level5.png';
 
-  // Audio & Data
+  // Audio
   static const String intro = '${audioPath}intro.mp3';
   static const String adhan = '${audioPath}adhan.mp3';
   static const String splash = '${audioPath}siraman.mp3';
   static const String suaraAlhamdulillah = '${audioPath}suara_alhamdulillah.mp3';
   static const String suaraInsyaAllah = '${audioPath}suara_insyaaallah.mp3';
   static const String suaraHi = '${audioPath}suara_hi.mp3';
+
+  // JSON
   static const String sirahData = '${dataPath}sirah_data.json';
   static const String eventData = '${dataPath}events.json';
 }
