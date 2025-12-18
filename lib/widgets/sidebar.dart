@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart - ENHANCED INTERACTIVE SIDEBAR
+// lib/widgets/sidebar.dart (OPTIMIZED FOR 60PX)
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -12,39 +12,17 @@ import '../utils/hijri_service.dart';
 import 'metallic_gold.dart';
 import 'embun_ui/embun_ui.dart';
 
-class Sidebar extends StatefulWidget {
+class Sidebar extends StatelessWidget {
   final double dockWidth;
   final Color backgroundColor;
-  
+
   const Sidebar({
     Key? key,
-    this.dockWidth = AppSizes.sidebarWidth,
-    this.backgroundColor = Colors.transparent,
+    this.dockWidth = AppSizes.sidebarWidth, // Auto 60.0 dari constants
+    this.backgroundColor = Colors.transparent, 
   }) : super(key: key);
 
-  @override
-  State<Sidebar> createState() => _SidebarState();
-}
-
-class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  String? _hoveredMenuId;
-  
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-  
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
+  // --- WHATSAPP LOGIC ---
   final String _whatsappNumber = '+60133662440';
   final String _whatsappMessage = 'Assalamualaikum Admin, saya berminat untuk membuat Infaq Pembangunan iHijrah.';
 
@@ -52,6 +30,9 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     final url = 'whatsapp://send?phone=$_whatsappNumber&text=${Uri.encodeComponent(_whatsappMessage)}';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback
+      debugPrint("WhatsApp error");
     }
   }
 
@@ -59,44 +40,20 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCardDark.withOpacity(0.95),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
-        ),
-        title: const MetallicGold(
-          child: Text(
-            'Infaq Pembangunan',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Playfair'
-            ),
-          ),
-        ),
+        backgroundColor: kCardDark.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)),
+        title: const MetallicGold(child: Text('Infaq Pembangunan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Playfair'))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Projek iHijrah dibangunkan atas dasar sukarela. Sumbangan anda amat dihargai.",
-              style: TextStyle(
-                color: kTextSecondary,
-                fontSize: AppFontSizes.sm
-              ),
-            ),
+            const Text("Projek iHijrah dibangunkan atas dasar sukarela. Sumbangan anda amat dihargai.", style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm)),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
-              width: double.infinity,
-              height: 45,
-              child: ElevatedButton.icon(
+              width: double.infinity, height: 40,
+              child: ElevatedButton(
                 onPressed: () => _launchWhatsApp(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-                  ),
-                ),
-                icon: const Icon(Icons.chat, size: AppSizes.iconSm),
-                label: const Text("WhatsApp Admin"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text("WhatsApp Admin"),
               ),
             ),
           ],
@@ -113,123 +70,131 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     return AppAssets.treePhase5;
   }
 
+  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
+    final model = Provider.of<SidebarStateModel>(context);
+    final isActive = model.activeMenuId == id;
+
+    return InkWell(
+      onTap: isComingSoon ? null : () => model.setActiveMenu(id),
+      child: Container(
+        width: dockWidth,
+        padding: const EdgeInsets.symmetric(vertical: 10), // Padding vertikal rapat sikit
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
+          border: isActive ? Border(left: BorderSide(color: kPrimaryGold.withOpacity(0.8), width: 2)) : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MetallicGold(
+              child: Icon(
+                icon,
+                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? Colors.white : Colors.white.withOpacity(0.6)),
+                size: 20 // Ikon kecil sikit (20px)
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              style: TextStyle(
+                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.6)),
+                fontSize: 8, // Font kecil (8px)
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(
-          width: widget.dockWidth + 1,
+          width: dockWidth + 1,
           height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.black.withOpacity(0.4),
-                Colors.black.withOpacity(0.3),
-              ],
-            ),
-            border: Border(
-              right: BorderSide(
-                color: kPrimaryGold.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
+            color: Colors.black.withOpacity(0.3),
+            border: Border(right: BorderSide(color: Colors.white.withOpacity(0.08), width: 1)),
           ),
           child: SafeArea(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // Profile Section - Enhanced
-                  _buildProfileSection(),
+                  // Profile Section (Compressed)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, bottom: 5),
+                    child: Consumer<UserModel>(
+                      builder: (context, user, _) {
+                        return Column(
+                          children: [
+                            Container(
+                              width: 38, height: 38, // Avatar kecil (38px)
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.5),
+                              ),
+                              child: ClipOval(
+                                child: Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            MetallicGold(
+                              child: Text(
+                                user.name.isNotEmpty ? (user.name.length > 6 ? '${user.name.substring(0, 5)}..' : user.name) : "User",
+                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Tree Section
+                  Consumer<UserModel>(
+                    builder: (context, user, _) {
+                      return InkWell(
+                        onTap: () => Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress'),
+                        child: Container(
+                          height: 60, width: double.infinity,
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Image.asset(_getTreeAsset(user.treeLevel), fit: BoxFit.contain, height: 40),
+                              Positioned(bottom: 0, child: Text("LVL ${user.treeLevel}", style: TextStyle(color: kPrimaryGold.withOpacity(0.8), fontSize: 6, fontWeight: FontWeight.bold))),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  Divider(color: Colors.white.withOpacity(0.1), height: 1),
+
+                  // Menu Icons
+                  _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
+                  _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
+                  _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
+                  _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
+                  _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
+                  _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
                   
-                  const SizedBox(height: AppSpacing.sm),
-                  
-                  // Tree Section - Enhanced
-                  _buildTreeSection(),
-                  
-                  Divider(
-                    color: kPrimaryGold.withOpacity(0.2),
-                    height: 1,
-                    thickness: 1,
-                  ),
-                  
-                  const SizedBox(height: AppSpacing.sm),
-                  
-                  // Menu Icons - Enhanced
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.calendar_month,
-                    title: 'Kalendar',
-                    id: 'kalendar',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.menu_book,
-                    title: 'Sirah',
-                    id: 'sirah',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.cake,
-                    title: 'H.Jadi',
-                    id: 'birthday',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.event,
-                    title: 'Peristiwa',
-                    id: 'peristiwa',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.notifications,
-                    title: 'Notifikasi',
-                    id: 'notifikasi',
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.person,
-                    title: 'Profil',
-                    id: 'profil',
-                  ),
-                  
-                  const SizedBox(height: AppSpacing.xs),
-                  
-                  // Coming Soon Items
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.mosque,
-                    title: 'Qiblat',
-                    id: 'qiblat',
-                    isComingSoon: true,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.book,
-                    title: 'Quran',
-                    id: 'quran',
-                    isComingSoon: true,
-                  ),
-                  
-                  const SizedBox(height: AppSpacing.md),
-                  
-                  // Bottom Actions
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.favorite,
-                    title: 'Infaq',
-                    id: 'infaq',
-                    isPrimary: true,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.info,
-                    title: 'Info',
-                    id: 'info',
-                  ),
-                  
+                  const SizedBox(height: 5),
+                  _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
+                  _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
+                  const SizedBox(height: 15),
+                  _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
+                  _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
+
                   // Infaq Trigger
                   Consumer<SidebarStateModel>(
                     builder: (ctx, model, child) {
@@ -245,247 +210,6 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildProfileSection() {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
-      child: Consumer<UserModel>(
-        builder: (context, user, _) {
-          return Column(
-            children: [
-              // Avatar with glow effect
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: kPrimaryGold.withOpacity(0.3 * _pulseController.value),
-                          blurRadius: 15,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: kGoldGradient,
-                    border: Border.all(
-                      color: kPrimaryGold,
-                      width: 2,
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      AppAssets.profileDefault,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: AppSpacing.xs),
-              
-              // Name
-              MetallicGold(
-                child: Text(
-                  user.name.isNotEmpty
-                    ? (user.name.length > 7 ? '${user.name.substring(0, 6)}..' : user.name)
-                    : "User",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-  
-  Widget _buildTreeSection() {
-    return Consumer<UserModel>(
-      builder: (context, user, _) {
-        return InkWell(
-          onTap: () => Provider.of<SidebarStateModel>(context, listen: false)
-              .setActiveMenu('tree_progress'),
-          child: Container(
-            height: 70,
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(
-              vertical: AppSpacing.xs,
-              horizontal: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  kPrimaryGold.withOpacity(0.1),
-                  Colors.transparent,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Tree Image
-                Image.asset(
-                  _getTreeAsset(user.treeLevel),
-                  fit: BoxFit.contain,
-                  height: 50,
-                ),
-                
-                // Level Badge
-                Positioned(
-                  bottom: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: kGoldGradient,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "LVL ${user.treeLevel}",
-                      style: const TextStyle(
-                        color: kBackgroundDark,
-                        fontSize: 7,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-  
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String id,
-    bool isComingSoon = false,
-    bool isPrimary = false,
-  }) {
-    final model = Provider.of<SidebarStateModel>(context);
-    final isActive = model.activeMenuId == id;
-    final isHovered = _hoveredMenuId == id;
-    
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hoveredMenuId = id),
-      onExit: (_) => setState(() => _hoveredMenuId = null),
-      child: InkWell(
-        onTap: isComingSoon ? null : () => model.setActiveMenu(id),
-        child: AnimatedContainer(
-          duration: AppDurations.fast,
-          curve: Curves.easeOut,
-          width: widget.dockWidth,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            gradient: isActive || isHovered
-              ? LinearGradient(
-                  colors: [
-                    kPrimaryGold.withOpacity(isActive ? 0.2 : 0.1),
-                    Colors.transparent,
-                  ],
-                )
-              : null,
-            border: isActive
-              ? Border(
-                  left: BorderSide(
-                    color: kPrimaryGold,
-                    width: 3,
-                  ),
-                )
-              : null,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon dengan effect
-              AnimatedContainer(
-                duration: AppDurations.fast,
-                transform: Matrix4.identity()
-                  ..scale(isActive || isHovered ? 1.1 : 1.0),
-                child: MetallicGold(
-                  child: Icon(
-                    icon,
-                    color: isComingSoon
-                      ? Colors.grey.withOpacity(0.3)
-                      : isPrimary
-                        ? Colors.red.shade300
-                        : isActive
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.7),
-                    size: 22,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 4),
-              
-              // Label
-              Text(
-                title,
-                style: TextStyle(
-                  color: isComingSoon
-                    ? Colors.grey.withOpacity(0.3)
-                    : isPrimary
-                      ? Colors.red.shade300
-                      : isActive
-                        ? kPrimaryGold
-                        : kTextSecondary.withOpacity(0.7),
-                  fontSize: 8.5,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              
-              // Coming Soon Badge
-              if (isComingSoon)
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Soon',
-                    style: TextStyle(
-                      color: Colors.orange.shade300,
-                      fontSize: 6,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
           ),
         ),
       ),
