@@ -1,4 +1,4 @@
-// lib/models/sidebar_state_model.dart (FIXED: Added menuTitle getter)
+// lib/models/sidebar_state_model.dart (FULL CODE: PHANTOM MODE)
 
 import 'package:flutter/material.dart';
 
@@ -8,15 +8,20 @@ import 'package:flutter/material.dart';
 /// - Toggle logic dengan animation support
 /// - Menu history tracking
 /// - Auto-close untuk special menus (Infaq)
+/// - Visibility toggle on scroll (Phantom Mode)
 class SidebarStateModel extends ChangeNotifier {
   // ===== CONSTANTS =====
-  static const double _defaultDockWidth = 70.0;
+  static const double _defaultDockWidth = 60.0;
   static const double _defaultFlyoutWidth = 300.0;
 
   // ===== STATE =====
   String? _activeMenuId;
   final List<String> _menuHistory = [];
   bool _isAnimating = false;
+  
+  // ✅ STATE BARU: VISIBILITY (PHANTOM MODE)
+  // Default true (Nampak)
+  bool _isVisible = true; 
 
   // ===== GETTERS =====
 
@@ -41,7 +46,10 @@ class SidebarStateModel extends ChangeNotifier {
   /// Get last opened menu (for back navigation)
   String? get previousMenu => _menuHistory.isNotEmpty ? _menuHistory.last : null;
 
-  // ✅ GETTER BARU (UNTUK FLYOUT PANEL)
+  /// Check sidebar visibility
+  bool get isVisible => _isVisible;
+
+  /// Tajuk Menu untuk Flyout Panel
   String get menuTitle {
     switch (_activeMenuId) {
       case 'profil': return 'Profil Pengguna';
@@ -58,7 +66,6 @@ class SidebarStateModel extends ChangeNotifier {
       default: return 'Menu';
     }
   }
-  // ✅ END GETTER BARU
 
   // ===== PUBLIC METHODS =====
 
@@ -77,6 +84,8 @@ class SidebarStateModel extends ChangeNotifier {
       closeMenu();
     } else {
       _activeMenuId = id;
+      // Bila buka menu, pastikan sidebar visible
+      _isVisible = true; 
       notifyListeners();
     }
   }
@@ -138,6 +147,23 @@ class SidebarStateModel extends ChangeNotifier {
       setActiveMenu(menuId);
     }
   }
+  
+  // ✅ METHOD BARU: KAWAL VISIBILITY BILA SCROLL
+  void setSidebarVisibility(bool visible) {
+    // Jika menu sedang terbuka, JANGAN sorok sidebar (nanti pelik)
+    if (isMenuOpen) {
+      if (!_isVisible) {
+        _isVisible = true;
+        notifyListeners();
+      }
+      return;
+    }
+
+    if (_isVisible != visible) {
+      _isVisible = visible;
+      notifyListeners();
+    }
+  }
 
   // ===== SPECIAL MENU HANDLERS =====
 
@@ -155,6 +181,7 @@ class SidebarStateModel extends ChangeNotifier {
     _activeMenuId = null;
     _menuHistory.clear();
     _isAnimating = false;
+    _isVisible = true;
     notifyListeners();
   }
 }
