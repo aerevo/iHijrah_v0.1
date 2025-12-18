@@ -1,8 +1,7 @@
-// lib/widgets/dummy_feed_panel.dart (EDGE-TO-EDGE WIDE)
+// lib/widgets/dummy_feed_panel.dart (SCROLL TEST MODE: 20 POSTS)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-import 'metallic_gold.dart'; 
 
 class DummyFeedPanel extends StatelessWidget {
   const DummyFeedPanel({Key? key}) : super(key: key);
@@ -10,44 +9,49 @@ class DummyFeedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      // Padding Feed: ZERO Left/Right untuk maksimalkan lebar
+      physics: const BouncingScrollPhysics(), // Efek mantul bila hujung (iOS style)
       padding: const EdgeInsets.only(
         top: AppSpacing.md, 
-        left: 0, // Rapat ke tepi Sidebar
-        right: 0, // Rapat ke tepi Skrin Kanan
-        bottom: 100,
+        left: 0, 
+        right: 0,
+        bottom: 120, // Ruang bawah lebih besar supaya post last tak tertutup
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Post 1
-          const _SocialPostCard(
-            userName: 'Syafiq Aiman',
-            timeAgo: '2j',
-            content: 'Alhamdulillah, hari ni genap 30 hari istiqamah solat Subuh berjemaah. Rasa tenang sangat hati ni. Doakan saya terus kuat ya sahabat semua!',
-            initialLikes: 42,
-            initialComments: 5,
+          // Header Kecil
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              "Suapan Komuniti",
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 12,
+                letterSpacing: 1.5,
+                fontWeight: FontWeight.bold
+              ),
+            ),
           ),
 
-          const SizedBox(height: AppSpacing.md),
-
-          // Post 2
-          const _SocialPostCard(
-            userName: 'Sarah Liyana',
-            timeAgo: 'Semalam',
-            content: 'Ada sesiapa tahu kat mana nak cari kelas tajwid asas area Seremban yang sesuai untuk wanita bekerja? Terima kasih.',
-            initialLikes: 12,
-            initialComments: 8,
-          ),
-          
-          const SizedBox(height: AppSpacing.md),
+          // --- GENERATE 20 DUMMY POSTS ---
+          ...List.generate(20, (index) {
+            return _SocialPostCard(
+              userName: index % 2 == 0 ? 'Syafiq Aiman' : 'Sarah Liyana',
+              timeAgo: '${index + 1}j yang lalu',
+              content: index % 2 == 0
+                ? 'Post ke-#${index + 1}: Alhamdulillah, hari ni genap 30 hari istiqamah solat Subuh berjemaah. Rasa tenang sangat hati ni. Doakan saya terus kuat ya sahabat semua!'
+                : 'Post ke-#${index + 1}: Ada sesiapa tahu kat mana nak cari kelas tajwid asas area Seremban yang sesuai untuk wanita bekerja? Terima kasih.',
+              initialLikes: (index * 5) + 12,
+              initialComments: index + 2,
+            );
+          }),
         ],
       ),
     );
   }
 }
 
-// --- PRIVATE WIDGET: WIDE GLASS CARD ---
+// --- WIDGET KAD KACA (SAMA MACAM DULU) ---
 class _SocialPostCard extends StatelessWidget {
   final String userName;
   final String timeAgo;
@@ -67,8 +71,7 @@ class _SocialPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Margin kecil di tepi supaya tak rapat sangat ke dinding (pilihan: 4-8px)
-      margin: const EdgeInsets.symmetric(horizontal: 4), 
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6), // Jarak antara post
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
