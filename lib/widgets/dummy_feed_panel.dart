@@ -1,4 +1,4 @@
-// lib/widgets/dummy_feed_panel.dart (VERSI ASAL + CERMIN JERNIH 3.0)
+// lib/widgets/dummy_feed_panel.dart (PREMIUM: GRADIENT BORDER & SHADER TEXT)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
@@ -9,17 +9,16 @@ class DummyFeedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(), // Kekal: Efek mantul
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(
         top: AppSpacing.md, 
         left: 0, 
         right: 0,
-        bottom: 120, // Kekal: Ruang bawah
+        bottom: 120, 
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Kecil
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
@@ -33,7 +32,6 @@ class DummyFeedPanel extends StatelessWidget {
             ),
           ),
 
-          // --- GENERATE 20 DUMMY POSTS (KEKAL) ---
           ...List.generate(20, (index) {
             return _SocialPostCard(
               userName: index % 2 == 0 ? 'Syafiq Aiman' : 'Sarah Liyana',
@@ -51,7 +49,6 @@ class DummyFeedPanel extends StatelessWidget {
   }
 }
 
-// --- WIDGET KAD KACA ---
 class _SocialPostCard extends StatelessWidget {
   final String userName;
   final String timeAgo;
@@ -71,76 +68,137 @@ class _SocialPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6), 
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          // ✅ FIX UTAMA: Blur diturunkan dari 10.0 ke 3.0 (Supaya Jernih)
-          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0), 
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3), // Hitam nipis
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1), // Border kaca
-                width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), // Jarak lebih luas sikit
+      child: Stack(
+        children: [
+          // 1. GLOW EFFECT (Belakang Kad)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: kPrimaryGold.withOpacity(0.05), // Glow emas sangat halus
+                    blurRadius: 20,
+                    spreadRadius: -5,
+                  )
+                ],
               ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1), 
-                        shape: BoxShape.circle
-                      ),
-                      // Icon tukar jadi putih sikit supaya tak kusam
-                      child: Icon(Icons.person, color: Colors.white.withOpacity(0.9), size: 28),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Nama tukar jadi Emas (kPrimaryGold)
-                          Text(userName, style: const TextStyle(color: kPrimaryGold, fontWeight: FontWeight.bold, fontSize: AppFontSizes.md, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
-                          Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.6), size: 20),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                // Content (Tukar jadi putih terang supaya mudah baca atas background alam)
-                Text(content, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5, shadows: [Shadow(color: Colors.black45, blurRadius: 2)])),
-                
-                const SizedBox(height: 16),
-                Divider(color: Colors.white.withOpacity(0.1), height: 1),
-                const SizedBox(height: 12),
-                
-                // Footer
-                Row(
-                  children: [
-                    // Icon tukar jadi Emas pudar sikit
-                    _buildAction(Icons.favorite_border, '$initialLikes'),
-                    const SizedBox(width: 24),
-                    _buildAction(Icons.chat_bubble_outline, '$initialComments'),
-                    const Spacer(),
-                    _buildAction(Icons.share_outlined, '', isIconOnly: true),
-                  ],
-                ),
-              ],
             ),
           ),
-        ),
+
+          // 2. GRADIENT BORDER CONTAINER
+          // Trik: Container Gradient di belakang, Container Hitam di depan (margin 1px)
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  kPrimaryGold.withOpacity(0.6), // Atas Kiri: Emas Terang
+                  Colors.white.withOpacity(0.1), // Tengah: Pudar
+                  kPrimaryGold.withOpacity(0.3), // Bawah Kanan: Emas Gelap
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(17), // 1px lebih besar dari content
+            ),
+            padding: const EdgeInsets.all(1.0), // Ini yang jadi "Border" 1px
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Blur sederhana
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.4), // Latar Gelap
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient( // Avatar Ring Gradient
+                                colors: [kPrimaryGold, kGoldDark],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              shape: BoxShape.circle
+                            ),
+                            padding: const EdgeInsets.all(1.5), // Border tebal sikit
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black, // Inner circle
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.person, color: Colors.white.withOpacity(0.9), size: 24),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // ✅ SHADER MASK: TEKS EMAS BERKILAU (METALLIC)
+                                ShaderMask(
+                                  shaderCallback: (bounds) => kShimmerGoldGradient.createShader(
+                                    Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                                  ),
+                                  child: Text(
+                                    userName, 
+                                    style: const TextStyle(
+                                      color: Colors.white, // Wajib putih untuk shader nampak
+                                      fontWeight: FontWeight.bold, 
+                                      fontSize: AppFontSizes.md + 1,
+                                    )
+                                  ),
+                                ),
+                                Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.more_horiz, color: kPrimaryGold.withOpacity(0.5), size: 20),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Content
+                      Text(
+                        content, 
+                        style: const TextStyle(
+                          color: Colors.white, 
+                          fontSize: 14, 
+                          height: 1.5,
+                          shadows: [Shadow(color: Colors.black, blurRadius: 4)] // Shadow teks supaya timbul
+                        )
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      Divider(color: kPrimaryGold.withOpacity(0.2), height: 1), // Garis pemisah emas pudar
+                      const SizedBox(height: 12),
+                      
+                      // Footer
+                      Row(
+                        children: [
+                          _buildAction(Icons.favorite_border, '$initialLikes'),
+                          const SizedBox(width: 24),
+                          _buildAction(Icons.chat_bubble_outline, '$initialComments'),
+                          const Spacer(),
+                          _buildAction(Icons.share_outlined, '', isIconOnly: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -148,11 +206,10 @@ class _SocialPostCard extends StatelessWidget {
   Widget _buildAction(IconData icon, String label, {bool isIconOnly = false}) {
     return Row(
       children: [
-        // Tukar warna icon kelabu ke Emas/Putih
-        Icon(icon, size: 20, color: kPrimaryGold.withOpacity(0.8)),
+        Icon(icon, size: 20, color: kPrimaryGold), // Ikon Emas Penuh
         if (!isIconOnly) ...[
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ],
     );
