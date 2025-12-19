@@ -1,4 +1,4 @@
-// lib/widgets/dummy_feed_panel.dart (SCROLL TEST MODE: 20 POSTS)
+// lib/widgets/dummy_feed_panel.dart (VERSI ASAL + CERMIN JERNIH 3.0)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
@@ -9,12 +9,12 @@ class DummyFeedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(), // Efek mantul bila hujung (iOS style)
+      physics: const BouncingScrollPhysics(), // Kekal: Efek mantul
       padding: const EdgeInsets.only(
         top: AppSpacing.md, 
         left: 0, 
         right: 0,
-        bottom: 120, // Ruang bawah lebih besar supaya post last tak tertutup
+        bottom: 120, // Kekal: Ruang bawah
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +33,7 @@ class DummyFeedPanel extends StatelessWidget {
             ),
           ),
 
-          // --- GENERATE 20 DUMMY POSTS ---
+          // --- GENERATE 20 DUMMY POSTS (KEKAL) ---
           ...List.generate(20, (index) {
             return _SocialPostCard(
               userName: index % 2 == 0 ? 'Syafiq Aiman' : 'Sarah Liyana',
@@ -51,7 +51,7 @@ class DummyFeedPanel extends StatelessWidget {
   }
 }
 
-// --- WIDGET KAD KACA (SAMA MACAM DULU) ---
+// --- WIDGET KAD KACA ---
 class _SocialPostCard extends StatelessWidget {
   final String userName;
   final String timeAgo;
@@ -71,17 +71,18 @@ class _SocialPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6), // Jarak antara post
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6), 
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          // ✅ FIX UTAMA: Blur diturunkan dari 10.0 ke 3.0 (Supaya Jernih)
+          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0), 
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4), 
+              color: Colors.black.withOpacity(0.3), // Hitam nipis
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.1), // Border kaca
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(16),
@@ -95,31 +96,40 @@ class _SocialPostCard extends StatelessWidget {
                   children: [
                     Container(
                       width: 40, height: 40,
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: Icon(Icons.person, color: Colors.grey[400], size: 28),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1), 
+                        shape: BoxShape.circle
+                      ),
+                      // Icon tukar jadi putih sikit supaya tak kusam
+                      child: Icon(Icons.person, color: Colors.white.withOpacity(0.9), size: 28),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(userName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: AppFontSizes.md, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
-                          Text(timeAgo, style: TextStyle(color: Colors.grey[400], fontSize: 11)),
+                          // Nama tukar jadi Emas (kPrimaryGold)
+                          Text(userName, style: const TextStyle(color: kPrimaryGold, fontWeight: FontWeight.bold, fontSize: AppFontSizes.md, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
+                          Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
                         ],
                       ),
                     ),
-                    Icon(Icons.more_horiz, color: Colors.grey[400], size: 20),
+                    Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.6), size: 20),
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Content
-                Text(content, style: const TextStyle(color: Color(0xFFEEEEEE), fontSize: 14, height: 1.5, shadows: [Shadow(color: Colors.black45, blurRadius: 2)])),
+                
+                // Content (Tukar jadi putih terang supaya mudah baca atas background alam)
+                Text(content, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5, shadows: [Shadow(color: Colors.black45, blurRadius: 2)])),
+                
                 const SizedBox(height: 16),
                 Divider(color: Colors.white.withOpacity(0.1), height: 1),
                 const SizedBox(height: 12),
+                
                 // Footer
                 Row(
                   children: [
+                    // Icon tukar jadi Emas pudar sikit
                     _buildAction(Icons.favorite_border, '$initialLikes'),
                     const SizedBox(width: 24),
                     _buildAction(Icons.chat_bubble_outline, '$initialComments'),
@@ -138,10 +148,11 @@ class _SocialPostCard extends StatelessWidget {
   Widget _buildAction(IconData icon, String label, {bool isIconOnly = false}) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey[400]),
+        // Tukar warna icon kelabu ke Emas/Putih
+        Icon(icon, size: 20, color: kPrimaryGold.withOpacity(0.8)),
         if (!isIconOnly) ...[
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ],
     );
