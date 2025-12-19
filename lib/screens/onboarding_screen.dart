@@ -1,14 +1,14 @@
-// lib/screens/onboarding_screen.dart (NEW: PREMIUM REGISTRATION)
+// lib/screens/onboarding_screen.dart (PREMIUM WHEEL DATE PICKER)
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart'; // ✅ WAJIB: Untuk Kalendar Pusing
 import 'package:provider/provider.dart';
-import 'package:hijri/hijri_calendar.dart'; // Pastikan package ini ada
+import 'package:hijri/hijri_calendar.dart';
 
 import '../home.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../widgets/dynamic_background.dart';
-import '../widgets/embun_ui/embun_ui.dart'; // Untuk butang cantik
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -28,37 +28,91 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  // Fungsi Pilih Tarikh Lahir
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+  // ✅ FUNGSI PILIH TARIKH BARU (GAYA PUSING/WHEEL)
+  void _pickDate() {
+    // Kalau belum pilih, set default ke tahun 2000
+    if (_selectedDate == null) {
+      _selectedDate = DateTime(2000, 1, 1);
+      _updateHijri(_selectedDate!);
+    }
+
+    showModalBottomSheet(
       context: context,
-      initialDate: DateTime(2000),
-      firstDate: DateTime(1940),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: kPrimaryGold,
-              onPrimary: Colors.black,
-              surface: kCardDark,
-              onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: kCardDark,
+      backgroundColor: kCardDark, // Latar Gelap
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext builder) {
+        return Container(
+          height: 300, // Tinggi panel pusing
+          child: Column(
+            children: [
+              // 1. Toolbar (Butang Selesai)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: const BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Pilih Tarikh Lahir", style: TextStyle(color: kTextSecondary)),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "SELESAI",
+                        style: TextStyle(
+                          color: kPrimaryGold, 
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // 2. Roda Pusing (Spinner)
+              Expanded(
+                child: CupertinoTheme(
+                  // Paksa tema gelap supaya tulisan roda jadi Putih
+                  data: const CupertinoThemeData(
+                    brightness: Brightness.dark, 
+                    textTheme: CupertinoTextThemeData(
+                      dateTimePickerTextStyle: TextStyle(
+                        color: Colors.white, 
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500
+                      ),
+                    ),
+                  ),
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    initialDateTime: _selectedDate,
+                    minimumDate: DateTime(1940),
+                    maximumDate: DateTime.now(),
+                    // Tukar format tarikh ikut susunan Malaysia (Hari - Bulan - Tahun)
+                    dateOrder: DatePickerDateOrder.dmy, 
+                    onDateTimeChanged: (DateTime newDate) {
+                      setState(() {
+                        _selectedDate = newDate;
+                        _updateHijri(newDate);
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
-          child: child!,
         );
       },
     );
+  }
 
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        // Convert ke Hijrah
-        HijriCalendar hDate = HijriCalendar.fromDate(picked);
-        _hijriString = hDate.toFormat("dd MMMM yyyy"); // Contoh: 12 Ramadan 1421
-      });
-    }
+  void _updateHijri(DateTime date) {
+    HijriCalendar hDate = HijriCalendar.fromDate(date);
+    _hijriString = hDate.toFormat("dd MMMM yyyy"); 
   }
 
   void _submitData() async {
@@ -66,31 +120,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sila masukkan nama panggilan sahabat.")),
+        const SnackBar(
+          backgroundColor: kWarningRed,
+          content: Text("Sila masukkan nama panggilan sahabat.", style: TextStyle(color: Colors.white)),
+        ),
       );
       return;
     }
 
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sila pilih tarikh lahir.")),
+        const SnackBar(
+          backgroundColor: kWarningRed,
+          content: Text("Sila pilih tarikh lahir anda.", style: TextStyle(color: Colors.white)),
+        ),
       );
       return;
     }
 
-    // Simpan ke UserModel
+    // Simpan Data
     final user = Provider.of<UserModel>(context, listen: false);
     
-    // Kita simpan format Hijrah string untuk paparan
-    // (Anda boleh ubah logic save ni ikut UserModel Tuan sedia ada)
     await user.updateProfile(
       name: name,
-      // Simpan tarikh masihi string ISO8601 atau Hijrah, bergantung implementation Tuan.
-      // Di sini saya simpan string Hijrah untuk display umur nanti.
+      // Simpan ISO string untuk data, Hijri untuk display nanti
       hijriDOB: _selectedDate!.toIso8601String(), 
     );
 
-    // Masuk Home
+    // Animasi Masuk Home
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -105,7 +162,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false, // Elak keyboard tolak background
+      resizeToAvoidBottomInset: false, 
       body: Stack(
         children: [
           // 1. Background Alam
@@ -155,17 +212,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           TextField(
                             controller: _nameController,
                             style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
+                            cursorColor: kPrimaryGold,
+                            decoration: const InputDecoration(
                               labelText: "Nama Panggilan",
-                              labelStyle: const TextStyle(color: kTextSecondary),
-                              enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: kPrimaryGold)),
-                              prefixIcon: const Icon(Icons.person_outline, color: kPrimaryGold),
+                              labelStyle: TextStyle(color: kTextSecondary),
+                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: kPrimaryGold)),
+                              prefixIcon: Icon(Icons.person_outline, color: kPrimaryGold),
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          // Input Tarikh Lahir
+                          // Input Tarikh Lahir (TRIGGER RODA PUSING)
                           InkWell(
                             onTap: _pickDate,
                             child: InputDecorator(
@@ -175,11 +233,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
                                 prefixIcon: Icon(Icons.cake_outlined, color: kPrimaryGold),
                               ),
-                              child: Text(
-                                _selectedDate == null 
-                                  ? "Pilih Tarikh (Masihi)" 
-                                  : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}",
-                                style: const TextStyle(color: Colors.white),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    _selectedDate == null 
+                                      ? "Sentuh untuk pilih" 
+                                      : "${_selectedDate!.day} / ${_selectedDate!.month} / ${_selectedDate!.year}",
+                                    style: TextStyle(
+                                      color: _selectedDate == null ? Colors.white38 : Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const Icon(Icons.arrow_drop_down, color: kTextSecondary),
+                                ],
                               ),
                             ),
                           ),
@@ -187,10 +254,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           // Paparan Hijrah Preview
                           if (_hijriString.isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                "Tarikh Hijrah: $_hijriString",
-                                style: const TextStyle(color: kAccentOlive, fontSize: 12, fontStyle: FontStyle.italic),
+                              padding: const EdgeInsets.only(top: 12.0),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: kAccentOlive.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: kAccentOlive.withOpacity(0.5)),
+                                ),
+                                child: Text(
+                                  "Tarikh Hijrah: $_hijriString",
+                                  style: const TextStyle(color: kAccentOlive, fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ),
 
