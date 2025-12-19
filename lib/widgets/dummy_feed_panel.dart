@@ -1,7 +1,8 @@
-// lib/widgets/dummy_feed_panel.dart (PREMIUM: GRADIENT BORDER & SHADER TEXT)
+// lib/widgets/dummy_feed_panel.dart (FORCE BRIGHT GOLD MODE)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
+import 'metallic_gold.dart'; // ✅ WAJIB IMPORT INI
 
 class DummyFeedPanel extends StatelessWidget {
   const DummyFeedPanel({Key? key}) : super(key: key);
@@ -68,49 +69,49 @@ class _SocialPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), // Jarak lebih luas sikit
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Stack(
         children: [
-          // 1. GLOW EFFECT (Belakang Kad)
+          // 1. GLOW FRAME (Belakang Kad)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: kPrimaryGold.withOpacity(0.05), // Glow emas sangat halus
-                    blurRadius: 20,
-                    spreadRadius: -5,
+                    color: kPrimaryGold.withOpacity(0.08), // Glow emas sekeliling kad
+                    blurRadius: 15,
+                    spreadRadius: -2,
                   )
                 ],
               ),
             ),
           ),
 
-          // 2. GRADIENT BORDER CONTAINER
-          // Trik: Container Gradient di belakang, Container Hitam di depan (margin 1px)
+          // 2. MAIN CARD CONTENT
           Container(
             decoration: BoxDecoration(
+              // Border Gradient Emas yang SANGAT NIPIS & TAJAM
               gradient: LinearGradient(
                 colors: [
-                  kPrimaryGold.withOpacity(0.6), // Atas Kiri: Emas Terang
-                  Colors.white.withOpacity(0.1), // Tengah: Pudar
-                  kPrimaryGold.withOpacity(0.3), // Bawah Kanan: Emas Gelap
+                  Color(0xFFFFD740), // Emas Terang
+                  Colors.white.withOpacity(0.1), 
+                  Color(0xFFFFA000), // Emas Pekat
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(17), // 1px lebih besar dari content
+              borderRadius: BorderRadius.circular(17), 
             ),
-            padding: const EdgeInsets.all(1.0), // Ini yang jadi "Border" 1px
+            padding: const EdgeInsets.all(1.0), // Border 1px
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Blur sederhana
+                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.4), // Latar Gelap
+                    color: Colors.black.withOpacity(0.5), // Latar Gelap Sikit supaya Emas naik
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -120,44 +121,49 @@ class _SocialPostCard extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          // AVATAR RING (Emas)
                           Container(
                             width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient( // Avatar Ring Gradient
-                                colors: [kPrimaryGold, kGoldDark],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                            decoration: const BoxDecoration(shape: BoxShape.circle),
+                            // Guna MetallicGold pada Avatar Ring
+                            child: MetallicGold(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white, width: 2), // White jadi Emas sbb MetallicGold
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.person, color: Colors.white, size: 24),
                               ),
-                              shape: BoxShape.circle
-                            ),
-                            padding: const EdgeInsets.all(1.5), // Border tebal sikit
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.black, // Inner circle
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.person, color: Colors.white.withOpacity(0.9), size: 24),
                             ),
                           ),
+                          
                           const SizedBox(width: 12),
+                          
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // ✅ SHADER MASK: TEKS EMAS BERKILAU (METALLIC)
-                                ShaderMask(
-                                  shaderCallback: (bounds) => kShimmerGoldGradient.createShader(
-                                    Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                                  ),
+                                // ✅ NAMA PENGGUNA (MENYALA!)
+                                // Kita bungkus dalam MetallicGold Widget yang Kapten baru update
+                                MetallicGold(
                                   child: Text(
                                     userName, 
-                                    style: const TextStyle(
-                                      color: Colors.white, // Wajib putih untuk shader nampak
-                                      fontWeight: FontWeight.bold, 
+                                    style: TextStyle(
+                                      color: Colors.white, // Base mesti putih
+                                      fontWeight: FontWeight.w900, // Lebih tebal supaya nampak kilau
                                       fontSize: AppFontSizes.md + 1,
+                                      shadows: [
+                                        // RAHSIANYA DI SINI: Shadow Emas (Glow)
+                                        BoxShadow(
+                                          color: Color(0xFFFFD740).withOpacity(0.6),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 0),
+                                        )
+                                      ]
                                     )
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
                               ],
                             ),
@@ -174,22 +180,22 @@ class _SocialPostCard extends StatelessWidget {
                           color: Colors.white, 
                           fontSize: 14, 
                           height: 1.5,
-                          shadows: [Shadow(color: Colors.black, blurRadius: 4)] // Shadow teks supaya timbul
+                          shadows: [Shadow(color: Colors.black, blurRadius: 4)]
                         )
                       ),
                       
                       const SizedBox(height: 16),
-                      Divider(color: kPrimaryGold.withOpacity(0.2), height: 1), // Garis pemisah emas pudar
+                      Divider(color: kPrimaryGold.withOpacity(0.3), height: 1), 
                       const SizedBox(height: 12),
                       
-                      // Footer
+                      // Footer Actions (Icons pun Emas Menyala)
                       Row(
                         children: [
-                          _buildAction(Icons.favorite_border, '$initialLikes'),
+                          _buildGoldIconAction(Icons.favorite_border, '$initialLikes'),
                           const SizedBox(width: 24),
-                          _buildAction(Icons.chat_bubble_outline, '$initialComments'),
+                          _buildGoldIconAction(Icons.chat_bubble_outline, '$initialComments'),
                           const Spacer(),
-                          _buildAction(Icons.share_outlined, '', isIconOnly: true),
+                          _buildGoldIconAction(Icons.share_outlined, '', isIconOnly: true),
                         ],
                       ),
                     ],
@@ -203,10 +209,13 @@ class _SocialPostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAction(IconData icon, String label, {bool isIconOnly = false}) {
+  // Widget Khas untuk Icon Emas
+  Widget _buildGoldIconAction(IconData icon, String label, {bool isIconOnly = false}) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: kPrimaryGold), // Ikon Emas Penuh
+        MetallicGold(
+          child: Icon(icon, size: 22, color: Colors.white),
+        ),
         if (!isIconOnly) ...[
           const SizedBox(width: 6),
           Text(label, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500)),
