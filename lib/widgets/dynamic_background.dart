@@ -1,5 +1,4 @@
-// lib/widgets/dynamic_background.dart (NATURE MODE)
-
+// lib/widgets/dynamic_background.dart (CRYSTAL CLEAR NATURE)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/sidebar_state_model.dart';
@@ -18,12 +17,14 @@ class DynamicBackground extends StatelessWidget {
         // PRIORITI 1: MENU BUKA (Guna Corak)
         if (sidebarState.activeMenuId != null && sidebarState.activeMenuId!.isNotEmpty) {
           targetImage = AppAssets.bgPattern;
-          overlayOpacity = 0.0; // Terang benderang untuk corak
+          // Overlay 0% (Jelas)
+          overlayOpacity = 0.0; 
         } 
         // PRIORITI 2: MODE BIASA (Guna Alam.png)
         else {
-          targetImage = AppAssets.bgDay; // alam.png
-          overlayOpacity = 0.6; // Lapisan gelap supaya Feed nampak jelas
+          targetImage = AppAssets.bgDay; 
+          // ✅ FIX: Overlay 0% (Tiada lagi gelap/dimming. Terang benderang!)
+          overlayOpacity = 0.0; 
         }
 
         return AnimatedSwitcher(
@@ -35,9 +36,10 @@ class DynamicBackground extends StatelessWidget {
             decoration: BoxDecoration(
               image: DecorationImage(
                 image: AssetImage(targetImage),
-                fit: BoxFit.cover,
+                fit: BoxFit.cover, // Penuhkan skrin
               ),
             ),
+            // Layer Hitam (Sekarang transparent sepenuhnya)
             child: Container(
               color: Colors.black.withOpacity(overlayOpacity),
               width: double.infinity,
