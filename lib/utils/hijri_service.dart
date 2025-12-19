@@ -1,10 +1,13 @@
-// lib/utils/hijri_service.dart
+// lib/utils/hijri_service.dart (FINAL FIX: SUPPORTS GREGORIAN & HIJRI INPUTS)
+
 import 'package:hijri/hijri_calendar.dart';
-import 'package:flutter/foundation.dart'; // Untuk kDebugMode
+import 'package:flutter/foundation.dart';
 
 class HijriService {
+  
+  // Setup Locale
   static void _ensureLocale() {
-    HijriCalendar.setLocal('en');
+    HijriCalendar.setLocal('en'); // Atau 'ms' jika package support
   }
 
   static HijriCalendar nowHijri() {
@@ -34,63 +37,71 @@ class HijriService {
     return "${today.hDay} ${today.getLongMonthName()}".toLowerCase();
   }
 
-  // ✅ UPDATED: Added Safety Checks & Debug Prints
-  static String calculateHijriAge(String hijriDOB) {
-    if (kDebugMode) {
-      print('🔍 DEBUG HijriAge: Input DOB = "$hijriDOB"');
-    }
-
-    if (hijriDOB.isEmpty) return "-- Tahun";
-    if (hijriDOB == 'null') return "-- Tahun"; // Extra safety
+  // =================================================================
+  // ✅ HELPER PINTAR: CONVERT APA SAJA TARIKH KE HIJRI OBJECT
+  // =================================================================
+  static HijriCalendar? _parseInputToHijri(String dateString) {
+    if (dateString.isEmpty || dateString == 'null') return null;
 
     try {
-      final parts = hijriDOB.split('/');
-      if (parts.length != 3) {
-        if (kDebugMode) print('⚠️ Format Tarikh Salah: $hijriDOB');
-        return "Format Salah";
-      }
-
-      final dobDay = int.parse(parts[0]);
-      final dobMonth = int.parse(parts[1]);
-      final dobYear = int.parse(parts[2]);
-      final today = nowHijri();
-
-      int ageYears = today.hYear - dobYear;
-      int ageMonths = today.hMonth - dobMonth;
-      int ageDays = today.hDay - dobDay;
-
-      if (ageDays < 0) {
-        ageMonths--;
-        final prevMonth = today.hMonth - 1 == 0 ? 12 : today.hMonth - 1;
-
-        HijriCalendar prevDate = HijriCalendar();
-        prevDate.hYear = today.hYear;
-        prevDate.hMonth = prevMonth;
-
-        ageDays += prevDate.lengthOfMonth;
-      }
-
-      if (ageMonths < 0) {
-        ageYears--;
-        ageMonths += 12;
+      // KES 1: Tarikh Masihi ISO (Contoh: "1990-05-20T00:00:00") - Dari Onboarding Baru
+      if (dateString.contains('-')) {
+        DateTime gregorian = DateTime.parse(dateString);
+        return HijriCalendar.fromDate(gregorian);
       }
       
-      String result = "$ageYears Tahun $ageMonths Bulan";
-      if (kDebugMode) print('✅ Umur Berjaya Dikira: $result');
-      
-      return result;
+      // KES 2: Tarikh Hijrah Lama (Contoh: "12/09/1410") - Dari Data Lama
+      else if (dateString.contains('/')) {
+        final parts = dateString.split('/');
+        var hDate = HijriCalendar();
+        hDate.hDay = int.parse(parts[0]);
+        hDate.hMonth = int.parse(parts[1]);
+        hDate.hYear = int.parse(parts[2]);
+        return hDate;
+      }
     } catch (e) {
-      if (kDebugMode) print('❌ Error Kira Umur: $e');
-      return "-- Tahun";
+      if (kDebugMode) print("Error parsing date: $e");
+    }
+    return null;
+  }
+
+  // =================================================================
+  // 1. KIRA UMUR HIJRAH (Auto Convert)
+  // =================================================================
+  static String calculateHijriAge(String dobString) {
+    final dobHijri = _parseInputToHijri(dobString);
+    if (dobHijri == null) return "--"; // Jika gagal parse
+
+    try {
+      final now = nowHijri();
+      int age = now.hYear - dobHijri.hYear;
+
+      // Fine-tuning: Jika belum sampai bulan/hari lahir tahun ini, tolak 1 tahun
+      if (now.hMonth < dobHijri.hMonth) {
+        age--;
+      } else if (now.hMonth == dobHijri.hMonth && now.hDay < dobHijri.hDay) {
+        age--;
+      }
+
+      if (age < 0) age = 0;
+      return "$age Tahun";
+    } catch (e) {
+      return "--";
     }
   }
 
-  static String propheticAgeComparison(String? hijriDOB) {
-    if (hijriDOB == null || hijriDOB.isEmpty) return 'Belum disahkan.';
+  // =================================================================
+  // 2. BANDINGAN UMUR NABI (Auto Convert)
+  // =================================================================
+  static String propheticAgeComparison(String? dobString) {
+    if (dobString == null) return 'Belum disahkan.';
+    
+    final dobHijri = _parseInputToHijri(dobString);
+    if (dobHijri == null) return 'Data tidak lengkap.';
+
     try {
-      final parts = hijriDOB.split('/');
-      final dobYear = int.parse(parts[2]);
-      final ageInYears = nowHijri().hYear - dobYear;
+      final now = nowHijri();
+      final ageInYears = now.hYear - dobHijri.hYear;
 
       if (ageInYears < 40) return 'Fasa Persediaan (Sebelum Kenabian).';
       if (ageInYears < 53) return 'Fasa Dakwah Mekah (Usia 40-53).';
@@ -101,35 +112,45 @@ class HijriService {
     }
   }
 
-  static int getDaysUntilNextBirthday(String? hijriDOB) {
-    if (hijriDOB == null || hijriDOB.isEmpty) return 0;
-    try {
-      final parts = hijriDOB.split('/');
-      final dobDay = int.parse(parts[0]);
-      final dobMonth = int.parse(parts[1]);
-      final today = nowHijri();
+  // =================================================================
+  // 3. HARI HINGGA HARI JADI SETERUSNYA (Auto Convert)
+  // =================================================================
+  static int getDaysUntilNextBirthday(String? dobString) {
+    if (dobString == null) return 0;
 
-      int nextYear = today.hYear;
-      if (today.hMonth > dobMonth || (today.hMonth == dobMonth && today.hDay >= dobDay)) {
-        nextYear++;
+    final dobHijri = _parseInputToHijri(dobString);
+    if (dobHijri == null) return 0;
+
+    try {
+      final today = nowHijri();
+      
+      // Kira tahun birthday seterusnya
+      int nextBdayYear = today.hYear;
+      
+      // Jika bulan dah lepas, atau bulan sama tapi hari dah lepas -> Tahun depan
+      if (today.hMonth > dobHijri.hMonth || 
+         (today.hMonth == dobHijri.hMonth && today.hDay >= dobHijri.hDay)) {
+        nextBdayYear++;
       }
 
-      final nextBday = HijriCalendar()
-        ..hYear = nextYear
-        ..hMonth = dobMonth
-        ..hDay = dobDay;
+      // Buat object Hijri untuk birthday seterusnya
+      final nextBday = HijriCalendar();
+      nextBday.hYear = nextBdayYear;
+      nextBday.hMonth = dobHijri.hMonth;
+      nextBday.hDay = dobHijri.hDay;
 
-      final todayG = DateTime.now();
-      final nextBdayG = nextBday.hijriToGregorian(nextYear, dobMonth, dobDay);
+      // Convert kedua-duanya ke Masihi untuk kira beza hari (Sebab Hijri susah kira duration)
+      // *Nota: HijriCalendar tak ada method .difference(), kena guna DateTime conversion
+      // API HijriCalendar agak terhad, jadi kita guna anggaran kasar atau conversion balik:
+      
+      // Cara selamat: Convert ke DateTime (Masihi) untuk kiraan tepat
+      DateTime todayGreg = today.hijriToGregorian(today.hYear, today.hMonth, today.hDay);
+      DateTime nextBdayGreg = nextBday.hijriToGregorian(nextBday.hYear, nextBday.hMonth, nextBday.hDay);
 
-      return nextBdayG.difference(todayG).inDays;
+      return nextBdayGreg.difference(todayGreg).inDays;
+
     } catch (e) {
       return 0;
     }
-  }
-
-  static int getDaysInCurrentMonth() {
-    final today = nowHijri();
-    return today.lengthOfMonth;
   }
 }
