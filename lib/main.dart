@@ -1,11 +1,10 @@
-// lib/main.dart (RESTORED: ORIGINAL FLOW)
-
+// lib/main.dart (GATEWAY TO ZYAMINA)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Import Screens & Utils
-import 'screens/splash_screen.dart'; // ✅ Pintu masuk sebenar
+import 'screens/splash_screen.dart'; 
 import 'utils/constants.dart';
 
 // Import Models & Services for Provider
@@ -20,19 +19,19 @@ void main() async {
   // 1. Ensure Bindings
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Load User Data from SharedPreferences
+  // 2. Load User Data
   final userModel = await UserModel.load();
 
-  // 3. Lock Orientation
+  // 3. Lock Orientation (Portrait)
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 4. Set Status Bar Color
+  // 4. Set Status Bar (Transparent untuk Fullscreen feel)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
+    statusBarIconBrightness: Brightness.light, 
   ));
 
   runApp(IHijrahApp(userModel: userModel));
@@ -44,7 +43,6 @@ class IHijrahApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 5. Setup MultiProvider
     return MultiProvider(
       providers: [
         // Data Providers
@@ -52,9 +50,8 @@ class IHijrahApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
 
-        // Service Providers (Logic)
+        // Service Providers
         Provider(create: (_) => AudioService()),
-        // PrayerService now depends on UserModel, so we use a ProxyProvider
         ChangeNotifierProxyProvider<UserModel, PrayerService>(
             create: (context) => PrayerService(context.read<UserModel>()),
             update: (context, user, prayerService) => prayerService!..updateUser(user),
@@ -65,12 +62,12 @@ class IHijrahApp extends StatelessWidget {
         title: 'iHijrah Embun Jiwa',
         debugShowCheckedModeBanner: false,
 
-        // 6. Global Theme Definition
+        // GLOBAL THEME
         theme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: kBackgroundDark,
+          scaffoldBackgroundColor: Colors.black, // Default Black
           primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto',
+          fontFamily: 'Roboto', // Font moden & clean
 
           colorScheme: const ColorScheme.dark(
             primary: kPrimaryGold,
@@ -78,21 +75,10 @@ class IHijrahApp extends StatelessWidget {
             surface: kCardDark,
             background: kBackgroundDark,
           ),
-
-          textTheme: const TextTheme(
-            bodyMedium: TextStyle(color: kTextPrimary),
-            bodySmall: TextStyle(color: kTextSecondary),
-          ),
-
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-          ),
         ),
 
-        // 7. Entry Point
-        home: const SplashScreen(), // ✅ KEMBALI ASAL
+        // PINTU MASUK: INTRO ZYAMINA STUDIO
+        home: const SplashScreen(), 
       ),
     );
   }
