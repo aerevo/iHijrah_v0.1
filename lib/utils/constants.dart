@@ -1,12 +1,13 @@
-// lib/utils/constants.dart
-// THEME: EMBUN JIWA (NATURE EDITION)
-// Status: UPDATED BACKGROUND TO ALAM.PNG
-
+// lib/utils/constants.dart (THEME: 24K GOLD & PURE NATURE)
 import 'package:flutter/material.dart';
 
-// ===== WARNA TERAS =====
-const Color kPrimaryGold = Color(0xFFF6E7C1); 
-const Color kGoldDark = Color(0xFFC5A059);
+// ===== WARNA TERAS (24K GOLD EDITION) =====
+// Dulu: 0xFFF6E7C1 (Cream/Gangsa) -> Sekarang: 0xFFFFD54F (Emas Terang)
+const Color kPrimaryGold = Color(0xFFFFD54F); 
+
+// Emas Gelap untuk Shadow/Border (Metallic)
+const Color kGoldDark = Color(0xFFC6A700); 
+
 const Color kBackgroundDark = Color(0xFF1A1A1A); 
 const Color kCardDark = Color(0xFF252525);
 const Color kAccentOlive = Color(0xFF9DBA7F);
@@ -15,9 +16,14 @@ const Color kTextSecondary = Color(0xFFAAAAAA);
 const Color kWarningRed = Color(0xFFCF6679);
 const Color kSuccessGreen = Color(0xFF9DBA7F);
 
-// ===== GRADIENT =====
+// ===== GRADIENT (METALLIC SHINE) =====
+// Gradient ini lebih tajam kontranya supaya nampak berkilau
 const LinearGradient kShimmerGoldGradient = LinearGradient(
-  colors: [Colors.white10, kPrimaryGold, Colors.white10],
+  colors: [
+    Color(0xFFB38728), // Emas Gelap
+    Color(0xFFFBF5B7), // Emas Putih (Kilauan)
+    Color(0xFFBF953F), // Emas Classic
+  ],
   stops: [0.1, 0.5, 0.9],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
@@ -33,7 +39,7 @@ const LinearGradient kBackgroundGradient = LinearGradient(
 const double DEFAULT_LATITUDE = 3.140853; 
 const double DEFAULT_LONGITUDE = 101.693207;
 
-// ===== SAIZ & SUSUN ATUR =====
+// ===== SIZES & SPACING =====
 class AppSizes {
   static const double sidebarWidth = 60.0; 
   static const double flyoutWidth = 300.0;
@@ -71,7 +77,7 @@ class AppFontSizes {
   static const double xxl = 24.0;
 }
 
-// ===== DURATIONS & ANIMATIONS =====
+// ===== DURATIONS =====
 class AppDurations {
   static const Duration normal = Duration(milliseconds: 300);
   static const Duration fast = Duration(milliseconds: 300);
@@ -91,7 +97,7 @@ class AppCurves {
   static const Curve springy = Curves.elasticOut;
 }
 
-// ===== ASET GAMBAR =====
+// ===== ASSETS =====
 class AppAssets {
   static const String imagesPath = 'assets/images/';
   static const String audioPath = 'assets/sounds/';
@@ -99,20 +105,16 @@ class AppAssets {
 
   static const String logo = '${imagesPath}logo.png';
   static const String profileDefault = '${imagesPath}profile_default.png';
-
-  // ✅ BACKGROUND BARU: ALAM.PNG
   static const String bgDay = '${imagesPath}alam.png'; 
   static const String bgNight = '${imagesPath}alam.png'; 
   static const String bgPattern = '${imagesPath}latar_corak.png';
 
-  // POKOK
   static const String treePhase1 = '${imagesPath}pokok_level1.png';
   static const String treePhase2 = '${imagesPath}pokok_level2.png';
   static const String treePhase3 = '${imagesPath}pokok_level3.png';
   static const String treePhase4 = '${imagesPath}pokok_level4.png';
   static const String treePhase5 = '${imagesPath}pokok_level5.png';
 
-  // AUDIO & DATA
   static const String intro = '${audioPath}intro.mp3';
   static const String adhan = '${audioPath}adhan.mp3';
   static const String splash = '${audioPath}siraman.mp3';
