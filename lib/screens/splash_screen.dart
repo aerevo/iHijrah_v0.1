@@ -1,11 +1,11 @@
-// lib/screens/splash_screen.dart
-
+// lib/screens/splash_screen.dart (ZYAMINA STUDIO - TENCENT STYLE)
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/user_model.dart';
-import '../utils/constants.dart';
+
 import '../home.dart';
-import 'birthdate_prompt_screen.dart';
+import '../utils/audio_service.dart';
+import '../utils/constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -16,46 +16,59 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
+  late Animation<double> _opacityAnim;
+  late Animation<double> _spacingAnim;
+  late Animation<double> _lineAnim;
 
   @override
   void initState() {
     super.initState();
+
+    // 1. Setup Animasi (Total 3.5 Saat)
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 3), 
     );
 
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    // Animasi Pudar Masuk (Fade In)
+    _opacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.4, curve: Curves.easeIn)),
     );
 
+    // Animasi Jarak Huruf (Cinematic Spacing) - Mula rapat, kemudian renggang sikit
+    _spacingAnim = Tween<double>(begin: 0.0, end: 4.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic)),
+    );
+
+    // Animasi Garisan Putih (Melebar)
+    _lineAnim = Tween<double>(begin: 0.0, end: 150.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.3, 0.8, curve: Curves.easeOut)),
+    );
+
+    // 2. Mula Animasi & Audio
     _controller.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Mainkan bunyi intro (Boom effect jika ada, atau intro sedia ada)
+      Provider.of<AudioService>(context, listen: false).playIntroAudio();
+    });
 
-    // Navigasi Selepas 3.5 Saat
-    Future.delayed(const Duration(milliseconds: 3500), () {
-      _checkUserAndNavigate();
+    // 3. Pindah ke Home selepas 4 saat
+    Timer(const Duration(seconds: 4), () {
+      _navigateToHome();
     });
   }
 
-  void _checkUserAndNavigate() {
-    final user = Provider.of<UserModel>(context, listen: false);
-
-    // [PEMBAIKAN] Semak 'birthdate'. Jika null, bermakna user belum set tarikh lahir (User Baru).
-    // Jika ada birthdate, bermakna profil asas dah lengkap.
-    if (user.birthdate != null) {
-      // User dah wujud
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage())
-      );
-    } else {
-      // User baru atau data tak lengkap
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const BirthdatePromptScreen())
-      );
-    }
+  void _navigateToHome() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const HomePage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Transisi Pudar (Fade) yang smooth ke alam semulajadi
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 1200), // Masuk perlahan
+      ),
+    );
   }
 
   @override
@@ -67,45 +80,53 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Latar Gelap (Cinematic)
+      backgroundColor: Colors.black, // HITAM LEGAM (Tencent Style)
       body: Center(
-        child: FadeTransition(
-          opacity: _opacityAnimation,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 1. Logo Ikon
-              Icon(
-                Icons.diamond_outlined,
-                size: 60,
-                color: kPrimaryGold.withOpacity(0.8),
-              ),
-              const SizedBox(height: 20),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _opacityAnim.value,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 1. ZYAMINA (BOLD & BIG)
+                  Text(
+                    "ZYAMINA",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900, // Tebal Maksimum
+                      letterSpacing: 2.0 + _spacingAnim.value, // Huruf bergerak
+                      fontFamily: 'Roboto', // Atau font 'Impact' jika ada
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 10),
 
-              // 2. Nama Studio
-              const Text(
-                "ZYAMINA STUDIO",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 6.0,
-                  fontFamily: 'Poppins',
-                ),
-              ),
+                  // 2. GARISAN PUTIH (Animated Width)
+                  Container(
+                    height: 2,
+                    width: _lineAnim.value,
+                    color: Colors.white,
+                  ),
 
-              // 3. Slogan Kecil
-              const SizedBox(height: 8),
-              const Text(
-                "Crafting Digital Barakah",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 10,
-                  letterSpacing: 2.0,
-                ),
+                  const SizedBox(height: 10),
+
+                  // 3. STUDIO (SPACED OUT)
+                  Text(
+                    "STUDIO",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w300, // Nipis
+                      letterSpacing: 8.0 + _spacingAnim.value, // Jarak luas
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
