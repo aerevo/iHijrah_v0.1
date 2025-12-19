@@ -1,8 +1,8 @@
-// lib/widgets/dummy_feed_panel.dart (FORCE BRIGHT GOLD MODE)
+// lib/widgets/dummy_feed_panel.dart (THEME: CYBERPUNK NEON PURPLE)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-import 'metallic_gold.dart'; // ✅ WAJIB IMPORT INI
+import 'metallic_gold.dart'; // Masih guna untuk Avatar (Sentuhan Mewah)
 
 class DummyFeedPanel extends StatelessWidget {
   const DummyFeedPanel({Key? key}) : super(key: key);
@@ -12,34 +12,65 @@ class DummyFeedPanel extends StatelessWidget {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(
-        top: AppSpacing.md, 
+        top: 20, 
         left: 0, 
         right: 0,
-        bottom: 120, 
+        bottom: 150, 
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // HEADER: NEON GRADIENT TEXT
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              "Suapan Komuniti",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 12,
-                letterSpacing: 1.5,
-                fontWeight: FontWeight.bold
-              ),
+            padding: const EdgeInsets.only(left: 24, bottom: 20),
+            child: Row(
+              children: [
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [
+                      Color(0xFFD500F9), // Neon Purple
+                      Color(0xFF00E5FF), // Neon Cyan
+                    ],
+                  ).createShader(bounds),
+                  child: const Text(
+                    "NEON FEED",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.0, 
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Dot Indicator (Cyber blink)
+                Container(
+                  width: 8, height: 8,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00E5FF), 
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.8), blurRadius: 6)
+                    ]
+                  ),
+                )
+              ],
             ),
           ),
 
+          // GENERATE POSTS
           ...List.generate(20, (index) {
-            return _SocialPostCard(
+            return _CyberNeonCard(
+              index: index,
               userName: index % 2 == 0 ? 'Syafiq Aiman' : 'Sarah Liyana',
-              timeAgo: '${index + 1}j yang lalu',
+              timeAgo: '${index + 1}j',
+              category: index % 2 == 0 ? 'Tazkirah' : 'Soalan',
+              // Warna label ikut Cyberpunk palette
+              categoryColor: index % 2 == 0 ? const Color(0xFFD500F9) : const Color(0xFF00E5FF),
               content: index % 2 == 0
-                ? 'Post ke-#${index + 1}: Alhamdulillah, hari ni genap 30 hari istiqamah solat Subuh berjemaah. Rasa tenang sangat hati ni. Doakan saya terus kuat ya sahabat semua!'
-                : 'Post ke-#${index + 1}: Ada sesiapa tahu kat mana nak cari kelas tajwid asas area Seremban yang sesuai untuk wanita bekerja? Terima kasih.',
+                ? 'Istiqamah itu berat, sebab ganjarannya Syurga. Kalau ringan, ganjarannya cuma "Super Ring". Teruskan berjuang sahabat! 🔥'
+                : 'Ada sesiapa tahu kedai gunting rambut muslimah area Bangi yang "hidden gem"? Nak privacy sikit.',
               initialLikes: (index * 5) + 12,
               initialComments: index + 2,
             );
@@ -50,17 +81,23 @@ class DummyFeedPanel extends StatelessWidget {
   }
 }
 
-class _SocialPostCard extends StatelessWidget {
+class _CyberNeonCard extends StatelessWidget {
+  final int index;
   final String userName;
   final String timeAgo;
+  final String category;
+  final Color categoryColor;
   final String content;
   final int initialLikes;
   final int initialComments;
 
-  const _SocialPostCard({
+  const _CyberNeonCard({
     Key? key,
+    required this.index,
     required this.userName,
     required this.timeAgo,
+    required this.category,
+    required this.categoryColor,
     required this.content,
     required this.initialLikes,
     required this.initialComments,
@@ -69,134 +106,116 @@ class _SocialPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      height: 180, 
       child: Stack(
+        clipBehavior: Clip.none, 
         children: [
-          // 1. GLOW FRAME (Belakang Kad)
-          Positioned.fill(
+          
+          // 1. KAD UTAMA (NEON BORDER & GLOW)
+          Positioned(
+            left: 20, right: 0, top: 0, bottom: 0,
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                // Background Hitam + Sedikit Tint Ungu
+                color: const Color(0xFF120E16).withOpacity(0.9), 
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),   
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                // BORDER GRADIENT (UNGU -> BIRU)
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFD500F9).withOpacity(0.3), // Purple
+                    const Color(0xFF120E16), // Tengah gelap
+                    const Color(0xFF00E5FF).withOpacity(0.3), // Cyan
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 boxShadow: [
+                  // GLOW UNGU DI BELAKANG KAD
                   BoxShadow(
-                    color: kPrimaryGold.withOpacity(0.08), // Glow emas sekeliling kad
-                    blurRadius: 15,
-                    spreadRadius: -2,
+                    color: const Color(0xFFD500F9).withOpacity(0.15), 
+                    blurRadius: 15, 
+                    offset: const Offset(5, 5)
                   )
-                ],
+                ]
               ),
-            ),
-          ),
-
-          // 2. MAIN CARD CONTENT
-          Container(
-            decoration: BoxDecoration(
-              // Border Gradient Emas yang SANGAT NIPIS & TAJAM
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFD740), // Emas Terang
-                  Colors.white.withOpacity(0.1), 
-                  Color(0xFFFFA000), // Emas Pekat
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(17), 
-            ),
-            padding: const EdgeInsets.all(1.0), // Border 1px
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5), // Latar Gelap Sikit supaya Emas naik
-                    borderRadius: BorderRadius.circular(16),
+              child: Container(
+                // Layer dalam untuk tutup gradient border
+                margin: const EdgeInsets.all(1.5), 
+                decoration: BoxDecoration(
+                   color: Colors.black.withOpacity(0.6), // Kaca gelap
+                   borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(3),   
+                    topRight: Radius.circular(19),
+                    bottomLeft: Radius.circular(19),
+                    bottomRight: Radius.circular(19),
                   ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(40, 16, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Header
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // AVATAR RING (Emas)
-                          Container(
-                            width: 40, height: 40,
-                            decoration: const BoxDecoration(shape: BoxShape.circle),
-                            // Guna MetallicGold pada Avatar Ring
-                            child: MetallicGold(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white, width: 2), // White jadi Emas sbb MetallicGold
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.person, color: Colors.white, size: 24),
-                              ),
-                            ),
-                          ),
-                          
-                          const SizedBox(width: 12),
-                          
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // ✅ NAMA PENGGUNA (MENYALA!)
-                                // Kita bungkus dalam MetallicGold Widget yang Kapten baru update
-                                MetallicGold(
-                                  child: Text(
-                                    userName, 
-                                    style: TextStyle(
-                                      color: Colors.white, // Base mesti putih
-                                      fontWeight: FontWeight.w900, // Lebih tebal supaya nampak kilau
-                                      fontSize: AppFontSizes.md + 1,
-                                      shadows: [
-                                        // RAHSIANYA DI SINI: Shadow Emas (Glow)
-                                        BoxShadow(
-                                          color: Color(0xFFFFD740).withOpacity(0.6),
-                                          blurRadius: 8,
-                                          offset: Offset(0, 0),
-                                        )
-                                      ]
-                                    )
+                                // NAMA GUNA WARNA CYAN/PUTIH (Lebih Tech)
+                                Text(
+                                  userName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                    shadows: [
+                                      BoxShadow(color: Color(0xFF00E5FF), blurRadius: 10) // Glow Cyan Teks
+                                    ]
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                                Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
                               ],
                             ),
                           ),
-                          Icon(Icons.more_horiz, color: kPrimaryGold.withOpacity(0.5), size: 20),
+                          
+                          // NEON PILL (Outline Style)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: categoryColor), // Border Neon
+                              boxShadow: [BoxShadow(color: categoryColor.withOpacity(0.2), blurRadius: 6)]
+                            ),
+                            child: Text(
+                              "#$category",
+                              style: TextStyle(color: categoryColor, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ],
                       ),
+                      
                       const SizedBox(height: 12),
                       
-                      // Content
+                      // Content Text
                       Text(
-                        content, 
+                        content,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white, 
-                          fontSize: 14, 
-                          height: 1.5,
-                          shadows: [Shadow(color: Colors.black, blurRadius: 4)]
-                        )
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      Divider(color: kPrimaryGold.withOpacity(0.3), height: 1), 
-                      const SizedBox(height: 12),
-                      
-                      // Footer Actions (Icons pun Emas Menyala)
-                      Row(
-                        children: [
-                          _buildGoldIconAction(Icons.favorite_border, '$initialLikes'),
-                          const SizedBox(width: 24),
-                          _buildGoldIconAction(Icons.chat_bubble_outline, '$initialComments'),
-                          const Spacer(),
-                          _buildGoldIconAction(Icons.share_outlined, '', isIconOnly: true),
-                        ],
+                          color: Color(0xFFE0E0E0),
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -204,23 +223,68 @@ class _SocialPostCard extends StatelessWidget {
               ),
             ),
           ),
+
+          // 2. AVATAR TERAPUNG (EMAS VS NEON)
+          // Kita kekalkan Emas pada Avatar sebagai "Status Simbol", tapi glow dia Ungu
+          Positioned(
+            left: 0, 
+            top: -10,
+            child: Container(
+              width: 55, height: 55,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black,
+                border: Border.all(color: const Color(0xFFD500F9), width: 2), // Ring Ungu
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFFD500F9).withOpacity(0.5), blurRadius: 12, offset: const Offset(0, 0)) // Glow Ungu Kuat
+                ]
+              ),
+              child: CircleAvatar(
+                backgroundColor: const Color(0xFF202020),
+                // Icon dalam masih Emas (Luxury Touch)
+                child: MetallicGold(
+                  child: const Icon(Icons.person, size: 30, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+
+          // 3. ACTION CAPSULE (GRADIENT UNGU-BIRU)
+          Positioned(
+            right: 16,
+            bottom: -10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                // Gradient Cyberpunk sebenar
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6200EA), Color(0xFFD500F9)], // Deep Purple -> Neon Purple
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFFD500F9).withOpacity(0.5), blurRadius: 8, offset: const Offset(0, 4))
+                ]
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.favorite, size: 14, color: Colors.white),
+                  const SizedBox(width: 4),
+                  Text("$initialLikes", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  
+                  Container(width: 1, height: 12, color: Colors.white24, margin: const EdgeInsets.symmetric(horizontal: 10)),
+                  
+                  const Icon(Icons.chat_bubble, size: 14, color: Colors.white),
+                  const SizedBox(width: 4),
+                  Text("$initialComments", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  // Widget Khas untuk Icon Emas
-  Widget _buildGoldIconAction(IconData icon, String label, {bool isIconOnly = false}) {
-    return Row(
-      children: [
-        MetallicGold(
-          child: Icon(icon, size: 22, color: Colors.white),
-        ),
-        if (!isIconOnly) ...[
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500)),
-        ],
-      ],
     );
   }
 }
