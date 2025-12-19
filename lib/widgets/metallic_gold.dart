@@ -1,16 +1,14 @@
-// lib/widgets/metallic_gold.dart (OPTIMIZED: SHUTTERSTOCK LUXURY PALETTE)
+// lib/widgets/metallic_gold.dart (THE FAMOUS LUXURY GOLD GRADIENT)
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
 
-/// Premium Static Gold Effect
+/// Premium Static Gold Effect (LUXURY TEXTURE EDITION)
 ///
 /// Features:
-/// - Zero GPU Animation Load (Battery Friendly)
-/// - Luxury "Gold Bar" Gradient Style
-/// - Uses specific Hex Palette from Shutterstock "100 Gradient Styles"
+/// - Menggunakan palet "Luxury Gold" yang terkenal dalam design premium.
+/// - Mencipta efek "Gold Foil" atau tekstur logam sebenar.
 class MetallicGold extends StatelessWidget {
   final Widget child;
-  final bool isLightMode; // Opsyen jika nak tone lebih cerah
+  final bool isLightMode; 
 
   const MetallicGold({
     Key? key,
@@ -23,34 +21,32 @@ class MetallicGold extends StatelessWidget {
     return ShaderMask(
       shaderCallback: (bounds) {
         return const LinearGradient(
-          // Arah gradient dari Atas ke Bawah (Vertical Sheen)
-          // Meniru pantulan cahaya pada permukaan emas fizikal
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          // Diagonal halus untuk efek pantulan semulajadi
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Color(0xFF996900), // Dark Olive Gold (Bayang Atas)
-            Color(0xFFFFDE62), // Bright Gold (Emas Terang)
-            Color(0xFFFFF5C2), // HIGHLIGHT (Putih Mutiara - Kilauan Utama)
-            Color(0xFF8A500E), // Deep Rich Gold (Emas Pekat)
-            Color(0xFF521D00), // Dark Brown (Bayang Bawah - 3D Depth)
+            Color(0xFFBF953F), // 1. Classic Gold (Base)
+            Color(0xFFFCF6BA), // 2. Ultra Light Gold (Highlight/Silau)
+            Color(0xFFB38728), // 3. Dark Metallic Gold (Shadow/Depth)
+            Color(0xFFFBF5B7), // 4. Light Sand Gold (Pantulan Kedua)
+            Color(0xFFAA771C), // 5. Rich Gold (Finishing)
           ],
           stops: [
-            0.0,  // Gelap di hujung atas
-            0.25, // Mula terang
-            0.5,  // KILAUAN DI TENGAH (Titik Fokus)
-            0.75, // Kembali pekat
-            1.0,  // Gelap di hujung bawah
+            0.0,
+            0.25, // Highlight di bahagian atas
+            0.5,  // Shadow di tengah (memberi bentuk 3D)
+            0.75, // Highlight kedua
+            1.0,
           ],
         ).createShader(bounds);
       },
-      blendMode: BlendMode.srcIn, // Pastikan ia 'paint' di atas text/icon sahaja
+      blendMode: BlendMode.srcIn, 
       child: child,
     );
   }
 }
 
 /// Backward Compatibility Wrapper
-/// (Disimpan supaya kod lama yang panggil kelas ini tidak crash)
 class MetallicGoldStatic extends StatelessWidget {
   final Widget child;
 
@@ -61,7 +57,6 @@ class MetallicGoldStatic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Redirect terus ke MetallicGold utama yang kini sudah optimum
     return MetallicGold(child: child);
   }
 }
