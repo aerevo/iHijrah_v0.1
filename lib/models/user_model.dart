@@ -1,8 +1,8 @@
-// lib/models/user_model.dart (FIXED: RESTORED ALL ORIGINAL LOGIC)
+// lib/models/user_model.dart (FULL FIX: recordSelawat & nextLevelPoints ADDED)
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // Perlu untuk JSON encode/decode map
+import 'dart:convert'; 
 
 import '../utils/settings_enums.dart';
 import '../utils/hijri_service.dart';
@@ -25,20 +25,24 @@ class UserModel extends ChangeNotifier {
   int selawatCountToday = 0;
   DateTime? lastResetDate;
   
-  // State Zikir Harian (Untuk prompt home screen)
+  // State Zikir Harian
   bool _zikirDoneToday = false; 
   String _lastZikirDate = '';
 
   // ===== 4. SETTINGS (PRAYER & ALARM) =====
-  int adhanModeIndex = 1; // Default: Full
+  int adhanModeIndex = 1; 
   bool isFajrAlarmEnabled = true;
   bool isDhuhrAlarmEnabled = true;
   bool isAsrAlarmEnabled = true;
   bool isMaghribAlarmEnabled = true;
   bool isIshaAlarmEnabled = true;
 
-  // Getter
+  // Getter Zikir
   bool get zikirDoneToday => _zikirDoneToday;
+
+  // ✅ GETTER BARU (WAJIB ADA UNTUK HIJRAH TREE)
+  // Logic: Level 1 target 100, Level 2 target 200, dst.
+  int get nextLevelPoints => treeLevel * 100;
 
   // Constructor
   UserModel({
@@ -50,7 +54,7 @@ class UserModel extends ChangeNotifier {
   });
 
   // =========================================================
-  // FUNGSI LOAD (MEMUAT TURUN DATA DARI MEMORI)
+  // FUNGSI LOAD
   // =========================================================
   static Future<UserModel> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -71,7 +75,7 @@ class UserModel extends ChangeNotifier {
     user.treeLevel = prefs.getInt('user_tree_level') ?? 1;
     user.totalPoints = prefs.getInt('user_total_points') ?? 0;
 
-    // C. Load Daily Logs (JSON)
+    // C. Load Daily Logs
     String? fardhuJson = prefs.getString('daily_fardhu_log');
     if (fardhuJson != null) {
       user.dailyFardhuLog = Map<String, bool>.from(json.decode(fardhuJson));
@@ -84,7 +88,7 @@ class UserModel extends ChangeNotifier {
 
     user.selawatCountToday = prefs.getInt('selawat_count_today') ?? 0;
 
-    // D. Load Settings (Alarm)
+    // D. Load Settings
     user.adhanModeIndex = prefs.getInt('adhan_mode_index') ?? 1;
     user.isFajrAlarmEnabled = prefs.getBool('alarm_fajr') ?? true;
     user.isDhuhrAlarmEnabled = prefs.getBool('alarm_dhuhr') ?? true;
@@ -109,35 +113,31 @@ class UserModel extends ChangeNotifier {
     }
     user._lastZikirDate = lastZikirStr;
 
-    // Jalankan semakan reset harian (untuk log solat dll)
+    // Reset harian jika perlu
     user._checkAndResetDailyData();
 
     return user;
   }
 
   // =========================================================
-  // FUNGSI SAVE (SIMPAN DATA KE MEMORI)
+  // FUNGSI SAVE
   // =========================================================
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Basic
     await prefs.setString('user_name', name);
     if (hijriDOB != null) await prefs.setString('user_hijri_dob', hijriDOB!);
     if (avatarPath != null) await prefs.setString('user_avatar_path', avatarPath!);
     if (gender != null) await prefs.setString('user_gender', gender!);
     if (birthdate != null) await prefs.setString('user_birthdate', birthdate!.toIso8601String());
 
-    // Points
     await prefs.setInt('user_tree_level', treeLevel);
     await prefs.setInt('user_total_points', totalPoints);
 
-    // Logs
     await prefs.setString('daily_fardhu_log', json.encode(dailyFardhuLog));
     await prefs.setString('daily_amalan_log', json.encode(dailyAmalanLog));
     await prefs.setInt('selawat_count_today', selawatCountToday);
 
-    // Settings
     await prefs.setInt('adhan_mode_index', adhanModeIndex);
     await prefs.setBool('alarm_fajr', isFajrAlarmEnabled);
     await prefs.setBool('alarm_dhuhr', isDhuhrAlarmEnabled);
@@ -145,26 +145,25 @@ class UserModel extends ChangeNotifier {
     await prefs.setBool('alarm_maghrib', isMaghribAlarmEnabled);
     await prefs.setBool('alarm_isha', isIshaAlarmEnabled);
 
-    // Last Reset
     if (lastResetDate != null) {
       await prefs.setString('last_reset_date', lastResetDate!.toIso8601String());
     }
   }
 
   // =========================================================
-  // ✅ NEW: UPDATE PROFILE (FOR ONBOARDING)
+  // UPDATE PROFILE (ONBOARDING)
   // =========================================================
   Future<void> updateProfile({String? name, String? hijriDOB, String? avatarPath}) async {
     if (name != null) this.name = name;
     if (hijriDOB != null) this.hijriDOB = hijriDOB;
     if (avatarPath != null) this.avatarPath = avatarPath;
     
-    await save(); // Simpan kekal
+    await save();
     notifyListeners();
   }
 
   // =========================================================
-  // ✅ NEW: RECORD ZIKIR (FOR HOME PROMPT)
+  // RECORD ZIKIR (HOME PROMPT)
   // =========================================================
   Future<void> recordZikir() async {
     final prefs = await SharedPreferences.getInstance();
@@ -173,7 +172,6 @@ class UserModel extends ChangeNotifier {
     _zikirDoneToday = true;
     _lastZikirDate = today;
 
-    // Tambah Point sikit sebagai ganjaran (Gamification)
     addPoints(10); 
 
     await prefs.setString('user_last_zikir_date', today);
@@ -183,7 +181,17 @@ class UserModel extends ChangeNotifier {
   }
 
   // =========================================================
-  // LOGIC ASAL (YANG HILANG TADI)
+  // ✅ RECORD SELAWAT (WAJIB ADA UNTUK POKOK)
+  // =========================================================
+  void recordSelawat() {
+    selawatCountToday++;
+    addPoints(5); // Dapat 5 point setiap kali selawat
+    save();
+    notifyListeners();
+  }
+
+  // =========================================================
+  // POINTS & LOGIC LAIN
   // =========================================================
 
   void addPoints(int points) {
@@ -194,13 +202,12 @@ class UserModel extends ChangeNotifier {
   }
 
   void _checkLevelUp() {
-    // Logic mudah level up: Setiap 100 point naik 1 level (Max 5)
     int calculatedLevel = (totalPoints / 100).floor() + 1;
     if (calculatedLevel > 5) calculatedLevel = 5;
 
     if (calculatedLevel > treeLevel) {
       treeLevel = calculatedLevel;
-      // Di sini boleh tambah logic play sound 'level up' jika mahu
+      // Boleh tambah sound play di sini nanti
     }
   }
 
@@ -224,17 +231,14 @@ class UserModel extends ChangeNotifier {
 
   void _checkAndResetDailyData() {
     final now = DateTime.now();
-    // Reset pada pukul 3 pagi (contoh) atau bila hari bertukar
-    // Kita guna logik simple: Jika tarikh hari ini != tarikh last reset
-    
+    // Reset jika tarikh last reset berbeza dengan hari ini
     if (lastResetDate == null || !_isSameDay(now, lastResetDate!)) {
-      // Lakukan Reset
       dailyFardhuLog.clear();
       dailyAmalanLog.clear();
       selawatCountToday = 0;
       
       lastResetDate = now;
-      save(); // Simpan state 'kosong' baru
+      save();
     }
   }
 
