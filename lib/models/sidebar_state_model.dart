@@ -1,4 +1,4 @@
-// lib/models/sidebar_state_model.dart (FULL CODE: PHANTOM MODE)
+// lib/models/sidebar_state_model.dart (FULL FIX: PARAMETERIZED TOGGLE)
 
 import 'package:flutter/material.dart';
 
@@ -19,8 +19,7 @@ class SidebarStateModel extends ChangeNotifier {
   final List<String> _menuHistory = [];
   bool _isAnimating = false;
   
-  // ✅ STATE BARU: VISIBILITY (PHANTOM MODE)
-  // Default true (Nampak)
+  // ✅ STATE: VISIBILITY (PHANTOM MODE)
   bool _isVisible = true; 
 
   // ===== GETTERS =====
@@ -34,19 +33,10 @@ class SidebarStateModel extends ChangeNotifier {
   /// Check if sidebar is closed
   bool get isClosed => _activeMenuId == null;
 
-  /// Get sidebar dock width
   double get dockWidth => _defaultDockWidth;
-
-  /// Get flyout panel width
   double get flyoutWidth => _defaultFlyoutWidth;
-
-  /// Check if currently animating
   bool get isAnimating => _isAnimating;
-
-  /// Get last opened menu (for back navigation)
   String? get previousMenu => _menuHistory.isNotEmpty ? _menuHistory.last : null;
-
-  /// Check sidebar visibility
   bool get isVisible => _isVisible;
 
   /// Tajuk Menu untuk Flyout Panel
@@ -69,23 +59,32 @@ class SidebarStateModel extends ChangeNotifier {
 
   // ===== PUBLIC METHODS =====
 
-  /// Set active menu dengan toggle logic
-  ///
-  /// Rules:
-  /// - Tekan menu yang sama → Close
-  /// - Tekan menu lain → Switch
-  void setActiveMenu(String id) {
-    if (_activeMenuId != null && _activeMenuId != id) {
-      // Record current menu before switching
-      _menuHistory.add(_activeMenuId!);
+  /// ✅ FIX UTAMA: Toggle Menu kini terima ID
+  void toggleMenu(String menuId) {
+    // KES 1: Butang Hamburger ('menu' atau kosong)
+    if (menuId == 'menu' || menuId.isEmpty) {
+      if (_activeMenuId != null) {
+        // Kalau dah buka, tutup
+        closeMenu();
+      } else {
+        // Kalau tutup, buka profil atau menu terakhir
+        _activeMenuId = _menuHistory.isNotEmpty ? _menuHistory.last : 'profil';
+        _isVisible = true; // Paksa muncul
+        notifyListeners();
+      }
+      return;
+    }
+
+    // KES 2: Item Menu Biasa (Profil, Sirah, dll)
+    if (_activeMenuId != null && _activeMenuId != menuId) {
+      _menuHistory.add(_activeMenuId!); // Simpan history
     }
     
-    if (_activeMenuId == id) {
-      closeMenu();
+    if (_activeMenuId == menuId) {
+      closeMenu(); // Tutup jika tekan benda sama
     } else {
-      _activeMenuId = id;
-      // Bila buka menu, pastikan sidebar visible
-      _isVisible = true; 
+      _activeMenuId = menuId; // Buka menu baru
+      _isVisible = true; // Paksa muncul
       notifyListeners();
     }
   }
@@ -108,30 +107,12 @@ class SidebarStateModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Toggle menu (for FAB)
-  ///
-  /// Logic:
-  /// - Jika closed → Open last menu atau default (profil)
-  /// - Jika open → Close
-  void toggleMenu() {
-    if (_isAnimating) return;
-
-    if (isMenuOpen) {
-      closeMenu();
-    } else {
-      // Open last menu atau default
-      final menuToOpen = previousMenu ?? 'profil';
-      setActiveMenu(menuToOpen);
-    }
-  }
-
   /// Navigate back in menu history
   bool navigateBack() {
     if (_menuHistory.isEmpty) {
       closeMenu();
       return false;
     }
-
     final previousMenuId = _menuHistory.removeLast();
     _activeMenuId = previousMenuId;
     notifyListeners();
@@ -141,16 +122,9 @@ class SidebarStateModel extends ChangeNotifier {
   /// Check if specific menu is active
   bool isMenuActive(String menuId) => _activeMenuId == menuId;
 
-  /// Open specific menu without toggle
-  void openMenu(String menuId) {
-    if (_activeMenuId != menuId) {
-      setActiveMenu(menuId);
-    }
-  }
-  
-  // ✅ METHOD BARU: KAWAL VISIBILITY BILA SCROLL
+  // ✅ PHANTOM MODE: KAWAL VISIBILITY BILA SCROLL
   void setSidebarVisibility(bool visible) {
-    // Jika menu sedang terbuka, JANGAN sorok sidebar (nanti pelik)
+    // Jika menu sedang terbuka, JANGAN sorok sidebar
     if (isMenuOpen) {
       if (!_isVisible) {
         _isVisible = true;
@@ -166,17 +140,11 @@ class SidebarStateModel extends ChangeNotifier {
   }
 
   // ===== SPECIAL MENU HANDLERS =====
-
-  /// Handle Infaq menu (special case - show dialog then close)
   void handleInfaqMenu() {
-    // Infaq menu tak buka flyout, terus trigger dialog
-    // So kita close menu selepas user click
     closeMenu();
   }
 
   // ===== DEBUG HELPERS =====
-
-  /// Reset state (for testing)
   void reset() {
     _activeMenuId = null;
     _menuHistory.clear();
