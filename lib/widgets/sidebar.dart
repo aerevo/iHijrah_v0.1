@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (ICON EMAS BOOSTED)
+// lib/widgets/sidebar.dart (FULL VERSION: HIJRI AGE RESTORED + ANIMATED SLIDE)
 
 import 'dart:io';
 import 'dart:ui';
@@ -37,42 +37,74 @@ class Sidebar extends StatelessWidget {
   void _showInfaqDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.9),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: kPrimaryGold, width: 1)),
-          title: const Text("Infaq Pembangunan",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: kPrimaryGold, fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.handshake, size: 50, color: kPrimaryGold),
-              const SizedBox(height: 16),
-              const Text(
-                "Bantu kami membangunkan app iHijrah dengan lebih canggih. Sumbangan tuan/puan amat bermakna.",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: kCardDark.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)),
+        title: const MetallicGold(child: Text('Infaq Pembangunan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Playfair'))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Sumbangan anda amat dihargai untuk pembangunan iHijrah.", style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm)),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              height: 45,
+              child: CelebrationButton(
+                onPressed: () => _launchWhatsApp(context),
+                backgroundColor: Colors.green.shade700,
+                child: const Text("WhatsApp Admin", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryGold,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _launchWhatsApp(context);
-                },
-                icon: const Icon(Icons.chat),
-                label: const Text("WhatsApp Admin"),
-              )
-            ],
-          ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getTreeAsset(int level) {
+    if (level <= 1) return AppAssets.treePhase1;
+    if (level <= 3) return AppAssets.treePhase2;
+    if (level <= 5) return AppAssets.treePhase3;
+    if (level <= 8) return AppAssets.treePhase4;
+    return AppAssets.treePhase5;
+  }
+
+  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
+    final model = Provider.of<SidebarStateModel>(context);
+    final isActive = model.activeMenuId == id;
+
+    return InkWell(
+      onTap: isComingSoon ? null : () => model.setActiveMenu(id),
+      child: Container(
+        width: dockWidth,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
+          border: isActive ? Border(left: BorderSide(color: kPrimaryGold.withOpacity(0.8), width: 2)) : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MetallicGold(
+              child: Icon(
+                icon,
+                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? Colors.white : Colors.white.withOpacity(0.6)),
+                size: 20 
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              style: TextStyle(
+                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.6)),
+                fontSize: 8, 
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
@@ -80,197 +112,126 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserModel>(context);
-    final sidebarState = Provider.of<SidebarStateModel>(context);
-    final bool isOpen = sidebarState.activeMenuId != null;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    return Consumer<SidebarStateModel>(
+      builder: (context, model, child) {
+        // Efek Phantom: Slide out ke kiri bila scroll
+        final double xOffset = model.isVisible ? 0.0 : -dockWidth;
 
-    // Hitung Umur Hijrah
-    String ageDisplay = "-- Tahun";
-    if (user.hijriDOB != null) {
-      ageDisplay = HijriService.calculateHijriAge(user.hijriDOB!);
-    }
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          transform: Matrix4.translationValues(xOffset, 0, 0),
+          width: dockWidth + 1,
+          height: MediaQuery.of(context).size.height,
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  border: Border(right: BorderSide(color: Colors.white.withOpacity(0.08), width: 1)),
+                ),
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // === PROFILE & HIJRI AGE ===
+                        Padding(
+                          padding: const EdgeInsets.only(top: 20, bottom: 5),
+                          child: Consumer<UserModel>(
+                            builder: (context, user, _) {
+                              // LOGIK UMUR HIJRAH (DIKEMBALIKAN)
+                              String rawAgeString = "";
+                              if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
+                                rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
+                              }
+                              String ageDisplay = rawAgeString.contains(RegExp(r'\d')) 
+                                  ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)} Thn"
+                                  : "--";
 
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      left: isOpen ? 0 : - (screenWidth - dockWidth), 
-      top: 0,
-      bottom: 0,
-      width: screenWidth, 
-      child: Row(
-        children: [
-          // 1. PANEL UTAMA (SIDEBAR MENU)
-          Expanded(
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  color: Colors.black.withOpacity(0.85),
-                  child: Column(
-                    children: [
-                      // PROFILE HEADER
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
-                        decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 25,
-                              backgroundColor: kCardDark,
-                              backgroundImage: user.avatarPath != null 
-                                ? FileImage(File(user.avatarPath!)) 
-                                : const AssetImage(AppAssets.profileDefault) as ImageProvider,
-                            ),
-                            const SizedBox(width: 15),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              return Column(
                                 children: [
-                                  Text(user.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text(ageDisplay, style: const TextStyle(color: kPrimaryGold, fontSize: 12)),
+                                  Container(
+                                    width: 38, height: 38,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.5),
+                                    ),
+                                    child: ClipOval(
+                                      child: user.avatarPath != null
+                                        ? Image.file(File(user.avatarPath!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset(AppAssets.profileDefault, fit: BoxFit.cover))
+                                        : Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  MetallicGold(
+                                    child: Text(
+                                      user.name.isNotEmpty ? (user.name.length > 6 ? '${user.name.substring(0, 5)}..' : user.name) : "User",
+                                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    ageDisplay,
+                                    style: TextStyle(color: kPrimaryGold.withOpacity(0.8), fontSize: 8, fontWeight: FontWeight.bold),
+                                  ),
                                 ],
+                              );
+                            },
+                          ),
+                        ),
+
+                        // === TREE SECTION ===
+                        Consumer<UserModel>(
+                          builder: (context, user, _) {
+                            return InkWell(
+                              onTap: () => Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress'),
+                              child: Container(
+                                height: 60,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Image.asset(_getTreeAsset(user.treeLevel), fit: BoxFit.contain, height: 40),
+                                    Positioned(bottom: 0, child: Text("LVL ${user.treeLevel}", style: TextStyle(color: kPrimaryGold.withOpacity(0.8), fontSize: 6, fontWeight: FontWeight.bold))),
+                                  ],
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.settings, color: Colors.white54),
-                              onPressed: () {},
-                            )
-                          ],
+                            );
+                          },
                         ),
-                      ),
 
-                      // MENU ITEMS
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          children: [
-                            _buildMenuItem(context, icon: Icons.mosque, title: 'Utama', id: ''), // Reset
-                            _buildMenuItem(context, icon: Icons.history_edu, title: 'Sirah', id: 'sirah'),
-                            _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
-                            _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
-                            _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
-                            _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
-                            _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
-                            const SizedBox(height: 5),
-                            _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
-                            _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
-                            const SizedBox(height: 15),
-                            _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
-                            _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
+                        Divider(color: Colors.white.withOpacity(0.1), height: 1),
 
-                            Consumer<SidebarStateModel>(
-                              builder: (ctx, m, _) {
-                                if (m.activeMenuId == 'infaq') {
-                                  WidgetsBinding.instance.addPostFrameCallback((_) { m.closeMenu(); _showInfaqDialog(context); });
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-                          ],
+                        // === MENUS ===
+                        _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
+                        _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
+                        _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
+                        _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
+                        _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
+                        _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
+                        const SizedBox(height: 5),
+                        _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
+                        _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
+                        const SizedBox(height: 15),
+                        _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
+                        _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
+
+                        Consumer<SidebarStateModel>(
+                          builder: (ctx, m, _) {
+                            if (m.activeMenuId == 'infaq') {
+                              WidgetsBinding.instance.addPostFrameCallback((_) { m.closeMenu(); _showInfaqDialog(context); });
+                            }
+                            return const SizedBox.shrink();
+                          },
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-
-          // 2. DOCK SIDEBAR (SENTIASA KELIHATAN)
-          Container(
-            width: dockWidth,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.black, // Solid Black untuk kontras tinggi
-              border: Border(left: BorderSide(color: Colors.white.withOpacity(0.1))),
-              boxShadow: [
-                BoxShadow(
-                  color: kPrimaryGold.withOpacity(0.1), // Sedikit glow emas di tepi
-                  blurRadius: 10,
-                  offset: const Offset(-5, 0)
-                )
-              ]
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: isOpen 
-                    ? const Icon(Icons.close, color: Colors.white54)
-                    : const Icon(Icons.menu, color: kPrimaryGold),
-                  onPressed: () {
-                    sidebarState.toggleMenu('menu'); 
-                  },
-                ),
-                const SizedBox(height: 20),
-                // Rotated Text
-                RotatedBox(
-                  quarterTurns: 3,
-                  child: Text(
-                    "iHIJRAH",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.3),
-                      letterSpacing: 3,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(BuildContext context, {
-    required IconData icon, 
-    required String title, 
-    required String id,
-    bool isComingSoon = false
-  }) {
-    final sidebarState = Provider.of<SidebarStateModel>(context, listen: false);
-
-    return ListTile(
-      leading: MetallicGold(
-        // ✅ FIX 4: ICON EMAS DIBOOST
-        // isLightMode: true (Paksa guna palet emas cerah)
-        isLightMode: true, 
-        child: Icon(
-          icon, 
-          size: 26, 
-          color: Colors.white, // Base putih penting untuk ShaderMask
-          shadows: const [
-            // Tambah Shadow Emas supaya ikon nampak "Bloom" / Bercahaya
-            BoxShadow(
-              color: kPrimaryGold, 
-              blurRadius: 10, 
-              spreadRadius: 2
-            )
-          ],
-        ),
-      ),
-      title: Text(
-        title, 
-        style: const TextStyle(color: Colors.white70, fontSize: 14)
-      ),
-      trailing: isComingSoon 
-        ? Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.white10,
-              borderRadius: BorderRadius.circular(4)
-            ),
-            child: const Text("SOON", style: TextStyle(fontSize: 8, color: Colors.white54))
-          )
-        : null,
-      onTap: () {
-        if (!isComingSoon) {
-          sidebarState.toggleMenu(id);
-        }
+        );
       },
     );
   }

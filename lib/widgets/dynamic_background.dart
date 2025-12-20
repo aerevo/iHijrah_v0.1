@@ -1,4 +1,4 @@
-// lib/widgets/dynamic_background.dart (LATAR CORAK MODE)
+// lib/widgets/dynamic_background.dart (LIVING ATMOSPHERE: FIREFLIES & GLOW)
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,15 +13,19 @@ class DynamicBackground extends StatelessWidget {
     return Consumer<SidebarStateModel>(
       builder: (context, sidebarState, child) {
         String targetImage;
+        // Kita kekalkan logic asal (0% overlay untuk Alam)
+        // Tapi overlay akan ditambah secara manual di bawah guna Gradient
         bool isMenuOpen = sidebarState.activeMenuId != null && sidebarState.activeMenuId!.isNotEmpty;
 
-        // ✅ FIX 1: Dua-dua keadaan (Menu Buka atau Tutup) guna LATAR CORAK.
-        // Alam.png disimpan dalam sejarah. Sekarang era Latar Corak.
-        targetImage = AppAssets.bgPattern; 
+        if (isMenuOpen) {
+          targetImage = AppAssets.bgPattern;
+        } else {
+          targetImage = AppAssets.bgDay; 
+        }
 
         return Stack(
           children: [
-            // 1. BASE IMAGE
+            // 1. BASE IMAGE (Animated Switcher)
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 1000),
               switchInCurve: Curves.easeInOut,
@@ -37,25 +41,45 @@ class DynamicBackground extends StatelessWidget {
               ),
             ),
 
-            // 2. FIREFLIES (Kekal ada untuk effect hidup)
-            // Kita benarkan fireflies walaupun guna latar corak supaya tak kaku
-             const Positioned.fill(
+            // 2. FIREFLIES / PARTICLES (Hanya bila Menu Tutup / Alam Mode)
+            if (!isMenuOpen)
+              const Positioned.fill(
                 child: _FireflyEffect(), 
               ),
 
-            // 3. AMBIENT GLOW (Gradient dari bawah)
+            // 3. AMBIENT GLOW (Gradient dari bawah ke atas)
+            // Ini yang buat teks nampak jelas tapi gambar masih terang
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withOpacity(0.8), // Bawah: Gelap
-                      Colors.black.withOpacity(0.3), // Tengah
-                      Colors.transparent,            // Atas
+                      Colors.black.withOpacity(0.8), // Bawah: Gelap (untuk Navigation/Footer)
+                      Colors.black.withOpacity(0.3), // Tengah: Sederhana
+                      Colors.transparent,            // Atas: Jelas (untuk Langit)
                     ],
                     stops: const [0.0, 0.4, 1.0],
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
+                  ),
+                ),
+              ),
+            ),
+
+            // 4. EXTRA SHADOW FOR SIDEBAR AREA (Left Side)
+            // Supaya sidebar nampak jelas walaupun background terang
+            Positioned(
+              left: 0, top: 0, bottom: 0,
+              width: 100,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withOpacity(0.6),
+                      Colors.transparent
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
                 ),
               ),
@@ -67,7 +91,7 @@ class DynamicBackground extends StatelessWidget {
   }
 }
 
-// --- CLASS: FIREFLY PARTICLES ---
+// --- CLASS: FIREFLY PARTICLES (KUNANG-KUNANG) ---
 class _FireflyEffect extends StatefulWidget {
   const _FireflyEffect({Key? key}) : super(key: key);
 
@@ -83,13 +107,14 @@ class _FireflyEffectState extends State<_FireflyEffect> with SingleTickerProvide
   @override
   void initState() {
     super.initState();
+    // Buat 25 ekor kunang-kunang
     for (int i = 0; i < 25; i++) {
       _fireflies.add(_generateFirefly());
     }
     
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10), 
+      duration: const Duration(seconds: 10), // Loop panjang supaya tak nampak berulang
     )..repeat();
   }
 
@@ -97,11 +122,11 @@ class _FireflyEffectState extends State<_FireflyEffect> with SingleTickerProvide
     return _Firefly(
       x: _random.nextDouble(),
       y: _random.nextDouble(),
-      size: _random.nextDouble() * 3 + 1, 
-      opacity: _random.nextDouble() * 0.5 + 0.3,
-      speedX: (_random.nextDouble() - 0.5) * 0.002,
-      speedY: (_random.nextDouble() - 0.5) * 0.002,
-      offset: _random.nextDouble() * 2 * pi, 
+      size: _random.nextDouble() * 3 + 1, // Saiz 1.0 - 4.0
+      opacity: _random.nextDouble() * 0.5 + 0.3, // Opacity 0.3 - 0.8
+      speedX: (_random.nextDouble() - 0.5) * 0.002, // Gerak perlahan kiri/kanan
+      speedY: (_random.nextDouble() - 0.5) * 0.002, // Gerak perlahan atas/bawah
+      offset: _random.nextDouble() * 2 * pi, // Fasa kelip berbeza
     );
   }
 
@@ -151,21 +176,26 @@ class _FireflyPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     for (var fly in fireflies) {
+      // 1. Gerakkan Firefly
       fly.x += fly.speedX;
       fly.y += fly.speedY;
 
+      // Wrap around screen (Pacman style)
       if (fly.x < 0) fly.x = 1;
       if (fly.x > 1) fly.x = 0;
       if (fly.y < 0) fly.y = 1;
       if (fly.y > 1) fly.y = 0;
 
-      final twinkle = (sin((animationValue * 2 * pi) + fly.offset) + 1) / 2; 
-      final currentOpacity = fly.opacity * (0.5 + 0.5 * twinkle); 
+      // 2. Efek Kelip (Twinkle) - Guna Sinus wave
+      final twinkle = (sin((animationValue * 2 * pi) + fly.offset) + 1) / 2; // 0.0 -> 1.0
+      final currentOpacity = fly.opacity * (0.5 + 0.5 * twinkle); // Min opacity 50% dari base
 
-      paint.color = kPrimaryGold.withOpacity(currentOpacity * 0.5); 
+      // 3. Lukis Glow
+      paint.color = kPrimaryGold.withOpacity(currentOpacity * 0.5); // Glow luar pudar
       canvas.drawCircle(Offset(fly.x * size.width, fly.y * size.height), fly.size * 2, paint);
 
-      paint.color = const Color(0xFFFFF9C4).withOpacity(currentOpacity);
+      // 4. Lukis Core (Titik Putih/Emas)
+      paint.color = Color(0xFFFFF9C4).withOpacity(currentOpacity); // Putih kekuningan
       canvas.drawCircle(Offset(fly.x * size.width, fly.y * size.height), fly.size * 0.6, paint);
     }
   }

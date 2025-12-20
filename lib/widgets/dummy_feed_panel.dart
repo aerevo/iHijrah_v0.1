@@ -1,8 +1,8 @@
-// lib/widgets/dummy_feed_panel.dart (JERNIH & NEON MALAP)
+// lib/widgets/dummy_feed_panel.dart (THEME: CYBERPUNK NEON PURPLE)
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-import 'metallic_gold.dart'; 
+import 'metallic_gold.dart'; // Masih guna untuk Avatar (Sentuhan Mewah)
 
 class DummyFeedPanel extends StatelessWidget {
   const DummyFeedPanel({Key? key}) : super(key: key);
@@ -20,16 +20,16 @@ class DummyFeedPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // HEADER: NEON TEXT (Opacity dikurangkan sedikit)
+          // HEADER: NEON GRADIENT TEXT
           Padding(
             padding: const EdgeInsets.only(left: 24, bottom: 20),
             child: Row(
               children: [
                 ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
+                  shaderCallback: (bounds) => const LinearGradient(
                     colors: [
-                      const Color(0xFFD500F9).withOpacity(0.9), // Kurang sikit opacity
-                      const Color(0xFF00E5FF).withOpacity(0.9), 
+                      Color(0xFFD500F9), // Neon Purple
+                      Color(0xFF00E5FF), // Neon Cyan
                     ],
                   ).createShader(bounds),
                   child: const Text(
@@ -44,14 +44,14 @@ class DummyFeedPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                // Dot Indicator (Cyber blink)
                 Container(
                   width: 8, height: 8,
                   decoration: BoxDecoration(
                     color: const Color(0xFF00E5FF), 
                     shape: BoxShape.circle,
                     boxShadow: [
-                      // ✅ FIX 3: Silau dot dikurangkan
-                      BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.5), blurRadius: 4)
+                      BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.8), blurRadius: 6)
                     ]
                   ),
                 )
@@ -66,6 +66,7 @@ class DummyFeedPanel extends StatelessWidget {
               userName: index % 2 == 0 ? 'Syafiq Aiman' : 'Sarah Liyana',
               timeAgo: '${index + 1}j',
               category: index % 2 == 0 ? 'Tazkirah' : 'Soalan',
+              // Warna label ikut Cyberpunk palette
               categoryColor: index % 2 == 0 ? const Color(0xFFD500F9) : const Color(0xFF00E5FF),
               content: index % 2 == 0
                 ? 'Istiqamah itu berat, sebab ganjarannya Syurga. Kalau ringan, ganjarannya cuma "Super Ring". Teruskan berjuang sahabat! 🔥'
@@ -111,122 +112,120 @@ class _CyberNeonCard extends StatelessWidget {
         clipBehavior: Clip.none, 
         children: [
           
-          // 1. KAD UTAMA
+          // 1. KAD UTAMA (NEON BORDER & GLOW)
           Positioned(
             left: 20, right: 0, top: 0, bottom: 0,
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF120E16).withOpacity(0.8), // Lebih transparent
+                // Background Hitam + Sedikit Tint Ungu
+                color: const Color(0xFF120E16).withOpacity(0.9), 
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),   
                   topRight: Radius.circular(20),
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                 ),
-                // ✅ FIX 3: Gradient Border lebih malap (Opacity rendah)
+                // BORDER GRADIENT (UNGU -> BIRU)
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFD500F9).withOpacity(0.15), // Neon malap
-                    const Color(0xFF120E16), 
-                    const Color(0xFF00E5FF).withOpacity(0.15), // Cyan malap
+                    const Color(0xFFD500F9).withOpacity(0.3), // Purple
+                    const Color(0xFF120E16), // Tengah gelap
+                    const Color(0xFF00E5FF).withOpacity(0.3), // Cyan
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
-                  // ✅ FIX 3: Glow belakang dikurangkan
+                  // GLOW UNGU DI BELAKANG KAD
                   BoxShadow(
-                    color: const Color(0xFFD500F9).withOpacity(0.05), // Sangat nipis
-                    blurRadius: 10, 
+                    color: const Color(0xFFD500F9).withOpacity(0.15), 
+                    blurRadius: 15, 
                     offset: const Offset(5, 5)
                   )
                 ]
               ),
-              child: ClipRRect( // Clip untuk Glass Effect
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(4),   
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+              child: Container(
+                // Layer dalam untuk tutup gradient border
+                margin: const EdgeInsets.all(1.5), 
+                decoration: BoxDecoration(
+                   color: Colors.black.withOpacity(0.6), // Kaca gelap
+                   borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(3),   
+                    topRight: Radius.circular(19),
+                    bottomLeft: Radius.circular(19),
+                    bottomRight: Radius.circular(19),
+                  ),
                 ),
-                child: BackdropFilter(
-                  // ✅ FIX 2: BLUR KACA DIKURANGKAN JADI 1.5 (Sangat Jernih)
-                  filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(40, 16, 16, 16),
-                    decoration: BoxDecoration(
-                      // Tint hitam nipis untuk kebolehbacaan
-                      color: Colors.black.withOpacity(0.4), 
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Nama User
-                                  Text(
-                                    userName,
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.95),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.5,
-                                      // ✅ FIX 3: Shadow teks dikurangkan
-                                      shadows: [
-                                        BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.3), blurRadius: 5)
-                                      ]
-                                    ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(40, 16, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // NAMA GUNA WARNA CYAN/PUTIH (Lebih Tech)
+                                Text(
+                                  userName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                    shadows: [
+                                      BoxShadow(color: Color(0xFF00E5FF), blurRadius: 10) // Glow Cyan Teks
+                                    ]
                                   ),
-                                  Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
-                                ],
-                              ),
+                                ),
+                                Text(timeAgo, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
+                              ],
                             ),
-                            
-                            // Category Pill (Neon Nipis)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: categoryColor.withOpacity(0.5)), 
-                                boxShadow: [BoxShadow(color: categoryColor.withOpacity(0.1), blurRadius: 4)]
-                              ),
-                              child: Text(
-                                "#$category",
-                                style: TextStyle(color: categoryColor.withOpacity(0.9), fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 12),
-                        
-                        // Content Text
-                        Text(
-                          content,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFE0E0E0),
-                            fontSize: 13,
-                            height: 1.4,
                           ),
+                          
+                          // NEON PILL (Outline Style)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: categoryColor), // Border Neon
+                              boxShadow: [BoxShadow(color: categoryColor.withOpacity(0.2), blurRadius: 6)]
+                            ),
+                            child: Text(
+                              "#$category",
+                              style: TextStyle(color: categoryColor, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Content Text
+                      Text(
+                        content,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFE0E0E0),
+                          fontSize: 13,
+                          height: 1.4,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
 
-          // 2. AVATAR TERAPUNG
+          // 2. AVATAR TERAPUNG (EMAS VS NEON)
+          // Kita kekalkan Emas pada Avatar sebagai "Status Simbol", tapi glow dia Ungu
           Positioned(
             left: 0, 
             top: -10,
@@ -235,39 +234,37 @@ class _CyberNeonCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black,
-                border: Border.all(color: const Color(0xFFD500F9).withOpacity(0.5), width: 2),
+                border: Border.all(color: const Color(0xFFD500F9), width: 2), // Ring Ungu
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFFD500F9).withOpacity(0.2), blurRadius: 8) // Glow avatar dikurangkan
+                  BoxShadow(color: const Color(0xFFD500F9).withOpacity(0.5), blurRadius: 12, offset: const Offset(0, 0)) // Glow Ungu Kuat
                 ]
               ),
               child: CircleAvatar(
                 backgroundColor: const Color(0xFF202020),
+                // Icon dalam masih Emas (Luxury Touch)
                 child: MetallicGold(
-                  // Ikon Avatar Emas
                   child: const Icon(Icons.person, size: 30, color: Colors.white),
                 ),
               ),
             ),
           ),
 
-          // 3. ACTION CAPSULE
+          // 3. ACTION CAPSULE (GRADIENT UNGU-BIRU)
           Positioned(
             right: 16,
             bottom: -10,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6200EA).withOpacity(0.8), 
-                    const Color(0xFFD500F9).withOpacity(0.8)
-                  ], 
+                // Gradient Cyberpunk sebenar
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6200EA), Color(0xFFD500F9)], // Deep Purple -> Neon Purple
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFFD500F9).withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 4))
+                  BoxShadow(color: const Color(0xFFD500F9).withOpacity(0.5), blurRadius: 8, offset: const Offset(0, 4))
                 ]
               ),
               child: Row(
