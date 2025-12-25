@@ -1,5 +1,4 @@
-// lib/widgets/flyout_panel.dart (UPDATED)
-
+// lib/widgets/flyout_panel.dart (GLASSMORPHISM STYLE - INTEGRATED)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui'; 
@@ -15,7 +14,7 @@ import 'event_view.dart';
 import 'settings_view.dart'; 
 import 'about_view.dart';   
 import 'hijrah_tree.dart'; 
-import 'birthday_view.dart'; // ✅ 1. TAMBAH IMPORT INI
+import 'birthday_view.dart'; // ✅ WAJIB ADA INI
 
 class FlyoutPanel extends StatelessWidget {
   final double panelWidth;
@@ -31,30 +30,21 @@ class FlyoutPanel extends StatelessWidget {
       case 'info': return const AboutView();
       case 'tree_progress': return const HijrahTree(); 
       
+      // ✅ GANTI DENGAN WIDGET BIRTHDAY
+      case 'birthday': return const BirthdayView();
+
       case 'sirah': 
         return const Center(
-          child: Text(
-            "Halaman Sirah - Akan Datang", 
-            style: TextStyle(color: kTextSecondary)
-          )
+          child: Text("Halaman Sirah - Akan Datang", style: TextStyle(color: kTextSecondary))
         );
-        
-      // ✅ 2. GANTI BAHAGIAN INI DENGAN WIDGET BARU
-      case 'birthday': 
-        return const BirthdayView(); 
-        
       case 'infaq': 
         return const Center(
-          child: Text(
-            "Infaq - Sila rujuk Dialog", 
-            style: TextStyle(color: kTextSecondary)
-          )
+          child: Text("Infaq - Sila rujuk Dialog", style: TextStyle(color: kTextSecondary))
         );
       default: return const SizedBox.shrink();
     }
   }
 
-  // ... (Bahagian build di bawah KEKAL SAMA macam fail asal Kapten) ...
   @override
   Widget build(BuildContext context) {
     return Consumer<SidebarStateModel>(
