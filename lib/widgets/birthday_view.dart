@@ -1,10 +1,12 @@
+// lib/widgets/birthday_view.dart (FIXED HEIGHT LAYOUT)
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
-import 'living_tree.dart'; // ✅ GUNA LIVING TREE TERUS (LEBIH STABIL UNTUK ZOOM)
+import 'living_tree.dart'; // Guna LivingTree untuk kawalan penuh
 
 class BirthdayView extends StatefulWidget {
   const BirthdayView({Key? key}) : super(key: key);
@@ -65,7 +67,6 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
     }
   }
 
-  // Helper aset video
   String _getTreeAsset(int level) {
     if (level <= 1) return 'assets/videos/tree_v1.mp4'; 
     if (level <= 3) return 'assets/videos/tree_v2.mp4';
@@ -76,10 +77,13 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel>(context);
+    
+    // Kira tinggi skrin supaya muat elok
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Column(
       children: [
-        // HEADER (Hilang bila tulis)
+        // HEADER (Akan hilang bila mod menulis aktif)
         if (!_isWritingMode) ...[
            Container(
             padding: const EdgeInsets.all(15),
@@ -88,10 +92,10 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
               borderRadius: BorderRadius.circular(15),
             ),
             child: Row(
-              children: [
-                const Icon(Icons.cake, color: Colors.white),
-                const SizedBox(width: 10),
-                const Text("Raikan Hijrahmu", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              children: const [
+                Icon(Icons.cake, color: Colors.white),
+                SizedBox(width: 10),
+                Text("Raikan Hijrahmu", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -109,8 +113,9 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
           const SizedBox(height: 10),
         ],
 
-        // ISI KANDUNGAN
-        Expanded(
+        // ISI KANDUNGAN (GANTI Expanded DENGAN SizedBox)
+        SizedBox(
+          height: screenHeight * 0.7, // ✅ KUNCI TINGGI DI SINI (Contoh: 70% tinggi skrin)
           child: TabBarView(
             controller: _tabController,
             physics: _isWritingMode ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
@@ -119,24 +124,24 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // 1. LAYER POKOK (DIJAMIN MUNCUL)
+                  // 1. LAYER POKOK (Video)
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 1000),
                     curve: Curves.easeInOutCubic,
-                    // Kita mainkan posisi Bottom supaya dia naik/turun
-                    bottom: _isWritingMode ? -50 : 20, 
+                    // Bila tulis, tolak pokok ke atas sikit
+                    top: _isWritingMode ? -100 : 0, 
                     left: 0, 
                     right: 0,
-                    height: 500, // ✅ SIZE TETAP: Takkan jadi penyek!
+                    bottom: _isWritingMode ? 100 : 50, 
                     child: AnimatedScale(
-                      scale: _isWritingMode ? 1.5 : 0.85, // Zoom 1.5x bila tulis
+                      scale: _isWritingMode ? 1.6 : 0.9, // Zoom In bila tulis
                       duration: const Duration(milliseconds: 1000),
                       curve: Curves.easeInOutCubic,
-                      alignment: Alignment.bottomCenter, // Zoom dari pangkal
-                      child: LivingTree( // Guna widget video terus
+                      alignment: Alignment.bottomCenter, 
+                      child: LivingTree(
                         assetPath: _getTreeAsset(user.treeLevel),
-                        height: 500, // Pastikan tinggi video cukup
-                        onTap: () {},
+                        height: 450, // Tinggi Video Tetap
+                        onTap: () {}, 
                       ),
                     ),
                   ),
@@ -144,7 +149,7 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
                   // 2. BUTANG "MULA MENULIS"
                   if (!_isWritingMode)
                     Positioned(
-                      bottom: 40,
+                      bottom: 20,
                       child: GestureDetector(
                         onTap: () => setState(() => _isWritingMode = true),
                         child: Container(
@@ -155,6 +160,7 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
                             boxShadow: [BoxShadow(color: kPrimaryGold.withOpacity(0.5), blurRadius: 15)],
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: const [
                               Icon(Icons.edit, color: Colors.black, size: 16),
                               SizedBox(width: 8),
@@ -165,47 +171,56 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
                       ),
                     ),
 
-                  // 3. KERTAS ANTIK (Slide Naik)
+                  // 3. KERTAS ANTIK (Slide Naik dari Bawah)
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 1200),
                     curve: Curves.elasticOut,
-                    bottom: _isWritingMode ? 0 : -600, // Sorok kat bawah skrin
+                    bottom: _isWritingMode ? 0 : -800, // Sorok jauh di bawah
                     left: 0, right: 0,
                     child: Container(
-                      height: 400,
+                      height: 420,
                       padding: const EdgeInsets.all(25),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3E5AB), // Warna Kertas Lama
+                        color: const Color(0xFFF3E5AB), // Warna Kertas
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                        boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 30)],
+                        boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 40)],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Header Kertas
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Warkah ${DateTime.now().year}", style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                              Text("Warkah ${DateTime.now().year}", style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, fontSize: 16)),
                               IconButton(
                                 icon: const Icon(Icons.close, color: Color(0xFF5D4037)),
                                 onPressed: () => setState(() => _isWritingMode = false),
                               )
                             ],
                           ),
-                          const Divider(color: Color(0xFF8D6E63)),
+                          const Divider(color: Color(0xFF8D6E63), thickness: 1.5),
                           
                           // Dropdown Negeri
-                          DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _states.contains(_selectedState) ? _selectedState : _states[0],
-                              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF5D4037)),
-                              dropdownColor: const Color(0xFFF3E5AB),
-                              isExpanded: true,
-                              style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold),
-                              items: _states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                              onChanged: (v) => setState(() => _selectedState = v!),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black12),
+                              borderRadius: BorderRadius.circular(8)
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _states.contains(_selectedState) ? _selectedState : _states[0],
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF5D4037)),
+                                dropdownColor: const Color(0xFFF3E5AB),
+                                isExpanded: true,
+                                style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold, fontSize: 14),
+                                items: _states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                                onChanged: (v) => setState(() => _selectedState = v!),
+                              ),
                             ),
                           ),
+                          const SizedBox(height: 10),
                           
                           // Input Doa
                           Expanded(
@@ -214,8 +229,8 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
                               maxLines: 8,
                               style: const TextStyle(color: Color(0xFF3E2723), fontSize: 16, height: 1.5, fontFamily: 'serif'),
                               decoration: const InputDecoration(
-                                hintText: "Catatkan doa di sini...",
-                                hintStyle: TextStyle(color: Colors.black38, fontStyle: FontStyle.italic),
+                                hintText: "Catatkan doa dan harapanmu...",
+                                hintStyle: TextStyle(color: Colors.black26, fontStyle: FontStyle.italic),
                                 border: InputBorder.none,
                               ),
                             ),
@@ -224,10 +239,14 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
                           // Butang Simpan
                           SizedBox(
                             width: double.infinity,
+                            height: 45,
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8D6E63)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF8D6E63),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                              ),
                               onPressed: _saveData,
-                              child: const Text("SIMPAN (CAP JARI)", style: TextStyle(color: Color(0xFFF3E5AB))),
+                              child: const Text("SIMPAN (CAP JARI)", style: TextStyle(color: Color(0xFFF3E5AB), fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
@@ -238,7 +257,16 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
               ),
 
               // ================= TAB 2: TAMAN SAHABAT =================
-              Center(child: Text("Komuniti Akan Datang", style: TextStyle(color: Colors.grey))),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.people_outline, size: 60, color: kPrimaryGold.withOpacity(0.3)),
+                    const SizedBox(height: 15),
+                    const Text("KOMUNITI AKAN DATANG", style: TextStyle(color: kPrimaryGold, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
