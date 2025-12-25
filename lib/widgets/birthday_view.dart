@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
-import 'hijrah_tree.dart';
+import 'living_tree.dart'; // ✅ GUNA LIVING TREE TERUS (LEBIH STABIL UNTUK ZOOM)
 
 class BirthdayView extends StatefulWidget {
   const BirthdayView({Key? key}) : super(key: key);
@@ -17,7 +17,7 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
   late TabController _tabController;
   final TextEditingController _noteController = TextEditingController();
   
-  // State untuk Animasi Zoom & Kertas
+  // State Zoom
   bool _isWritingMode = false; 
 
   // Data Lokasi
@@ -50,26 +50,27 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
     await prefs.setString('birthday_state', _selectedState);
     await prefs.setString('birthday_note', _noteController.text);
     
-    // Tutup keyboard & Zoom out
     FocusScope.of(context).unfocus();
     setState(() {
-      _isWritingMode = false;
+      _isWritingMode = false; // Zoom out lepas simpan
     });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("✨ Warkah anda telah disimpan di pangkal pokok."),
+          content: Text("✨ Warkah disimpan di pangkal pokok."),
           backgroundColor: kPrimaryGold,
         ),
       );
     }
   }
 
-  void _toggleWritingMode() {
-    setState(() {
-      _isWritingMode = !_isWritingMode;
-    });
+  // Helper aset video
+  String _getTreeAsset(int level) {
+    if (level <= 1) return 'assets/videos/tree_v1.mp4'; 
+    if (level <= 3) return 'assets/videos/tree_v2.mp4';
+    if (level <= 5) return 'assets/videos/tree_v3.mp4';
+    return 'assets/videos/tree_v1.mp4'; 
   }
 
   @override
@@ -78,7 +79,7 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
 
     return Column(
       children: [
-        // HEADER (Kekal)
+        // HEADER (Hilang bila tulis)
         if (!_isWritingMode) ...[
            Container(
             padding: const EdgeInsets.all(15),
@@ -114,143 +115,119 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
             controller: _tabController,
             physics: _isWritingMode ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
             children: [
-              // ================= TAB 1: AURA DIRI (INTERAKTIF ZOOM) =================
+              // ================= TAB 1: AURA DIRI =================
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // 1. LAYER POKOK (BACKGROUND)
+                  // 1. LAYER POKOK (DIJAMIN MUNCUL)
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 1000),
                     curve: Curves.easeInOutCubic,
-                    // Bila zoom, kita tarik pokok ke atas sikit supaya nampak pangkal
-                    top: _isWritingMode ? -150 : 20, 
-                    left: 0, right: 0,
-                    bottom: _isWritingMode ? 100 : 80, // Bagi ruang untuk pokok memanjang
+                    // Kita mainkan posisi Bottom supaya dia naik/turun
+                    bottom: _isWritingMode ? -50 : 20, 
+                    left: 0, 
+                    right: 0,
+                    height: 500, // ✅ SIZE TETAP: Takkan jadi penyek!
                     child: AnimatedScale(
-                      scale: _isWritingMode ? 1.8 : 0.9, // ZOOM 1.8x bila menulis
+                      scale: _isWritingMode ? 1.5 : 0.85, // Zoom 1.5x bila tulis
                       duration: const Duration(milliseconds: 1000),
                       curve: Curves.easeInOutCubic,
-                      alignment: Alignment.bottomCenter, // Zoom fokus ke pangkal (bawah)
-                      child: const HijrahTree(),
+                      alignment: Alignment.bottomCenter, // Zoom dari pangkal
+                      child: LivingTree( // Guna widget video terus
+                        assetPath: _getTreeAsset(user.treeLevel),
+                        height: 500, // Pastikan tinggi video cukup
+                        onTap: () {},
+                      ),
                     ),
                   ),
 
-                  // 2. BUTANG MULA MENULIS (Hanya muncul bila belum zoom)
+                  // 2. BUTANG "MULA MENULIS"
                   if (!_isWritingMode)
                     Positioned(
                       bottom: 40,
                       child: GestureDetector(
-                        onTap: _toggleWritingMode,
+                        onTap: () => setState(() => _isWritingMode = true),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
                             color: kPrimaryGold,
                             borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(color: kPrimaryGold.withOpacity(0.5), blurRadius: 15, spreadRadius: 1)
-                            ],
+                            boxShadow: [BoxShadow(color: kPrimaryGold.withOpacity(0.5), blurRadius: 15)],
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: const [
-                              Icon(Icons.edit_note, color: Colors.black),
+                              Icon(Icons.edit, color: Colors.black, size: 16),
                               SizedBox(width: 8),
-                              Text("TULIS WARKAH DI PANGKAL POKOK", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10)),
+                              Text("TULIS WARKAH", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
                             ],
                           ),
                         ),
                       ),
                     ),
 
-                  // 3. KERTAS NOTA ANTIK (Muncul bila Zoom)
+                  // 3. KERTAS ANTIK (Slide Naik)
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 1200),
                     curve: Curves.elasticOut,
-                    bottom: _isWritingMode ? 20 : -500, // Slide dari bawah
-                    left: 20, right: 20,
+                    bottom: _isWritingMode ? 0 : -600, // Sorok kat bawah skrin
+                    left: 0, right: 0,
                     child: Container(
-                      height: 380,
+                      height: 400,
                       padding: const EdgeInsets.all(25),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3E5AB), // Warna Vanilla/Kertas Lama
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          const BoxShadow(color: Colors.black54, blurRadius: 30, spreadRadius: 5),
-                          BoxShadow(color: Colors.brown.withOpacity(0.3), blurRadius: 5, offset: const Offset(0, -2))
-                        ],
-                        border: Border.all(color: const Color(0xFF8D6E63), width: 2), // Border Coklat
+                        color: const Color(0xFFF3E5AB), // Warna Kertas Lama
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                        boxShadow: [const BoxShadow(color: Colors.black54, blurRadius: 30)],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header Kertas
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "Warkah ${DateTime.now().year}", 
-                                style: const TextStyle(
-                                  color: Color(0xFF5D4037), 
-                                  fontFamily: 'serif', 
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.italic
-                                )
-                              ),
+                              Text("Warkah ${DateTime.now().year}", style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
                               IconButton(
                                 icon: const Icon(Icons.close, color: Color(0xFF5D4037)),
-                                onPressed: _toggleWritingMode, // Tutup/Zoom Out
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
+                                onPressed: () => setState(() => _isWritingMode = false),
                               )
                             ],
                           ),
-                          const Divider(color: Color(0xFF8D6E63), thickness: 1),
+                          const Divider(color: Color(0xFF8D6E63)),
                           
-                          // Input Negeri (Dropdown Style Lama)
+                          // Dropdown Negeri
                           DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _states.contains(_selectedState) ? _selectedState : _states[0],
                               icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF5D4037)),
                               dropdownColor: const Color(0xFFF3E5AB),
                               isExpanded: true,
-                              style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold, fontFamily: 'serif'),
-                              items: _states.map((String value) {
-                                return DropdownMenuItem<String>(value: value, child: Text(value));
-                              }).toList(),
-                              onChanged: (newValue) => setState(() => _selectedState = newValue!),
+                              style: const TextStyle(color: Color(0xFF5D4037), fontWeight: FontWeight.bold),
+                              items: _states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                              onChanged: (v) => setState(() => _selectedState = v!),
                             ),
                           ),
-                          const SizedBox(height: 10),
-
-                          // Text Area (Doa)
+                          
+                          // Input Doa
                           Expanded(
                             child: TextField(
                               controller: _noteController,
                               maxLines: 8,
-                              style: const TextStyle(
-                                color: Color(0xFF3E2723), 
-                                fontSize: 16, 
-                                fontFamily: 'serif', // Font gaya lama
-                                height: 1.5,
-                              ),
+                              style: const TextStyle(color: Color(0xFF3E2723), fontSize: 16, height: 1.5, fontFamily: 'serif'),
                               decoration: const InputDecoration(
-                                hintText: "Catatkan doa dan harapanmu di sini...",
-                                hintStyle: TextStyle(color: Colors.black38, fontStyle: FontStyle.italic, fontFamily: 'serif'),
+                                hintText: "Catatkan doa di sini...",
+                                hintStyle: TextStyle(color: Colors.black38, fontStyle: FontStyle.italic),
                                 border: InputBorder.none,
                               ),
                             ),
                           ),
 
-                          // Cap / Butang Simpan
-                          Center(
+                          // Butang Simpan
+                          SizedBox(
+                            width: double.infinity,
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8D6E63), // Coklat Kayu
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                              ),
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8D6E63)),
                               onPressed: _saveData,
-                              child: const Text("SIMPAN (CAP JARI)", style: TextStyle(color: Color(0xFFF3E5AB), fontWeight: FontWeight.bold)),
+                              child: const Text("SIMPAN (CAP JARI)", style: TextStyle(color: Color(0xFFF3E5AB))),
                             ),
                           ),
                         ],
@@ -260,24 +237,8 @@ class _BirthdayViewState extends State<BirthdayView> with SingleTickerProviderSt
                 ],
               ),
 
-              // ================= TAB 2: TAMAN SAHABAT (Kekal) =================
-              Center(
-                child: Opacity(
-                  opacity: 0.5,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.diversity_1, size: 50, color: kPrimaryGold),
-                      const SizedBox(height: 20),
-                      const Text("KOMUNITI AKAN DATANG", style: TextStyle(color: Colors.white, letterSpacing: 1.5)),
-                      const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text("Ruang untuk mengaminkan doa sahabat.", style: TextStyle(color: Colors.grey, fontSize: 12), textAlign: TextAlign.center),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // ================= TAB 2: TAMAN SAHABAT =================
+              Center(child: Text("Komuniti Akan Datang", style: TextStyle(color: Colors.grey))),
             ],
           ),
         ),
