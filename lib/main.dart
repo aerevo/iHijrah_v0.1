@@ -1,4 +1,4 @@
-// lib/main.dart (GATEWAY TO ZYAMINA)
+// lib/main.dart (WAYAR DISAMBUNG)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,24 +11,20 @@ import 'utils/constants.dart';
 import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'models/animation_controller_model.dart';
+import 'providers/daily_content_provider.dart'; // ✅ IMPORT INI PENTING
 import 'utils/audio_service.dart';
 import 'utils/prayer_service.dart';
 import 'utils/sirah_service.dart';
 
 void main() async {
-  // 1. Ensure Bindings
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Load User Data
   final userModel = await UserModel.load();
 
-  // 3. Lock Orientation (Portrait)
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 4. Set Status Bar (Transparent untuk Fullscreen feel)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light, 
@@ -49,6 +45,9 @@ class IHijrahApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: userModel),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
+        
+        // ✅ [PENYELAMAT] OTAK DATA HARIAN DIHIDUPKAN DI SINI:
+        ChangeNotifierProvider(create: (_) => DailyContentProvider()), 
 
         // Service Providers
         Provider(create: (_) => AudioService()),
@@ -61,14 +60,11 @@ class IHijrahApp extends StatelessWidget {
       child: MaterialApp(
         title: 'iHijrah Embun Jiwa',
         debugShowCheckedModeBanner: false,
-
-        // GLOBAL THEME
         theme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: Colors.black, // Default Black
+          scaffoldBackgroundColor: Colors.black,
           primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto', // Font moden & clean
-
+          fontFamily: 'Roboto',
           colorScheme: const ColorScheme.dark(
             primary: kPrimaryGold,
             secondary: kAccentOlive,
@@ -76,8 +72,6 @@ class IHijrahApp extends StatelessWidget {
             background: kBackgroundDark,
           ),
         ),
-
-        // PINTU MASUK: INTRO ZYAMINA STUDIO
         home: const SplashScreen(), 
       ),
     );
