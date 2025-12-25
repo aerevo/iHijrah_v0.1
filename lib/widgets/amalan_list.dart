@@ -1,128 +1,82 @@
-﻿// lib/widgets/amalan_list.dart (UPGRADED 7.8/10)
+// lib/widgets/amalan_list.dart (LIVE DATA)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/user_model.dart';
-import '../../utils/constants.dart';
+import '../providers/daily_content_provider.dart';
+import '../utils/constants.dart';
 
 class AmalanList extends StatelessWidget {
   const AmalanList({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Senarai Amalan Tetap (Boleh dipindahkan ke constants/service jika perlu pada masa depan)
-    final List<Map<String, dynamic>> amalanHarian = [
-      {'id': 'dhuha', 'name': 'Solat Sunat Dhuha', 'icon': Icons.wb_sunny},
-      {'id': 'quran', 'name': 'Baca Al-Quran (1 Muka)', 'icon': Icons.menu_book},
-      {'id': 'sedekah', 'name': 'Sedekah Subuh / Harian', 'icon': Icons.volunteer_activism},
-      {'id': 'tahajjud', 'name': 'Bangun Tahajjud', 'icon': Icons.nightlight_round},
-      {'id': 'witir', 'name': 'Solat Witir', 'icon': Icons.stars},
-    ];
+    // 1. Tarik data dari Provider
+    final provider = Provider.of<DailyContentProvider>(context);
+    final amalanList = provider.todayAmalanList;
+    final isLoading = provider.isLoading;
 
-    return Consumer<UserModel>(
-      builder: (context, user, child) {
-        // Kira progress
-        int completedCount = 0;
-        for (var a in amalanHarian) {
-          if (user.isAmalanDoneToday(a['id'])) completedCount++;
-        }
-
-        double progress = completedCount / amalanHarian.length;
-
-        return Card(
-          color: kCardDark,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-            side: BorderSide(color: kTextSecondary.withOpacity(0.1)),
-          ),
-          child: ExpansionTile(
-            // HEADER TILE
-            tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-            leading: CircleAvatar(
-              backgroundColor: kPrimaryGold.withOpacity(0.1),
-              radius: 22,
-              child: const Icon(Icons.library_add_check, color: kPrimaryGold, size: AppSizes.iconMd),
-            ),
-            title: const Text(
-              "Senarai Semak Sunnah",
-              style: TextStyle(
-                color: kTextPrimary,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Playfair',
-                fontSize: AppFontSizes.lg
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 6),
-                Text(
-                  completedCount == amalanHarian.length
-                   ? "Tahniah! Semua lengkap."
-                   : "$completedCount daripada ${amalanHarian.length} selesai",
-                  style: const TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm),
-                ),
-                const SizedBox(height: 8),
-
-                // Mini Progress Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 4,
-                    backgroundColor: Colors.black26,
-                    valueColor: const AlwaysStoppedAnimation(kAccentOlive),
-                  ),
-                )
-              ],
-            ),
-            iconColor: kPrimaryGold,
-            collapsedIconColor: kTextSecondary,
-
-            // ISI KANDUNGAN
-            children: amalanHarian.map((amalan) {
-              final isDone = user.isAmalanDoneToday(amalan['id']);
-
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 5, bottom: 10),
+          child: Text("AMALAN SUNNAH", style: TextStyle(color: kTextSecondary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        ),
+        
+        if (isLoading)
+          const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: kPrimaryGold)))
+        else if (amalanList.isEmpty)
+           const Padding(padding: EdgeInsets.all(20), child: Text("Tiada amalan khusus disenaraikan.", style: TextStyle(color: Colors.grey)))
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: amalanList.length,
+            itemBuilder: (context, index) {
+              final amalan = amalanList[index];
               return Container(
+                margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05)))
+                  color: amalan.isCompleted ? kPrimaryGold.withOpacity(0.1) : Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: amalan.isCompleted ? kPrimaryGold.withOpacity(0.5) : Colors.white10
+                  ),
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
-                  leading: Icon(
-                    amalan['icon'],
-                    color: isDone ? kPrimaryGold : kTextSecondary,
-                    size: AppSizes.iconSm,
+                  leading: GestureDetector(
+                    onTap: () => provider.toggleAmalan(amalan.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: amalan.isCompleted ? kPrimaryGold : Colors.grey, width: 2),
+                        color: amalan.isCompleted ? kPrimaryGold : Colors.transparent,
+                      ),
+                      child: amalan.isCompleted 
+                        ? const Icon(Icons.check, size: 14, color: Colors.black)
+                        : const Icon(null, size: 14),
+                    ),
                   ),
                   title: Text(
-                    amalan['name'],
+                    amalan.title,
                     style: TextStyle(
-                      color: isDone ? kPrimaryGold : kTextSecondary,
-                      decoration: isDone ? TextDecoration.lineThrough : null,
-                      fontSize: AppFontSizes.md
+                      color: amalan.isCompleted ? kPrimaryGold : Colors.white,
+                      fontSize: 14,
+                      decoration: amalan.isCompleted ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  trailing: Transform.scale(
-                    scale: 1.1,
-                    child: Checkbox(
-                      value: isDone,
-                      activeColor: kPrimaryGold,
-                      checkColor: kBackgroundDark,
-                      side: BorderSide(color: kTextSecondary.withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      onChanged: (bool? val) {
-                        if (val == true) {
-                          user.recordAmalan(amalan['id']);
-                        }
-                      },
-                    ),
+                  subtitle: Text(
+                    amalan.type.toUpperCase(), // 'HARIAN' atau 'MINGGUAN'
+                    style: TextStyle(color: Colors.grey.withOpacity(0.6), fontSize: 10),
                   ),
+                  trailing: amalan.source.isNotEmpty 
+                    ? const Icon(Icons.info_outline, size: 16, color: Colors.grey)
+                    : null,
                 ),
               );
-            }).toList(),
+            },
           ),
-        );
-      },
+      ],
     );
   }
 }
