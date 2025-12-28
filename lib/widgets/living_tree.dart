@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../utils/constants.dart';
 
-// ==========================================================
-// 🎥 ENJIN VIDEO POKOK (EDISI KHAS KAPTEN AER)
-// ==========================================================
-
 class LivingTree extends StatefulWidget {
   final String assetPath; 
   final double height;
@@ -76,8 +72,16 @@ class _LivingTreeState extends State<LivingTree> {
 
   @override
   Widget build(BuildContext context) {
+    // 🛑 [FIX UTAMA] FORCE RESUME
+    // Setiap kali widget ini dilukis semula (bila Sidebar buka), 
+    // kita cek: Kalau dia dah ready TAPI dia berhenti, kita PAKSA dia main balik.
+    if (_isInitialized && _controller != null && !_controller!.value.isPlaying) {
+      _controller!.play();
+    }
+
     return GestureDetector(
       onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque, // Tangkap tap walaupun kawasan kosong
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
