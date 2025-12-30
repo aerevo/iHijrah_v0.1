@@ -1,20 +1,25 @@
+// lib/widgets/flyout_panel.dart (VERSI LENGKAP: SIRAH & AMALAN BERASINGAN)
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:ui'; // Wajib untuk ImageFilter
+import 'dart:ui'; 
 
 import '../models/sidebar_state_model.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
 
-// === IMPORT SEMUA VIEW (PASTIKAN SEMUA FAIL INI WUJUD) ===
+// === IMPORT SEMUA VIEW ===
 import 'profile_detail_view.dart';
 import 'calendar_view.dart';
 import 'event_view.dart';
 import 'settings_view.dart'; 
 import 'about_view.dart';   
 import 'hijrah_tree.dart'; 
-import 'birthday_view.dart'; // ✅ View Birthday
-import 'sirah_view.dart';    // ✅ View Sirah Baru
+import 'birthday_view.dart'; 
+
+// ✅ IMPORT DUA BERADIK BARU
+import 'sirah_view.dart';    
+import 'amalan_view.dart';   
 
 class FlyoutPanel extends StatelessWidget {
   final double panelWidth;
@@ -32,18 +37,18 @@ class FlyoutPanel extends StatelessWidget {
       // POKOK SAHAJA
       case 'tree_progress': return const HijrahTree(); 
       
-      // HARI JADI (Ulang Tahun)
+      // HARI JADI
       case 'birthday': return const BirthdayView();
 
-      // SIRAH & AMALAN (Menu Baru)
+      // ✅ MENU 1: SIRAH
       case 'sirah': return const SirahView(); 
+      
+      // ✅ MENU 2: AMALAN (Misi Harian)
+      case 'amalan': return const AmalanView(); 
       
       case 'infaq': 
         return const Center(
-          child: Text(
-            "Infaq - Coming Soon", 
-            style: TextStyle(color: kTextSecondary)
-          )
+          child: Text("Infaq - Coming Soon", style: TextStyle(color: kTextSecondary))
         );
       default: return const SizedBox.shrink();
     }
@@ -106,7 +111,6 @@ class FlyoutPanel extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Tajuk Menu (Emas)
                     MetallicGold(
                       child: Text(
                         model.menuTitle.toUpperCase(),
@@ -118,7 +122,6 @@ class FlyoutPanel extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Butang Tutup (X)
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white70),
                       onPressed: () => model.closeMenu(),
@@ -127,16 +130,13 @@ class FlyoutPanel extends StatelessWidget {
                 ),
               ),
 
-              // KANDUNGAN SCROLLABLE
+              // KANDUNGAN
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   child: Column(
                     children: [
-                      // Kandungan sebenar
                       _buildContent(model.activeMenuId!),
-                      
-                      // Ruang kosong bawah
                       const SizedBox(height: 100), 
                     ],
                   ),
