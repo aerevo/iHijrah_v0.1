@@ -1,10 +1,8 @@
-// lib/widgets/sirah_view.dart
-// Halaman ini hanya muncul bila tekan menu "SIRAH" di Sidebar
+// lib/widgets/sirah_view.dart (KHAS SIRAH)
 
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import 'sirah_card.dart';   
-import 'amalan_list.dart';
 
 class SirahView extends StatelessWidget {
   const SirahView({Key? key}) : super(key: key);
@@ -14,11 +12,11 @@ class SirahView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header Kecil
+        // Header
         Container(
           padding: const EdgeInsets.only(left: 10, bottom: 20),
           child: const Text(
-            "KHAZANAH HARI INI",
+            "KHAZANAH NABI",
             style: TextStyle(
               color: kPrimaryGold, 
               letterSpacing: 2.0, 
@@ -28,13 +26,8 @@ class SirahView extends StatelessWidget {
           ),
         ),
 
-        // 1. KAD SIRAH
+        // HANYA KAD SIRAH DI SINI
         const SirahCard(),
-
-        const SizedBox(height: 30),
-
-        // 2. SENARAI AMALAN
-        const AmalanList(),
       ],
     );
   }
