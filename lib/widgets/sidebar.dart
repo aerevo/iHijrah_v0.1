@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (UPDATED: LIVING TREE INTEGRATION)
+// lib/widgets/sidebar.dart (MENU ASING: SIRAH & AMALAN)
 
 import 'dart:io';
 import 'dart:ui';
@@ -12,7 +12,7 @@ import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import 'metallic_gold.dart';
 import 'embun_ui/embun_ui.dart';
-import 'living_tree.dart'; // ✅ IMPORT PENTING: Panggil widget pokok hidup
+import 'living_tree.dart'; 
 
 class Sidebar extends StatelessWidget {
   final double dockWidth;
@@ -61,12 +61,9 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // ✅ KEMASKINI: Menggunakan Logik Video (Sama macam HijrahTree)
   String _getTreeAsset(int level) {
-    // Pastikan path ini SAMA dengan yang ada dalam hijrah_tree.dart
     if (level <= 1) return 'assets/videos/tree_v1.mp4'; 
-    if (level <= 3) return 'assets/videos/tree_v2.mp4'; // Placeholder
-    // Fallback selamat
+    if (level <= 3) return 'assets/videos/tree_v2.mp4'; 
     return 'assets/videos/tree_v1.mp4'; 
   }
 
@@ -135,6 +132,7 @@ class Sidebar extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
+                        // PROFILE HEADER
                         Padding(
                           padding: const EdgeInsets.only(top: 20, bottom: 5),
                           child: Consumer<UserModel>(
@@ -219,7 +217,7 @@ class Sidebar extends StatelessWidget {
                           ),
                         ),
                         
-                        // ✅ AREA MENU POKOK HIDUP
+                        // POKOK HIDUP (MENU)
                         Consumer<UserModel>(
                           builder: (context, user, _) {
                             return InkWell(
@@ -230,13 +228,11 @@ class Sidebar extends StatelessWidget {
                                 child: Stack(
                                   alignment: Alignment.center,
                                   children: [
-                                    // GANTI Image.asset DENGAN LivingTree (Video)
-                                    // Kita set height 50 supaya muat elok dalam kotak 60
-                                    IgnorePointer( // Supaya tak ganggu scroll sidebar
+                                    IgnorePointer(
                                       child: LivingTree(
                                         assetPath: _getTreeAsset(user.treeLevel),
                                         height: 50, 
-                                        onTap: null, // Menu Sidebar handle tap
+                                        onTap: null, 
                                       ),
                                     ),
                                     Positioned(
@@ -259,18 +255,30 @@ class Sidebar extends StatelessWidget {
                         ),
 
                         Divider(color: Colors.white.withOpacity(0.1), height: 1),
+                        
+                        // === SENARAI MENU ===
                         _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
+                        
+                        // 1. MENU SIRAH (Buku)
                         _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
+                        
+                        // 2. MENU AMALAN (Misi/Hati) - BARU!
+                        _buildMenuItem(context, icon: Icons.volunteer_activism, title: 'Amalan', id: 'amalan'),
+
                         _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
                         _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
                         _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
                         _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
+                        
                         const SizedBox(height: 5),
                         _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
                         _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
+                        
                         const SizedBox(height: 15),
                         _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
                         _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
+                        
+                        // Handler untuk Dialog Infaq
                         Consumer<SidebarStateModel>(
                           builder: (ctx, m, _) {
                             if (m.activeMenuId == 'infaq') {
