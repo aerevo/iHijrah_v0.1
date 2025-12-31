@@ -56,7 +56,7 @@ flutter:
     - assets/images/
     - assets/sounds/
     - assets/animations/
-    - assets/data/
+    - assets/data/sirah_data.json
     - assets/videos/
 
   # --- FONT PREMIUM ---
