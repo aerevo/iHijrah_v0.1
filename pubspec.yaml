@@ -58,6 +58,7 @@ flutter:
     - assets/animations/
     - assets/videos/
     - assets/data/sirah_data.json
+    - assets/data/amalan_sunnah.json
 
   # --- FONT PREMIUM ---
   fonts:
