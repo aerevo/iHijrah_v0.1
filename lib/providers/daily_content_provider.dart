@@ -1,6 +1,3 @@
-// lib/providers/daily_content_provider.dart
-// (VERSI SYNC DUA HALA: SIRAH & AMALAN)
-
 import 'dart:convert';
 import 'dart:math'; 
 import 'package:flutter/material.dart';
@@ -27,12 +24,13 @@ class SirahToday {
   }
 }
 
-// Model Amalan (Kini dibaca dari JSON)
+// Model Amalan 
 class AmalanToday {
   final String id;
   final String title;
   final String source;
-  final String type; // 'harian', 'mingguan', 'khas'
+  final String type; // 'khas' (Date specific), 'mingguan' (Day specific)
+  final String reward; // Fadhilat/Ganjaran
   bool isCompleted;
 
   AmalanToday({
@@ -40,6 +38,7 @@ class AmalanToday {
     required this.title, 
     required this.source, 
     required this.type,
+    this.reward = "",
     this.isCompleted = false,
   });
 }
@@ -54,8 +53,8 @@ class DailyContentProvider with ChangeNotifier {
   List<AmalanToday> _todayAmalanList = [];
   List<AmalanToday> get todayAmalanList => _todayAmalanList;
 
-  // Debug Message untuk On-Screen Logging
-  String debugMessage = "";
+  // Notification Message (Pop Up Ringkas untuk Rutin)
+  String? popupMessage; 
 
   DailyContentProvider() {
     loadDailyContent();
@@ -63,13 +62,11 @@ class DailyContentProvider with ChangeNotifier {
 
   Future<void> loadDailyContent() async {
     _isLoading = true;
-    debugMessage = ""; // Reset error
+    popupMessage = null;
     notifyListeners();
 
     try {
-      // ==========================================
-      // BAHAGIAN 1: SYNC SIRAH (Sedia Ada)
-      // ==========================================
+      // 1. SYNC SIRAH (Kekal Sama)
       final String sirahResponse = await rootBundle.loadString('assets/data/sirah_data.json');
       final Map<String, dynamic> sirahData = json.decode(sirahResponse);
 
@@ -86,85 +83,97 @@ class DailyContentProvider with ChangeNotifier {
         }
       }
 
-      // ==========================================
-      // BAHAGIAN 2: SYNC AMALAN (Baru!)
-      // ==========================================
+      // 2. SYNC AMALAN (Logik Baru: Anti-Serabut)
       final String amalanResponse = await rootBundle.loadString('assets/data/amalan_sunnah.json');
       final List<dynamic> amalanData = json.decode(amalanResponse);
 
-      _todayAmalanList = []; // Kosongkan senarai lama
+      _todayAmalanList = []; 
 
-      // A. Dapatkan Info Hari Ini
+      // Data Tarikh & Hari
       DateTime now = DateTime.now();
       String dayNameMy = _getDayName(now.weekday); // Isnin, Selasa...
       
-      // B. Dapatkan Info Hijrah (Cth: "10 Muharram")
-      // Nota: JSON Kapten guna ejaan Melayu, kita kena match kan.
+      // Data Hijrah (Mapping Nama Bulan)
       List<String> bulanHijrahMy = [
         "Muharram", "Safar", "Rabiulawal", "Rabiulakhir",
         "Jamadilawal", "Jamadilakhir", "Rejab", "Syaaban",
         "Ramadan", "Syawal", "Zulkaedah", "Zulhijjah"
       ];
-      String hijriDateStr = "${_today.hDay} ${bulanHijrahMy[_today.hMonth - 1]}";
+      String hijriDateStr = "${_today.hDay} ${bulanHijrahMy[_today.hMonth - 1]}"; // Cth: 10 Muharram
 
-      // C. Lakukan Penapisan (Filtering)
+      // === PENAPIS "SNIPER" FRANCOIS ===
       for (var item in amalanData) {
-        String hariIsam = item['hari'].toString(); // Ambil field 'hari' dari JSON
+        String hariIsam = item['hari'].toString(); 
         bool include = false;
-        String type = 'harian';
+        String type = 'mingguan';
 
-        // Logik Penapis:
-        if (hariIsam == "Setiap hari") {
+        // A. Cek Tarikh Spesifik (PRIORITI TERTINGGI)
+        // Cth: "10 Muharram" atau "27 Rejab"
+        if (hariIsam == hijriDateStr) {
           include = true;
-          type = 'harian';
-        } else if (hariIsam == hijriDateStr) {
-          // Contoh: "10 Muharram" == "10 Muharram"
-          include = true;
-          type = 'khas'; // Amalan Khas (Paling Penting)
-        } else if (hariIsam.toLowerCase() == "malam" && (now.hour >= 19 || now.hour < 6)) {
-          // Tunjuk amalan malam jika waktu malam
-          include = true; 
-          type = 'harian';
-        } else if (hariIsam.toLowerCase() == dayNameMy.toLowerCase()) {
-          // Isnin / Khamis / Jumaat
-          include = true;
-          type = 'mingguan';
+          type = 'khas';
         } 
+        
+        // B. Cek Hari Mingguan (Isnin/Khamis/Jumaat SAHAJA)
+        // Kita abaikan hari biasa yang tiada puasa sunat/amalan khas
+        else if (hariIsam.toLowerCase() == dayNameMy.toLowerCase()) {
+           // Hanya ambil jika Isnin/Khamis (Puasa) atau Jumaat (Kahfi/Mandi)
+           if (['Isnin', 'Khamis', 'Jumaat'].contains(dayNameMy)) {
+             include = true;
+             type = 'mingguan';
+           }
+        }
+
+        // C. SOROKKAN RUTIN ("Setiap hari" / "Malam")
+        // Kita tak masukkan dalam list, TAPI kita boleh simpan sebagai 'popupMessage'
+        // jika Kapten nak "sekadar lalu"
+        else if (hariIsam == "Setiap hari" && popupMessage == null) {
+           // Contoh: Set popup rawak untuk peringatan dhuha
+           if (now.hour > 7 && now.hour < 12) {
+             popupMessage = "Peringatan Dhuha: 2 rakaat yang mencukupkan rezeki.";
+           }
+        }
 
         if (include) {
-          // Jika lulus tapisan, masukkan dalam list
           _todayAmalanList.add(AmalanToday(
             id: item['id'],
             title: item['amalan'],
             source: item['sumber'] ?? "",
             type: type,
+            reward: item['huraian'] ?? "", // Papar huraian sebagai ganjaran/motivasi
           ));
         }
       }
       
-      // Susun: Amalan Khas naik atas sekali
+      // Susun: Yang 'khas' (Rare) duduk atas sekali
       _todayAmalanList.sort((a, b) {
         if (a.type == 'khas' && b.type != 'khas') return -1;
         if (a.type != 'khas' && b.type == 'khas') return 1;
         return 0;
       });
 
+      // Jika tiada amalan khas hari ni (List kosong), 
+      // Tunjukkan mesej "Rehat" atau satu amalan rawak ringan supaya tak nampak bug
+      if (_todayAmalanList.isEmpty) {
+         _todayAmalanList.add(AmalanToday(
+           id: 'rest_day',
+           title: 'Tiada Amalan Khusus Hari Ini',
+           source: 'Rehat & Fokus Ibadah Wajib',
+           type: 'mingguan',
+           reward: 'Fokus pada kualiti solat fardu anda hari ini.',
+         ));
+      }
+
     } catch (e) {
-      // ON-SCREEN LOGGING: Papar error di UI jika ada
-      debugMessage = "Ralat Data: $e";
-      
-      // Fallback supaya UI tak kosong
-      _todayAmalanList = [
-        AmalanToday(id: 'err_1', title: 'Istighfar (Data Error)', source: 'Sunnah', type: 'harian'),
-      ];
+      debugPrint("❌ Error: $e");
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // Toggle Checkbox Amalan
   void toggleAmalan(String id) {
+    // Logik tick/untick
     int index = _todayAmalanList.indexWhere((item) => item.id == id);
     if (index != -1) {
       _todayAmalanList[index].isCompleted = !_todayAmalanList[index].isCompleted;
@@ -172,7 +181,6 @@ class DailyContentProvider with ChangeNotifier {
     }
   }
 
-  // Helper: Tukar nombor hari ke Bahasa Melayu
   String _getDayName(int weekday) {
     switch (weekday) {
       case 1: return "Isnin";
