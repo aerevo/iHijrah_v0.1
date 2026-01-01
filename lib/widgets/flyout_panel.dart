@@ -1,4 +1,4 @@
-// lib/widgets/flyout_panel.dart (VERSI LENGKAP: SIRAH & AMALAN BERASINGAN)
+// lib/widgets/flyout_panel.dart (VERSI GLASS: LEBIH TERANG & JELAS)
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +13,7 @@ import 'profile_detail_view.dart';
 import 'calendar_view.dart';
 import 'event_view.dart';
 import 'settings_view.dart'; 
-import 'about_view.dart';   
+import 'about_view.dart';    
 import 'hijrah_tree.dart'; 
 import 'birthday_view.dart'; 
 
@@ -81,12 +81,14 @@ class FlyoutPanel extends StatelessWidget {
   Widget _buildGlassContainer(BuildContext context, SidebarStateModel model) {
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15), 
+        // KURANGKAN BLUR SEDIKIT SUPAYA LEBIH REALISTIK
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), 
         child: Container(
           width: panelWidth,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.4), 
+            // ✅ UBAH DI SINI: Opacity diturunkan drpd 0.4 ke 0.15 (Lebih Terang)
+            color: Colors.black.withOpacity(0.15), 
             border: Border(
               right: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
               left: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
