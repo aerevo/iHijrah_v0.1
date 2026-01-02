@@ -1,14 +1,9 @@
 buildscript {
     ext.kotlin_version = '1.7.10'
     repositories {
-        // 1. Cari di Google rasmi dulu
         google()
-        
-        // 2. ✅ JALAN TIKUS: Guna Mirror Google untuk Maven Central (PENTING!)
-        // Ini akan elak error 403 Forbidden dari server asal
+        // ✅ JALAN TIKUS: Guna Mirror Google untuk elak error 403
         maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
-        
-        // 3. Fallback ke server asal (kalau mirror tak jumpa)
         mavenCentral()
     }
 
@@ -20,15 +15,10 @@ buildscript {
 
 allprojects {
     repositories {
-        // Ulang strategi sama untuk semua sub-projek
         google()
-        
-        // ✅ JALAN TIKUS DI SINI JUGA
+        // ✅ JALAN TIKUS UNTUK SEMUA PROJECT
         maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
-        
         mavenCentral()
-        
-        // Tambahan untuk sesetengah lib lama
         maven { url "https://jitpack.io" }
     }
 }
