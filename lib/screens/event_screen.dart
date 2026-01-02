@@ -1,35 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-// Pastikan package ini ada dalam pubspec.yaml. Jika tiada, boleh tukar ke GridView.count biasa.
 
 class EventScreen extends StatelessWidget {
   const EventScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Data Dummy ala Majalah (Kapten boleh ganti imej nanti)
-    final List<Map<String, dynamic>> magazineItems = [
+    // Data Dummy (Nama, Umur, Caption)
+    final List<Map<String, dynamic>> items = [
       {
-        'title': 'USERS',
-        'subtitle': 'COMMUNITY',
+        'name': 'AISYAH',
+        'age': '24',
+        'caption': 'Pejuang Subuh',
         'image': 'assets/images/mosque_bg.jpg', 
         'height': 280.0,
       },
       {
-        'title': 'SIRAH',
-        'subtitle': 'HISTORY',
+        'name': 'FATIMAH',
+        'age': '21',
+        'caption': 'Cinta Al-Quran',
         'image': 'assets/images/quran_bg.jpg', 
         'height': 220.0,
       },
       {
-        'title': 'VIBE',
-        'subtitle': 'AESTHETIC',
+        'name': 'ADAM',
+        'age': '28',
+        'caption': 'Musafir Ilmu',
         'image': 'assets/images/nature_bg.jpg', 
         'height': 240.0,
       },
       {
-        'title': 'ISLAM',
-        'subtitle': 'LIFESTYLE',
+        'name': 'YUSOF',
+        'age': '30',
+        'caption': 'Hijrah Hati',
         'image': 'assets/images/kaaba_bg.jpg', 
         'height': 260.0,
       },
@@ -38,19 +41,18 @@ class EventScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent, 
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        
-        // Guna Masonry Grid untuk susunan 'Tidak Sekata' (Pinterest Style)
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: MasonryGridView.count(
           crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          itemCount: magazineItems.length,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          itemCount: items.length,
           itemBuilder: (context, index) {
-            final item = magazineItems[index];
-            return _buildMagazineCard(
-              title: item['title'],
-              subtitle: item['subtitle'],
+            final item = items[index];
+            return _buildRawPoster(
+              name: item['name'],
+              age: item['age'],
+              caption: item['caption'],
               height: item['height'],
               imagePath: item['image'], 
             );
@@ -60,119 +62,134 @@ class EventScreen extends StatelessWidget {
     );
   }
 
-  // WIDGET KAD ALA CAPCUT (UPGRADED)
-  Widget _buildMagazineCard({
-    required String title,
-    required String subtitle,
+  // WIDGET CAPCUT RAW (TANPA KAD)
+  Widget _buildRawPoster({
+    required String name,
+    required String age,
+    required String caption,
     required double height,
     required String imagePath,
   }) {
     return Container(
       height: height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12), 
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      // HANYA ClipRRect, TIADA DECORATION/SHADOW KOTAK
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // 1. GAMBAR PENUH (Full Brightness)
+            // 1. GAMBAR PENUH (Background)
             Image.asset(
               imagePath,
               fit: BoxFit.cover,
               errorBuilder: (c, o, s) => Container(color: Colors.grey.shade900),
             ),
 
-            // 2. GRADIENT LANTAI (Rahsia Teks Jelas tapi Gambar Terang)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.5, 0.8, 1.0], // Mula gelap di bawah saja
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.5),
-                    Colors.black.withOpacity(0.9),
-                  ],
-                ),
-              ),
-            ),
-
-            // 3. TAG KATEGORI (Kecil di atas kiri - Macam 'Autocut' badge)
+            // 2. GRADIENT HALUS (Supaya tulisan Emas nampak, tapi bukan kotak)
             Positioned(
-              top: 10,
-              left: 10,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 100, // Gradient hanya di bahagian bawah
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2), // Glass effect
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.white30, width: 0.5),
-                ),
-                child: Text(
-                  subtitle.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8, 
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.3), // Sangat nipis
+                      Colors.black.withOpacity(0.7),
+                    ],
                   ),
                 ),
               ),
             ),
 
-            // 4. TEXT CONTENT (Tanam di Bawah Kiri)
-            Padding(
-              padding: const EdgeInsets.all(12.0),
+            // 3. TEXT CONTENT (EMAS & SILVER)
+            Positioned(
+              bottom: 15,
+              left: 10,
+              right: 10,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.end, // Kunci: Letak bawah
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22, // Besar!
-                      fontFamily: 'Poppins', 
-                      fontWeight: FontWeight.w900, // Paling Tebal
-                      height: 1.0, // Rapatkan baris
-                      shadows: [
-                        Shadow(offset: Offset(0, 1), blurRadius: 5, color: Colors.black54),
-                      ],
+                  // NAMA (GOLD GRADIENT TEXT)
+                  ShaderMask(
+                    shaderCallback: (bounds) {
+                      return const LinearGradient(
+                        colors: [
+                          Color(0xFFFFF176), // Emas Muda (Kuning Cerah)
+                          Color(0xFFFFD700), // Emas Tulen
+                          Color(0xFFFFB300), // Emas Gelap (Amber)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ).createShader(bounds);
+                    },
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900, // Tebal macam CapCut
+                        fontFamily: 'Poppins', 
+                        color: Colors.white, // Warna asas (akan ditutup shader)
+                        height: 1.0,
+                        shadows: [
+                          // BAYANG SILVER (GLOW)
+                          Shadow(
+                            offset: Offset(0, 0),
+                            blurRadius: 10.0,
+                            color: Colors.white60, // Silver Glow
+                          ),
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2.0,
+                            color: Colors.black45, // Bayang Hitam sikit utk readability
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  
-                  const SizedBox(height: 8),
 
-                  // User Info (Kecil di bawah tajuk)
+                  const SizedBox(height: 4),
+
+                  // UMUR & CAPTION (PUTIH BERSIH)
                   Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 8,
-                        backgroundColor: Colors.white24,
-                        child: Icon(Icons.person, size: 10, color: Colors.white),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2), // Glass nipis
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.white30, width: 0.5),
+                        ),
+                        child: Text(
+                          "$age THN",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "iHijrah Official", 
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 10,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          caption,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 11,
+                            shadows: const [
+                              Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black),
+                            ],
+                          ),
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
