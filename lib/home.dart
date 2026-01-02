@@ -1,4 +1,4 @@
-// lib/home.dart (FIXED: PHANTOM SCROLL RESTORED)
+// lib/home.dart (FIXED: BYPASS FEED PANEL -> TERUS KE EVENT SCREEN)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; 
@@ -14,7 +14,8 @@ import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
 import 'widgets/prayer_time_overlay.dart';
-import 'widgets/feed_panel.dart'; 
+// import 'widgets/feed_panel.dart'; // ❌ KITA BUANG ORANG TENGAH NI
+import 'screens/event_screen.dart'; // ✅ KITA PANGGIL DIRECT HERO KITA (Pastikan path betul)
 import 'widgets/dynamic_background.dart';
 
 class HomePage extends StatefulWidget {
@@ -46,13 +47,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool _onScroll(UserScrollNotification notification, BuildContext context) {
     final sidebarModel = Provider.of<SidebarStateModel>(context, listen: false);
     
-    // Jika user scroll ke bawah (Forward) dan sidebar sedang nampak -> SOROKKAN
     if (notification.direction == ScrollDirection.reverse && sidebarModel.isVisible) {
-       sidebarModel.setSidebarVisibility(false); // Sorok
+       sidebarModel.setSidebarVisibility(false); 
     }
-    // Jika user scroll ke atas (Reverse/Up) -> TUNJUK BALIK (Optional, kalau nak)
     else if (notification.direction == ScrollDirection.forward && !sidebarModel.isVisible) {
-       sidebarModel.setSidebarVisibility(true); // Tunjuk
+       sidebarModel.setSidebarVisibility(true); 
     }
     return true;
   }
@@ -79,7 +78,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               children: [
                 Positioned.fill(
                   child: sidebarModel.isClosed
-                      ? NotificationListener<UserScrollNotification>( // <--- SENSOR SKROL DIPASANG SINI
+                      ? NotificationListener<UserScrollNotification>(
                           onNotification: (notification) => _onScroll(notification, context),
                           child: AnimatedPadding(
                             duration: const Duration(milliseconds: 300),
@@ -87,7 +86,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             padding: EdgeInsets.only(
                               left: sidebarModel.isVisible ? AppSizes.sidebarWidth : 0
                             ),
-                            child: const FeedPanel(), 
+                            // ✅ PERUBAHAN BESAR DI SINI:
+                            // Dulu: child: const FeedPanel(),
+                            // Sekarang: Terus panggil EventScreen (UI CapCut)
+                            child: const EventScreen(), 
                           ),
                         )
                       : const SizedBox.shrink(),
