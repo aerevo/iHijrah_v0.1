@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
-// ✅ INTEGRASI: Panggil fail emas original (Walaupun tak guna, kita simpan untuk masa depan)
+// ✅ INTEGRASI: Panggil fail emas original (Kita simpan import ini jika perlu)
 import '../widgets/metallic_gold.dart';
 
 class EventScreen extends StatefulWidget {
@@ -94,221 +94,248 @@ class _EventScreenState extends State<EventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ══════════════════════════════════════════════════════════════
-            // HEADER - Search Bar + AutoCut
-            // ══════════════════════════════════════════════════════════════
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Search Islamic Content',
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 15,
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(Icons.search, color: Colors.grey[600]),
-                        ],
-                      ),
+      // 1) LATAR BELAKANG TRANSPARENT SUPAYA GAMBAR LANGIT NAMPAK
+      backgroundColor: Colors.transparent, 
+      
+      body: Stack(
+        children: [
+          // ══════════════════════════════════════════════════════════════
+          // 1. LATAR BELAKANG LANGIT (ASSETS)
+          // ══════════════════════════════════════════════════════════════
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/langit.png', // Pastikan fail ini wujud di assets
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback kalau gambar tak jumpa: Gradient Langit
+                return Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF87CEEB), Color(0xFFE0F7FA)],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
+                );
+              },
+            ),
+          ),
+
+          // 2. KONTEN UTAMA
+          SafeArea(
+            child: Column(
+              children: [
+                // ══════════════════════════════════════════════════════════════
+                // HEADER - Search Bar + AutoCut
+                // ══════════════════════════════════════════════════════════════
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
                     children: [
-                      Icon(Icons.auto_awesome, size: 24),
-                      const SizedBox(height: 2),
-                      Text(
-                        'AutoCut',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            // Putih dengan opacity rendah supaya nampak langit sikit
+                            color: Colors.white.withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Search Islamic Content',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(Icons.search, color: Colors.grey[700]),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        children: [
+                          Icon(Icons.auto_awesome, size: 24, color: Colors.white), // Icon Putih/Contrast
+                          const SizedBox(height: 2),
+                          Text(
+                            'AutoCut',
+                            style: TextStyle(
+                              fontSize: 11, 
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white, // Teks Putih atas Langit
+                              shadows: [Shadow(color: Colors.black26, blurRadius: 2)],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // ══════════════════════════════════════════════════════════════
-            // "All" HEADER
-            // ══════════════════════════════════════════════════════════════
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.video_library, size: 28),
-                  const SizedBox(width: 8),
-                  Text(
-                    'All',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ══════════════════════════════════════════════════════════════
-            // FILTER TABS (Following, For you, etc)
-            // ══════════════════════════════════════════════════════════════
-            SizedBox(
-              height: 50,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filters.length,
-                itemBuilder: (context, index) {
-                  bool isSelected = filters[index] == selectedFilter;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedFilter = filters[index];
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.white,
-                        border: Border.all(
-                          color: isSelected ? Colors.black : Colors.grey[300]!,
-                          width: isSelected ? 2 : 1,
+                // ══════════════════════════════════════════════════════════════
+                // "All" HEADER
+                // ══════════════════════════════════════════════════════════════
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.video_library, size: 28, color: Colors.white),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'All',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // Teks Putih
+                          shadows: [Shadow(color: Colors.black26, blurRadius: 4)],
                         ),
-                        borderRadius: BorderRadius.circular(25),
                       ),
-                      child: Center(
-                        child: Text(
-                          filters[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 14,
+                    ],
+                  ),
+                ),
+
+                // ══════════════════════════════════════════════════════════════
+                // FILTER TABS (Following, For you, etc)
+                // ══════════════════════════════════════════════════════════════
+                SizedBox(
+                  height: 50,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filters.length,
+                    itemBuilder: (context, index) {
+                      bool isSelected = filters[index] == selectedFilter;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedFilter = filters[index];
+                          });
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          decoration: BoxDecoration(
+                            // Kaca (Glassmorphism) untuk Tab
+                            color: isSelected 
+                                ? Colors.white 
+                                : Colors.white.withOpacity(0.3), 
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.5),
+                                width: 1
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              filters[index],
+                              style: TextStyle(
+                                color: isSelected ? Colors.black : Colors.white,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // ══════════════════════════════════════════════════════════════
-            // FILTER OPTIONS (Standard, Clips, Duration)
-            // ══════════════════════════════════════════════════════════════
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Icon(Icons.tune, color: Colors.grey[700]),
-                  const SizedBox(width: 16),
-                  _buildFilterChip('💎 Standard', true),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Clips', false),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Duration', false),
-                ],
-              ),
-            ),
-
-            // ══════════════════════════════════════════════════════════════
-            // GRID CONTENT (2 Columns - CapCut Style)
-            // ══════════════════════════════════════════════════════════════
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.62, // Ratio untuk card height
+                      );
+                    },
+                  ),
                 ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  return _buildVideoCard(items[index]);
-                },
-              ),
+
+                const SizedBox(height: 10),
+
+                // ❌ 2) MENU STATIK (Standard/Clips/Duration) TELAH DIPADAM DI SINI
+                // Francois dah buang seperti titah Tuanku.
+
+                // ══════════════════════════════════════════════════════════════
+                // GRID CONTENT
+                // ══════════════════════════════════════════════════════════════
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.62, 
+                    ),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      return _buildVideoCard(items[index]);
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
 
       // ══════════════════════════════════════════════════════════════
-      // BOTTOM NAV BAR (CapCut Style)
+      // BOTTOM NAV BAR (Semi-Transparent Glass)
       // ══════════════════════════════════════════════════════════════
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8), // Glass Effect
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.5))),
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey,
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          currentIndex: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.cut),
-              label: 'Edit',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.video_library),
-              label: 'Templates',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.folder_open),
-              label: 'Projects',
-            ),
-            BottomNavigationBarItem(
-              icon: Stack(
-                children: [
-                  Icon(Icons.person),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+            child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent, // Transparent supaya glass nampak
+              elevation: 0,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.grey[700],
+              selectedFontSize: 11,
+              unselectedFontSize: 11,
+              currentIndex: 0,
+              items: [
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.cut),
+                  label: 'Edit',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.video_library),
+                  label: 'Templates',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.folder_open),
+                  label: 'Projects',
+                ),
+                BottomNavigationBarItem(
+                  icon: Stack(
+                    children: [
+                      const Icon(Icons.person),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-              label: 'Me',
+                  label: 'Me',
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   // ══════════════════════════════════════════════════════════════
-  // VIDEO CARD (CapCut Grid Style)
+  // VIDEO CARD
   // ══════════════════════════════════════════════════════════════
   Widget _buildVideoCard(Map<String, dynamic> item) {
     return Container(
@@ -316,9 +343,9 @@ class _EventScreenState extends State<EventScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -341,7 +368,7 @@ class _EventScreenState extends State<EventScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withOpacity(0.8),
                   ],
                   stops: const [0.5, 1.0],
                 ),
@@ -356,7 +383,6 @@ class _EventScreenState extends State<EventScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Badge
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -368,11 +394,9 @@ class _EventScreenState extends State<EventScreen> {
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
-                  // Views
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
@@ -381,7 +405,7 @@ class _EventScreenState extends State<EventScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.visibility, color: Colors.white, size: 10),
+                        const Icon(Icons.visibility, color: Colors.white, size: 10),
                         const SizedBox(width: 3),
                         Text(
                           item['views'],
@@ -409,7 +433,6 @@ class _EventScreenState extends State<EventScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Title
                     Text(
                       item['title'],
                       style: const TextStyle(
@@ -422,7 +445,6 @@ class _EventScreenState extends State<EventScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    // Description
                     Text(
                       item['description'],
                       style: TextStyle(
@@ -434,7 +456,8 @@ class _EventScreenState extends State<EventScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    // Profile Row
+                    
+                    // 3) SILVER KILAU PROFILE ROW
                     Row(
                       children: [
                         CircleAvatar(
@@ -446,24 +469,30 @@ class _EventScreenState extends State<EventScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                item['name'],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                              // NAMA (SILVER)
+                              _MetallicSilver(
+                                child: Text(
+                                  item['name'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                              Text(
-                                item['role'],
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 9,
+                              // ROLE (SILVER PUDAR)
+                              _MetallicSilver(
+                                child: Text(
+                                  item['role'],
+                                  style: const TextStyle(
+                                    color: Colors.white, 
+                                    fontSize: 9,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -484,25 +513,32 @@ class _EventScreenState extends State<EventScreen> {
       ),
     );
   }
+}
 
-  // ══════════════════════════════════════════════════════════════
-  // FILTER CHIP BUILDER
-  // ══════════════════════════════════════════════════════════════
-  Widget _buildFilterChip(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFE3F2FD) : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isActive ? Colors.blue[700] : Colors.grey[700],
-          fontSize: 13,
-          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
+// ══════════════════════════════════════════════════════════════
+// HELPER: METALLIC SILVER (KILAUAN PERAK)
+// ══════════════════════════════════════════════════════════════
+class _MetallicSilver extends StatelessWidget {
+  final Widget child;
+  const _MetallicSilver({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (bounds) {
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFE0E0E0), // Perak Terang
+            Color(0xFFFFFFFF), // Putih Kilau
+            Color(0xFFBDBDBD), // Perak Gelap
+            Color(0xFFE0E0E0), // Perak Terang
+          ],
+          stops: [0.0, 0.4, 0.6, 1.0],
+        ).createShader(bounds);
+      },
+      child: child,
     );
   }
 }
