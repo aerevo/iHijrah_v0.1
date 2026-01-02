@@ -1,241 +1,378 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:ui';
 
 // ✅ INTEGRASI: Panggil fail emas original
 import '../widgets/metallic_gold.dart';
 
-class EventScreen extends StatelessWidget {
+class EventScreen extends StatefulWidget {
   const EventScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // ✅ KONTEN ASAL KAPTEN (Dipindahkan dari FeedPanel)
-    final List<Map<String, dynamic>> items = [
-      {
-        'name': 'USTAZ DON',
-        'category': 'VIDEO',
-        'age': '40',
-        'caption': 'Kisah Hijrah Rasulullah: Detik cemas di Gua Thur. 🕷️',
-        'image': 'assets/images/mosque_bg.jpg', 
-        'height': 320.0,
-        'featured': true,
-      },
-      {
-        'name': 'IMAM SYAFII',
-        'category': 'QUOTE',
-        'age': '60+',
-        'caption': 'Jangan bersedih, sesungguhnya Allah bersama kita. ✨',
-        'image': 'assets/images/nature_bg.jpg', 
-        'height': 240.0,
-        'featured': false,
-      },
-      {
-        'name': 'DR. ZUL',
-        'category': 'ARTICLE',
-        'age': '50',
-        'caption': 'Tips Murah Rezeki: Amalan dhuha dan sedekah subuh.',
-        'image': 'assets/images/quran_bg.jpg', 
-        'height': 280.0,
-        'featured': true,
-      },
-      {
-        'name': 'MUALLAF',
-        'category': 'STORY',
-        'age': '25',
-        'caption': 'Hidayah di London: Bagaimana Al-Quran mengubah hidup saya.',
-        'image': 'assets/images/kaaba_bg.jpg', 
-        'height': 300.0,
-        'featured': false,
-      },
-    ];
+  State<EventScreen> createState() => _EventScreenState();
+}
 
+class _EventScreenState extends State<EventScreen> {
+  // Data Bersepadu (Menggunakan aset dummy_post1 dan dummy_post2)
+  final List<Map<String, dynamic>> items = [
+    {
+      'name': 'USTAZ DON',
+      'role': 'Pendakwah',
+      'quote': 'Hijrah itu pengorbanan.',
+      'description': 'Kisah detik cemas di Gua Thur dan strategi Rasulullah SAW.',
+      'image': 'assets/images/dummy_post1.jpg',
+      'stats': '1.2M Views'
+    },
+    {
+      'name': 'IMAM SYAFII',
+      'role': 'Ulama',
+      'quote': 'Ilmu itu cahaya.',
+      'description': 'Nasihat tentang menuntut ilmu di usia muda.',
+      'image': 'assets/images/dummy_post2.jpg',
+      'stats': '890K Likes'
+    },
+    {
+      'name': 'DR. ZUL',
+      'role': 'Ilmuwan',
+      'quote': 'Sedekah Subuh.',
+      'description': 'Rahsia pintu rezeki yang jarang orang ketahui.',
+      'image': 'assets/images/dummy_post1.jpg',
+      'stats': '450K Shares'
+    },
+    {
+      'name': 'MUALLAF',
+      'role': 'Inspirasi',
+      'quote': 'Hidayah Allah.',
+      'description': 'Perjalanan mencari Tuhan di kota London.',
+      'image': 'assets/images/dummy_post2.jpg',
+      'stats': '2.1M Views'
+    },
+    {
+      'name': 'AL-GHAZALI',
+      'role': 'Sufi',
+      'quote': 'Jaga hatimu.',
+      'description': 'Penyakit hati yang membinasakan amalan.',
+      'image': 'assets/images/dummy_post1.jpg',
+      'stats': 'Vintage'
+    },
+  ];
+
+  // State untuk Hero Selection (Bahagian Atas)
+  int _selectedHeroIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, 
+      backgroundColor: const Color(0xFF0F172A), // Dark Base
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              sliver: SliverMasonryGrid.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return _PremiumPosterCard(
-                    name: item['name'],
-                    category: item['category'],
-                    age: item['age'],
-                    caption: item['caption'],
-                    height: item['height'],
-                    imagePath: item['image'],
-                    isFeatured: item['featured'] ?? false,
-                  );
-                },
-              ),
-            ),
-            const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PremiumPosterCard extends StatefulWidget {
-  final String name;
-  final String category;
-  final String age;
-  final String caption;
-  final double height;
-  final String imagePath;
-  final bool isFeatured;
-
-  const _PremiumPosterCard({
-    required this.name,
-    required this.category,
-    required this.age,
-    required this.caption,
-    required this.height,
-    required this.imagePath,
-    required this.isFeatured,
-  });
-
-  @override
-  State<_PremiumPosterCard> createState() => _PremiumPosterCardState();
-}
-
-class _PremiumPosterCardState extends State<_PremiumPosterCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) { setState(() => _isPressed = true); _controller.forward(); },
-      onTapUp: (_) { setState(() => _isPressed = false); _controller.reverse(); },
-      onTapCancel: () { setState(() => _isPressed = false); _controller.reverse(); },
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 6))],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                AnimatedScale(
-                  scale: _isPressed ? 1.05 : 1.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: Image.asset(
-                    widget.imagePath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, st) => Container(color: Colors.grey.shade900),
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.9)],
-                      stops: const [0.4, 0.7, 1.0],
-                    ),
-                  ),
-                ),
-                if (widget.isFeatured)
-                  Positioned(
-                    top: 10, right: 10,
-                    child: _GlassBadge(
+        child: Column(
+          children: [
+            // ══════════════════════════════════════════════════════════════
+            // PART 1: WINTER FASHION CATALOG (ATAS - 60%)
+            // ══════════════════════════════════════════════════════════════
+            Expanded(
+              flex: 6,
+              child: Container(
+                color: const Color(0xFFF1F5F9), // Ice White Background
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // HEADER TITLE
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.star, size: 10, color: Color(0xFFFFD54F)),
-                          const SizedBox(width: 4),
-                          const Text('FEATURED', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text(
+                            "KATALOG ILMU",
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 16,
+                              letterSpacing: 3,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Icon(Icons.snowing, color: Colors.grey[400], size: 20),
                         ],
                       ),
                     ),
-                  ),
-                Positioned(
-                  top: 10, left: 10,
-                  child: _GlassBadge(child: Text(widget.category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70))),
+
+                    // HERO SECTION (GAMBAR BESAR)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            // Main Hero Image
+                            Expanded(
+                              flex: 3,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 400),
+                                child: Container(
+                                  key: ValueKey<int>(_selectedHeroIndex),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(2),
+                                    image: DecorationImage(
+                                      image: AssetImage(items[_selectedHeroIndex]['image']),
+                                      fit: BoxFit.cover,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 20,
+                                        offset: const Offset(5, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.bottomLeft,
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.8),
+                                          Colors.transparent
+                                        ],
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          items[_selectedHeroIndex]['name'],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1,
+                                            fontFamily: 'Playfair Display', // Elegant font
+                                          ),
+                                        ),
+                                        Text(
+                                          items[_selectedHeroIndex]['description'],
+                                          maxLines: 2,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            
+                            // Vertical Side Selection (Grid Kecil)
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(items.length > 4 ? 4 : items.length, (index) {
+                                  bool isSelected = index == _selectedHeroIndex;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedHeroIndex = index;
+                                      });
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      margin: const EdgeInsets.only(bottom: 10),
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        border: isSelected 
+                                            ? Border.all(color: Colors.black, width: 2) 
+                                            : null,
+                                        image: DecorationImage(
+                                          image: AssetImage(items[index]['image']),
+                                          fit: BoxFit.cover,
+                                          colorFilter: isSelected 
+                                              ? null 
+                                              : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                  ],
                 ),
-                Positioned(
-                  bottom: 0, left: 0, right: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _GlassBadge(child: Text("${widget.age} THN", style: const TextStyle(fontSize: 10, color: Colors.white))),
-                        const SizedBox(height: 8),
-                        MetallicGold(
-                          child: Text(
-                            widget.name,
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+              ),
+            ),
+
+            // ══════════════════════════════════════════════════════════════
+            // PART 2: CYBERPUNK WHEEL SELECTOR (BAWAH - 40%)
+            // ══════════════════════════════════════════════════════════════
+            Expanded(
+              flex: 4,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF0F172A), // Deep Navy
+                      Color(0xFF020617), // Black
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black,
+                      blurRadius: 20,
+                      offset: Offset(0, -5),
+                    )
+                  ]
+                ),
+                child: Stack(
+                  children: [
+                    // The Wheel
+                    ListWheelScrollView.useDelegate(
+                      itemExtent: 80, // Tinggi setiap item
+                      perspective: 0.003,
+                      diameterRatio: 1.5,
+                      physics: const FixedExtentScrollPhysics(), // SNAP EFFECT
+                      onSelectedItemChanged: (index) {
+                        // Optional: Kalau nak sync bawah ke atas, uncomment ni
+                        // setState(() { _selectedHeroIndex = index; });
+                      },
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        childCount: items.length,
+                        builder: (context, index) {
+                          final item = items[index];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // KIRI: KUOTA / QUOTE
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    '"${item['quote']}"',
+                                    textAlign: TextAlign.end,
+                                    maxLines: 2,
+                                    style: TextStyle(
+                                      color: Colors.cyanAccent.withOpacity(0.8),
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                      shadows: [
+                                        BoxShadow(color: Colors.cyan.withOpacity(0.5), blurRadius: 10)
+                                      ]
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(width: 15),
+
+                                // TENGAH: PROFIL GAMBAR (GLOWING)
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.blueAccent.withOpacity(0.6),
+                                        blurRadius: 15,
+                                        spreadRadius: 2,
+                                      )
+                                    ],
+                                    image: DecorationImage(
+                                      image: AssetImage(item['image']),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(width: 15),
+
+                                // KANAN: BIODATA
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      MetallicGold(
+                                        child: Text(
+                                          item['name'],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        item['role'].toUpperCase(),
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontSize: 10,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Fading Overlay (Atas Bawah Roda) supaya nampak 3D
+                    IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF0F172A).withOpacity(1.0),
+                              const Color(0xFF0F172A).withOpacity(0.0),
+                              const Color(0xFF0F172A).withOpacity(0.0),
+                              const Color(0xFF020617).withOpacity(1.0),
+                            ],
+                            stops: const [0.0, 0.2, 0.8, 1.0],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.caption,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11, color: Colors.white70, height: 1.2),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    
+                    // Center Highlight Indicator (Garis Halus)
+                    Center(
+                      child: Container(
+                        height: 80,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.symmetric(
+                            horizontal: BorderSide(
+                              color: Colors.white.withOpacity(0.1), 
+                              width: 1
+                            ),
+                          ),
+                          color: Colors.white.withOpacity(0.02),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassBadge extends StatelessWidget {
-  final Widget child;
-  const _GlassBadge({required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: child,
+          ],
         ),
       ),
     );
