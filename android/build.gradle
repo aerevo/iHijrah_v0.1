@@ -1,15 +1,18 @@
 buildscript {
-    // Kita tetapkan versi Kotlin standard untuk kestabilan
     ext.kotlin_version = '1.7.10'
     repositories {
-        // ✅ STRATEGI FRANCOIS: Google MESTI duduk atas sekali
-        // Ini memaksa sistem cari di Google dulu, elak error 403 Maven
+        // 1. Cari di Google rasmi dulu
         google()
+        
+        // 2. ✅ JALAN TIKUS: Guna Mirror Google untuk Maven Central (PENTING!)
+        // Ini akan elak error 403 Forbidden dari server asal
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
+        
+        // 3. Fallback ke server asal (kalau mirror tak jumpa)
         mavenCentral()
     }
 
     dependencies {
-        // Ini adalah versi yang Kapten perlukan (berdasarkan error log tadi)
         classpath 'com.android.tools.build:gradle:7.3.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
@@ -17,9 +20,16 @@ buildscript {
 
 allprojects {
     repositories {
-        // ✅ STRATEGI SAMA: Ulang google() di atas juga di sini
+        // Ulang strategi sama untuk semua sub-projek
         google()
+        
+        // ✅ JALAN TIKUS DI SINI JUGA
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
+        
         mavenCentral()
+        
+        // Tambahan untuk sesetengah lib lama
+        maven { url "https://jitpack.io" }
     }
 }
 
