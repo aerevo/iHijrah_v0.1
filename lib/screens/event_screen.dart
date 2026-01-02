@@ -1,4 +1,66 @@
-// WIDGET KAD ALA CAPCUT (UPGRADED)
+import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+// Pastikan package ini ada dalam pubspec.yaml. Jika tiada, boleh tukar ke GridView.count biasa.
+
+class EventScreen extends StatelessWidget {
+  const EventScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Data Dummy ala Majalah (Kapten boleh ganti imej nanti)
+    final List<Map<String, dynamic>> magazineItems = [
+      {
+        'title': 'USERS',
+        'subtitle': 'COMMUNITY',
+        'image': 'assets/images/mosque_bg.jpg', 
+        'height': 280.0,
+      },
+      {
+        'title': 'SIRAH',
+        'subtitle': 'HISTORY',
+        'image': 'assets/images/quran_bg.jpg', 
+        'height': 220.0,
+      },
+      {
+        'title': 'VIBE',
+        'subtitle': 'AESTHETIC',
+        'image': 'assets/images/nature_bg.jpg', 
+        'height': 240.0,
+      },
+      {
+        'title': 'ISLAM',
+        'subtitle': 'LIFESTYLE',
+        'image': 'assets/images/kaaba_bg.jpg', 
+        'height': 260.0,
+      },
+    ];
+
+    return Scaffold(
+      backgroundColor: Colors.transparent, 
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        
+        // Guna Masonry Grid untuk susunan 'Tidak Sekata' (Pinterest Style)
+        child: MasonryGridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          itemCount: magazineItems.length,
+          itemBuilder: (context, index) {
+            final item = magazineItems[index];
+            return _buildMagazineCard(
+              title: item['title'],
+              subtitle: item['subtitle'],
+              height: item['height'],
+              imagePath: item['image'], 
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // WIDGET KAD ALA CAPCUT (UPGRADED)
   Widget _buildMagazineCard({
     required String title,
     required String subtitle,
@@ -8,7 +70,7 @@
     return Container(
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12), // Kurangkan radius sikit biar tajam
+        borderRadius: BorderRadius.circular(12), 
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
@@ -60,7 +122,7 @@
                   subtitle.toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 8, // Halus je
+                    fontSize: 8, 
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.0,
                   ),
@@ -82,7 +144,7 @@
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22, // Besar!
-                      fontFamily: 'Poppins', // Pastikan font moden
+                      fontFamily: 'Poppins', 
                       fontWeight: FontWeight.w900, // Paling Tebal
                       height: 1.0, // Rapatkan baris
                       shadows: [
@@ -103,7 +165,7 @@
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "iHijrah Official", // Boleh ganti dynamic
+                        "iHijrah Official", 
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 10,
@@ -119,3 +181,4 @@
       ),
     );
   }
+}
