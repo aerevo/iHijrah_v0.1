@@ -1,17 +1,17 @@
-// lib/widgets/sidebar.dart (MENU ASING: SIRAH & AMALAN)
-
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Import Models & Utils
 import '../models/sidebar_state_model.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
+
+// Import Widgets
 import 'metallic_gold.dart';
-import 'embun_ui/embun_ui.dart';
 import 'living_tree.dart'; 
 
 class Sidebar extends StatelessWidget {
@@ -24,6 +24,9 @@ class Sidebar extends StatelessWidget {
     this.backgroundColor = Colors.transparent, 
   }) : super(key: key);
 
+  // ══════════════════════════════════════════════════════════════
+  // LOGIK WHATSAPP & INFAQ
+  // ══════════════════════════════════════════════════════════════
   final String _whatsappNumber = '+60133662440';
   final String _whatsappMessage = 'Assalamualaikum Admin, saya berminat untuk membuat Infaq Pembangunan iHijrah.';
 
@@ -31,28 +34,57 @@ class Sidebar extends StatelessWidget {
     final url = 'whatsapp://send?phone=$_whatsappNumber&text=${Uri.encodeComponent(_whatsappMessage)}';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } 
+    } else {
+      // Fallback jika tiada WhatsApp installed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("WhatsApp tidak dijumpai")),
+      );
+    }
   }
 
   void _showInfaqDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCardDark.withOpacity(0.9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)),
-        title: const MetallicGold(child: Text('Infaq Pembangunan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+        backgroundColor: const Color(0xFF1E1E1E).withOpacity(0.95), // Dark Card
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Center(
+          child: MetallicGold(
+            child: Text(
+              'INFAQ PEMBANGUNAN', 
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)
+            )
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Sumbangan anda amat dihargai untuk pembangunan iHijrah.", style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm)),
-            const SizedBox(height: AppSpacing.md),
+            const Text(
+              "Sumbangan anda amat dihargai untuk kelangsungan dakwah aplikasi ini.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            // Custom Button untuk elak error import
             SizedBox(
               width: double.infinity,
               height: 45,
-              child: CelebrationButton(
+              child: ElevatedButton(
                 onPressed: () => _launchWhatsApp(context),
-                backgroundColor: Colors.green.shade700,
-                child: const Text("WhatsApp Admin", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 5,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.message, size: 18),
+                    SizedBox(width: 8),
+                    Text("WhatsApp Admin", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
             ),
           ],
@@ -62,190 +94,272 @@ class Sidebar extends StatelessWidget {
   }
 
   String _getTreeAsset(int level) {
+    // Logik pokok membesar ikut level
     if (level <= 1) return 'assets/videos/tree_v1.mp4'; 
     if (level <= 3) return 'assets/videos/tree_v2.mp4'; 
     return 'assets/videos/tree_v1.mp4'; 
   }
 
-  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
+  // ══════════════════════════════════════════════════════════════
+  // MENU ITEM BUILDER (AAA GRADE - CLEANER)
+  // ══════════════════════════════════════════════════════════════
+  Widget _buildMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String id,
+  }) {
     final model = Provider.of<SidebarStateModel>(context);
     final isActive = model.activeMenuId == id;
 
-    return InkWell(
-      onTap: isComingSoon ? null : () => model.setActiveMenu(id),
-      child: Container(
-        width: dockWidth,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
-          border: isActive ? Border(left: BorderSide(color: kPrimaryGold.withOpacity(0.8), width: 2)) : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MetallicGold(
-              child: Icon(
-                icon,
-                color: isComingSoon ? Colors.grey.withOpacity(0.3) : Colors.white, 
-                size: 22, 
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => model.setActiveMenu(id),
+        splashColor: kPrimaryGold.withOpacity(0.3),
+        child: Container(
+          width: dockWidth,
+          padding: const EdgeInsets.symmetric(vertical: 12), // KONSISTEN 12px
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
+            border: isActive 
+              ? const Border(left: BorderSide(color: kPrimaryGold, width: 3))
+              : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MetallicGold(
+                child: Icon(
+                  icon,
+                  color: Colors.white, 
+                  size: 24, // Ikon Besar sikit
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(
-                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.6)),
-                fontSize: 8, 
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  color: isActive ? kPrimaryGold : Colors.white.withOpacity(0.6),
+                  fontSize: 9, // Font standard
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  letterSpacing: 0.3,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // SECTION DIVIDER (GARISAN PEMISAH HALUS)
+  // ══════════════════════════════════════════════════════════════
+  Widget _buildSectionDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        height: 1,
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.transparent,
+              Colors.white.withOpacity(0.15),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // BUILD UTAMA
+  // ══════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     return Consumer<SidebarStateModel>(
       builder: (context, model, child) {
+        // Animasi Slide Keluar/Masuk
         final double xOffset = model.isVisible ? 0.0 : -dockWidth;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
+          curve: Curves.easeInOutCubic, // Animasi lebih smooth
           transform: Matrix4.translationValues(xOffset, 0, 0),
-          width: dockWidth + 1,
+          width: dockWidth, // Lebar tetap
           height: MediaQuery.of(context).size.height,
           child: ClipRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+              filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0), // Blur Kuat
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  border: Border(right: BorderSide(color: Colors.white.withOpacity(0.08), width: 1)),
+                  color: Colors.black.withOpacity(0.6), // Gelap sikit
+                  border: Border(
+                    right: BorderSide(
+                      color: Colors.white.withOpacity(0.1), 
+                      width: 1
+                    )
+                  ),
                 ),
                 child: SafeArea(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     child: Column(
                       children: [
-                        // PROFILE HEADER
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20, bottom: 5),
-                          child: Consumer<UserModel>(
-                            builder: (context, user, _) {
-                              String rawAgeString = "";
-                              if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
-                                rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
-                              }
-                              String ageDisplay = rawAgeString.contains(RegExp(r'\d')) 
-                                  ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)} Thn"
-                                  : "--";
+                        const SizedBox(height: 16),
 
-                              String fullName = user.name.isNotEmpty ? user.name : "User";
-                              List<String> nameParts = fullName.trim().split(' ');
-                              String firstName = nameParts.isNotEmpty ? nameParts.first : "";
-                              String lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : "";
+                        // ═══════════════════════════════════════════════
+                        // 1. PROFILE HEADER (COMPACT - AAA GRADE)
+                        // ═══════════════════════════════════════════════
+                        Consumer<UserModel>(
+                          builder: (context, user, _) {
+                            // Logik Umur Hijriah
+                            String rawAgeString = "";
+                            if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
+                              rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
+                            }
+                            String ageDisplay = rawAgeString.contains(RegExp(r'\d')) 
+                                ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)}"
+                                : "--";
 
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 38, height: 38,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.5),
+                            // Nama Pendek (First Name Only)
+                            String fullName = user.name.isNotEmpty ? user.name : "Kapten";
+                            String firstName = fullName.trim().split(' ').first;
+
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Avatar Bulat
+                                Container(
+                                  width: 44, 
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: kPrimaryGold.withOpacity(0.8), 
+                                      width: 2
                                     ),
-                                    child: ClipOval(
-                                      child: user.avatarPath != null
-                                        ? Image.file(File(user.avatarPath!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset(AppAssets.profileDefault, fit: BoxFit.cover))
-                                        : Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
-                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: kPrimaryGold.withOpacity(0.2),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 6),
-                                  MetallicGold(
-                                    child: Text(
-                                      firstName,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.white, 
-                                        fontSize: 11, 
-                                        fontWeight: FontWeight.w900
+                                  child: ClipOval(
+                                    child: user.avatarPath != null
+                                      ? Image.file(
+                                          File(user.avatarPath!), 
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
+                                        )
+                                      : Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 8),
+                                
+                                // Nama (Emas)
+                                MetallicGold(
+                                  child: Text(
+                                    firstName,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white, 
+                                      fontSize: 12, 
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 4),
+                                
+                                // Umur + Hijriah (Baris yang sama)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "$ageDisplay Thn",
+                                      style: TextStyle(
+                                        color: kPrimaryGold.withOpacity(0.9), 
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                  ),
-                                  if (lastName.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 1.0),
-                                      child: ShaderMask(
-                                        shaderCallback: (bounds) => const LinearGradient(
-                                          colors: [
-                                            Color(0xFFB0BEC5), 
-                                            Color(0xFFFFFFFF), 
-                                            Color(0xFF78909C), 
-                                            Color(0xFFFFFFFF), 
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          stops: [0.0, 0.45, 0.55, 1.0], 
-                                        ).createShader(bounds),
-                                        child: Text(
-                                          lastName,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: Colors.white, 
-                                            fontSize: 9, 
-                                            fontWeight: FontWeight.w900, 
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
+                                    Text(
+                                      " • ",
+                                      style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 9),
+                                    ),
+                                    Text(
+                                      "Hijriah",
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.6), 
+                                        fontSize: 8,
+                                        fontStyle: FontStyle.italic,
                                       ),
                                     ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    ageDisplay,
-                                    style: TextStyle(color: kPrimaryGold, fontSize: 9, fontWeight: FontWeight.bold),
-                                  ),
-                                  Text("Hijriah", style: TextStyle(color: kTextSecondary.withOpacity(0.7), fontSize: 7, fontStyle: FontStyle.italic)),
-                                ],
-                              );
-                            },
-                          ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
-                        
-                        // POKOK HIDUP (MENU)
+
+                        const SizedBox(height: 12),
+
+                        // ═══════════════════════════════════════════════
+                        // 2. POKOK HIDUP (SMALLER + BADGE)
+                        // ═══════════════════════════════════════════════
                         Consumer<UserModel>(
                           builder: (context, user, _) {
                             return InkWell(
-                              onTap: () => Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress'),
+                              onTap: () => Provider.of<SidebarStateModel>(
+                                context, 
+                                listen: false
+                              ).setActiveMenu('tree_progress'),
                               child: Container(
-                                height: 60,
+                                height: 48, // Saiz Compact
                                 width: dockWidth,
+                                margin: const EdgeInsets.symmetric(vertical: 4),
                                 child: Stack(
                                   alignment: Alignment.center,
                                   children: [
+                                    // Pokok
                                     IgnorePointer(
                                       child: LivingTree(
                                         assetPath: _getTreeAsset(user.treeLevel),
-                                        height: 50, 
+                                        height: 42, 
                                         onTap: null, 
                                       ),
                                     ),
+                                    // Badge Level
                                     Positioned(
-                                      bottom: 0, 
-                                      child: Text(
-                                        "LVL ${user.treeLevel}", 
-                                        style: TextStyle(
-                                          color: kPrimaryGold.withOpacity(0.9), 
-                                          fontSize: 7, 
-                                          fontWeight: FontWeight.w900,
-                                          shadows: [Shadow(color: Colors.black, blurRadius: 2)]
-                                        )
-                                      )
+                                      bottom: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.8),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: kPrimaryGold.withOpacity(0.5), width: 0.5),
+                                        ),
+                                        child: Text(
+                                          "LVL ${user.treeLevel}",
+                                          style: const TextStyle(
+                                            color: kPrimaryGold,
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -254,35 +368,95 @@ class Sidebar extends StatelessWidget {
                           },
                         ),
 
-                        Divider(color: Colors.white.withOpacity(0.1), height: 1),
-                        
-                        // === SENARAI MENU ===
-                        _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
-                        
-                        // 1. MENU SIRAH (Buku)
-                        _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
-                        
-                        // 2. MENU AMALAN (Misi/Hati) - BARU!
-                        _buildMenuItem(context, icon: Icons.volunteer_activism, title: 'Amalan', id: 'amalan'),
+                        _buildSectionDivider(),
 
-                        _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
-                        _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
-                        _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
-                        _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
-                        
-                        const SizedBox(height: 5),
-                        _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
-                        _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
-                        
-                        const SizedBox(height: 15),
-                        _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
-                        _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
-                        
-                        // Handler untuk Dialog Infaq
+                        // ═══════════════════════════════════════════════
+                        // SEKSYEN 1: AMALAN (Primary)
+                        // ═══════════════════════════════════════════════
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.calendar_month, 
+                          title: 'Kalendar', 
+                          id: 'kalendar'
+                        ),
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.volunteer_activism, 
+                          title: 'Amalan', 
+                          id: 'amalan'
+                        ),
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.cake, 
+                          title: 'H.Jadi', 
+                          id: 'birthday'
+                        ),
+
+                        _buildSectionDivider(),
+
+                        // ═══════════════════════════════════════════════
+                        // SEKSYEN 2: ILMU (Learning)
+                        // ═══════════════════════════════════════════════
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.menu_book, 
+                          title: 'Sirah', 
+                          id: 'sirah'
+                        ),
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.event, 
+                          title: 'Peristiwa', 
+                          id: 'peristiwa'
+                        ),
+
+                        _buildSectionDivider(),
+
+                        // ═══════════════════════════════════════════════
+                        // SEKSYEN 3: SISTEM (Settings)
+                        // ═══════════════════════════════════════════════
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.notifications, 
+                          title: 'Notifikasi', 
+                          id: 'notifikasi'
+                        ),
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.person, 
+                          title: 'Profil', 
+                          id: 'profil'
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // ═══════════════════════════════════════════════
+                        // BOTTOM ACTIONS (Special)
+                        // ═══════════════════════════════════════════════
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.favorite, 
+                          title: 'Infaq', 
+                          id: 'infaq'
+                        ),
+                        _buildMenuItem(
+                          context, 
+                          icon: Icons.info_outline, 
+                          title: 'Info', 
+                          id: 'info'
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Infaq Dialog Listener
                         Consumer<SidebarStateModel>(
                           builder: (ctx, m, _) {
+                            // Jika menu 'infaq' ditekan
                             if (m.activeMenuId == 'infaq') {
-                              WidgetsBinding.instance.addPostFrameCallback((_) { m.closeMenu(); _showInfaqDialog(context); });
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                m.closeMenu(); // Tutup sidebar dulu
+                                _showInfaqDialog(context); // Buka dialog
+                              });
                             }
                             return const SizedBox.shrink();
                           },
