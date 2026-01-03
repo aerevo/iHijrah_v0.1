@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (MENU ASING: SIRAH & AMALAN)
+// lib/widgets/sidebar.dart (VERSI ORIGINAL - APPROVED)
 
 import 'dart:io';
 import 'dart:ui';
