@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'dart:math'; // Perlu untuk Shuffle
+import 'dart:math'; // Untuk Shuffle
 
 // ✅ INTEGRASI: Fail emas
 import '../widgets/metallic_gold.dart';
@@ -13,8 +13,8 @@ class EventScreen extends StatefulWidget {
 }
 
 class _EventScreenState extends State<EventScreen> {
-  // PALET WARNA KUOTA (Pink, Biru, Hijau)
-  final List<Color> quoteColors = [
+  // PALET WARNA BADGE
+  final List<Color> badgeColors = [
     const Color(0xFFE91E63), // Pink
     const Color(0xFF2196F3), // Biru
     const Color(0xFF00E676), // Hijau
@@ -29,68 +29,50 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // 🧠 LOGIK PENYUSUNAN PINTAR (SHUFFLE & SORT)
+  // 🧠 DATA GENERATOR (CHECKERBOARD LOGIC)
   // ══════════════════════════════════════════════════════════════
   List<Map<String, dynamic>> _generateCheckerboardData() {
-    // 1. BEKAS SUMBER: QUOTES (Tetap)
     final List<Map<String, dynamic>> sourceQuotes = [
-      {'name': 'GHAZALI', 'title': 'Nasihat', 'description': 'Ilmu tanpa amal itu gila.', 'badge': 'ILMU'},
-      {'name': 'RUMI', 'title': 'Cinta', 'description': 'Apa yang kau cari, sedang mencarimu.', 'badge': 'SUFI'},
-      {'name': 'HIKMAH', 'title': 'Sabar', 'description': 'Sabar itu separuh iman.', 'badge': 'ADAB'},
-      {'name': 'BUYA', 'title': 'Hidup', 'description': 'Takutlah mati sebelum hidup.', 'badge': 'JIWA'},
-      {'name': 'IBNU SINA', 'title': 'Sihat', 'description': 'Tenang adalah ubat.', 'badge': 'MEDIK'},
-      {'name': 'SYAFIE', 'title': 'Masa', 'description': 'Masa ibarat pedang.', 'badge': 'MASA'},
-      {'name': 'HAMKA', 'title': 'Jiwaku', 'description': 'Kecantikan abadi ada pada adab.', 'badge': 'ADAB'},
-      {'name': 'TARIM', 'title': 'Ilmu', 'description': 'Adab dulu baru ilmu.', 'badge': 'YAMAN'},
+      {'name': 'GHAZALI', 'title': 'Nasihat', 'description': 'Ilmu tanpa amal itu gila. Amal tanpa ilmu itu sia-sia. Jangan jadi lilin yang menerangi orang lain tapi membakar diri sendiri.', 'badge': 'ILMU'},
+      {'name': 'RUMI', 'title': 'Cinta', 'description': 'Apa yang kau cari, sedang mencarimu. Luka adalah tempat di mana cahaya memasukimu. Jangan bersedih, segala yang hilang akan kembali dalam bentuk lain.', 'badge': 'SUFI'},
+      {'name': 'HIKMAH', 'title': 'Sabar', 'description': 'Sabar itu separuh daripada iman. Dan yakin itu adalah seluruh iman.', 'badge': 'ADAB'},
+      {'name': 'BUYA', 'title': 'Hidup', 'description': 'Jangan takut jatuh, takutlah mati sebelum hidup. Kehidupan yang tidak dipertaruhkan tidak akan dimenangkan.', 'badge': 'JIWA'},
+      {'name': 'IBNU SINA', 'title': 'Sihat', 'description': 'Waham adalah penyakit, tenang adalah ubat, dan sabar adalah permulaan kesembuhan.', 'badge': 'MEDIK'},
+      {'name': 'SYAFIE', 'title': 'Masa', 'description': 'Masa ibarat pedang, jika kau tak potong, ia memotongmu. Jiwa jika tidak disibukkan dengan kebenaran, ia akan disibukkan dengan kebatilan.', 'badge': 'MASA'},
     ];
 
-    // 2. BEKAS SUMBER: MEDIA (Gambar & Video bercampur)
     final List<Map<String, dynamic>> sourceMedia = [
-      {'type': 'video', 'name': 'TADABBUR', 'title': 'Zikir', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'VIDEO', 'duration': '0:45'},
-      {'type': 'image', 'name': 'ALAM FANA', 'title': 'Puncak', 'asset': 'assets/images/pokok_level5.png', 'badge': 'LVL 5'},
-      {'type': 'image', 'name': 'USTAZ DON', 'title': 'Ranting', 'asset': 'assets/images/pokok_level3.png', 'badge': 'LVL 3'},
-      {'type': 'video', 'name': 'HIJRAH', 'title': 'Agung', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'DOCU', 'duration': '2:30'},
-      {'type': 'image', 'name': 'HAMKA', 'title': 'Mula', 'asset': 'assets/images/pokok_level2.png', 'badge': 'LVL 2'},
-      {'type': 'image', 'name': 'DR. MAZA', 'title': 'Syariah', 'asset': 'assets/images/pokok_level4.png', 'badge': 'LVL 4'},
-      {'type': 'image', 'name': 'UK STORY', 'title': 'London', 'asset': 'assets/images/dummy_post1.jpg', 'badge': 'STORY'},
-      {'type': 'image', 'name': 'SITI', 'title': 'Fiqh', 'asset': 'assets/images/dummy_post2.jpg', 'badge': 'FIQH'},
+      {'type': 'video', 'name': 'TADABBUR', 'title': 'Zikir', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'VIDEO', 'duration': '0:45', 'desc': 'Video pokok berzikir menyerap keagungan Ilahi. Lihatlah dedaunan yang bergerak mengikut irama angin.'},
+      {'type': 'image', 'name': 'ALAM FANA', 'title': 'Puncak', 'asset': 'assets/images/pokok_level5.png', 'badge': 'LVL 5', 'desc': 'Pemandangan dari puncak yang mendamaikan jiwa. Mengingatkan kita betapa kecilnya diri ini.'},
+      {'type': 'image', 'name': 'USTAZ DON', 'title': 'Ranting', 'asset': 'assets/images/pokok_level3.png', 'badge': 'LVL 3', 'desc': 'Kisah ranting yang rapuh namun tetap bertahan demi menampung dedaunan.'},
+      {'type': 'video', 'name': 'HIJRAH', 'title': 'Agung', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'DOCU', 'duration': '2:30', 'desc': 'Dokumentari khas perjalanan Hijrah Rasulullah SAW.'},
+      {'type': 'image', 'name': 'HAMKA', 'title': 'Mula', 'asset': 'assets/images/pokok_level2.png', 'badge': 'LVL 2', 'desc': 'Permulaan segalanya bermula dengan niat yang suci.'},
+      {'type': 'image', 'name': 'DR. MAZA', 'title': 'Syariah', 'asset': 'assets/images/pokok_level4.png', 'badge': 'LVL 4', 'desc': 'Perbincangan mendalam mengenai hukum fiqh semasa.'},
+      {'type': 'image', 'name': 'UK STORY', 'title': 'London', 'asset': 'assets/images/dummy_post1.jpg', 'badge': 'STORY', 'desc': 'Pengalaman mencari arah kiblat di tengah kota London.'},
+      {'type': 'image', 'name': 'SITI', 'title': 'Fiqh', 'asset': 'assets/images/dummy_post2.jpg', 'badge': 'FIQH', 'desc': 'Panduan lengkap solat bagi wanita bekerjaya.'},
     ];
 
-    // 3. KOCOK (SHUFFLE) MEDIA SUPAYA POSISI RANDOM
-    // Video dan gambar akan bertukar tempat setiap kali app buka
     sourceMedia.shuffle(Random());
 
     List<Map<String, dynamic>> finalGrid = [];
     int quoteIndex = 0;
     int mediaIndex = 0;
 
-    // 4. SUSUN KE DALAM GRID 3 LAJUR (PATTERN: X O X, O X O)
-    // Total item = 15 (contoh)
     for (int i = 0; i < 15; i++) {
       if (i % 2 == 0) {
-        // 🟥 POSISI X (GENAP) -> WAJIB QUOTE (BERWARNA)
-        // Kitar semula quote jika habis
+        // X - KUOTA
         var quote = Map<String, dynamic>.from(sourceQuotes[quoteIndex % sourceQuotes.length]);
-        
-        // Tetapkan jenis & warna ikut urutan (Pink->Biru->Hijau)
         quote['type'] = 'quote';
-        quote['color'] = quoteColors[quoteIndex % quoteColors.length];
-        
+        quote['badgeColor'] = badgeColors[quoteIndex % badgeColors.length];
         finalGrid.add(quote);
         quoteIndex++;
       } else {
-        // ⭕ POSISI O (GANJIL) -> WAJIB MEDIA (RANDOM)
-        // Ambil dari senarai media yang dah dikocok tadi
+        // O - MEDIA
         var media = Map<String, dynamic>.from(sourceMedia[mediaIndex % sourceMedia.length]);
-        
-        // Pastikan tiada warna tint (biar original)
-        media['color'] = Colors.transparent; 
-        
         finalGrid.add(media);
         mediaIndex++;
       }
     }
-
     return finalGrid;
   }
 
@@ -104,7 +86,7 @@ class _EventScreenState extends State<EventScreen> {
       
       body: Stack(
         children: [
-          // 1. LATAR BELAKANG LANGIT
+          // LATAR BELAKANG LANGIT
           Positioned.fill(
             child: Image.asset(
               'assets/images/langit.png',
@@ -123,12 +105,10 @@ class _EventScreenState extends State<EventScreen> {
             ),
           ),
 
-          // 2. KONTEN
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 10),
-
                 // FILTER TABS
                 SizedBox(
                   height: 38,
@@ -140,9 +120,7 @@ class _EventScreenState extends State<EventScreen> {
                       bool isSelected = filters[index] == selectedFilter;
                       return GestureDetector(
                         onTap: () {
-                          setState(() {
-                            selectedFilter = filters[index];
-                          });
+                          setState(() { selectedFilter = filters[index]; });
                         },
                         child: Container(
                           margin: const EdgeInsets.only(right: 8),
@@ -150,10 +128,7 @@ class _EventScreenState extends State<EventScreen> {
                           decoration: BoxDecoration(
                             color: isSelected ? Colors.white : Colors.white.withOpacity(0.15), 
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 1
-                            ),
+                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                           ),
                           child: Center(
                             child: Text(
@@ -170,7 +145,6 @@ class _EventScreenState extends State<EventScreen> {
                     },
                   ),
                 ),
-
                 const SizedBox(height: 10),
 
                 // GRID UTAMA
@@ -187,12 +161,29 @@ class _EventScreenState extends State<EventScreen> {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      // PANGGIL BUILDER YANG SESUAI
-                      if (item['type'] == 'quote') {
-                        return _buildQuoteTile(item); // X (Berwarna)
-                      } else {
-                        return _buildMediaTile(item); // O (Media Random)
-                      }
+                      // UNTUK HERO ANIMATION YG UNIK
+                      final String heroTag = 'hero_${index}_${item['name']}';
+
+                      return GestureDetector(
+                        onTap: () {
+                          // 🚀 NAVIGASI ZOOM IN (DETAIL SCREEN)
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FeedDetailScreen(item: item, heroTag: heroTag),
+                            ),
+                          );
+                        },
+                        child: Hero(
+                          tag: heroTag, // Kunci Animasi Zoom
+                          child: Material(
+                            color: Colors.transparent,
+                            child: item['type'] == 'quote' 
+                                ? _buildTransparentTile(item) 
+                                : _buildMediaTile(item),
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -241,29 +232,23 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE X: KUOTA (TRANSPARENT + WARNA CAIR)
+  // TILE BUILDERS (STATIC - UNTUK GRID)
   // ══════════════════════════════════════════════════════════════
-  Widget _buildQuoteTile(Map<String, dynamic> item) {
-    Color baseColor = item['color']; // Pink/Biru/Hijau
-
+  Widget _buildTransparentTile(Map<String, dynamic> item) {
+    const textShadows = [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1))];
     return Column(
       children: [
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              // Kaca berwarna (Opacity rendah supaya nampak langit)
-              color: baseColor.withOpacity(0.25), 
+              color: Colors.white.withOpacity(0.15), 
               borderRadius: BorderRadius.circular(12),
-              // Border sedikit terang ikut warna tema
-              border: Border.all(color: baseColor.withOpacity(0.6), width: 1.2),
-              boxShadow: [
-                BoxShadow(color: baseColor.withOpacity(0.1), blurRadius: 8),
-              ],
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
             ),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ISI TEKS
                 Container(
                   padding: const EdgeInsets.all(8),
                   alignment: Alignment.center,
@@ -271,24 +256,19 @@ class _EventScreenState extends State<EventScreen> {
                     item['description'] ?? '',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
+                      color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600,
                       fontStyle: FontStyle.italic,
-                      // Shadow supaya boleh baca atas warna
-                      shadows: [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1))],
+                      shadows: [Shadow(color: Colors.black, blurRadius: 6)],
                     ),
-                    maxLines: 6,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 6, overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                // BADGE KECIL
                 Positioned(
                   top: 6, left: 6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
-                      color: baseColor.withOpacity(0.9), // Warna solid
+                      color: (item['badgeColor'] as Color).withOpacity(0.8),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -301,18 +281,12 @@ class _EventScreenState extends State<EventScreen> {
             ),
           ),
         ),
-        
         const SizedBox(height: 6),
-        
-        // CAPTION BAWAH
-        _buildBottomCaption(item, isQuote: true),
+        _buildBottomCaption(item),
       ],
     );
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TILE O: MEDIA (GAMBAR/VIDEO - RANDOM POSITION)
-  // ══════════════════════════════════════════════════════════════
   Widget _buildMediaTile(Map<String, dynamic> item) {
     return Column(
       children: [
@@ -320,25 +294,18 @@ class _EventScreenState extends State<EventScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 5, offset: const Offset(0, 3)),
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 5, offset: const Offset(0, 3))],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // GAMBAR PENUH
                   Image.asset(
                     item['asset'],
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(color: Colors.grey[300]);
-                    },
+                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300]),
                   ),
-                  
-                  // BADGE HITAM
                   Positioned(
                     top: 6, left: 6,
                     child: Container(
@@ -353,41 +320,25 @@ class _EventScreenState extends State<EventScreen> {
                       ),
                     ),
                   ),
-
-                  // VIDEO ICON (JIKA VIDEO)
+                  // VIDEO ICON (STATIK DI GRID - TIADA BUTANG PLAY MENYEMAK)
                   if (item['type'] == 'video')
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-                      ),
+                    Positioned(
+                      right: 6, top: 6,
+                      child: Icon(Icons.videocam, color: Colors.white.withOpacity(0.8), size: 16),
                     ),
                 ],
               ),
             ),
           ),
         ),
-
         const SizedBox(height: 6),
-
-        // CAPTION BAWAH
-        _buildBottomCaption(item, isQuote: false),
+        _buildBottomCaption(item),
       ],
     );
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HELPER CAPTION
-  // ══════════════════════════════════════════════════════════════
-  Widget _buildBottomCaption(Map<String, dynamic> item, {required bool isQuote}) {
-    // Shadow teks sentiasa ada untuk konsistensi
+  Widget _buildBottomCaption(Map<String, dynamic> item) {
     const textShadows = [Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(0, 1))];
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
@@ -398,17 +349,11 @@ class _EventScreenState extends State<EventScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withOpacity(0.8), width: 1),
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
             ),
             child: CircleAvatar(
-              radius: 10,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              backgroundImage: (item['type'] != 'quote' && item['asset'] != '') 
-                  ? AssetImage(item['asset']) 
-                  : null,
-              child: (item['type'] == 'quote' || item['asset'] == '')
-                  ? const Icon(Icons.person, size: 12, color: Colors.white)
-                  : null,
+              radius: 10, backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundImage: (item['type'] != 'quote' && item['asset'] != '') ? AssetImage(item['asset']) : null,
+              child: (item['type'] == 'quote' || item['asset'] == '') ? const Icon(Icons.person, size: 12, color: Colors.white) : null,
             ),
           ),
           const SizedBox(width: 5),
@@ -418,26 +363,202 @@ class _EventScreenState extends State<EventScreen> {
               children: [
                 Text(
                   item['name'],
-                  style: const TextStyle(
-                    color: Colors.white, 
-                    fontSize: 9, 
-                    fontWeight: FontWeight.w900,
-                    shadows: textShadows,
-                    letterSpacing: 0.3,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, shadows: textShadows),
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   item['title'],
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
-                    fontSize: 8, 
-                    fontWeight: FontWeight.w500,
-                    shadows: textShadows,
-                  ),
+                  style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 8, fontWeight: FontWeight.w500, shadows: textShadows),
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 🚀 FEED DETAIL SCREEN (ZOOM IN & INTERACTIVE)
+// ══════════════════════════════════════════════════════════════
+class FeedDetailScreen extends StatefulWidget {
+  final Map<String, dynamic> item;
+  final String heroTag;
+
+  const FeedDetailScreen({Key? key, required this.item, required this.heroTag}) : super(key: key);
+
+  @override
+  State<FeedDetailScreen> createState() => _FeedDetailScreenState();
+}
+
+class _FeedDetailScreenState extends State<FeedDetailScreen> {
+  bool isExpanded = false; // Status caption (Short/Full)
+  bool isPlaying = false;  // Status video (Play/Pause)
+
+  @override
+  Widget build(BuildContext context) {
+    bool isVideo = widget.item['type'] == 'video';
+    bool isQuote = widget.item['type'] == 'quote';
+
+    // Text Description (Fallback jika tiada 'desc', guna 'description')
+    String fullText = widget.item['desc'] ?? widget.item['description'] ?? "Tiada kapsyen.";
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 1. CONTENT UTAMA (FULL SCREEN)
+          Center(
+            child: Hero(
+              tag: widget.heroTag,
+              child: AspectRatio(
+                aspectRatio: isQuote ? 0.8 : 9/16, // Quote petak, Video panjang
+                child: Container(
+                  decoration: BoxDecoration(
+                    // Jika Quote, kekalkan background glass
+                    color: isQuote 
+                        ? (widget.item['badgeColor'] as Color).withOpacity(0.2) 
+                        : Colors.black,
+                    borderRadius: BorderRadius.circular(isQuote ? 20 : 0),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // A. MEDIA
+                      if (!isQuote)
+                        Image.asset(widget.item['asset'], fit: BoxFit.cover),
+                      
+                      // B. QUOTE TEXT
+                      if (isQuote)
+                         Center(
+                           child: Padding(
+                             padding: const EdgeInsets.all(20),
+                             child: Text(
+                                widget.item['description'],
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white, fontSize: 24, 
+                                  fontWeight: FontWeight.bold, fontStyle: FontStyle.italic,
+                                  decoration: TextDecoration.none
+                                ),
+                             ),
+                           ),
+                         ),
+
+                      // C. VIDEO CONTROLS (HANYA JIKA VIDEO)
+                      if (isVideo)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isPlaying = !isPlaying;
+                            });
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                            child: Center(
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 200),
+                                opacity: isPlaying ? 0.0 : 1.0, // Hilang bila play
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2)
+                                  ),
+                                  child: const Icon(Icons.play_arrow, color: Colors.white, size: 50),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // 2. TOP BAR (CLOSE BUTTON)
+          Positioned(
+            top: 40, left: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: const CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ),
+
+          // 3. BOTTOM CAPTION (INTERACTIVE)
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  isExpanded = !isExpanded; // Toggle Zoom Text
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black.withOpacity(0.9), Colors.transparent],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // USER INFO
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: (!isQuote && widget.item['asset'] != '') 
+                            ? AssetImage(widget.item['asset']) 
+                            : null,
+                          child: isQuote ? const Icon(Icons.person, color: Colors.white) : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.item['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            Text(widget.item['title'], style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // CAPTION TEXT (EXPANDABLE)
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      child: Text(
+                        fullText,
+                        maxLines: isExpanded ? null : 2, // 2 Baris -> Unlimited
+                        overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                      ),
+                    ),
+                    
+                    // HINT TEXT
+                    if (!isExpanded)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text("Lihat lagi...", style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
