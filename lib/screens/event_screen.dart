@@ -22,7 +22,7 @@ class _EventScreenState extends State<EventScreen> {
       'role': 'Tadabbur',
       'title': 'Pokok Berzikir',
       'description': 'Lihatlah bagaimana alam sujud kepada Pencipta.',
-      'asset': 'assets/videos/tree_v1.mp4', // Fail Video Tuanku
+      'asset': 'assets/videos/tree_v1.mp4', 
       'views': '5.2M',
       'badge': 'VIDEO',
       'duration': '0:45',
@@ -69,7 +69,6 @@ class _EventScreenState extends State<EventScreen> {
       'role': 'Pendakwah',
       'title': 'Salon Muslimah',
       'description': 'Hukum dan panduan salon patuh syariah.',
-      'image': 'assets/images/dummy_post2.jpg', // Support key lama 'image' juga
       'asset': 'assets/images/dummy_post2.jpg',
       'views': '890K',
       'badge': 'GUIDE'
@@ -158,7 +157,6 @@ class _EventScreenState extends State<EventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Latar Belakang Transparent (Nampak Langit Assets)
       backgroundColor: Colors.transparent, 
       
       body: Stack(
@@ -188,9 +186,9 @@ class _EventScreenState extends State<EventScreen> {
               children: [
                 const SizedBox(height: 10),
 
-                // FILTER TABS (Kekal sebagai navigasi tunggal)
+                // FILTER TABS
                 SizedBox(
-                  height: 40,
+                  height: 44,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -205,23 +203,30 @@ class _EventScreenState extends State<EventScreen> {
                         },
                         child: Container(
                           margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                           decoration: BoxDecoration(
-                            // Glass Effect Tab
                             color: isSelected ? Colors.white : Colors.white.withOpacity(0.2), 
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(
                                 color: Colors.white.withOpacity(0.4),
-                                width: 1
+                                width: 1.5
                             ),
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ] : null,
                           ),
                           child: Center(
                             child: Text(
                               filters[index],
                               style: TextStyle(
-                                color: isSelected ? Colors.black : Colors.white,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 13,
+                                color: isSelected ? Colors.black87 : Colors.white,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                fontSize: 14,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ),
@@ -231,29 +236,25 @@ class _EventScreenState extends State<EventScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
-                // GRID KONTEN (Mixed: Image, Video, Quote)
+                // ═══════════════════════════════════════════════════
+                // GRID KONTEN (AAA GRADE - CAPCUT STYLE)
+                // ═══════════════════════════════════════════════════
                 Expanded(
                   child: GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+                    physics: const BouncingScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.65, // Ratio menegak (Shorts style)
+                      crossAxisSpacing: 12, 
+                      mainAxisSpacing: 12,   
+                      childAspectRatio: 0.68, // Optimized untuk caption luar
                     ),
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      // SWITCH LOGIC IKUT JENIS KONTEN
-                      if (item['type'] == 'video') {
-                        return _buildVideoCard(item);
-                      } else if (item['type'] == 'quote') {
-                        return _buildQuoteCard(item);
-                      } else {
-                        return _buildImageCard(item);
-                      }
+                      return _buildCapCutStyleCard(item);
                     },
                   ),
                 ),
@@ -310,262 +311,343 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // 1. KAD GAMBAR (Standard)
+  // 🎯 CAPCUT STYLE CARD (AAA GRADE)
+  // Caption LUAR card, Media BERSIH dalam card
   // ══════════════════════════════════════════════════════════════
-  Widget _buildImageCard(Map<String, dynamic> item) {
-    return _BaseCard(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(item['asset'], fit: BoxFit.cover),
-          _GradientOverlay(),
-          _TopBadge(text: item['badge'], views: item['views']),
-          _BottomInfo(item: item),
-        ],
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // 2. KAD VIDEO (Ada Play Button)
-  // ══════════════════════════════════════════════════════════════
-  Widget _buildVideoCard(Map<String, dynamic> item) {
-    return _BaseCard(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background Gelap sikit untuk Video
-          Container(color: Colors.black87),
-          
-          // Center Play Icon
-          const Center(
-            child: Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
-          ),
-
-          // Duration Badge
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                item['duration'] ?? '0:00',
-                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          
-          _GradientOverlay(),
-          
-          // Badge Kiri Atas
-          Positioned(
-            top: 8, left: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.redAccent, // Merah untuk Video
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                item['badge'],
-                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-
-          _BottomInfo(item: item),
-        ],
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // 3. KAD KUOTO (Teks Sahaja, Tanpa Gambar)
-  // ══════════════════════════════════════════════════════════════
-  Widget _buildQuoteCard(Map<String, dynamic> item) {
-    return _BaseCard(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              item['color'] ?? Colors.blueAccent,
-              (item['color'] as Color).withOpacity(0.6),
-            ],
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.format_quote, color: Colors.white54, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              item['description'],
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
-                fontFamily: 'Serif',
-                height: 1.3,
-              ),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "- ${item['name']} -",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// WIDGET KECIL (HELPER)
-// ══════════════════════════════════════════════════════════════
-
-class _BaseCard extends StatelessWidget {
-  final Widget child;
-  const _BaseCard({required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: ClipRRect(borderRadius: BorderRadius.circular(12), child: child),
-    );
-  }
-}
-
-class _GradientOverlay extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
-          stops: const [0.6, 1.0],
-        ),
-      ),
-    );
-  }
-}
-
-class _TopBadge extends StatelessWidget {
-  final String text;
-  final String views;
-  const _TopBadge({required this.text, required this.views});
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: 8, left: 8, right: 8,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(4)),
-            child: Text(text, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-          ),
-          Row(children: [
-            const Icon(Icons.visibility, color: Colors.white, size: 10),
-            const SizedBox(width: 3),
-            Text(views, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-          ]),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomInfo extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const _BottomInfo({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 0, left: 0, right: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              item['title'],
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              item['description'],
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 8,
-                  // Fallback jika asset video tiada gambar
-                  backgroundColor: Colors.grey,
-                  backgroundImage: item['type'] == 'video' ? null : AssetImage(item['asset']),
-                  child: item['type'] == 'video' ? const Icon(Icons.play_arrow, size: 10, color: Colors.white) : null,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _MetallicSilver(
-                        child: Text(
-                          item['name'],
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+  Widget _buildCapCutStyleCard(Map<String, dynamic> item) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ═══════════════════════════════════════════════════════
+        // 1. MEDIA CARD (Clean, Badge & Views sahaja)
+        // ═══════════════════════════════════════════════════════
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-          ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Background berdasarkan jenis
+                  if (item['type'] == 'video')
+                    _buildVideoBackground(item)
+                  else if (item['type'] == 'quote')
+                    _buildQuoteBackground(item)
+                  else
+                    _buildImageBackground(item),
+
+                  // Gradient Overlay (lebih subtle)
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.1),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.3),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // Badge & Views (Top)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getBadgeColor(item['type']),
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            item['badge'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        // Views
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.visibility, color: Colors.white, size: 11),
+                              const SizedBox(width: 4),
+                              Text(
+                                item['views'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Video Duration (jika video)
+                  if (item['type'] == 'video')
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item['duration'] ?? '0:00',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Play Icon (jika video) - Centered
+                  if (item['type'] == 'video')
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // ═══════════════════════════════════════════════════════
+        // 2. CAPTION AREA (LUAR CARD - CapCut Style)
+        // ═══════════════════════════════════════════════════════
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 12,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: item['type'] != 'video' && item['asset'].isNotEmpty
+                      ? AssetImage(item['asset'])
+                      : null,
+                  child: item['type'] == 'video' || item['asset'].isEmpty
+                      ? const Icon(Icons.person, size: 14, color: Colors.white70)
+                      : null,
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Username & Title
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Username (Metallic Silver Effect)
+                    _MetallicSilver(
+                      child: Text(
+                        item['name'],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    // Title
+                    Text(
+                      item['title'],
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // BACKGROUND BUILDERS (Cleaner)
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildVideoBackground(Map<String, dynamic> item) {
+    return Container(
+      color: Colors.black87,
+      child: Center(
+        child: Icon(
+          Icons.videocam_rounded,
+          color: Colors.white.withOpacity(0.2),
+          size: 48,
         ),
       ),
     );
   }
+
+  Widget _buildQuoteBackground(Map<String, dynamic> item) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            item['color'] ?? Colors.blueAccent,
+            (item['color'] as Color).withOpacity(0.7),
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.format_quote, color: Colors.white60, size: 28),
+          const SizedBox(height: 12),
+          Text(
+            item['description'],
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w400,
+              height: 1.4,
+              letterSpacing: 0.2,
+            ),
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageBackground(Map<String, dynamic> item) {
+    return Image.asset(
+      item['asset'],
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Colors.grey[300],
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.grey, size: 48),
+          ),
+        );
+      },
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // HELPER: Badge Color berdasarkan type
+  // ══════════════════════════════════════════════════════════════
+  Color _getBadgeColor(String type) {
+    switch (type) {
+      case 'video':
+        return Colors.redAccent;
+      case 'quote':
+        return Colors.deepPurpleAccent;
+      default:
+        return Colors.black87;
+    }
+  }
 }
 
+// ══════════════════════════════════════════════════════════════
+// METALLIC SILVER EFFECT (Kekalkan)
+// ══════════════════════════════════════════════════════════════
 class _MetallicSilver extends StatelessWidget {
   final Widget child;
   const _MetallicSilver({required this.child});
+  
   @override
   Widget build(BuildContext context) {
     return ShaderMask(
       shaderCallback: (bounds) => const LinearGradient(
-        begin: Alignment.topLeft, end: Alignment.bottomRight,
-        colors: [Color(0xFFE0E0E0), Color(0xFFFFFFFF), Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFE0E0E0),
+          Color(0xFFFFFFFF),
+          Color(0xFFBDBDBD),
+          Color(0xFFE0E0E0)
+        ],
         stops: [0.0, 0.4, 0.6, 1.0],
       ).createShader(bounds),
       child: child,
