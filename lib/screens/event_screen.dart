@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'dart:math';
 
-// ✅ INTEGRASI: Fail emas (Simpan untuk rujukan masa depan)
+// ✅ INTEGRASI: Fail emas
 import '../widgets/metallic_gold.dart';
 
 class EventScreen extends StatefulWidget {
@@ -13,11 +12,11 @@ class EventScreen extends StatefulWidget {
 }
 
 class _EventScreenState extends State<EventScreen> {
-  // PALET WARNA KACA (Pink, Biru, Hijau)
-  final List<Color> glassColors = [
+  // PALET WARNA BADGE (Untuk Kuota)
+  final List<Color> badgeColors = [
     const Color(0xFFE91E63), // Pink
-    const Color(0xFF2196F3), // Blue
-    const Color(0xFF00E676), // Green
+    const Color(0xFF2196F3), // Biru
+    const Color(0xFF00E676), // Hijau
   ];
 
   late final List<Map<String, dynamic>> items;
@@ -25,36 +24,14 @@ class _EventScreenState extends State<EventScreen> {
   @override
   void initState() {
     super.initState();
-    // DATA DUMMY (POKOK & KONTEN)
+    // ⚠️ DATA DISUSUN SECARA 'SELANG-SELI' (MANUAL SORTING)
+    // PATTERN: X (Quote), O (Media), X (Quote), O (Media)...
+    // Supaya grid 3 lajur jadi:
+    // X O X
+    // O X O
+    
     items = [
-      {
-        'type': 'image',
-        'name': 'ALAM FANA',
-        'title': 'Puncak',
-        'asset': 'assets/images/pokok_level5.png',
-        'views': '1.2M',
-        'badge': 'LVL 5',
-        'color': glassColors[2],
-      },
-      {
-        'type': 'video',
-        'name': 'TADABBUR',
-        'title': 'Zikir',
-        'asset': 'assets/videos/tree_v1.mp4',
-        'views': '5.2M',
-        'badge': 'VIDEO',
-        'duration': '0:45',
-        'color': glassColors[1],
-      },
-      {
-        'type': 'image',
-        'name': 'USTAZ DON',
-        'title': 'Ranting',
-        'asset': 'assets/images/pokok_level3.png',
-        'views': '890K',
-        'badge': 'LVL 3',
-        'color': glassColors[0],
-      },
+      // 0. X - QUOTE (Transparent)
       {
         'type': 'quote',
         'name': 'GHAZALI',
@@ -63,36 +40,19 @@ class _EventScreenState extends State<EventScreen> {
         'asset': '', 
         'views': '900K',
         'badge': 'ILMU',
-        'color': glassColors[1],
+        'badgeColor': badgeColors[1],
       },
-      {
-        'type': 'image',
-        'name': 'HAMKA',
-        'title': 'Mula',
-        'asset': 'assets/images/pokok_level2.png',
-        'views': '450K',
-        'badge': 'LVL 2',
-        'color': glassColors[2],
-      },
-      {
-        'type': 'image',
-        'name': 'DR. MAZA',
-        'title': 'Syariah',
-        'asset': 'assets/images/pokok_level4.png',
-        'views': '1.5M',
-        'badge': 'LVL 4',
-        'color': glassColors[0],
-      },
+      // 1. O - MEDIA (Video)
       {
         'type': 'video',
-        'name': 'HIJRAH',
-        'title': 'Agung',
+        'name': 'TADABBUR',
+        'title': 'Zikir',
         'asset': 'assets/videos/tree_v1.mp4',
-        'views': '3.1M',
-        'badge': 'DOCU',
-        'duration': '2:30',
-        'color': glassColors[1],
+        'views': '5.2M',
+        'badge': 'VIDEO',
+        'duration': '0:45',
       },
+      // 2. X - QUOTE (Transparent)
       {
         'type': 'quote',
         'name': 'RUMI',
@@ -101,35 +61,18 @@ class _EventScreenState extends State<EventScreen> {
         'asset': '',
         'views': '5M+',
         'badge': 'SUFI',
-        'color': glassColors[2],
+        'badgeColor': badgeColors[0],
       },
+      // 3. O - MEDIA (Image)
       {
         'type': 'image',
-        'name': 'UK STORY',
-        'title': 'London',
-        'asset': 'assets/images/dummy_post1.jpg',
-        'views': '2.5M',
-        'badge': 'STORY',
-        'color': glassColors[0],
+        'name': 'ALAM FANA',
+        'title': 'Puncak',
+        'asset': 'assets/images/pokok_level5.png',
+        'views': '1.2M',
+        'badge': 'LVL 5',
       },
-      {
-        'type': 'image',
-        'name': 'SITI',
-        'title': 'Fiqh',
-        'asset': 'assets/images/dummy_post2.jpg',
-        'views': '450K',
-        'badge': 'FIQH',
-        'color': glassColors[1],
-      },
-       {
-        'type': 'image',
-        'name': 'NABI',
-        'title': 'Sirah',
-        'asset': 'assets/images/dummy_post1.jpg',
-        'views': '9M',
-        'badge': 'SIRAH',
-        'color': glassColors[2],
-      },
+      // 4. X - QUOTE (Transparent)
       {
         'type': 'quote',
         'name': 'HIKMAH',
@@ -138,7 +81,77 @@ class _EventScreenState extends State<EventScreen> {
         'asset': '',
         'views': '100K',
         'badge': 'ADAB',
-        'color': glassColors[0],
+        'badgeColor': badgeColors[2],
+      },
+      // 5. O - MEDIA (Image)
+      {
+        'type': 'image',
+        'name': 'USTAZ DON',
+        'title': 'Ranting',
+        'asset': 'assets/images/pokok_level3.png',
+        'views': '890K',
+        'badge': 'LVL 3',
+      },
+      // 6. X - QUOTE (Transparent)
+      {
+        'type': 'quote',
+        'name': 'BUYA',
+        'title': 'Hidup',
+        'description': 'Jangan takut jatuh, takutlah mati sebelum hidup.',
+        'asset': '',
+        'views': '300K',
+        'badge': 'JIWA',
+        'badgeColor': badgeColors[1],
+      },
+      // 7. O - MEDIA (Video)
+      {
+        'type': 'video',
+        'name': 'HIJRAH',
+        'title': 'Agung',
+        'asset': 'assets/videos/tree_v1.mp4',
+        'views': '3.1M',
+        'badge': 'DOCU',
+        'duration': '2:30',
+      },
+      // 8. X - QUOTE (Transparent)
+      {
+        'type': 'quote',
+        'name': 'IBNU SINA',
+        'title': 'Sihat',
+        'description': 'Waham adalah penyakit, tenang adalah ubat.',
+        'asset': '',
+        'views': '750K',
+        'badge': 'MEDIK',
+        'badgeColor': badgeColors[2],
+      },
+      // 9. O - MEDIA (Image)
+      {
+        'type': 'image',
+        'name': 'HAMKA',
+        'title': 'Mula',
+        'asset': 'assets/images/pokok_level2.png',
+        'views': '450K',
+        'badge': 'LVL 2',
+      },
+      // 10. X - QUOTE (Transparent)
+      {
+        'type': 'quote',
+        'name': 'SYAFIE',
+        'title': 'Masa',
+        'description': 'Masa ibarat pedang, jika kau tak potong, ia memotongmu.',
+        'asset': '',
+        'views': '2M',
+        'badge': 'MASA',
+        'badgeColor': badgeColors[0],
+      },
+      // 11. O - MEDIA (Image)
+      {
+        'type': 'image',
+        'name': 'DR. MAZA',
+        'title': 'Syariah',
+        'asset': 'assets/images/pokok_level4.png',
+        'views': '1.5M',
+        'badge': 'LVL 4',
       },
     ];
   }
@@ -178,7 +191,7 @@ class _EventScreenState extends State<EventScreen> {
               children: [
                 const SizedBox(height: 10),
 
-                // FILTER TABS (Lebih Compact untuk 3 Column)
+                // FILTER TABS (Compact)
                 SizedBox(
                   height: 38,
                   child: ListView.builder(
@@ -223,7 +236,7 @@ class _EventScreenState extends State<EventScreen> {
                 const SizedBox(height: 10),
 
                 // ═══════════════════════════════════════════════════
-                // GRID KONTEN (3 LAJUR - CHECKERBOARD)
+                // GRID KONTEN (3 LAJUR - SUSUNAN TEPAT)
                 // ═══════════════════════════════════════════════════
                 Expanded(
                   child: GridView.builder(
@@ -231,20 +244,21 @@ class _EventScreenState extends State<EventScreen> {
                     physics: const BouncingScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3, // ✅ 3 LAJUR
-                      crossAxisSpacing: 8, // Rapat sikit
+                      crossAxisSpacing: 8,
                       mainAxisSpacing: 12,   
-                      childAspectRatio: 0.58, // Lebih tinggi sebab caption di luar
+                      childAspectRatio: 0.58, 
                     ),
                     itemCount: items.length,
                     itemBuilder: (context, index) {
-                      // LOGIK PAPAN CATUR (CHECKERBOARD) UNTUK 3 LAJUR
-                      // Dalam grid 3 lajur (ganjil), % 2 cukup untuk buat corak selang-seli berterusan
-                      // 0: O, 1: X, 2: O
-                      // 3: X, 4: O, 5: X
-                      bool isTransparentTile = (index % 2 == 0); 
-
                       final item = items[index];
-                      return _buildGlassTileCard(item, isTransparentTile);
+                      // KITA DAH SUSUN DATA SECARA MANUAL (QUOTE, MEDIA, QUOTE, MEDIA)
+                      // JADI BUILDER HANYA PERLU RENDER IKUT TYPE SAHAJA
+                      
+                      if (item['type'] == 'quote') {
+                        return _buildTransparentTile(item); // X (Kuota)
+                      } else {
+                        return _buildMediaTile(item); // O (Gambar/Video)
+                      }
                     },
                   ),
                 ),
@@ -293,41 +307,85 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // 🎯 GLASS TILE CARD (3 LAJUR)
+  // TILE X: KUOTA (TRANSPARENT + SHADOW)
   // ══════════════════════════════════════════════════════════════
-  Widget _buildGlassTileCard(Map<String, dynamic> item, bool isTransparent) {
-    // TENTUKAN WARNA:
-    // Jika Transparent (O) -> Putih Nipis 10%
-    // Jika Random (X) -> Warna Item 20%
-    Color tileColor = isTransparent 
-        ? Colors.white.withOpacity(0.1) 
-        : (item['color'] as Color).withOpacity(0.2);
-
-    Color borderColor = isTransparent
-        ? Colors.white.withOpacity(0.2)
-        : (item['color'] as Color).withOpacity(0.5);
-
-    // LOGIK SHADOW TEKS: Hanya jika tile transparent
-    List<Shadow> textShadows = isTransparent 
-        ? [const Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1))]
-        : [];
+  Widget _buildTransparentTile(Map<String, dynamic> item) {
+    // Shadow WAJIB untuk tulisan atas transparent
+    const textShadows = [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1))];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. TILE KACA (MEDIA)
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: tileColor, 
+              color: Colors.white.withOpacity(0.15), // Glass Nipis
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor, width: 1),
+              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
+              ],
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // TEKS KUOTA
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  alignment: Alignment.center,
+                  child: Text(
+                    item['description'] ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      fontStyle: FontStyle.italic,
+                      shadows: [Shadow(color: Colors.black, blurRadius: 6)], // Shadow Kuat
+                    ),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                // BADGE
+                Positioned(
+                  top: 6, left: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (item['badgeColor'] as Color).withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item['badge'],
+                      style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 6),
+        
+        // CAPTION BAWAH (Avatar & Nama - Putih + Shadow)
+        _buildBottomCaption(item, hasShadow: true),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // TILE O: MEDIA (GAMBAR/VIDEO PENUH)
+  // ══════════════════════════════════════════════════════════════
+  Widget _buildMediaTile(Map<String, dynamic> item) {
+    return Column(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 5, offset: const Offset(0, 3)),
               ],
             ),
             child: ClipRRect(
@@ -335,13 +393,16 @@ class _EventScreenState extends State<EventScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // KONTEN
-                  if (item['type'] == 'quote')
-                     _buildQuoteContent(item, isTransparent)
-                  else
-                     _buildImageContent(item),
-
-                  // BADGE (KECILKAN UNTUK 3 LAJUR)
+                  // GAMBAR PENUH
+                  Image.asset(
+                    item['asset'],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(color: Colors.grey[300]);
+                    },
+                  ),
+                  
+                  // BADGE
                   Positioned(
                     top: 6, left: 6,
                     child: Container(
@@ -352,9 +413,7 @@ class _EventScreenState extends State<EventScreen> {
                       ),
                       child: Text(
                         item['badge'],
-                        style: const TextStyle(
-                          color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900),
                       ),
                     ),
                   ),
@@ -380,116 +439,74 @@ class _EventScreenState extends State<EventScreen> {
 
         const SizedBox(height: 6),
 
-        // 2. CAPTION AREA (LUAR & COMPACT)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar Kecil
-              Container(
-                width: 20, height: 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
-                ),
-                child: CircleAvatar(
-                  radius: 10,
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  backgroundImage: (item['type'] != 'quote' && item['asset'] != '') 
-                      ? AssetImage(item['asset']) 
-                      : null,
-                  child: (item['type'] == 'quote' || item['asset'] == '')
-                      ? const Icon(Icons.person, size: 12, color: Colors.white)
-                      : null,
-                ),
-              ),
-
-              const SizedBox(width: 5),
-
-              // Teks (Nama & Tajuk)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['name'],
-                      style: TextStyle(
-                        color: Colors.white, 
-                        fontSize: 9, 
-                        fontWeight: FontWeight.w800,
-                        shadows: textShadows, // ✅ SHADOW JIKA TRANSPARENT
-                      ),
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      item['title'],
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 8, 
-                        fontWeight: FontWeight.w400,
-                        shadows: textShadows, // ✅ SHADOW JIKA TRANSPARENT
-                      ),
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        // CAPTION BAWAH (Standard)
+        _buildBottomCaption(item, hasShadow: true),
       ],
     );
   }
 
   // ══════════════════════════════════════════════════════════════
-  // HELPER CONTENT
+  // HELPER CAPTION
   // ══════════════════════════════════════════════════════════════
+  Widget _buildBottomCaption(Map<String, dynamic> item, {bool hasShadow = false}) {
+    List<Shadow> shadows = hasShadow 
+      ? [const Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(0, 1))]
+      : [];
 
-  Widget _buildQuoteContent(Map<String, dynamic> item, bool isTransparent) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      alignment: Alignment.center,
-      child: Text(
-        item['description'] ?? '',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 10, // Kecilkan sikit untuk 3 lajur
-          fontStyle: FontStyle.italic,
-          shadows: isTransparent ? [const Shadow(color: Colors.black, blurRadius: 4)] : [],
-        ),
-        maxLines: 6,
-        overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 20, height: 20,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.8), width: 1),
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+            ),
+            child: CircleAvatar(
+              radius: 10,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundImage: (item['type'] != 'quote' && item['asset'] != '') 
+                  ? AssetImage(item['asset']) 
+                  : null,
+              child: (item['type'] == 'quote' || item['asset'] == '')
+                  ? const Icon(Icons.person, size: 12, color: Colors.white)
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['name'],
+                  style: TextStyle(
+                    color: Colors.white, 
+                    fontSize: 9, 
+                    fontWeight: FontWeight.w900,
+                    shadows: shadows,
+                    letterSpacing: 0.3,
+                  ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  item['title'],
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.95),
+                    fontSize: 8, 
+                    fontWeight: FontWeight.w500,
+                    shadows: shadows,
+                  ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildImageContent(Map<String, dynamic> item) {
-    // Tiada padding supaya nampak macam tiles penuh
-    return Image.asset(
-      item['asset'],
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Center(
-          child: Icon(Icons.image, color: Colors.white.withOpacity(0.3), size: 20),
-        );
-      },
-    );
-  }
-}
-
-// Helper Class untuk Nama Kilat (Optional - kalau nak guna)
-class _MetallicSilver extends StatelessWidget {
-  final Widget child;
-  const _MetallicSilver({required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: [Color(0xFFE0E0E0), Color(0xFFFFFFFF), Color(0xFFBDBDBD)],
-      ).createShader(bounds),
-      child: child,
     );
   }
 }
