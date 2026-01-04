@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
 
-// ✅ INTEGRASI: Fail emas (Kekal digunakan untuk Tile X)
+// ✅ INTEGRASI: Fail emas (Kekal digunakan untuk Tile X - Emas)
 import '../widgets/metallic_gold.dart';
 
 class EventScreen extends StatefulWidget {
@@ -188,7 +188,7 @@ class _EventScreenState extends State<EventScreen> {
                       } else if (item['style'] == 'X') {
                         return _buildTileX(item); // Emas (Glass 10%)
                       } else {
-                        return _buildTileY(item); // Silver (Glass 40%, Putih Biasa)
+                        return _buildTileY(item, index); // Silver (Berwarna Opacity 40%)
                       }
                     },
                   ),
@@ -277,16 +277,27 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE Y: TULISAN PUTIH | LATAR PUTIH 40% OPACITY
+  // TILE Y: WARNA-WARNI 40% | TULISAN PUTIH BIASA
   // ══════════════════════════════════════════════════════════════
-  Widget _buildTileY(Map<String, dynamic> item) {
+  Widget _buildTileY(Map<String, dynamic> item, int index) {
+    // Logik Warna Latar Belakang (Cycle 3 Warna)
+    Color bgColor;
+    int colorIndex = index % 3;
+    
+    if (colorIndex == 0) {
+      bgColor = const Color(0xFFFFC0CB).withOpacity(0.4); // Pink (Opacity 40%)
+    } else if (colorIndex == 1) {
+      bgColor = const Color(0xFF90EE90).withOpacity(0.4); // Hijau Muda (Opacity 40%)
+    } else {
+      bgColor = const Color(0xFFADD8E6).withOpacity(0.4); // Biru Muda (Opacity 40%)
+    }
+
     return Column(
       children: [
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              // GANTI WARNA-WARNI DENGAN PUTIH 40% OPACITY
-              color: Colors.white.withOpacity(0.4), 
+              color: bgColor, 
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             ),
@@ -299,7 +310,7 @@ class _EventScreenState extends State<EventScreen> {
               style: const TextStyle(
                 color: Colors.white, // Putih Bersih
                 fontSize: 10,
-                fontWeight: FontWeight.w600, // Agak tebal supaya baca di atas glass
+                fontWeight: FontWeight.w600, 
                 shadows: [Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1))],
               ),
               maxLines: 5,
