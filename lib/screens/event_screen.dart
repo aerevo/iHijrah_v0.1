@@ -16,13 +16,13 @@ class _EventScreenState extends State<EventScreen> {
 
   // 🎨 PALET WARNA "FUNKY" (KHAS UNTUK TILE X SAHAJA)
   final List<Color> funkyColors = [
-    Colors.deepPurple[600]!, // 1. Deep Purple (Mewah)
-    Colors.orange[800]!,     // 2. Vibrant Orange (Tenaga)
-    Colors.teal[600]!,       // 3. Electric Teal (Moden)
-    Colors.redAccent[700]!,  // 4. Hot Red (Berani)
-    Colors.indigo[600]!,     // 5. Indigo (Eksklusif)
-    Colors.pink[600]!,       // 6. Pink (Funky)
-    Colors.blue[700]!,       // 7. Royal Blue (Asal)
+    Colors.deepPurple[600]!, // 1. Deep Purple
+    Colors.orange[800]!,     // 2. Vibrant Orange
+    Colors.teal[600]!,       // 3. Electric Teal
+    Colors.redAccent[700]!,  // 4. Hot Red
+    Colors.indigo[600]!,     // 5. Indigo
+    Colors.pink[600]!,       // 6. Pink
+    Colors.blue[700]!,       // 7. Royal Blue
   ];
 
   @override
@@ -32,29 +32,33 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // 🧠 GENERATOR GRID X-Y-Z
+  // 🧠 GENERATOR GRID X-Y-Z (KEKAL 3 LAJUR)
   // ══════════════════════════════════════════════════════════════
   List<Map<String, dynamic>> _generateXYZGrid() {
     // SUMBER QUOTE (X & Y)
     final List<Map<String, dynamic>> sourceQuotes = [
-      {'name': 'IMAM GHAZALI', 'desc': 'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia.', 'badge': 'ILMU'},
-      {'name': 'JALALUDDIN RUMI', 'desc': 'Luka adalah tempat di mana cahaya memasukimu.', 'badge': 'SUFI'},
-      {'name': 'IBNU QAYYIM', 'desc': 'Dunia ini ibarat bayang-bayang, kejar dia lari, paling dia ikut.', 'badge': 'JIWA'},
-      {'name': 'BUYA HAMKA', 'desc': 'Jangan takut jatuh, kerana yang tidak pernah memanjatlah yang tidak pernah jatuh.', 'badge': 'MOTIVASI'},
-      {'name': 'IBNU SINA', 'desc': 'Kepanikan adalah separuh penyakit, ketenangan adalah separuh ubat.', 'badge': 'MEDIK'},
-      {'name': 'IMAM SYAFIE', 'desc': 'Masa ibarat pedang, jika kau tidak memotongnya, ia memotongmu.', 'badge': 'MASA'},
-      {'name': 'SAYIDINA ALI', 'desc': 'Lidahmu adalah singamu, jika kau menjaganya ia menjagamu.', 'badge': 'AKHLAK'},
-      {'name': 'TARIM', 'desc': 'Adab itu lebih tinggi daripada ilmu.', 'badge': 'ADAB'},
-      {'name': 'HIKMAH', 'desc': 'Sebaik-baik manusia adalah yang paling bermanfaat bagi orang lain.', 'badge': 'BAKTI'},
+      {'name': 'GHAZALI', 'desc': 'Ilmu tanpa amal itu gila.', 'badge': 'ILMU'},
+      {'name': 'RUMI', 'desc': 'Luka adalah tempat cahaya masuk.', 'badge': 'SUFI'},
+      {'name': 'HIKMAH', 'desc': 'Sabar itu separuh iman.', 'badge': 'ADAB'},
+      {'name': 'BUYA', 'desc': 'Takutlah mati sebelum hidup.', 'badge': 'JIWA'},
+      {'name': 'IBNU SINA', 'desc': 'Tenang adalah ubat.', 'badge': 'MEDIK'},
+      {'name': 'SYAFIE', 'desc': 'Masa ibarat pedang.', 'badge': 'MASA'},
+      {'name': 'HAMKA', 'desc': 'Kecantikan ada pada adab.', 'badge': 'ADAB'},
+      {'name': 'TARIM', 'desc': 'Adab dulu baru ilmu.', 'badge': 'YAMAN'},
+      {'name': 'NABI', 'desc': 'Berkata baik atau diam.', 'badge': 'HADIS'},
+      {'name': 'ALI', 'desc': 'Lidahmu adalah singamu.', 'badge': 'AKHLAK'},
     ];
 
     // SUMBER MEDIA (Z) - RANDOM
     final List<Map<String, dynamic>> sourceMedia = [
-      {'type': 'video', 'name': 'ALAM SEMESTA', 'title': 'Pokok Berzikir', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'VIDEO', 'duration': '0:45'},
-      {'type': 'image', 'name': 'USTAZ AZHAR', 'title': 'Sunat Ab\'ad', 'asset': 'assets/images/pokok_level3.png', 'badge': 'FIQH'},
-      {'type': 'video', 'name': 'JEJAK RASUL', 'title': 'Gua Hira', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'DOCU', 'duration': '2:30'},
-      {'type': 'image', 'name': 'DR. MAZA', 'title': 'Hukum Semasa', 'asset': 'assets/images/pokok_level4.png', 'badge': 'FATWA'},
+      {'type': 'video', 'name': 'TADABBUR', 'title': 'Zikir', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'VIDEO', 'duration': '0:45'},
       {'type': 'image', 'name': 'ALAM FANA', 'title': 'Puncak', 'asset': 'assets/images/pokok_level5.png', 'badge': 'LVL 5'},
+      {'type': 'image', 'name': 'USTAZ DON', 'title': 'Ranting', 'asset': 'assets/images/pokok_level3.png', 'badge': 'LVL 3'},
+      {'type': 'video', 'name': 'HIJRAH', 'title': 'Agung', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'DOCU', 'duration': '2:30'},
+      {'type': 'image', 'name': 'HAMKA', 'title': 'Mula', 'asset': 'assets/images/pokok_level2.png', 'badge': 'LVL 2'},
+      {'type': 'image', 'name': 'DR. MAZA', 'title': 'Syariah', 'asset': 'assets/images/pokok_level4.png', 'badge': 'LVL 4'},
+      {'type': 'image', 'name': 'UK STORY', 'title': 'London', 'asset': 'assets/images/dummy_post1.jpg', 'badge': 'STORY'},
+      {'type': 'image', 'name': 'SITI', 'title': 'Fiqh', 'asset': 'assets/images/dummy_post2.jpg', 'badge': 'FIQH'},
     ];
 
     // Kocok Media supaya Z sentiasa random
@@ -107,29 +111,26 @@ class _EventScreenState extends State<EventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E), 
+      backgroundColor: Colors.transparent, 
       
       body: Stack(
         children: [
           // 1. LATAR BELAKANG LANGIT
           Positioned.fill(
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
-              child: Image.asset(
-                'assets/images/langit.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFF141E30), Color(0xFF243B55)],
-                      ),
+            child: Image.asset(
+              'assets/images/langit.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF87CEEB), Color(0xFFE0F7FA)],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -140,7 +141,7 @@ class _EventScreenState extends State<EventScreen> {
                 const SizedBox(height: 10),
                 // FILTER TABS
                 SizedBox(
-                  height: 40,
+                  height: 38,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -152,19 +153,20 @@ class _EventScreenState extends State<EventScreen> {
                           setState(() { selectedFilter = filters[index]; });
                         },
                         child: Container(
-                          margin: const EdgeInsets.only(right: 10),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.white.withOpacity(0.2), 
-                            borderRadius: BorderRadius.circular(30),
+                            color: isSelected ? Colors.white : Colors.white.withOpacity(0.15), 
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                           ),
                           child: Center(
                             child: Text(
                               filters[index],
                               style: TextStyle(
                                 color: isSelected ? Colors.black87 : Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                fontSize: 12,
                               ),
                             ),
                           ),
@@ -173,18 +175,18 @@ class _EventScreenState extends State<EventScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
 
                 // GRID UTAMA
                 Expanded(
                   child: GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
                     physics: const BouncingScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // 2 LAJUR
-                      crossAxisSpacing: 12,
+                      crossAxisCount: 3, 
+                      crossAxisSpacing: 8,
                       mainAxisSpacing: 12,   
-                      childAspectRatio: 0.7, 
+                      childAspectRatio: 0.65, 
                     ),
                     itemCount: items.length,
                     itemBuilder: (context, index) {
@@ -195,12 +197,12 @@ class _EventScreenState extends State<EventScreen> {
                         return _buildTileZ(item); // Media (Kekal)
                       } 
                       else if (item['style'] == 'X') {
-                        // ✅ TILE X: GUNA WARNA FUNKY (Looping)
+                        // ✅ TILE X: WARNA FUNKY (70% Opacity)
                         final Color myColor = funkyColors[index % funkyColors.length];
-                        return _buildQuoteTileX(item, myColor); 
+                        return _buildTileX(item, myColor); 
                       }
                       else {
-                        // ✅ TILE Y: GLASS TRANSPAREN + SILVER (Kembali Asal)
+                        // ✅ TILE Y: GLASS TRANSPAREN (Kekal)
                         return _buildTileY(item);
                       }
                     },
@@ -211,123 +213,129 @@ class _EventScreenState extends State<EventScreen> {
           ),
         ],
       ),
-       // BOTTOM NAV
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white60,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-             BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-             BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
-             BottomNavigationBarItem(icon: Icon(Icons.add_box_outlined), label: ''),
-             BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
-             BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
-        ]
-      )
-    );
-  }
 
-  // ══════════════════════════════════════════════════════════════
-  // ✅ TILE X: FUNKY COLORS + TEKS PUTIH BERBAYANG
-  // ══════════════════════════════════════════════════════════════
-  Widget _buildQuoteTileX(Map<String, dynamic> item, Color cardColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        color: cardColor, // Warna Funky
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(2, 4)),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // IKON
-          const Icon(Icons.format_quote_rounded, color: Colors.white70, size: 40),
-          
-          // TEKS
-          Expanded(
-            child: Center(
-              child: Text(
-                item['desc'] ?? '',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white, 
-                  fontSize: 16, 
-                  fontWeight: FontWeight.w600,
-                  fontStyle: FontStyle.italic,
-                  height: 1.3,
-                  shadows: [
-                    Shadow(color: Colors.black.withOpacity(0.5), blurRadius: 4, offset: const Offset(2, 2)),
-                  ],
+      // BOTTOM NAV
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.5))),
+            ),
+            child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.grey[700],
+              showSelectedLabels: false,
+              showUnselectedLabels: false,
+              items: [
+                const BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: ''),
+                const BottomNavigationBarItem(icon: Icon(Icons.explore_outlined), label: ''),
+                const BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline, size: 30), label: ''),
+                const BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: const EdgeInsets.all(1),
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black)),
+                    child: const CircleAvatar(radius: 11, backgroundColor: Colors.grey, child: Icon(Icons.person, size: 14, color: Colors.white)),
+                  ),
+                  label: '',
                 ),
-                maxLines: 6,
-                overflow: TextOverflow.ellipsis,
-              ),
+              ],
             ),
           ),
-          
-          const SizedBox(height: 10),
-          // NAMA
-          Text(
-            "- ${item['name']} -",
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              shadows: [Shadow(color: Colors.black.withOpacity(0.3), blurRadius: 2, offset: const Offset(1, 1))],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   // ══════════════════════════════════════════════════════════════
-  // ✅ TILE Y: SILVER | GLASS | GAYA ASAL (JGN USIK)
+  // ✅ TILE X: FUNKY COLORS (70% OPACITY) | TEKS ITALIK | BAYANG
+  // ══════════════════════════════════════════════════════════════
+  Widget _buildTileX(Map<String, dynamic> item, Color bgColor) {
+    return Column(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              // ✅ UBAH DI SINI: OPACITY 70% (0.7)
+              color: bgColor.withOpacity(0.7), 
+              borderRadius: BorderRadius.circular(12),
+              // Shadow lembut pada kad
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: Offset(2, 2))
+              ], 
+            ),
+            padding: const EdgeInsets.all(6),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon Petik
+                const Icon(Icons.format_quote, color: Colors.white54, size: 16),
+                const SizedBox(height: 2),
+                
+                // Teks Utama (Italik + Bayang)
+                Text(
+                  item['desc'] ?? '',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white, // Putih
+                    fontSize: 10, 
+                    fontWeight: FontWeight.w700, 
+                    fontStyle: FontStyle.italic, // ✅ ITALIK
+                    // Bayang Gelap
+                    shadows: [Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(1, 1))],
+                  ),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        _buildBottomCaption(item),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ✅ TILE Y: GLASS TRANSPAREN (ASAL) + TULISAN SILVER
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileY(Map<String, dynamic> item) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        // Glass Transparen (Putih 10%)
-        color: Colors.white.withOpacity(0.1), 
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Center(
-              child: Text(
-                item['desc'] ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFC0C0C0), // Silver
-                  fontSize: 14, // Kecil sikit dari X
-                  fontWeight: FontWeight.w500,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 3, offset: Offset(1, 1))],
-                ),
-                maxLines: 6,
-                overflow: TextOverflow.ellipsis,
+    return Column(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              // Glass Transparen 5%
+              color: Colors.white.withOpacity(0.05), 
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+            ),
+            padding: const EdgeInsets.all(8),
+            alignment: Alignment.center,
+            child: Text(
+              item['desc'] ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFE0E0E0), // Silver
+                fontSize: 10,
+                fontWeight: FontWeight.w600, 
+                shadows: [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1))],
               ),
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            item['name'] ?? '',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 10,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 6),
+        _buildBottomCaption(item),
+      ],
     );
   }
 
@@ -335,78 +343,188 @@ class _EventScreenState extends State<EventScreen> {
   // TILE Z: MEDIA (VIDEO/GAMBAR) - KEKAL (JGN USIK)
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileZ(Map<String, dynamic> item) {
-    bool isVideo = item['type'] == 'video';
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(2, 4))],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ColorFiltered(
-              colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.2), BlendMode.darken),
-              child: Image.asset(
-                item['asset'],
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[900]),
-              ),
-            ),
-            
-            Positioned(
-              top: 12, left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isVideo ? Colors.redAccent : Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  item['badge'] ?? (isVideo ? 'VIDEO' : 'IMG'),
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
+    final String heroTag = 'hero_z_${item['name']}_${Random().nextInt(1000)}';
 
-            if (isVideo && item['duration'] != null)
-            Positioned(
-              top: 12, right: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
-                child: Text(item['duration'], style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-            ),
-
-            if (isVideo)
-              Center(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => FeedDetailScreen(item: item, heroTag: heroTag)));
+      },
+      child: Hero(
+        tag: heroTag,
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            children: [
+              Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
-                  child: const Icon(Icons.play_arrow_rounded, color: Colors.black87, size: 32),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 5)],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // GAMBAR / VIDEO THUMBNAIL
+                        Image.asset(
+                          item['asset'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[900]),
+                        ),
+                        
+                        // GRADIENT BAWAH
+                        Positioned(
+                          bottom: 0, left: 0, right: 0,
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // CAPTION PUTIH HALUS
+                        Positioned(
+                          bottom: 6, left: 6, right: 6,
+                          child: Text(
+                            item['title'],
+                            style: const TextStyle(
+                              color: Colors.white, 
+                              fontSize: 9, 
+                              fontWeight: FontWeight.w300,
+                            ),
+                            maxLines: 1, 
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // VIDEO ICON
+                        if (item['type'] == 'video')
+                          Center(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                shape: BoxShape.circle
+                              ),
+                              child: const Icon(Icons.play_circle_fill, color: Colors.white, size: 30),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            
-            Positioned(
-              bottom: 16, left: 16, right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['title'],
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4, color: Colors.black)]),
-                  ),
-                  Text(
-                    item['name'],
-                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, shadows: const [Shadow(blurRadius: 2, color: Colors.black)]),
-                  ),
-                ],
+              const SizedBox(height: 6),
+              // Caption User Luar
+              _buildBottomCaption(item),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // HELPER CAPTION LUAR
+  // ══════════════════════════════════════════════════════════════
+  Widget _buildBottomCaption(Map<String, dynamic> item) {
+    const textShadows = [Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(0, 1))];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 20, height: 20,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.8), width: 1),
+            ),
+            child: CircleAvatar(
+              radius: 10, backgroundColor: Colors.white.withOpacity(0.2),
+              // Z guna asset, X & Y guna icon
+              backgroundImage: (item['style'] == 'Z' && item['asset'] != '') ? AssetImage(item['asset']) : null,
+              child: (item['style'] != 'Z') ? const Icon(Icons.person, size: 12, color: Colors.white) : null,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['name'],
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, shadows: textShadows),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+                if(item['style'] != 'Z') 
+                Text(
+                  item['badge'] ?? '',
+                  style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 7, fontWeight: FontWeight.w400, shadows: textShadows),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// DETAIL SCREEN (UNTUK Z - MEDIA)
+// ══════════════════════════════════════════════════════════════
+class FeedDetailScreen extends StatefulWidget {
+  final Map<String, dynamic> item;
+  final String heroTag;
+
+  const FeedDetailScreen({Key? key, required this.item, required this.heroTag}) : super(key: key);
+
+  @override
+  State<FeedDetailScreen> createState() => _FeedDetailScreenState();
+}
+
+class _FeedDetailScreenState extends State<FeedDetailScreen> {
+  bool isPlaying = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Center(
+            child: Hero(
+              tag: widget.heroTag,
+              child: AspectRatio(
+                aspectRatio: 9/16,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(widget.item['asset'], fit: BoxFit.cover),
+                    if (widget.item['type'] == 'video')
+                      GestureDetector(
+                        onTap: () => setState(() => isPlaying = !isPlaying),
+                        child: Center(
+                          child: Icon(
+                            isPlaying ? Icons.pause : Icons.play_arrow, 
+                            color: Colors.white, size: 60
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          Positioned(top: 40, left: 16, child: GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.close, color: Colors.white))),
+        ],
       ),
     );
   }
