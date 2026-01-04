@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
 
-// ✅ INTEGRASI: Fail emas
+// ✅ INTEGRASI: Fail emas (Pastikan fail metallic_gold.dart wujud di path ini)
 import '../widgets/metallic_gold.dart';
 
 class EventScreen extends StatefulWidget {
@@ -186,9 +186,9 @@ class _EventScreenState extends State<EventScreen> {
                       if (item['style'] == 'Z') {
                         return _buildTileZ(item); // Media
                       } else if (item['style'] == 'X') {
-                        return _buildTileX(item); // Emas/Kelabu
+                        return _buildTileX(item); // Emas (Glass)
                       } else {
-                        return _buildTileY(item); // Silver/Glass
+                        return _buildTileY(item, index); // Silver (Warna-warni)
                       }
                     },
                   ),
@@ -238,7 +238,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE X: EMAS | SHADOW SILVER | KELABU 20%
+  // TILE X: EMAS | TEXTURE GOLD | LATAR GLASS TRANSPAREN 10%
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileX(Map<String, dynamic> item) {
     return Column(
@@ -246,25 +246,27 @@ class _EventScreenState extends State<EventScreen> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.2), // Latar Kelabu 20%
+              color: Colors.white.withOpacity(0.1), // Transparen Glass 10%
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            child: Text(
-              item['desc'] ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFFFFD700), // Emas
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                fontStyle: FontStyle.italic,
-                // Shadow Silver
-                shadows: [Shadow(color: Color(0xFFC0C0C0), blurRadius: 4, offset: Offset(1, 1))],
+            // Bungkus Text dalam MetallicGold untuk efek emas premium
+            child: MetallicGold(
+              child: Text(
+                item['desc'] ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white, // Base color (dibalut shader emas)
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700, // Tebal supaya efek emas jelas
+                  fontStyle: FontStyle.italic,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(1, 1))],
+                ),
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
@@ -275,32 +277,46 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE Y: SILVER | SHADOW GELAP | GLASS 5%
+  // TILE Y: SILVER | LATAR BERSELANG SELI (PINK/HIJAU/BIRU)
   // ══════════════════════════════════════════════════════════════
-  Widget _buildTileY(Map<String, dynamic> item) {
+  Widget _buildTileY(Map<String, dynamic> item, int index) {
+    // Logik Warna Latar Belakang (Cycle 3 Warna)
+    Color bgColor;
+    int colorIndex = index % 3;
+    
+    if (colorIndex == 0) {
+      bgColor = const Color(0xFFFFC0CB).withOpacity(0.3); // Pink Muda
+    } else if (colorIndex == 1) {
+      bgColor = const Color(0xFF90EE90).withOpacity(0.3); // Hijau Muda
+    } else {
+      bgColor = const Color(0xFFADD8E6).withOpacity(0.3); // Biru Muda
+    }
+
     return Column(
       children: [
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05), // Glass 5%
+              color: bgColor, // Latar Warna-warni lembut
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            child: Text(
-              item['desc'] ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFFE0E0E0), // Silver
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                // Shadow Gelap
-                shadows: [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1))],
+            // Teks Silver pun guna efek MetallicGold ikut arahan (Standard Premium)
+            child: MetallicGold(
+              child: Text(
+                item['desc'] ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white, 
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(1, 1))],
+                ),
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
@@ -311,7 +327,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE Z: MEDIA (VIDEO/GAMBAR) | CAPTION PUTIH HALUS DLM
+  // TILE Z: MEDIA (VIDEO/GAMBAR) | LOGO PLAY UNTUK VIDEO
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileZ(Map<String, dynamic> item) {
     // Zoom Animation Hook
@@ -375,10 +391,16 @@ class _EventScreenState extends State<EventScreen> {
                           ),
                         ),
 
-                        // VIDEO ICON
+                        // VIDEO ICON (Pastikan nampak jelas)
                         if (item['type'] == 'video')
                           Center(
-                            child: Icon(Icons.play_circle_outline, color: Colors.white.withOpacity(0.8), size: 24),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                shape: BoxShape.circle
+                              ),
+                              child: const Icon(Icons.play_circle_fill, color: Colors.white, size: 30),
+                            ),
                           ),
                       ],
                     ),
