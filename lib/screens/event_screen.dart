@@ -16,8 +16,8 @@ class _EventScreenState extends State<EventScreen> {
 
   // 🎨 PALET WARNA "FUNKY" (KHAS UNTUK TILE X SAHAJA)
   final List<Color> funkyColors = [
-    Colors.blue[600]!,       // 1. Biru (Macam Screenshot)
-    Colors.pink[500]!,       // 2. Pink (Macam Screenshot)
+    Colors.blue[600]!,       // 1. Biru
+    Colors.pink[500]!,       // 2. Pink
     Colors.purple[600]!,     // 3. Ungu
     Colors.orange[800]!,     // 4. Jingga
     Colors.teal[600]!,       // 5. Teal
@@ -277,7 +277,8 @@ class _EventScreenState extends State<EventScreen> {
                 Text(
                   item['desc'] ?? '',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  // 🛑 PERUBAHAN PENTING: BUANG 'const' KERANA 'withOpacity'
+                  style: TextStyle(
                     color: Colors.white, 
                     fontSize: 12, // Besar sikit utk nampak jenis font
                     fontWeight: FontWeight.w600, 
@@ -309,10 +310,6 @@ class _EventScreenState extends State<EventScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        // Saya sembunyikan caption luar untuk Tile X supaya tak redundant dengan nama dalam kad
-        // Tapi untuk maintain layout grid, saya letak SizedBox atau Container kosong kalau perlu
-        // Atau kekalkan caption luar jika Kapten mahu dua kali nama.
-        // Di sini saya kekalkan _buildBottomCaption untuk konsistensi baris grid.
         _buildBottomCaption(item),
       ],
     );
