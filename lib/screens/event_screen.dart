@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
 
-// ✅ INTEGRASI: Fail emas (Kekal digunakan untuk Tile X - Emas)
+// ✅ INTEGRASI: Fail emas (Wajib ada untuk Tile X)
 import '../widgets/metallic_gold.dart';
 
 class EventScreen extends StatefulWidget {
@@ -186,9 +186,11 @@ class _EventScreenState extends State<EventScreen> {
                       if (item['style'] == 'Z') {
                         return _buildTileZ(item); // Media
                       } else if (item['style'] == 'X') {
-                        return _buildTileX(item); // Emas (Glass 10%)
+                        // ✅ TILE X: EMAS (Background Warna-Warni 55%)
+                        return _buildTileX(item, index); 
                       } else {
-                        return _buildTileY(item, index); // Silver (Berwarna Opacity 40%)
+                        // ✅ TILE Y: SILVER (Background Glass Transparen)
+                        return _buildTileY(item); 
                       }
                     },
                   ),
@@ -238,31 +240,47 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE X: EMAS | TEXTURE GOLD | LATAR GLASS TRANSPAREN 10%
+  // ✅ TILE X (EMAS)
+  // LATAR: Pink/Hijau/Biru (55% Opacity)
+  // TULISAN: Emas + Shadow Gelap
   // ══════════════════════════════════════════════════════════════
-  Widget _buildTileX(Map<String, dynamic> item) {
+  Widget _buildTileX(Map<String, dynamic> item, int index) {
+    // Logik Warna Latar Belakang (Cycle 3 Warna)
+    Color bgColor;
+    int colorIndex = index % 3;
+    
+    // OPACITY 55% SEPERTI ARAHAN
+    if (colorIndex == 0) {
+      bgColor = const Color(0xFFFFC0CB).withOpacity(0.55); // Pink
+    } else if (colorIndex == 1) {
+      bgColor = const Color(0xFF90EE90).withOpacity(0.55); // Hijau Muda
+    } else {
+      bgColor = const Color(0xFFADD8E6).withOpacity(0.55); // Biru Muda
+    }
+
     return Column(
       children: [
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1), // Transparen Glass 10%
+              color: bgColor, 
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            // Bungkus Text dalam MetallicGold untuk efek emas premium
+            // TULISAN EMAS (METALLIC)
             child: MetallicGold(
               child: Text(
                 item['desc'] ?? '',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white, // Base color (dibalut shader emas)
+                  color: Colors.white, // Base utk shader
                   fontSize: 10,
-                  fontWeight: FontWeight.w700, // Tebal supaya efek emas jelas
+                  fontWeight: FontWeight.w700, 
                   fontStyle: FontStyle.italic,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(1, 1))],
+                  // SHADOW GELAP
+                  shadows: [Shadow(color: Colors.black87, blurRadius: 2, offset: Offset(1, 1))],
                 ),
                 maxLines: 5,
                 overflow: TextOverflow.ellipsis,
@@ -277,41 +295,33 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE Y: WARNA-WARNI 40% | TULISAN PUTIH BIASA
+  // ✅ TILE Y (SILVER)
+  // LATAR: Transparent Glass (Lutsinar)
+  // TULISAN: Silver
   // ══════════════════════════════════════════════════════════════
-  Widget _buildTileY(Map<String, dynamic> item, int index) {
-    // Logik Warna Latar Belakang (Cycle 3 Warna)
-    Color bgColor;
-    int colorIndex = index % 3;
-    
-    if (colorIndex == 0) {
-      bgColor = const Color(0xFFFFC0CB).withOpacity(0.4); // Pink (Opacity 40%)
-    } else if (colorIndex == 1) {
-      bgColor = const Color(0xFF90EE90).withOpacity(0.4); // Hijau Muda (Opacity 40%)
-    } else {
-      bgColor = const Color(0xFFADD8E6).withOpacity(0.4); // Biru Muda (Opacity 40%)
-    }
-
+  Widget _buildTileY(Map<String, dynamic> item) {
     return Column(
       children: [
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: bgColor, 
+              // LATAR TRANSPARENT GLASS (KEMBALI KE ASAL)
+              color: Colors.white.withOpacity(0.05), 
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            // TULISAN PUTIH BIASA (TIADA METALLIC GOLD)
+            // TULISAN SILVER
             child: Text(
               item['desc'] ?? '',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.white, // Putih Bersih
+                color: Color(0xFFE0E0E0), // Warna Silver
                 fontSize: 10,
                 fontWeight: FontWeight.w600, 
-                shadows: [Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1))],
+                // Shadow Hitam utk kontras
+                shadows: [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1))],
               ),
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
