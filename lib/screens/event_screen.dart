@@ -186,10 +186,10 @@ class _EventScreenState extends State<EventScreen> {
                       if (item['style'] == 'Z') {
                         return _buildTileZ(item); // Media
                       } else if (item['style'] == 'X') {
-                        // ✅ TILE X: EMAS (Background Warna-Warni 55%)
+                        // ✅ TILE X: EMAS (Pekat 75%)
                         return _buildTileX(item, index); 
                       } else {
-                        // ✅ TILE Y: SILVER (Background Glass Transparen)
+                        // ✅ TILE Y: SILVER (Glass)
                         return _buildTileY(item); 
                       }
                     },
@@ -241,21 +241,21 @@ class _EventScreenState extends State<EventScreen> {
 
   // ══════════════════════════════════════════════════════════════
   // ✅ TILE X (EMAS)
-  // LATAR: Pink/Hijau/Biru (55% Opacity)
-  // TULISAN: Emas + Shadow Gelap
+  // LATAR: Pink/Hijau/Biru (75% Opacity)
+  // TULISAN: Stack Hitam (Belakang) + Emas (Depan) -> SHADOW GELAP BETUL
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileX(Map<String, dynamic> item, int index) {
     // Logik Warna Latar Belakang (Cycle 3 Warna)
     Color bgColor;
     int colorIndex = index % 3;
     
-    // OPACITY 55% SEPERTI ARAHAN
+    // OPACITY 75% (0.75) - MENGIKUT ARAHAN TERKINI
     if (colorIndex == 0) {
-      bgColor = const Color(0xFFFFC0CB).withOpacity(0.55); // Pink
+      bgColor = const Color(0xFFFFC0CB).withOpacity(0.75); // Pink Pekat
     } else if (colorIndex == 1) {
-      bgColor = const Color(0xFF90EE90).withOpacity(0.55); // Hijau Muda
+      bgColor = const Color(0xFF90EE90).withOpacity(0.75); // Hijau Pekat
     } else {
-      bgColor = const Color(0xFFADD8E6).withOpacity(0.55); // Biru Muda
+      bgColor = const Color(0xFFADD8E6).withOpacity(0.75); // Biru Pekat
     }
 
     return Column(
@@ -269,22 +269,44 @@ class _EventScreenState extends State<EventScreen> {
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            // TULISAN EMAS (METALLIC)
-            child: MetallicGold(
-              child: Text(
-                item['desc'] ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white, // Base utk shader
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700, 
-                  fontStyle: FontStyle.italic,
-                  // SHADOW GELAP
-                  shadows: [Shadow(color: Colors.black87, blurRadius: 2, offset: Offset(1, 1))],
+            
+            // GUNA STACK: LAYER HITAM DI BELAKANG, LAYER EMAS DI DEPAN
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 1. BAYANG HITAM (Shadow Gelap Sebenar)
+                Transform.translate(
+                  offset: const Offset(1, 1), // Anjak sikit ke bawah kanan
+                  child: Text(
+                    item['desc'] ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.black, // HITAM MUTLAK
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 5,
-                overflow: TextOverflow.ellipsis,
-              ),
+
+                // 2. TULISAN EMAS (MetallicGold)
+                MetallicGold(
+                  child: Text(
+                    item['desc'] ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white, // Base utk shader
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700, 
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -296,7 +318,7 @@ class _EventScreenState extends State<EventScreen> {
 
   // ══════════════════════════════════════════════════════════════
   // ✅ TILE Y (SILVER)
-  // LATAR: Transparent Glass (Lutsinar)
+  // LATAR: Transparent Glass (Kekal Asal)
   // TULISAN: Silver
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileY(Map<String, dynamic> item) {
@@ -335,7 +357,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE Z: MEDIA (VIDEO/GAMBAR) | LOGO PLAY UNTUK VIDEO
+  // TILE Z: MEDIA (VIDEO/GAMBAR)
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileZ(Map<String, dynamic> item) {
     // Zoom Animation Hook
@@ -399,7 +421,7 @@ class _EventScreenState extends State<EventScreen> {
                           ),
                         ),
 
-                        // VIDEO ICON (Pastikan nampak jelas)
+                        // VIDEO ICON
                         if (item['type'] == 'video')
                           Center(
                             child: Container(
@@ -416,7 +438,7 @@ class _EventScreenState extends State<EventScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              // Caption User Luar (Kekal Standard)
+              // Caption User Luar
               _buildBottomCaption(item),
             ],
           ),
@@ -458,7 +480,7 @@ class _EventScreenState extends State<EventScreen> {
                   style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, shadows: textShadows),
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
-                if(item['style'] != 'Z') // Z dah ada title dalam, so luar tak perlu redundant sangat
+                if(item['style'] != 'Z') 
                 Text(
                   item['badge'] ?? '',
                   style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 7, fontWeight: FontWeight.w400, shadows: textShadows),
