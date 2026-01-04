@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
 
-// ✅ INTEGRASI: Fail emas (Pastikan fail metallic_gold.dart wujud di path ini)
+// ✅ INTEGRASI: Fail emas (Kekal digunakan untuk Tile X)
 import '../widgets/metallic_gold.dart';
 
 class EventScreen extends StatefulWidget {
@@ -186,9 +186,9 @@ class _EventScreenState extends State<EventScreen> {
                       if (item['style'] == 'Z') {
                         return _buildTileZ(item); // Media
                       } else if (item['style'] == 'X') {
-                        return _buildTileX(item); // Emas (Glass)
+                        return _buildTileX(item); // Emas (Glass 10%)
                       } else {
-                        return _buildTileY(item, index); // Silver (Warna-warni)
+                        return _buildTileY(item); // Silver (Glass 40%, Putih Biasa)
                       }
                     },
                   ),
@@ -277,46 +277,33 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // TILE Y: SILVER | LATAR BERSELANG SELI (PINK/HIJAU/BIRU)
+  // TILE Y: TULISAN PUTIH | LATAR PUTIH 40% OPACITY
   // ══════════════════════════════════════════════════════════════
-  Widget _buildTileY(Map<String, dynamic> item, int index) {
-    // Logik Warna Latar Belakang (Cycle 3 Warna)
-    Color bgColor;
-    int colorIndex = index % 3;
-    
-    if (colorIndex == 0) {
-      bgColor = const Color(0xFFFFC0CB).withOpacity(0.3); // Pink Muda
-    } else if (colorIndex == 1) {
-      bgColor = const Color(0xFF90EE90).withOpacity(0.3); // Hijau Muda
-    } else {
-      bgColor = const Color(0xFFADD8E6).withOpacity(0.3); // Biru Muda
-    }
-
+  Widget _buildTileY(Map<String, dynamic> item) {
     return Column(
       children: [
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: bgColor, // Latar Warna-warni lembut
+              // GANTI WARNA-WARNI DENGAN PUTIH 40% OPACITY
+              color: Colors.white.withOpacity(0.4), 
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            // Teks Silver pun guna efek MetallicGold ikut arahan (Standard Premium)
-            child: MetallicGold(
-              child: Text(
-                item['desc'] ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white, 
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(1, 1))],
-                ),
-                maxLines: 5,
-                overflow: TextOverflow.ellipsis,
+            // TULISAN PUTIH BIASA (TIADA METALLIC GOLD)
+            child: Text(
+              item['desc'] ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white, // Putih Bersih
+                fontSize: 10,
+                fontWeight: FontWeight.w600, // Agak tebal supaya baca di atas glass
+                shadows: [Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1))],
               ),
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
