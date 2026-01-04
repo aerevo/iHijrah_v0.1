@@ -16,13 +16,13 @@ class _EventScreenState extends State<EventScreen> {
 
   // 🎨 PALET WARNA "FUNKY" (KHAS UNTUK TILE X SAHAJA)
   final List<Color> funkyColors = [
-    Colors.deepPurple[600]!, // 1. Deep Purple
-    Colors.orange[800]!,     // 2. Vibrant Orange
-    Colors.teal[600]!,       // 3. Electric Teal
-    Colors.redAccent[700]!,  // 4. Hot Red
-    Colors.indigo[600]!,     // 5. Indigo
-    Colors.pink[600]!,       // 6. Pink
-    Colors.blue[700]!,       // 7. Royal Blue
+    Colors.blue[600]!,       // 1. Biru (Macam Screenshot)
+    Colors.pink[500]!,       // 2. Pink (Macam Screenshot)
+    Colors.purple[600]!,     // 3. Ungu
+    Colors.orange[800]!,     // 4. Jingga
+    Colors.teal[600]!,       // 5. Teal
+    Colors.redAccent[700]!,  // 6. Merah
+    Colors.indigo[600]!,     // 7. Indigo
   ];
 
   @override
@@ -37,28 +37,25 @@ class _EventScreenState extends State<EventScreen> {
   List<Map<String, dynamic>> _generateXYZGrid() {
     // SUMBER QUOTE (X & Y)
     final List<Map<String, dynamic>> sourceQuotes = [
-      {'name': 'GHAZALI', 'desc': 'Ilmu tanpa amal itu gila.', 'badge': 'ILMU'},
-      {'name': 'RUMI', 'desc': 'Luka adalah tempat cahaya masuk.', 'badge': 'SUFI'},
-      {'name': 'HIKMAH', 'desc': 'Sabar itu separuh iman.', 'badge': 'ADAB'},
-      {'name': 'BUYA', 'desc': 'Takutlah mati sebelum hidup.', 'badge': 'JIWA'},
-      {'name': 'IBNU SINA', 'desc': 'Tenang adalah ubat.', 'badge': 'MEDIK'},
-      {'name': 'SYAFIE', 'desc': 'Masa ibarat pedang.', 'badge': 'MASA'},
-      {'name': 'HAMKA', 'desc': 'Kecantikan ada pada adab.', 'badge': 'ADAB'},
-      {'name': 'TARIM', 'desc': 'Adab dulu baru ilmu.', 'badge': 'YAMAN'},
-      {'name': 'NABI', 'desc': 'Berkata baik atau diam.', 'badge': 'HADIS'},
-      {'name': 'ALI', 'desc': 'Lidahmu adalah singamu.', 'badge': 'AKHLAK'},
+      {'name': 'IMAM GHAZALI', 'desc': 'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia.', 'badge': 'ILMU'},
+      {'name': 'JALALUDDIN RUMI', 'desc': 'Luka adalah tempat di mana cahaya memasukimu.', 'badge': 'SUFI'},
+      {'name': 'IBNU QAYYIM', 'desc': 'Dunia ini ibarat bayang-bayang, kejar dia lari, paling dia ikut.', 'badge': 'JIWA'},
+      {'name': 'BUYA HAMKA', 'desc': 'Jangan takut jatuh, kerana yang tidak pernah memanjatlah yang tidak pernah jatuh.', 'badge': 'MOTIVASI'},
+      {'name': 'IBNU SINA', 'desc': 'Kepanikan adalah separuh penyakit, ketenangan adalah separuh ubat.', 'badge': 'MEDIK'},
+      {'name': 'IMAM SYAFIE', 'desc': 'Masa ibarat pedang, jika kau tidak memotongnya, ia memotongmu.', 'badge': 'MASA'},
+      {'name': 'SAYIDINA ALI', 'desc': 'Lidahmu adalah singamu, jika kau menjaganya ia menjagamu.', 'badge': 'AKHLAK'},
+      {'name': 'TARIM', 'desc': 'Adab itu lebih tinggi daripada ilmu.', 'badge': 'ADAB'},
+      {'name': 'HIKMAH', 'desc': 'Sebaik-baik manusia adalah yang paling bermanfaat bagi orang lain.', 'badge': 'BAKTI'},
+      {'name': 'AL-HIKAM', 'desc': 'Rehatkan dirimu dari mengatur urusan dunia, sebab apa yang sudah diurus orang lain tak perlu kau urus.', 'badge': 'TASAWUF'},
     ];
 
     // SUMBER MEDIA (Z) - RANDOM
     final List<Map<String, dynamic>> sourceMedia = [
-      {'type': 'video', 'name': 'TADABBUR', 'title': 'Zikir', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'VIDEO', 'duration': '0:45'},
+      {'type': 'video', 'name': 'ALAM SEMESTA', 'title': 'Pokok Berzikir', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'VIDEO', 'duration': '0:45'},
+      {'type': 'image', 'name': 'USTAZ AZHAR', 'title': 'Sunat Ab\'ad', 'asset': 'assets/images/pokok_level3.png', 'badge': 'FIQH'},
+      {'type': 'video', 'name': 'JEJAK RASUL', 'title': 'Gua Hira', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'DOCU', 'duration': '2:30'},
+      {'type': 'image', 'name': 'DR. MAZA', 'title': 'Hukum Semasa', 'asset': 'assets/images/pokok_level4.png', 'badge': 'FATWA'},
       {'type': 'image', 'name': 'ALAM FANA', 'title': 'Puncak', 'asset': 'assets/images/pokok_level5.png', 'badge': 'LVL 5'},
-      {'type': 'image', 'name': 'USTAZ DON', 'title': 'Ranting', 'asset': 'assets/images/pokok_level3.png', 'badge': 'LVL 3'},
-      {'type': 'video', 'name': 'HIJRAH', 'title': 'Agung', 'asset': 'assets/videos/tree_v1.mp4', 'badge': 'DOCU', 'duration': '2:30'},
-      {'type': 'image', 'name': 'HAMKA', 'title': 'Mula', 'asset': 'assets/images/pokok_level2.png', 'badge': 'LVL 2'},
-      {'type': 'image', 'name': 'DR. MAZA', 'title': 'Syariah', 'asset': 'assets/images/pokok_level4.png', 'badge': 'LVL 4'},
-      {'type': 'image', 'name': 'UK STORY', 'title': 'London', 'asset': 'assets/images/dummy_post1.jpg', 'badge': 'STORY'},
-      {'type': 'image', 'name': 'SITI', 'title': 'Fiqh', 'asset': 'assets/images/dummy_post2.jpg', 'badge': 'FIQH'},
     ];
 
     // Kocok Media supaya Z sentiasa random
@@ -197,7 +194,7 @@ class _EventScreenState extends State<EventScreen> {
                         return _buildTileZ(item); // Media (Kekal)
                       } 
                       else if (item['style'] == 'X') {
-                        // ✅ TILE X: WARNA FUNKY (70% Opacity)
+                        // ✅ TILE X: FUNKY (70% Opacity) + FONT SERIF (Klasik)
                         final Color myColor = funkyColors[index % funkyColors.length];
                         return _buildTileX(item, myColor); 
                       }
@@ -253,7 +250,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // ✅ TILE X: FUNKY COLORS (70% OPACITY) | TEKS ITALIK | BAYANG
+  // ✅ TILE X: FUNKY (70% OPACITY) | FONT "SERIF" (KLASIK MACAM BUKU)
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileX(Map<String, dynamic> item, Color bgColor) {
     return Column(
@@ -261,36 +258,50 @@ class _EventScreenState extends State<EventScreen> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              // ✅ UBAH DI SINI: OPACITY 70% (0.7)
-              color: bgColor.withOpacity(0.7), 
+              color: bgColor.withOpacity(0.7), // Opacity 70%
               borderRadius: BorderRadius.circular(12),
-              // Shadow lembut pada kad
               boxShadow: [
                 BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: Offset(2, 2))
               ], 
             ),
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(8), // Padding sikit
             alignment: Alignment.center,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icon Petik
-                const Icon(Icons.format_quote, color: Colors.white54, size: 16),
+                // Icon Petik (Quote)
+                const Icon(Icons.format_quote, color: Colors.white70, size: 18),
                 const SizedBox(height: 2),
                 
-                // Teks Utama (Italik + Bayang)
+                // Teks Utama (Font Serif Italik)
                 Text(
                   item['desc'] ?? '',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Colors.white, // Putih
-                    fontSize: 10, 
-                    fontWeight: FontWeight.w700, 
-                    fontStyle: FontStyle.italic, // ✅ ITALIK
+                    color: Colors.white, 
+                    fontSize: 12, // Besar sikit utk nampak jenis font
+                    fontWeight: FontWeight.w600, 
+                    // ✅ RAHSIA FONT KLASIK (MACAM SCREENSHOT)
+                    fontFamily: 'Serif', // Memaksa guna font "berkaki"
+                    fontFamilyFallback: ['Georgia', 'Times New Roman'], 
+                    fontStyle: FontStyle.italic, // ✅ Miringkan
                     // Bayang Gelap
-                    shadows: [Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(1, 1))],
+                    shadows: [Shadow(color: Colors.black.withOpacity(0.6), blurRadius: 3, offset: Offset(1, 1))],
                   ),
                   maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                 // Nama Pengarang (Kecil)
+                Text(
+                  "- ${item['name']} -",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    shadows: [Shadow(color: Colors.black.withOpacity(0.3), blurRadius: 2, offset: const Offset(1, 1))],
+                  ),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -298,6 +309,10 @@ class _EventScreenState extends State<EventScreen> {
           ),
         ),
         const SizedBox(height: 6),
+        // Saya sembunyikan caption luar untuk Tile X supaya tak redundant dengan nama dalam kad
+        // Tapi untuk maintain layout grid, saya letak SizedBox atau Container kosong kalau perlu
+        // Atau kekalkan caption luar jika Kapten mahu dua kali nama.
+        // Di sini saya kekalkan _buildBottomCaption untuk konsistensi baris grid.
         _buildBottomCaption(item),
       ],
     );
