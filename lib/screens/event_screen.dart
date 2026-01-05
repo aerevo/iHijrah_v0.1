@@ -194,12 +194,12 @@ class _EventScreenState extends State<EventScreen> {
                         return _buildTileZ(item); // Media (Kekal)
                       } 
                       else if (item['style'] == 'X') {
-                        // ✅ TILE X: FUNKY (70% Opacity) + FONT SERIF (Klasik)
+                        // ✅ TILE X: FUNKY (70%) + FONT SERIF (Kekal)
                         final Color myColor = funkyColors[index % funkyColors.length];
                         return _buildTileX(item, myColor); 
                       }
                       else {
-                        // ✅ TILE Y: GLASS TRANSPAREN (Kekal)
+                        // ✅ TILE Y: TEMA ICE KUTUB + SILVER KILAU
                         return _buildTileY(item);
                       }
                     },
@@ -250,7 +250,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // ✅ TILE X: FUNKY (70% OPACITY) | FONT "SERIF" (KLASIK MACAM BUKU)
+  // ✅ TILE X: FUNKY (70%) | FONT "SERIF" (KLASIK) | JANGAN UBAH
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileX(Map<String, dynamic> item, Color bgColor) {
     return Column(
@@ -264,36 +264,30 @@ class _EventScreenState extends State<EventScreen> {
                 BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: Offset(2, 2))
               ], 
             ),
-            padding: const EdgeInsets.all(8), // Padding sikit
+            padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icon Petik (Quote)
                 const Icon(Icons.format_quote, color: Colors.white70, size: 18),
                 const SizedBox(height: 2),
                 
-                // Teks Utama (Font Serif Italik)
                 Text(
                   item['desc'] ?? '',
                   textAlign: TextAlign.center,
-                  // 🛑 PERUBAHAN PENTING: BUANG 'const' KERANA 'withOpacity'
                   style: TextStyle(
                     color: Colors.white, 
-                    fontSize: 12, // Besar sikit utk nampak jenis font
+                    fontSize: 12, 
                     fontWeight: FontWeight.w600, 
-                    // ✅ RAHSIA FONT KLASIK (MACAM SCREENSHOT)
-                    fontFamily: 'Serif', // Memaksa guna font "berkaki"
+                    fontFamily: 'Serif', 
                     fontFamilyFallback: ['Georgia', 'Times New Roman'], 
-                    fontStyle: FontStyle.italic, // ✅ Miringkan
-                    // Bayang Gelap
+                    fontStyle: FontStyle.italic, 
                     shadows: [Shadow(color: Colors.black.withOpacity(0.6), blurRadius: 3, offset: Offset(1, 1))],
                   ),
                   maxLines: 5,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                 // Nama Pengarang (Kecil)
                 Text(
                   "- ${item['name']} -",
                   style: TextStyle(
@@ -316,7 +310,7 @@ class _EventScreenState extends State<EventScreen> {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // ✅ TILE Y: GLASS TRANSPAREN (ASAL) + TULISAN SILVER
+  // ✅ TILE Y: ICE KUTUB THEME + SILVER KILAU (SHADER)
   // ══════════════════════════════════════════════════════════════
   Widget _buildTileY(Map<String, dynamic> item) {
     return Column(
@@ -324,24 +318,55 @@ class _EventScreenState extends State<EventScreen> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              // Glass Transparen 5%
-              color: Colors.white.withOpacity(0.05), 
+              // BACKGROUND: Gradient Ais Frosty (Kelabu Sejuk)
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.4),      // Putih Salji (Frost)
+                  Colors.blueGrey.withOpacity(0.2),   // Kelabu Ais (Deep Ice)
+                ],
+              ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+              // Border Putih nipis untuk efek "Beku"
+              border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+              // Glow sejuk
+              boxShadow: [
+                BoxShadow(color: Colors.blue.withOpacity(0.05), blurRadius: 8, spreadRadius: 0)
+              ], 
             ),
             padding: const EdgeInsets.all(8),
             alignment: Alignment.center,
-            child: Text(
-              item['desc'] ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFFE0E0E0), // Silver
-                fontSize: 10,
-                fontWeight: FontWeight.w600, 
-                shadows: [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1))],
+            
+            // TULISAN: SILVER KILAU (Guna ShaderMask)
+            child: ShaderMask(
+              shaderCallback: (bounds) {
+                return const LinearGradient(
+                  colors: [
+                    Color(0xFFC0C0C0), // Silver Standard
+                    Color(0xFFFFFFFF), // Highlight Putih Kilat
+                    Color(0xFF9E9E9E), // Shadow Abu Gelap (Depth)
+                    Color(0xFFE0E0E0), // Silver Cair
+                  ],
+                  stops: [0.0, 0.45, 0.55, 1.0], // Kilauan di tengah
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds);
+              },
+              blendMode: BlendMode.srcIn,
+              child: Text(
+                item['desc'] ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white, // Base (akan diganti oleh Shader)
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900, // Wajib tebal untuk nampak efek kilau
+                  // Shadow Gelap Lembut untuk kontras atas ais
+                  shadows: [Shadow(color: Colors.black38, blurRadius: 2, offset: Offset(1, 1))],
+                ),
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
@@ -378,14 +403,12 @@ class _EventScreenState extends State<EventScreen> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // GAMBAR / VIDEO THUMBNAIL
                         Image.asset(
                           item['asset'],
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[900]),
                         ),
                         
-                        // GRADIENT BAWAH
                         Positioned(
                           bottom: 0, left: 0, right: 0,
                           child: Container(
@@ -400,7 +423,6 @@ class _EventScreenState extends State<EventScreen> {
                           ),
                         ),
 
-                        // CAPTION PUTIH HALUS
                         Positioned(
                           bottom: 6, left: 6, right: 6,
                           child: Text(
@@ -415,7 +437,6 @@ class _EventScreenState extends State<EventScreen> {
                           ),
                         ),
 
-                        // VIDEO ICON
                         if (item['type'] == 'video')
                           Center(
                             child: Container(
@@ -432,7 +453,6 @@ class _EventScreenState extends State<EventScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              // Caption User Luar
               _buildBottomCaption(item),
             ],
           ),
