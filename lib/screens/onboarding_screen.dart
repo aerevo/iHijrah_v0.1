@@ -151,7 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _authBtn(String label, IconData icon, Color color) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.bottom(15),
+      margin: const EdgeInsets.only(bottom: 15),
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white10,
