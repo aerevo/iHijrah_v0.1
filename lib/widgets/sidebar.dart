@@ -1,4 +1,4 @@
-// lib/widgets/sidebar.dart (VERSI ORIGINAL - APPROVED)
+// lib/widgets/sidebar.dart (FIXED UI & LOGIC)
 
 import 'dart:io';
 import 'dart:ui';
@@ -132,18 +132,13 @@ class Sidebar extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        // PROFILE HEADER
+                        // PROFILE HEADER (FIXED LOGIC)
                         Padding(
                           padding: const EdgeInsets.only(top: 20, bottom: 5),
                           child: Consumer<UserModel>(
                             builder: (context, user, _) {
-                              String rawAgeString = "";
-                              if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
-                                rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
-                              }
+                              // Panggil getter hijriAge yang dah difix dalam UserModel
                               String displayAge = user.hijriAge;
-                                  ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)} Thn"
-                                  : "--";
 
                               String fullName = user.name.isNotEmpty ? user.name : "User";
                               List<String> nameParts = fullName.trim().split(' ');
@@ -161,8 +156,8 @@ class Sidebar extends StatelessWidget {
                                       border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.5),
                                     ),
                                     child: ClipOval(
-                                      child: user.avatarPath != null
-                                        ? Image.file(File(user.avatarPath!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset(AppAssets.profileDefault, fit: BoxFit.cover))
+                                      child: user.avatarPath.isNotEmpty
+                                        ? Image.file(File(user.avatarPath), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset(AppAssets.profileDefault, fit: BoxFit.cover))
                                         : Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
                                     ),
                                   ),
@@ -243,7 +238,7 @@ class Sidebar extends StatelessWidget {
                                           color: kPrimaryGold.withOpacity(0.9), 
                                           fontSize: 7, 
                                           fontWeight: FontWeight.w900,
-                                          shadows: [Shadow(color: Colors.black, blurRadius: 2)]
+                                          shadows: const [Shadow(color: Colors.black, blurRadius: 2)]
                                         )
                                       )
                                     ),
@@ -258,13 +253,8 @@ class Sidebar extends StatelessWidget {
                         
                         // === SENARAI MENU ===
                         _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
-                        
-                        // 1. MENU SIRAH (Buku)
                         _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
-                        
-                        // 2. MENU AMALAN (Misi/Hati) - BARU!
                         _buildMenuItem(context, icon: Icons.volunteer_activism, title: 'Amalan', id: 'amalan'),
-
                         _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
                         _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
                         _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
