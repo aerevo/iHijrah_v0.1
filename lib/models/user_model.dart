@@ -8,6 +8,21 @@ import '../utils/settings_enums.dart';
 import '../utils/hijri_service.dart';
 
 class UserModel extends ChangeNotifier {
+  // --- DATA ASAL ---
+  String name = 'Pengguna iHijrah';
+  DateTime? birthdate;
+
+  // --- TAMBAH CIRI KORPORAT BARU DI SINI ---
+  String email = ''; 
+  String gender = 'Lelaki'; // Default
+  String avatarPath = 'assets/images/avatar_m1.png'; // Path gambar avatar
+  String authMethod = 'Guest'; // Google, Email, atau Guest
+  
+  // Pastikan dalam fungsi save() dan load() pun tambah benda ni 
+  // supaya bila tutup app, data tak hilang.
+}
+
+class UserModel extends ChangeNotifier {
   // ===== 1. BASIC INFO =====
   String name = 'Pengguna iHijrah';
   DateTime? birthdate;
