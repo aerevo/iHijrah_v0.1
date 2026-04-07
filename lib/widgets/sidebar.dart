@@ -141,7 +141,7 @@ class Sidebar extends StatelessWidget {
                               if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
                                 rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
                               }
-                              String ageDisplay = rawAgeString.contains(RegExp(r'\d')) 
+                              String ageDisplay = user.hijriAge;
                                   ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)} Thn"
                                   : "--";
 
