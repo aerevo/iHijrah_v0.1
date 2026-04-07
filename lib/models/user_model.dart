@@ -1,26 +1,29 @@
+// lib/models/user_model.dart (FULL FIXED & MERGED)
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../utils/hijri_service.dart';
 
 class UserModel extends ChangeNotifier {
-  // Data Profil
+  // ===== 1. DATA PROFIL & KORPORAT =====
   String name = 'Hamba Allah';
   String email = '';
   String gender = 'Lelaki';
   String avatarPath = ''; 
   DateTime? birthdate;
-  String? hijriDOB; // ✅ Tambah balik variable ni (Sebab splash_screen panggil)
+  String? hijriDOB; // Diperlukan oleh splash_screen logic
 
-  // Data Progress
+  // ===== 2. DATA PROGRESS (XP & LEVEL) =====
   int treeLevel = 1;
   int totalPoints = 0;
 
-  // Data Tracking
+  // ===== 3. DATA TRACKING =====
   bool _zikirDoneToday = false;
   Map<String, bool> dailyFardhuLog = {};
-  
-  // Settings Alarms
+  Map<String, bool> dailyAmalanLog = {};
+
+  // ===== 4. TETAPAN (ALARM & AZAN) =====
   int adhanModeIndex = 1;
   bool isFajrAlarmEnabled = true;
   bool isDhuhrAlarmEnabled = true;
@@ -30,21 +33,42 @@ class UserModel extends ChangeNotifier {
 
   // ===== GETTERS =====
   bool get zikirDoneToday => _zikirDoneToday;
-  int get nextLevelPoints => treeLevel * 100; // ✅ Tambah balik
+  int get nextLevelPoints => treeLevel * 100;
 
   String get hijriAge {
     if (birthdate == null) return "0 Tahun";
-    return HijriService.calculateHijriAge(birthdate!); 
+    // Fix: Tukar DateTime ke String ISO sebelum hantar ke HijriService
+    return HijriService.calculateHijriAge(birthdate!.toIso8601String()); 
   }
 
-  // ===== METHODS =====
+  // ===== METHODS (LOGIK AMALAN) =====
   void recordZikir() {
     _zikirDoneToday = true;
     totalPoints += 10;
+    _checkLevelUp();
     save();
     notifyListeners();
   }
 
+  void _checkLevelUp() {
+    int calculatedLevel = (totalPoints / 100).floor() + 1;
+    if (calculatedLevel > 5) calculatedLevel = 5;
+    if (calculatedLevel > treeLevel) {
+      treeLevel = calculatedLevel;
+    }
+  }
+
+  bool isFardhuDoneToday(String prayerName) => dailyFardhuLog[prayerName] ?? false;
+
+  void recordFardhu(String prayerName) {
+    dailyFardhuLog[prayerName] = true;
+    totalPoints += 20;
+    _checkLevelUp();
+    save();
+    notifyListeners();
+  }
+
+  // ===== METHODS (TETAPAN) =====
   void setAdhanMode(int modeIndex) {
     adhanModeIndex = modeIndex;
     save();
@@ -63,15 +87,14 @@ class UserModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isFardhuDoneToday(String prayerName) => dailyFardhuLog[prayerName] ?? false;
-
-  // ===== STORAGE =====
+  // ===== STORAGE (LOCAL SAVE/LOAD) =====
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
     final data = {
       'name': name,
       'email': email,
       'gender': gender,
+      'avatarPath': avatarPath,
       'birthdate': birthdate?.toIso8601String(),
       'hijriDOB': hijriDOB,
       'totalPoints': totalPoints,
@@ -96,6 +119,7 @@ class UserModel extends ChangeNotifier {
       model.name = data['name'] ?? 'Hamba Allah';
       model.email = data['email'] ?? '';
       model.gender = data['gender'] ?? 'Lelaki';
+      model.avatarPath = data['avatarPath'] ?? '';
       model.hijriDOB = data['hijriDOB'];
       if (data['birthdate'] != null) model.birthdate = DateTime.parse(data['birthdate']);
       model.totalPoints = data['totalPoints'] ?? 0;
