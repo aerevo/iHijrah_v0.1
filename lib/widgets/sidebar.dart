@@ -141,7 +141,7 @@ class Sidebar extends StatelessWidget {
                               if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
                                 rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
                               }
-                              String ageDisplay = user.hijriAge;
+                              String displayAge = user.hijriAge;
                                   ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)} Thn"
                                   : "--";
 
@@ -207,8 +207,8 @@ class Sidebar extends StatelessWidget {
                                     ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    ageDisplay,
-                                    style: TextStyle(color: kPrimaryGold, fontSize: 9, fontWeight: FontWeight.bold),
+                                    displayAge,
+                                    style: const TextStyle(color: kPrimaryGold, fontSize: 10, fontWeight: FontWeight.w500),
                                   ),
                                   Text("Hijriah", style: TextStyle(color: kTextSecondary.withOpacity(0.7), fontSize: 7, fontStyle: FontStyle.italic)),
                                 ],
