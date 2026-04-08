@@ -1,4 +1,4 @@
-// lib/widgets/feed_panel.dart (RODA CAROUSEL EDITION)
+// lib/widgets/feed_panel.dart (FULL OVERWRITE: WHEEL ENGINE)
 
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -14,34 +14,27 @@ class FeedPanel extends StatefulWidget {
 }
 
 class _FeedPanelState extends State<FeedPanel> {
-  // Data Dummy untuk testing (Format FB Style)
+  // Data Testing (Abaikan dummy, kita fokus UI dulu)
   final List<Map<String, dynamic>> posts = const [
     {
-      'id': '101', 
-      'type': 'video', 
-      'title': 'Kisah Hijrah Rasulullah',
-      'content': 'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda Rasulullah SAW daripada kaum Musyrikin.', 
-      'author': 'Ustaz Don',
-      'authorAge': '40 thn', 'likes': 1240, 'time': '2j',
-      'assetPath': 'assets/images/dummy_post1.jpg',
+      'id': '101', 'type': 'video', 'title': 'Kisah Hijrah Rasulullah',
+      'content': 'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.', 
+      'author': 'Ustaz Don', 'authorAge': '40 thn', 'likes': 1240, 'time': '2j',
     },
     {
-      'id': '102', 
-      'type': 'quote', 
-      'title': 'Mutiara Kata Imam Syafi\'i',
-      'content': 'Jangan bersedih, sesungguhnya Allah bersama kita. Setiap kesulitan pasti ada kemudahan yang menyertainya.', 
-      'author': 'Zyamina Studio',
-      'authorAge': 'Admin', 'likes': 850, 'time': '5j',
-      'assetPath': '', 
+      'id': '102', 'type': 'quote', 'title': 'Mutiara Kata',
+      'content': 'Jangan bersedih, sesungguhnya Allah bersama kita.', 
+      'author': 'Zyamina Studio', 'authorAge': 'Admin', 'likes': 850, 'time': '5j',
     },
     {
-      'id': '103', 
-      'type': 'article', 
-      'title': 'Kelebihan Selawat Harian',
-      'content': 'Barangsiapa yang berselawat ke atasku sekali, Allah akan berselawat ke atasnya sepuluh kali. Mari suburkan pokok kita.', 
-      'author': 'Habib Ali',
-      'authorAge': '52 thn', 'likes': 2100, 'time': '1h',
-      'assetPath': 'assets/images/dummy_post2.jpg',
+      'id': '103', 'type': 'article', 'title': 'Kelebihan Selawat',
+      'content': 'Barangsiapa berselawat ke atasku sekali, Allah balas sepuluh kali.', 
+      'author': 'Habib Ali', 'authorAge': '52 thn', 'likes': 2100, 'time': '1h',
+    },
+    {
+      'id': '104', 'type': 'event', 'title': 'Majlis Ilmu Perdana',
+      'content': 'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah.', 
+      'author': 'Admin iHijrah', 'authorAge': '', 'likes': 500, 'time': '10j',
     },
   ];
 
@@ -54,110 +47,49 @@ class _FeedPanelState extends State<FeedPanel> {
         const Padding(
           padding: EdgeInsets.only(left: 20, top: 20, bottom: 10),
           child: Text(
-            "FEED KOMUNITI",
+            "JENDELA ILMU", 
             style: TextStyle(
-              color: kPrimaryGold,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-              fontSize: 12,
-            ),
+              color: kPrimaryGold, 
+              fontWeight: FontWeight.bold, 
+              letterSpacing: 2, 
+              fontSize: 11
+            )
           ),
         ),
 
-        // EFEK RODA (ListWheelScrollView / Carousel)
+        // === ENJIN RODA (WHEEL SCROLL) ===
         Expanded(
           child: ListWheelScrollView.useDelegate(
-            itemExtent: 280, // Tinggi setiap kad
-            perspective: 0.003, // Efek melengkung roda
-            diameterRatio: 1.8, // Saiz roda
-            physics: const FixedExtentScrollPhysics(), // Berhenti tepat pada kad (Snap)
+            itemExtent: 280, // Tinggi satu kad. Adjust ikut keselesaan mata.
+            perspective: 0.003, // Tahap kelengkungan roda (Sangat penting untuk vibe iOS)
+            diameterRatio: 1.8, // Saiz bulatan roda
+            physics: const FixedExtentScrollPhysics(), // Buat dia "Snap" (melekat) pada kad
             childDelegate: ListWheelChildBuilderDelegate(
               childCount: posts.length,
               builder: (context, index) {
                 final post = posts[index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: _buildGlassCard(context, post),
+                  child: FeedCard(
+                    id: post['id'],
+                    title: post['title'],
+                    subtitle: post['content'],
+                    author: post['author'],
+                    authorAge: post['authorAge'],
+                    time: post['time'],
+                    type: post['type'],
+                    likes: post['likes'],
+                    onTap: () => Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (c) => PostDetailPage(post: post))
+                    ),
+                  ),
                 );
               },
             ),
           ),
         ),
       ],
-    );
-  }
-
-  // BINA KAD JERNIH (GLASS) - FB STYLE
-  Widget _buildGlassCard(BuildContext context, Map<String, dynamic> post) {
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailPage(post: post))),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Kad (Author)
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: kPrimaryGold.withOpacity(0.2),
-                      child: const Icon(Icons.person, color: kPrimaryGold, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(post['author'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text("${post['time']} lepas • ${post['authorAge']}", style: const TextStyle(color: Colors.white38, fontSize: 10)),
-                      ],
-                    ),
-                    const Spacer(),
-                    const Icon(Icons.more_horiz, color: Colors.white38),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                
-                // Tajuk & Isi
-                Text(
-                  post['title'],
-                  style: const TextStyle(color: kPrimaryGold, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Text(
-                    post['content'],
-                    style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-
-                // Footer (Likes)
-                const Divider(color: Colors.white10),
-                Row(
-                  children: [
-                    const Icon(Icons.favorite, color: Colors.redAccent, size: 16),
-                    const SizedBox(width: 5),
-                    Text("${post['likes']}", style: const TextStyle(color: Colors.white60, fontSize: 12)),
-                    const Spacer(),
-                    const Text("Sentuh untuk baca lanjut", style: TextStyle(color: kPrimaryGold, fontSize: 10, fontStyle: FontStyle.italic)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
