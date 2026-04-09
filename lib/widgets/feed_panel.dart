@@ -1,5 +1,9 @@
 // lib/widgets/feed_panel.dart
-// Vertical Wheel Carousel — EKSTREM 3D CURVATURE
+// ═══════════════════════════════════════════════════════════════
+// PREMIUM UPGRADES APPLIED:
+//   [U1] AnimatedScale snap micro-interaction
+//   [U4] isCenter flag → FeedCard colored shadow glow
+// ═══════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -16,9 +20,6 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel> {
   int _currentIndex = 0;
 
-// ═══════════════════════════════════════════════════════════
-  // DATA DUMMY DIPERBANYAKKAN UNTUK TEST RODA PUSING
-  // ═══════════════════════════════════════════════════════════
   final List<PostModel> _posts = const [
     PostModel(
       id: '101', type: 'video', title: 'Kisah Hijrah Rasulullah',
@@ -29,7 +30,7 @@ class _FeedPanelState extends State<FeedPanel> {
     PostModel(
       id: '102', type: 'quote', title: 'Kata Hikmah',
       content: 'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',
-      author: "Imam Syafi'i", authorAge: '', likes: 850, time: '5j', // <--- TYPO DIBETULKAN DI SINI
+      author: "Imam Syafi'i", authorAge: '', likes: 850, time: '5j',
     ),
     PostModel(
       id: '103', type: 'article', title: 'Kelebihan Selawat',
@@ -65,52 +66,56 @@ class _FeedPanelState extends State<FeedPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildHeader(),
-        
-        // ─── ENJIN RODA 3D EKSTREM ──────────────────────────────────
+
         Expanded(
           child: ListWheelScrollView.useDelegate(
-            // TINGGI KAD: 300px. Sesuai untuk nampak 1 atas (bengkok), 1-2 tengah (rata), 1 bawah (bengkok)
-            itemExtent: 300, 
-            
-            // PERSPECTIVE: 0.009 (Hampir nilai maksimum 0.01). Sangat melengkung ke belakang!
-            perspective: 0.009, 
-            
-            // DIAMETER RODA: 1.2 (Roda kecil). Kad akan lebih cepat 'jatuh' dari pandangan.
-            diameterRatio: 1.2, 
-            
-            squeeze: 1.05, // Jarak kepadatan antara kad
-            physics: const FixedExtentScrollPhysics(), // Wajib ada supaya dia 'snap' berhenti
+            itemExtent: 300,
+            perspective: 0.009,
+            diameterRatio: 1.2,
+            squeeze: 1.05,
+            physics: const FixedExtentScrollPhysics(),
             onSelectedItemChanged: (index) {
               setState(() => _currentIndex = index);
             },
             childDelegate: ListWheelChildBuilderDelegate(
               childCount: _posts.length,
               builder: (context, index) {
-                // Opacity Effect: Kad yang tengah aktif paling terang.
-                // Kad yang melengkung atas/bawah akan jadi makin gelap.
                 final double distance = (_currentIndex - index).abs().toDouble();
                 final double opacity = (1.0 - (distance * 0.3)).clamp(0.2, 1.0);
+                final bool isCenter = distance == 0;
 
-                return Opacity(
-                  opacity: opacity,
-                  child: FeedCard(
-                    post: _posts[index],
-                    onTap: () {
-                      // Boleh buat pop-up atau navigation nanti
-                    },
+                // ╔══════════════════════════════════════════════╗
+                // ║  [U1] SNAP SCALE MICRO-INTERACTION           ║
+                // ║  center=1.0, satu atas/bawah=0.94, lebih=0.88║
+                // ║  easeOutCubic bagi rasa elastic, bukan linear║
+                // ╚══════════════════════════════════════════════╝
+                final double scale = isCenter
+                    ? 1.0
+                    : (1.0 - (distance * 0.06)).clamp(0.88, 1.0);
+
+                return AnimatedScale(
+                  scale: scale,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOutCubic,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: FeedCard(
+                      post: _posts[index],
+                      isCenter: isCenter, // [U4] untuk glow dalam FeedCard
+                      onTap: () {},
+                    ),
                   ),
                 );
               },
             ),
           ),
         ),
-        
+
         _buildDotIndicator(),
       ],
     );
   }
 
-  // ─── HEADER ────────────────────────────────────────────────
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
@@ -146,7 +151,6 @@ class _FeedPanelState extends State<FeedPanel> {
     );
   }
 
-  // ─── DOT INDICATOR ─────────────────────────────────────────
   Widget _buildDotIndicator() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
