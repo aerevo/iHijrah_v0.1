@@ -16,7 +16,7 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel> {
   int _currentIndex = 0;
 
-  // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
   // DATA DUMMY DIPERBANYAKKAN UNTUK TEST RODA PUSING
   // ═══════════════════════════════════════════════════════════
   final List<PostModel> _posts = const [
@@ -29,7 +29,7 @@ class _FeedPanelState extends State<FeedPanel> {
     PostModel(
       id: '102', type: 'quote', title: 'Kata Hikmah',
       content: 'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',
-      author: 'Imam Syafi\\'i', authorAge: '', likes: 850, time: '5j',
+      author: "Imam Syafi'i", authorAge: '', likes: 850, time: '5j', // <--- TYPO DIBETULKAN DI SINI
     ),
     PostModel(
       id: '103', type: 'article', title: 'Kelebihan Selawat',
