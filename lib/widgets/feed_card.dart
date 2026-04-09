@@ -1,7 +1,7 @@
 // lib/widgets/feed_card.dart
 // ═══════════════════════════════════════════════════════════════
 // KOD LENGKAP: TEKS KIRI | GAMBAR TENGAH | BUTANG MENEGAK KANAN
-// Semua kosmetik UI premium Claude dikekalkan 100%
+// EFEK BARU: CYLINDRICAL GRADIENT (Bagi kad nampak melengkung macam mesin slot)
 // ═══════════════════════════════════════════════════════════════
 
 import 'dart:ui';
@@ -56,10 +56,9 @@ class _FeedCardState extends State<FeedCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // Margin rapat sikit
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          // Shadow premium Claude dikekalkan
           boxShadow: [
             BoxShadow(
               color: typeColor.withOpacity(widget.isCenter ? 0.15 : 0.05),
@@ -67,9 +66,9 @@ class _FeedCardState extends State<FeedCard> {
               offset: Offset(0, widget.isCenter ? 8 : 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -80,23 +79,35 @@ class _FeedCardState extends State<FeedCard> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                // ────────────────────────────────────────────────────────────────
+                // MAGIS CYLINDER: Gradient Gelap Atas -> Terang Tengah -> Gelap Bawah
+                // Ini menipu mata supaya nampak macam kad ni melengkung (bukan flat)
+                // ────────────────────────────────────────────────────────────────
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.35),         // Atas melengkung ke dalam (gelap)
+                    Colors.white.withOpacity(0.08),         // Tengah cembung ke depan (terang)
+                    Colors.black.withOpacity(0.35),         // Bawah melengkung ke dalam (gelap)
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
                 border: Border(
-                  top: BorderSide(color: Colors.white.withOpacity(0.15), width: 1), // Top highlight strip
+                  top: BorderSide(color: Colors.white.withOpacity(0.15), width: 1), 
                   bottom: BorderSide(color: Colors.white.withOpacity(0.02), width: 1),
                 ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ─── 1. KIRI: TEKS & PROFIL (Paling Besar) ───
+                  // ─── 1. KIRI: TEKS & PROFIL ───
                   Expanded(
                     flex: 5,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Frasa Islamik Badge
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                           decoration: BoxDecoration(
@@ -110,8 +121,6 @@ class _FeedCardState extends State<FeedCard> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        
-                        // Tajuk
                         Text(
                           widget.post.title,
                           style: const TextStyle(color: kPrimaryGold, fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Playfair', letterSpacing: -0.3),
@@ -119,8 +128,6 @@ class _FeedCardState extends State<FeedCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        
-                        // Isi
                         Expanded(
                           child: Text(
                             widget.post.content,
@@ -129,8 +136,6 @@ class _FeedCardState extends State<FeedCard> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        
-                        // Footer Author
                         const SizedBox(height: 4),
                         Row(
                           children: [
@@ -184,9 +189,9 @@ class _FeedCardState extends State<FeedCard> {
                     ),
                   ],
 
-                  // ─── 3. KANAN: BUTANG MENEGAK (TRANSPAREN) ───
+                  // ─── 3. KANAN: BUTANG MENEGAK ───
                   const SizedBox(width: 10),
-                  Container(width: 1, color: Colors.white.withOpacity(0.08)), // Vertical Divider
+                  Container(width: 1, color: Colors.white.withOpacity(0.08)), 
                   const SizedBox(width: 6),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -238,7 +243,6 @@ class _FeedCardState extends State<FeedCard> {
   }
 }
 
-// ── ACTION BUTTON MENEGAK ─────────────────────────────────────────────
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final String label;
