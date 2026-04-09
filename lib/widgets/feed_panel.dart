@@ -1,4 +1,4 @@
-to// lib/widgets/feed_panel.dart
+// lib/widgets/feed_panel.dart
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM UPGRADES APPLIED:
 //   [U1] AnimatedScale snap micro-interaction
