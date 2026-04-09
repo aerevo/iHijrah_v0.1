@@ -1,6 +1,6 @@
 // lib/widgets/feed_panel.dart
 // ═══════════════════════════════════════════════════════════════
-// KOD LENGKAP: RODA 4 KAD (2 RATA TENGAH, 1 BENGKOK ATAS, 1 BENGKOK BAWAH)
+// KOD LENGKAP: RODA MESIN SLOT (Ketatkan roda, tinggikan perspektif)
 // ═══════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
@@ -75,13 +75,14 @@ class _FeedPanelState extends State<FeedPanel> {
           ),
         ),
 
-        // ── RODA SCROLL (DISELARASKAN UNTUK 4 KAD) ──────────────────
+        // ── RODA SCROLL (Fizik Mesin Slot) ──────────
         Expanded(
           child: ListWheelScrollView.useDelegate(
             controller: _controller,
-            itemExtent: 155,       // Ketinggian dikurangkan supaya tepat muat 4 kad 
-            perspective: 0.007,    // Bengkok ekstrem
-            diameterRatio: 2.0,    // Ratio roda diselaraskan supaya 2 kad tengah nampak rata
+            itemExtent: 150,       // Ketinggian kad dirapatkan sikit supaya getah nampak bersambung
+            perspective: 0.0085,   // PERSPEKTIF EKSTREM: Ini buat dia bengkok macam roda pusing
+            diameterRatio: 1.3,    // DIAMETER KETAT: Roda lebih kecil ibarat gear/silinder mesin slot
+            squeeze: 1.1,          // Bagi kad sedikit overlap supaya tutup jurang (hilangkan rupa rantai besi)
             physics: const FixedExtentScrollPhysics(),
             onSelectedItemChanged: (index) {
               setState(() => _currentIndex = index);
@@ -89,9 +90,9 @@ class _FeedPanelState extends State<FeedPanel> {
             childDelegate: ListWheelChildBuilderDelegate(
               childCount: _posts.length,
               builder: (context, index) {
-                // Opacity Logic: 2 Kad Tengah Terang, Tepi Malap
+                // Opacity Logic
                 final int distance = (_currentIndex - index).abs();
-                final double opacity = distance == 0 || distance == 1 ? 1.0 : 0.4;
+                final double opacity = distance == 0 ? 1.0 : (distance == 1 ? 0.8 : 0.3);
                 final bool isCenter = index == _currentIndex;
 
                 return Opacity(
