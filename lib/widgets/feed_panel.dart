@@ -1,4 +1,4 @@
-// lib/widgets/feed_panel.dart
+to// lib/widgets/feed_panel.dart
 // ═══════════════════════════════════════════════════════════════
 // PREMIUM UPGRADES APPLIED:
 //   [U1] AnimatedScale snap micro-interaction
@@ -69,10 +69,10 @@ class _FeedPanelState extends State<FeedPanel> {
 
         Expanded(
           child: ListWheelScrollView.useDelegate(
-            itemExtent: 300,
+            itemExtent: 280,
             perspective: 0.009,
-            diameterRatio: 1.2,
-            squeeze: 1.05,
+            diameterRatio: 3.5,
+            squeeze: 0.88,
             physics: const FixedExtentScrollPhysics(),
             onSelectedItemChanged: (index) {
               setState(() => _currentIndex = index);
