@@ -82,8 +82,8 @@ class _FeedCardState extends State<FeedCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 320),
         curve: Curves.easeOutCubic,
-        // [FIX 1] margin vertical 1px sahaja — hampir tiada jarak
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+        // margin vertical = 0, horizontal sahaja
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -180,7 +180,7 @@ class _FeedCardState extends State<FeedCard> {
                             ],
                           ),
 
-                          // TAJUK
+                          // TAJUK — center tunjuk 2 baris, lain 1 baris
                           Text(
                             widget.post.title,
                             style: const TextStyle(
@@ -191,20 +191,20 @@ class _FeedCardState extends State<FeedCard> {
                               letterSpacing: -0.2,
                               height: 1.2,
                             ),
-                            maxLines: 1,
+                            maxLines: widget.isCenter ? 2 : 1,
                             overflow: TextOverflow.ellipsis,
                           ),
 
-                          // KANDUNGAN
+                          // KANDUNGAN — dinamik: center card tunjuk lebih baris
                           Text(
                             widget.post.content,
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.70),
-                              fontSize: 8.5,
+                              fontSize: widget.isCenter ? 9.0 : 8.5,
                               height: 1.3,
                               fontWeight: FontWeight.w300,
                             ),
-                            maxLines: 2,
+                            maxLines: widget.isCenter ? 3 : 1,
                             overflow: TextOverflow.ellipsis,
                           ),
 
