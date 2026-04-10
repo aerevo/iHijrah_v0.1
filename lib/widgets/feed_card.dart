@@ -1,8 +1,4 @@
 // lib/widgets/feed_card.dart
-// ═══════════════════════════════════════════════════════════════
-// KOD LENGKAP: TEKS KIRI | GAMBAR TENGAH | BUTANG MENEGAK KANAN
-// EFEK BARU: CYLINDRICAL GRADIENT (Bagi kad nampak melengkung macam mesin slot)
-// ═══════════════════════════════════════════════════════════════
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -16,19 +12,28 @@ class IslamicPhrase {
   final String symbol;
   final Color color;
   final Color bg;
-  const IslamicPhrase({required this.arabic, required this.latin, required this.symbol, required this.color, required this.bg});
+  const IslamicPhrase({
+    required this.arabic,
+    required this.latin,
+    required this.symbol,
+    required this.color,
+    required this.bg,
+  });
 }
 
 const List<IslamicPhrase> kIslamicPhrases = [
-  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽', color: Color(0xFFC9A84C), bg: Color(0x22C9A84C)),
-  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '☘', color: Color(0xFF43A047), bg: Color(0x2243A047)),
-  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '✦', color: Color(0xFF1E88E5), bg: Color(0x221E88E5)),
-  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '◈', color: Color(0xFF8E24AA), bg: Color(0x228E24AA)),
+  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽', color: Color(0xFFC9A84C), bg: Color(0x28C9A84C)),
+  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '☘', color: Color(0xFF43A047), bg: Color(0x2843A047)),
+  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '✦', color: Color(0xFF1E88E5), bg: Color(0x281E88E5)),
+  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '◈', color: Color(0xFF8E24AA), bg: Color(0x288E24AA)),
+  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: '☪', color: Color(0xFFE53935), bg: Color(0x28E53935)),
+  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: '❋', color: Color(0xFF00897B), bg: Color(0x2800897B)),
 ];
 
+// ── FEED CARD ─────────────────────────────────────────────────
 class FeedCard extends StatefulWidget {
   final PostModel post;
-  final bool isCenter; 
+  final bool isCenter;
   final VoidCallback? onTap;
 
   const FeedCard({
@@ -45,175 +50,266 @@ class FeedCard extends StatefulWidget {
 class _FeedCardState extends State<FeedCard> {
   bool _liked = false;
 
+  Color get _typeColor {
+    switch (widget.post.type) {
+      case 'video':  return const Color(0xFFE53935);
+      case 'quote':  return const Color(0xFF8E24AA);
+      case 'event':  return const Color(0xFF43A047);
+      default:       return kPrimaryGold;
+    }
+  }
+
+  IconData get _typeIcon {
+    switch (widget.post.type) {
+      case 'video':  return Icons.play_arrow;
+      case 'quote':  return Icons.format_quote;
+      case 'event':  return Icons.calendar_month;
+      default:       return Icons.article;
+    }
+  }
+
+  IslamicPhrase get _phrase =>
+      kIslamicPhrases[widget.post.id.hashCode % kIslamicPhrases.length];
+
   @override
   Widget build(BuildContext context) {
-    final bool hasImage = widget.post.assetPath != null && widget.post.assetPath!.isNotEmpty;
-    final Color typeColor = _typeColor();
-    final phrase = kIslamicPhrases[widget.post.id.hashCode % kIslamicPhrases.length];
+    final bool hasImage = widget.post.assetPath != null &&
+        widget.post.assetPath!.isNotEmpty;
+    final phrase = _phrase;
 
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // Margin rapat sikit
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: typeColor.withOpacity(widget.isCenter ? 0.15 : 0.05),
-              blurRadius: widget.isCenter ? 24 : 10,
-              offset: Offset(0, widget.isCenter ? 8 : 4),
+              color: _typeColor.withOpacity(widget.isCenter ? 0.12 : 0.04),
+              blurRadius: widget.isCenter ? 20 : 8,
+              offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              color: Colors.black.withOpacity(0.28),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
               decoration: BoxDecoration(
-                // ────────────────────────────────────────────────────────────────
-                // MAGIS CYLINDER: Gradient Gelap Atas -> Terang Tengah -> Gelap Bawah
-                // Ini menipu mata supaya nampak macam kad ni melengkung (bukan flat)
-                // ────────────────────────────────────────────────────────────────
+                // [FIX 3] Jernihkan kad — kurangkan opacity gelap
+                // Dulu: black 0.35 atas/bawah → sekarang 0.08 sahaja
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.35),         // Atas melengkung ke dalam (gelap)
-                    Colors.white.withOpacity(0.08),         // Tengah cembung ke depan (terang)
-                    Colors.black.withOpacity(0.35),         // Bawah melengkung ke dalam (gelap)
+                    Colors.white.withOpacity(0.13),  // atas — cahaya masuk
+                    Colors.white.withOpacity(0.07),  // tengah
+                    Colors.white.withOpacity(0.04),  // bawah
                   ],
                   stops: const [0.0, 0.5, 1.0],
                 ),
+                // Top highlight — simulate glass rim light
                 border: Border(
-                  top: BorderSide(color: Colors.white.withOpacity(0.15), width: 1), 
-                  bottom: BorderSide(color: Colors.white.withOpacity(0.02), width: 1),
+                  top: BorderSide(color: Colors.white.withOpacity(0.22), width: 1),
+                  bottom: BorderSide(color: Colors.white.withOpacity(0.04), width: 1),
                 ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ─── 1. KIRI: TEKS & PROFIL ───
+                  // ─── KIRI: KONTEN ────────────────────────
                   Expanded(
                     flex: 5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: phrase.bg,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: phrase.color.withOpacity(0.3), width: 0.5),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+
+                          // [FIX 5] ISLAMIC PHRASE BADGE — pulihkan logo bulat + arabic
+                          Row(
+                            children: [
+                              // Simbol bulat berwarna
+                              Container(
+                                width: 22, height: 22,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: phrase.bg,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    phrase.symbol,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: phrase.color,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    phrase.arabic,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: phrase.color,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    phrase.latin,
+                                    style: TextStyle(
+                                      fontSize: 7,
+                                      color: phrase.color.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          child: Text(
-                            "${phrase.symbol} ${phrase.latin}", 
-                            style: TextStyle(color: phrase.color, fontSize: 8, fontWeight: FontWeight.bold)
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.post.title,
-                          style: const TextStyle(color: kPrimaryGold, fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Playfair', letterSpacing: -0.3),
-                          maxLines: 2, 
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: Text(
-                            widget.post.content,
-                            style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3, fontWeight: FontWeight.w300),
-                            maxLines: hasImage ? 2 : 3, 
+
+                          // TAJUK
+                          Text(
+                            widget.post.title,
+                            style: const TextStyle(
+                              color: kPrimaryGold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Playfair',
+                              letterSpacing: -0.3,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 8,
-                              backgroundColor: typeColor.withOpacity(0.2),
-                              child: Icon(_typeIcon(), color: typeColor, size: 8),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
+
+                          // KANDUNGAN
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
                               child: Text(
-                                "${widget.post.author} • ${widget.post.time}",
-                                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 9, fontWeight: FontWeight.w500),
-                                maxLines: 1, 
+                                widget.post.content,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.72),
+                                  fontSize: 9,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                                maxLines: hasImage ? 2 : 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+
+                          // AUTHOR
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 7,
+                                backgroundColor: _typeColor.withOpacity(0.22),
+                                child: Icon(_typeIcon, color: _typeColor, size: 7),
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  '${widget.post.author} • ${widget.post.time}',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.45),
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  // ─── 2. TENGAH: GAMBAR / VIDEO ───
+                  // ─── TENGAH: GAMBAR ───────────────────────
                   if (hasImage) ...[
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          image: DecorationImage(
-                            image: AssetImage(widget.post.assetPath!),
-                            fit: BoxFit.cover,
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: 70,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                widget.post.assetPath!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: _typeColor.withOpacity(0.15),
+                                  child: Icon(_typeIcon, color: _typeColor.withOpacity(0.4), size: 20),
+                                ),
+                              ),
+                              if (widget.post.type == 'video')
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white54, width: 1),
+                                    ),
+                                    child: const Icon(Icons.play_arrow, color: Colors.white, size: 14),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        child: widget.post.type == 'video'
-                            ? Center(
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.55),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white54, width: 1.5),
-                                  ),
-                                  child: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
-                                ),
-                              )
-                            : null,
                       ),
                     ),
                   ],
 
-                  // ─── 3. KANAN: BUTANG MENEGAK ───
-                  const SizedBox(width: 10),
-                  Container(width: 1, color: Colors.white.withOpacity(0.08)), 
+                  // ─── KANAN: ACTION BUTTONS ────────────────
                   const SizedBox(width: 6),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _ActionBtn(
-                        icon: _liked ? Icons.favorite : Icons.favorite_border,
-                        label: '${widget.post.likes}',
-                        color: _liked ? kWarningRed : Colors.white.withOpacity(0.35),
-                        onTap: () => setState(() => _liked = !_liked),
-                      ),
-                      _ActionBtn(
-                        icon: Icons.chat_bubble_outline, 
-                        label: '${(widget.post.likes / 12).floor()}', 
-                        color: Colors.white.withOpacity(0.35)
-                      ),
-                      _ActionBtn(
-                        icon: Icons.share_outlined, 
-                        label: 'Kongsi', 
-                        color: Colors.white.withOpacity(0.35)
-                      ),
-                    ],
+                  Container(width: 1, color: Colors.white.withOpacity(0.07)),
+                  const SizedBox(width: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _ActionBtn(
+                          icon: _liked ? Icons.favorite : Icons.favorite_border,
+                          label: '${widget.post.likes}',
+                          color: _liked
+                              ? kWarningRed
+                              : Colors.white.withOpacity(0.32),
+                          onTap: () => setState(() => _liked = !_liked),
+                        ),
+                        _ActionBtn(
+                          icon: Icons.chat_bubble_outline,
+                          label: '${(widget.post.likes / 12).floor()}',
+                          color: Colors.white.withOpacity(0.32),
+                        ),
+                        _ActionBtn(
+                          icon: Icons.share_outlined,
+                          label: 'Kongsi',
+                          color: Colors.white.withOpacity(0.32),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -223,33 +319,21 @@ class _FeedCardState extends State<FeedCard> {
       ),
     );
   }
-
-  Color _typeColor() {
-    switch (widget.post.type) {
-      case 'video':   return const Color(0xFFE53935);
-      case 'quote':   return const Color(0xFF8E24AA);
-      case 'event':   return const Color(0xFF43A047);
-      default:        return kPrimaryGold;
-    }
-  }
-
-  IconData _typeIcon() {
-    switch (widget.post.type) {
-      case 'video':   return Icons.play_arrow;
-      case 'quote':   return Icons.format_quote;
-      case 'event':   return Icons.calendar_month;
-      default:        return Icons.article;
-    }
-  }
 }
 
+// ── ACTION BUTTON ─────────────────────────────────────────────
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback? onTap;
 
-  const _ActionBtn({required this.icon, required this.label, required this.color, this.onTap});
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -259,8 +343,8 @@ class _ActionBtn extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(height: 3),
+          Icon(icon, size: 15, color: color),
+          const SizedBox(height: 2),
           Text(label, style: TextStyle(fontSize: 8, color: color, fontWeight: FontWeight.bold)),
         ],
       ),
