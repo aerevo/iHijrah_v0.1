@@ -53,11 +53,12 @@ class _FeedPanelState extends State<FeedPanel> {
     return ListWheelScrollView.useDelegate(
       controller: _controller,
 
-      // [FIX 1 & 4 & 6] Nilai-nilai kunci untuk 6 kad + jarak 1mm
-      itemExtent: 108,      // tinggi setiap kad — lebih kecil = lebih banyak muat
-      diameterRatio: 3.5,   // silinder besar → center flat, tepi melengkung
-      perspective: 0.009,   // kedalaman 3D
-      squeeze: 0.82,        // < 1.0 = pack lebih rapat, jarak antara kad ~1-2px
+      // [FIX 1] itemExtent kecil + squeeze sangat rapat = roda isi penuh skrin
+      itemExtent: 88,
+      diameterRatio: 3.5,
+      perspective: 0.009,
+      // [FIX 2] squeeze 0.68 = kad hampir bertindih, jarak minimum
+      squeeze: 0.68,
 
       physics: const FixedExtentScrollPhysics(),
       onSelectedItemChanged: (index) {
@@ -71,35 +72,26 @@ class _FeedPanelState extends State<FeedPanel> {
           final bool isCenter = distance == 0;
 
           final double scale = isCenter ? 1.0
-              : distance == 1 ? 0.955
-              : 0.88;
+              : distance == 1 ? 0.96
+              : 0.91;
 
-          final double opacity = isCenter ? 1.0
-              : distance == 1 ? 0.68
-              : distance == 2 ? 0.35
-              : 0.18;
-
+          // [FIX 3] Tiada AnimatedOpacity — kad melengkung tetap tajam & terang
           return AnimatedScale(
             scale: scale,
             duration: const Duration(milliseconds: 340),
             curve: Curves.easeOutCubic,
-            child: AnimatedOpacity(
-              opacity: opacity,
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOut,
-              child: FeedCard(
-                post: _posts[index],
-                isCenter: isCenter,
-                onTap: () {
-                  if (!isCenter) {
-                    _controller.animateToItem(
-                      index,
-                      duration: const Duration(milliseconds: 380),
-                      curve: Curves.easeOutCubic,
-                    );
-                  }
-                },
-              ),
+            child: FeedCard(
+              post: _posts[index],
+              isCenter: isCenter,
+              onTap: () {
+                if (!isCenter) {
+                  _controller.animateToItem(
+                    index,
+                    duration: const Duration(milliseconds: 380),
+                    curve: Curves.easeOutCubic,
+                  );
+                }
+              },
             ),
           );
         },
