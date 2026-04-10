@@ -80,68 +80,66 @@ class _FeedCardState extends State<FeedCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
+        duration: const Duration(milliseconds: 320),
         curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+        // [FIX 1] margin vertical 1px sahaja — hampir tiada jarak
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: _typeColor.withOpacity(widget.isCenter ? 0.12 : 0.04),
-              blurRadius: widget.isCenter ? 20 : 8,
-              offset: const Offset(0, 6),
+              color: _typeColor.withOpacity(widget.isCenter ? 0.1 : 0.03),
+              blurRadius: widget.isCenter ? 16 : 6,
+              offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.28),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.22),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
-              padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
+              padding: const EdgeInsets.fromLTRB(10, 0, 5, 0),
               decoration: BoxDecoration(
-                // [FIX 3] Jernihkan kad — kurangkan opacity gelap
-                // Dulu: black 0.35 atas/bawah → sekarang 0.08 sahaja
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(0.13),  // atas — cahaya masuk
-                    Colors.white.withOpacity(0.07),  // tengah
-                    Colors.white.withOpacity(0.04),  // bawah
+                    Colors.white.withOpacity(0.13),
+                    Colors.white.withOpacity(0.07),
+                    Colors.white.withOpacity(0.04),
                   ],
                   stops: const [0.0, 0.5, 1.0],
                 ),
-                // Top highlight — simulate glass rim light
                 border: Border(
-                  top: BorderSide(color: Colors.white.withOpacity(0.22), width: 1),
-                  bottom: BorderSide(color: Colors.white.withOpacity(0.04), width: 1),
+                  top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1),
+                  bottom: BorderSide(color: Colors.white.withOpacity(0.03), width: 1),
                 ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+
                   // ─── KIRI: KONTEN ────────────────────────
                   Expanded(
                     flex: 5,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 7),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
 
-                          // [FIX 5] ISLAMIC PHRASE BADGE — pulihkan logo bulat + arabic
+                          // ISLAMIC PHRASE BADGE
                           Row(
                             children: [
-                              // Simbol bulat berwarna
                               Container(
-                                width: 22, height: 22,
+                                width: 20, height: 20,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: phrase.bg,
@@ -150,7 +148,7 @@ class _FeedCardState extends State<FeedCard> {
                                   child: Text(
                                     phrase.symbol,
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       color: phrase.color,
                                       fontWeight: FontWeight.w900,
                                     ),
@@ -160,11 +158,12 @@ class _FeedCardState extends State<FeedCard> {
                               const SizedBox(width: 5),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     phrase.arabic,
                                     style: TextStyle(
-                                      fontSize: 9,
+                                      fontSize: 8,
                                       color: phrase.color,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -172,7 +171,7 @@ class _FeedCardState extends State<FeedCard> {
                                   Text(
                                     phrase.latin,
                                     style: TextStyle(
-                                      fontSize: 7,
+                                      fontSize: 6.5,
                                       color: phrase.color.withOpacity(0.6),
                                     ),
                                   ),
@@ -186,55 +185,77 @@ class _FeedCardState extends State<FeedCard> {
                             widget.post.title,
                             style: const TextStyle(
                               color: kPrimaryGold,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Playfair',
-                              letterSpacing: -0.3,
+                              letterSpacing: -0.2,
                               height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          // KANDUNGAN
+                          Text(
+                            widget.post.content,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.70),
+                              fontSize: 8.5,
+                              height: 1.3,
+                              fontWeight: FontWeight.w300,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
 
-                          // KANDUNGAN
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Text(
-                                widget.post.content,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.72),
-                                  fontSize: 9,
-                                  height: 1.35,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                                maxLines: hasImage ? 2 : 3,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-
-                          // AUTHOR
+                          // FOOTER ROW: author + [FIX 3] SEE MORE
                           Row(
                             children: [
                               CircleAvatar(
-                                radius: 7,
-                                backgroundColor: _typeColor.withOpacity(0.22),
-                                child: Icon(_typeIcon, color: _typeColor, size: 7),
+                                radius: 6,
+                                backgroundColor: _typeColor.withOpacity(0.2),
+                                child: Icon(_typeIcon, color: _typeColor, size: 6),
                               ),
-                              const SizedBox(width: 5),
+                              const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   '${widget.post.author} • ${widget.post.time}',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.45),
-                                    fontSize: 8,
+                                    color: Colors.white.withOpacity(0.4),
+                                    fontSize: 7.5,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              // [FIX 3] BUTANG SEE MORE — hanya center card
+                              if (widget.isCenter)
+                                GestureDetector(
+                                  onTap: () {
+                                    // TODO: buka PostDetailPage
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: kPrimaryGold.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: kPrimaryGold.withOpacity(0.4),
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Lihat Lebih',
+                                      style: TextStyle(
+                                        color: kPrimaryGold,
+                                        fontSize: 7,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ],
@@ -244,13 +265,13 @@ class _FeedCardState extends State<FeedCard> {
 
                   // ─── TENGAH: GAMBAR ───────────────────────
                   if (hasImage) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 7),
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 5),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         child: SizedBox(
-                          width: 70,
+                          width: 62,
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
@@ -259,19 +280,19 @@ class _FeedCardState extends State<FeedCard> {
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
                                   color: _typeColor.withOpacity(0.15),
-                                  child: Icon(_typeIcon, color: _typeColor.withOpacity(0.4), size: 20),
+                                  child: Icon(_typeIcon, color: _typeColor.withOpacity(0.4), size: 18),
                                 ),
                               ),
                               if (widget.post.type == 'video')
                                 Center(
                                   child: Container(
-                                    padding: const EdgeInsets.all(4),
+                                    padding: const EdgeInsets.all(3),
                                     decoration: BoxDecoration(
                                       color: Colors.black.withOpacity(0.5),
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white54, width: 1),
                                     ),
-                                    child: const Icon(Icons.play_arrow, color: Colors.white, size: 14),
+                                    child: const Icon(Icons.play_arrow, color: Colors.white, size: 12),
                                   ),
                                 ),
                             ],
@@ -282,8 +303,8 @@ class _FeedCardState extends State<FeedCard> {
                   ],
 
                   // ─── KANAN: ACTION BUTTONS ────────────────
-                  const SizedBox(width: 6),
-                  Container(width: 1, color: Colors.white.withOpacity(0.07)),
+                  const SizedBox(width: 5),
+                  Container(width: 0.5, color: Colors.white.withOpacity(0.07)),
                   const SizedBox(width: 4),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
@@ -292,21 +313,19 @@ class _FeedCardState extends State<FeedCard> {
                       children: [
                         _ActionBtn(
                           icon: _liked ? Icons.favorite : Icons.favorite_border,
-                          label: '${widget.post.likes}',
-                          color: _liked
-                              ? kWarningRed
-                              : Colors.white.withOpacity(0.32),
+                          label: _formatCount(widget.post.likes),
+                          color: _liked ? kWarningRed : Colors.white.withOpacity(0.30),
                           onTap: () => setState(() => _liked = !_liked),
                         ),
                         _ActionBtn(
                           icon: Icons.chat_bubble_outline,
-                          label: '${(widget.post.likes / 12).floor()}',
-                          color: Colors.white.withOpacity(0.32),
+                          label: _formatCount((widget.post.likes / 12).floor()),
+                          color: Colors.white.withOpacity(0.30),
                         ),
                         _ActionBtn(
                           icon: Icons.share_outlined,
                           label: 'Kongsi',
-                          color: Colors.white.withOpacity(0.32),
+                          color: Colors.white.withOpacity(0.30),
                         ),
                       ],
                     ),
@@ -318,6 +337,11 @@ class _FeedCardState extends State<FeedCard> {
         ),
       ),
     );
+  }
+
+  String _formatCount(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
   }
 }
 
@@ -343,9 +367,9 @@ class _ActionBtn extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: color),
+          Icon(icon, size: 14, color: color),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 8, color: color, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(fontSize: 7, color: color, fontWeight: FontWeight.bold)),
         ],
       ),
     );
