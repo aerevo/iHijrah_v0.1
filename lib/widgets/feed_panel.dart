@@ -53,31 +53,15 @@ class _FeedPanelState extends State<FeedPanel> {
 
       // ─── KUNCI MENGISI SKRIN PENUH ───────────────────────────────
       //
-      // itemExtent: slot height setiap item pada silinder.
-      // BUKAN tinggi kad sebenar — kad boleh lebih besar dari slot ini.
-      // Kecilkan untuk pack lebih banyak slot dalam viewport.
-      itemExtent: 95,
-
-      // diameterRatio: saiz silinder.
-      // Besar (>3) = center flat, tepi melengkung.
-      // Kecil (<1.5) = semua melengkung teruk.
-      diameterRatio: 2.5,
-
-      // perspective: kedalaman 3D.
-      // 0.001 = hampir flat. 0.009 = maksimum dramatik.
+      // ─── FORMULA BETUL ──────────────────────────────────────────
+      // squeeze > 1.0 = items RAPAT/overlap. squeeze < 1.0 = items JAUH.
+      // Sebelum ni squeeze: 0.60 → items 1.67x lebih jauh = gap besar. SILAP.
+      // squeeze: 2.2 → items 2.2x lebih rapat = ~12 kad isi penuh skrin.
+      itemExtent: 90,
+      diameterRatio: 2.0,
       perspective: 0.007,
-
-      // squeeze: pack factor.
-      // 1.0 = normal. <1.0 = kad overlap/rapat.
-      // 0.6 = sangat rapat, hampir tiada gap.
-      squeeze: 0.60,
-
-      // overAndUnderCenterOpacity: opacity kad atas/bawah.
-      // 1.0 = semua terang. Default Flutter = 1.0.
-      // Pastikan ini 1.0 supaya kad tepi tak gelap automatik.
+      squeeze: 3.8,
       overAndUnderCenterOpacity: 1.0,
-
-      // clipBehavior: Clip.none supaya kad tak dipotong di tepi viewport.
       clipBehavior: Clip.none,
 
       physics: const FixedExtentScrollPhysics(),
