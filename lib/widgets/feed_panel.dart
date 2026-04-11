@@ -57,10 +57,10 @@ class _FeedPanelState extends State<FeedPanel> {
       // squeeze > 1.0 = items RAPAT/overlap. squeeze < 1.0 = items JAUH.
       // Sebelum ni squeeze: 0.60 → items 1.67x lebih jauh = gap besar. SILAP.
       // squeeze: 2.2 → items 2.2x lebih rapat = ~12 kad isi penuh skrin.
-      itemExtent: 90,
+      itemExtent: 75,
       diameterRatio: 2.0,
       perspective: 0.007,
-      squeeze: 3.8,
+      squeeze: 0.55,
       overAndUnderCenterOpacity: 1.0,
       clipBehavior: Clip.none,
 
