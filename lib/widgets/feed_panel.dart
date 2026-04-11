@@ -1,4 +1,6 @@
 // lib/widgets/feed_panel.dart
+// PageView vertical — padEnds: false buang ruang kosong atas/bawah
+// viewportFraction < 1.0 tunjuk kad tepi (efek roda)
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -13,13 +15,23 @@ class FeedPanel extends StatefulWidget {
 }
 
 class _FeedPanelState extends State<FeedPanel> {
-  late final FixedExtentScrollController _controller;
+  late final PageController _controller;
   int _currentIndex = 0;
+
+  // viewportFraction: 0.18 = setiap kad ambil 18% tinggi skrin
+  // → ~5-6 kad nampak serentak, tiada ruang kosong
+  static const double _viewportFraction = 0.18;
 
   @override
   void initState() {
     super.initState();
-    _controller = FixedExtentScrollController();
+    _controller = PageController(viewportFraction: _viewportFraction);
+    _controller.addListener(() {
+      final int newIndex = _controller.page?.round() ?? 0;
+      if (newIndex != _currentIndex) {
+        setState(() => _currentIndex = newIndex);
+      }
+    });
   }
 
   @override
@@ -48,53 +60,48 @@ class _FeedPanelState extends State<FeedPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return ListWheelScrollView.useDelegate(
-      controller: _controller,
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double cardHeight = screenHeight * _viewportFraction;
 
-      // ─── KUNCI MENGISI SKRIN PENUH ───────────────────────────────
-      //
-      // ─── FORMULA BETUL ──────────────────────────────────────────
-      // squeeze > 1.0 = items RAPAT/overlap. squeeze < 1.0 = items JAUH.
-      // Sebelum ni squeeze: 0.60 → items 1.67x lebih jauh = gap besar. SILAP.
-      // squeeze: 2.2 → items 2.2x lebih rapat = ~12 kad isi penuh skrin.
-      itemExtent: 75,
-      diameterRatio: 2.0,
-      perspective: 0.007,
-      squeeze: 0.55,
-      overAndUnderCenterOpacity: 1.0,
-      clipBehavior: Clip.none,
+    return SizedBox.expand(
+      child: PageView.builder(
+        controller: _controller,
+        scrollDirection: Axis.vertical,
+        // ✅ INI yang buang ruang kosong atas & bawah
+        padEnds: false,
+        itemCount: _posts.length,
+        itemBuilder: (context, index) {
+          return AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              // Kira jarak kad dari center
+              double page = _currentIndex.toDouble();
+              if (_controller.hasClients && _controller.page != null) {
+                page = _controller.page!;
+              }
+              final double diff = (page - index).abs();
 
-      physics: const FixedExtentScrollPhysics(),
-      onSelectedItemChanged: (index) {
-        setState(() => _currentIndex = index);
-      },
+              // Scale: center=1.0, makin jauh makin kecil
+              final double scale = (1.0 - diff * 0.04).clamp(0.88, 1.0);
 
-      childDelegate: ListWheelChildBuilderDelegate(
-        childCount: _posts.length,
-        builder: (context, index) {
-          final int distance = (_currentIndex - index).abs();
-          final bool isCenter = distance == 0;
-
-          // Scale sahaja — center sedikit lebih besar
-          final double scale = isCenter
-              ? 1.02
-              : distance == 1 ? 0.97
-              : 0.93;
-
-          return Transform.scale(
-            scale: scale,
-            child: FeedCard(
-              post: _posts[index],
-              isCenter: isCenter,
-              onTap: () {
-                if (!isCenter) {
-                  _controller.animateToItem(
+              return Transform.scale(
+                scale: scale,
+                child: child,
+              );
+            },
+            child: SizedBox(
+              height: cardHeight,
+              child: FeedCard(
+                post: _posts[index],
+                isCenter: index == _currentIndex,
+                onTap: () {
+                  _controller.animateToPage(
                     index,
                     duration: const Duration(milliseconds: 350),
                     curve: Curves.easeOutCubic,
                   );
-                }
-              },
+                },
+              ),
             ),
           );
         },
