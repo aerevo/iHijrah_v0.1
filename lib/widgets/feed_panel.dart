@@ -1,7 +1,7 @@
 // lib/widgets/feed_panel.dart
-// PageView vertical — padEnds: false buang ruang kosong atas/bawah
-// UI ok, spacing betul — wheel effect belum ada
+// iOS picker wheel effect — betul guna signed offset + perspective matrix
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
@@ -18,7 +18,8 @@ class _FeedPanelState extends State<FeedPanel> {
   late final PageController _controller;
   int _currentIndex = 0;
 
-  static const double _viewportFraction = 0.18;
+  // Naik sikit dari 0.18 — wheel feel lebih natural
+  static const double _viewportFraction = 0.23;
 
   @override
   void initState() {
@@ -71,16 +72,40 @@ class _FeedPanelState extends State<FeedPanel> {
           return AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
+              // Guna page semasa — fallback ke currentIndex
               double page = _currentIndex.toDouble();
               if (_controller.hasClients && _controller.page != null) {
                 page = _controller.page!;
               }
-              final double diff = (page - index).abs();
-              final double scale = (1.0 - diff * 0.04).clamp(0.88, 1.0);
 
-              return Transform.scale(
-                scale: scale,
-                child: child,
+              // SIGNED offset — jangan abs() kat sini
+              // positif = kad atas center, negatif = kad bawah center
+              final double offset = page - index;
+
+              // Scale: makin jauh dari center, makin kecil
+              final double scale =
+                  (1.0 - offset.abs() * 0.06).clamp(0.78, 1.0);
+
+              // Rotation: ~25° max tilt — sama macam iOS picker
+              final double angle = offset * (math.pi / 7.0);
+
+              // Opacity: fade sikit kad hujung
+              final double opacity =
+                  (1.0 - offset.abs() * 0.18).clamp(0.4, 1.0);
+
+              return Opacity(
+                opacity: opacity,
+                child: Transform(
+                  // perspective wajib — tanpa ni nampak flat/distorted
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.0015)
+                    ..rotateX(angle),
+                  alignment: Alignment.center,
+                  child: Transform.scale(
+                    scale: scale,
+                    child: child,
+                  ),
+                ),
               );
             },
             child: SizedBox(
