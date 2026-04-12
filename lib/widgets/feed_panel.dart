@@ -1,6 +1,6 @@
 // lib/widgets/feed_panel.dart
 // PageView vertical — padEnds: false buang ruang kosong atas/bawah
-// viewportFraction < 1.0 tunjuk kad tepi (efek roda)
+// UI ok, spacing betul — wheel effect belum ada
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -18,8 +18,6 @@ class _FeedPanelState extends State<FeedPanel> {
   late final PageController _controller;
   int _currentIndex = 0;
 
-  // viewportFraction: 0.18 = setiap kad ambil 18% tinggi skrin
-  // → ~5-6 kad nampak serentak, tiada ruang kosong
   static const double _viewportFraction = 0.18;
 
   @override
@@ -67,7 +65,6 @@ class _FeedPanelState extends State<FeedPanel> {
       child: PageView.builder(
         controller: _controller,
         scrollDirection: Axis.vertical,
-        // ✅ INI yang buang ruang kosong atas & bawah
         padEnds: false,
         itemCount: _posts.length,
         itemBuilder: (context, index) {
@@ -78,30 +75,12 @@ class _FeedPanelState extends State<FeedPanel> {
               if (_controller.hasClients && _controller.page != null) {
                 page = _controller.page!;
               }
-              final double diff = page - index;
-              final double absDiff = diff.abs();
+              final double diff = (page - index).abs();
+              final double scale = (1.0 - diff * 0.04).clamp(0.88, 1.0);
 
-              // Cylinder rotation — clamp supaya tak terbalik (max ~50°)
-              final double angle = (diff * 0.4).clamp(-0.85, 0.85);
-
-              // Scale: center=1.0, tepi mengecil
-              final double scale = (1.0 - absDiff * 0.06).clamp(0.82, 1.0);
-
-              // Opacity: center terang, tepi sedikit malap
-              final double opacity = (1.0 - absDiff * 0.25).clamp(0.4, 1.0);
-
-              return Opacity(
-                opacity: opacity,
-                child: Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.003)   // perspective depth
-                    ..rotateX(angle),          // putar pada paksi X — kesan silinder
-                  child: Transform.scale(
-                    scale: scale,
-                    child: child,
-                  ),
-                ),
+              return Transform.scale(
+                scale: scale,
+                child: child,
               );
             },
             child: SizedBox(
