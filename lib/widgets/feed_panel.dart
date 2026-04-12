@@ -74,19 +74,35 @@ class _FeedPanelState extends State<FeedPanel> {
           return AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
-              // Kira jarak kad dari center
               double page = _currentIndex.toDouble();
               if (_controller.hasClients && _controller.page != null) {
                 page = _controller.page!;
               }
-              final double diff = (page - index).abs();
+              final double diff = page - index;
+              final double absDiff = diff.abs();
 
-              // Scale: center=1.0, makin jauh makin kecil
-              final double scale = (1.0 - diff * 0.04).clamp(0.88, 1.0);
+              // Cylinder rotation — makin jauh dari center, makin bengkok ke belakang
+              // 0.8 radian (~46°) bila 1 kad jauh = kesan roda yang jelas
+              final double angle = diff * 0.75;
 
-              return Transform.scale(
-                scale: scale,
-                child: child,
+              // Scale: center=1.0, tepi mengecil
+              final double scale = (1.0 - absDiff * 0.06).clamp(0.82, 1.0);
+
+              // Opacity: center terang, tepi sedikit malap
+              final double opacity = (1.0 - absDiff * 0.25).clamp(0.4, 1.0);
+
+              return Opacity(
+                opacity: opacity,
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.003)   // perspective depth
+                    ..rotateX(angle),          // putar pada paksi X — kesan silinder
+                  child: Transform.scale(
+                    scale: scale,
+                    child: child,
+                  ),
+                ),
               );
             },
             child: SizedBox(
