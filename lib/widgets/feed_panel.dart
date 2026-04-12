@@ -81,9 +81,8 @@ class _FeedPanelState extends State<FeedPanel> {
               final double diff = page - index;
               final double absDiff = diff.abs();
 
-              // Cylinder rotation — makin jauh dari center, makin bengkok ke belakang
-              // 0.8 radian (~46°) bila 1 kad jauh = kesan roda yang jelas
-              final double angle = diff * 0.75;
+              // Cylinder rotation — clamp supaya tak terbalik (max ~50°)
+              final double angle = (diff * 0.4).clamp(-0.85, 0.85);
 
               // Scale: center=1.0, tepi mengecil
               final double scale = (1.0 - absDiff * 0.06).clamp(0.82, 1.0);
