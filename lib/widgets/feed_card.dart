@@ -93,6 +93,18 @@ class _FeedCardState extends State<FeedCard> {
   IslamicPhrase get _phrase =>
       kIslamicPhrases[widget.post.id.hashCode % kIslamicPhrases.length];
 
+  // Infer gender dari nama author — dalam production ganti dengan user.gender
+  bool get _isFemaleAuthor {
+    final String name = widget.post.author.toLowerCase();
+    return name.contains('ustazah') ||
+        name.contains('puan') ||
+        name.contains('cik') ||
+        name.contains('dr. nor') ||
+        name.contains('noor') ||
+        name.contains('siti') ||
+        name.contains('wanita');
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasImage = widget.post.assetPath != null &&
@@ -210,24 +222,33 @@ class _FeedCardState extends State<FeedCard> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
 
-                            // ISLAMIC PHRASE BADGE
+                            // ISLAMIC PHRASE BADGE — redesign
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
+                                // ── Logo bulat khat berwarna ──
                                 Container(
-                                  width: 24, height: 24,
+                                  width: 28, height: 28,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: phrase.bg,
                                     border: Border.all(
-                                      color: phrase.color.withOpacity(0.30),
-                                      width: 0.8,
+                                      color: phrase.color.withOpacity(0.50),
+                                      width: 1.0,
                                     ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: phrase.color.withOpacity(0.25),
+                                        blurRadius: 6,
+                                        spreadRadius: 0,
+                                      ),
+                                    ],
                                   ),
                                   child: Center(
                                     child: Text(
                                       phrase.symbol,
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 13,
                                         color: phrase.color,
                                         fontWeight: FontWeight.w900,
                                       ),
@@ -235,10 +256,12 @@ class _FeedCardState extends State<FeedCard> {
                                   ),
                                 ),
                                 const SizedBox(width: 7),
+                                // ── Teks: arabic + username + gender + umur ──
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    // Arabic (kekal)
                                     Text(
                                       phrase.arabic,
                                       style: TextStyle(
@@ -247,33 +270,84 @@ class _FeedCardState extends State<FeedCard> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    Text(
-                                      phrase.latin,
-                                      style: TextStyle(
-                                        fontSize: 8,
-                                        color: phrase.color.withOpacity(0.60),
-                                        fontWeight: FontWeight.w400,
-                                      ),
+                                    // Username + ikon gender
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          widget.post.author,
+                                          style: TextStyle(
+                                            fontSize: 8.0,
+                                            color: phrase.color.withOpacity(0.85),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Icon(
+                                          _isFemaleAuthor
+                                              ? Icons.female_rounded
+                                              : Icons.male_rounded,
+                                          size: 10,
+                                          color: phrase.color.withOpacity(0.70),
+                                        ),
+                                      ],
                                     ),
+                                    // Umur Hijriah
+                                    if (widget.post.authorAge.isNotEmpty)
+                                      Text(
+                                        '${widget.post.authorAge} thn H',
+                                        style: TextStyle(
+                                          fontSize: 7.0,
+                                          color: phrase.color.withOpacity(0.50),
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ],
                             ),
 
-                            // TAJUK
-                            Text(
-                              widget.post.title,
-                              style: TextStyle(
-                                color: widget.isCenter
-                                    ? _textTitle
-                                    : _textTitleDim,
-                                fontSize: widget.isCenter ? 14 : 12.5,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.3,
-                                height: 1.2,
+                            // TAJUK — Emas Kilau Metallic 3D
+                            ShaderMask(
+                              blendMode: BlendMode.srcIn,
+                              shaderCallback: (bounds) =>
+                                  const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFFFF0A0), // highlight putih emas
+                                  Color(0xFFFFD700), // emas terang
+                                  Color(0xFFC9A84C), // emas mid
+                                  Color(0xFF8B6914), // emas gelap (bayangan)
+                                  Color(0xFFFFCC00), // emas balik terang
+                                ],
+                                stops: [0.0, 0.25, 0.50, 0.75, 1.0],
+                              ).createShader(bounds),
+                              child: Text(
+                                widget.post.title,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: widget.isCenter ? 14 : 12.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.3,
+                                  height: 1.2,
+                                  shadows: const [
+                                    // Shadow bawah — bagi kesan 3D depth
+                                    Shadow(
+                                      color: Color(0xCC8B6914),
+                                      offset: Offset(0, 1),
+                                      blurRadius: 1,
+                                    ),
+                                    Shadow(
+                                      color: Color(0x668B6914),
+                                      offset: Offset(1, 2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                maxLines: widget.isCenter ? 2 : 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: widget.isCenter ? 2 : 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
 
                             // KANDUNGAN
