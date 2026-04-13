@@ -1,5 +1,5 @@
 // lib/widgets/feed_card.dart
-// PERFORMANCE BUILD — zero BackdropFilter, RepaintBoundary, border accent
+// TEMA CERAH — warm ivory + gold accent, zero blur, RepaintBoundary
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -22,13 +22,23 @@ class IslamicPhrase {
 }
 
 const List<IslamicPhrase> kIslamicPhrases = [
-  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽', color: Color(0xFFC9A84C), bg: Color(0x28C9A84C)),
-  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '☘', color: Color(0xFF43A047), bg: Color(0x2843A047)),
-  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '✦', color: Color(0xFF1E88E5), bg: Color(0x281E88E5)),
-  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '◈', color: Color(0xFF8E24AA), bg: Color(0x288E24AA)),
-  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: '☪', color: Color(0xFFE53935), bg: Color(0x28E53935)),
-  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: '❋', color: Color(0xFF00897B), bg: Color(0x2800897B)),
+  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽', color: Color(0xFFA07820), bg: Color(0x22C9A84C)),
+  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '☘', color: Color(0xFF2E7D32), bg: Color(0x2243A047)),
+  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '✦', color: Color(0xFF1565C0), bg: Color(0x221E88E5)),
+  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '◈', color: Color(0xFF6A1B9A), bg: Color(0x228E24AA)),
+  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: '☪', color: Color(0xFFC62828), bg: Color(0x22E53935)),
+  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: '❋', color: Color(0xFF00695C), bg: Color(0x2200897B)),
 ];
+
+// ── WARNA TEMA CERAH ──────────────────────────────────────────
+const Color _cardBg       = Color(0xFFFAF7F0); // ivory hangat
+const Color _cardBgDim    = Color(0xFFF2EEE6); // kad bukan center
+const Color _textTitle    = Color(0xFF1A1208); // hampir hitam
+const Color _textBody     = Color(0xFF4A3F2F); // coklat gelap
+const Color _textMeta     = Color(0xFF9E8E6E); // coklat pudar
+const Color _borderCenter = Color(0xFFC9A84C); // gold
+const Color _borderDim    = Color(0xFFDED5C0); // krim border
+const Color _divider      = Color(0xFFE8E0CC);
 
 // ── FEED CARD ─────────────────────────────────────────────────
 class FeedCard extends StatefulWidget {
@@ -52,19 +62,19 @@ class _FeedCardState extends State<FeedCard> {
 
   Color get _typeColor {
     switch (widget.post.type) {
-      case 'video':   return const Color(0xFFE53935);
-      case 'quote':   return const Color(0xFF8E24AA);
-      case 'event':   return const Color(0xFF43A047);
-      default:        return kPrimaryGold;
+      case 'video':  return const Color(0xFFC62828);
+      case 'quote':  return const Color(0xFF6A1B9A);
+      case 'event':  return const Color(0xFF2E7D32);
+      default:       return const Color(0xFFA07820);
     }
   }
 
   IconData get _typeIcon {
     switch (widget.post.type) {
-      case 'video':   return Icons.play_arrow;
-      case 'quote':   return Icons.format_quote;
-      case 'event':   return Icons.calendar_month;
-      default:        return Icons.article;
+      case 'video':  return Icons.play_arrow;
+      case 'quote':  return Icons.format_quote;
+      case 'event':  return Icons.calendar_month;
+      default:       return Icons.article;
     }
   }
 
@@ -77,8 +87,6 @@ class _FeedCardState extends State<FeedCard> {
         widget.post.assetPath!.isNotEmpty;
     final phrase = _phrase;
 
-    // RepaintBoundary — Flutter isolate repaint setiap kad,
-    // scroll tak trigger repaint kad lain
     return RepaintBoundary(
       child: GestureDetector(
         onTap: widget.onTap,
@@ -88,35 +96,28 @@ class _FeedCardState extends State<FeedCard> {
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            // SOLID — zero blur cost
-            color: widget.isCenter
-                ? const Color(0xFF1E1E1E)
-                : const Color(0xFF171717),
-            // BORDER — center dapat gold accent, lain subtle
+            color: widget.isCenter ? _cardBg : _cardBgDim,
             border: Border.all(
-              color: widget.isCenter
-                  ? kPrimaryGold.withOpacity(0.55)
-                  : Colors.white.withOpacity(0.09),
-              width: widget.isCenter ? 1.2 : 0.8,
+              color: widget.isCenter ? _borderCenter : _borderDim,
+              width: widget.isCenter ? 1.5 : 0.8,
             ),
-            // Shadow ringan — cukup depth tanpa blur
             boxShadow: widget.isCenter
                 ? [
                     BoxShadow(
-                      color: kPrimaryGold.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 3),
+                      color: const Color(0xFFC9A84C).withOpacity(0.18),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.35),
-                      blurRadius: 6,
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 4,
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 3,
                       offset: const Offset(0, 1),
                     ),
                   ],
@@ -129,17 +130,23 @@ class _FeedCardState extends State<FeedCard> {
 
                 // ─── ACCENT LINE KIRI ────────────────────
                 Container(
-                  width: 3,
-                  color: widget.isCenter
-                      ? _typeColor
-                      : _typeColor.withOpacity(0.35),
+                  width: 3.5,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: widget.isCenter
+                          ? [_typeColor, _typeColor.withOpacity(0.45)]
+                          : [_typeColor.withOpacity(0.35), _typeColor.withOpacity(0.12)],
+                    ),
+                  ),
                 ),
 
                 // ─── KONTEN UTAMA ─────────────────────────
                 Expanded(
                   flex: 5,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+                    padding: const EdgeInsets.fromLTRB(10, 9, 6, 9),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -149,10 +156,14 @@ class _FeedCardState extends State<FeedCard> {
                         Row(
                           children: [
                             Container(
-                              width: 22, height: 22,
+                              width: 24, height: 24,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: phrase.bg,
+                                border: Border.all(
+                                  color: phrase.color.withOpacity(0.25),
+                                  width: 0.8,
+                                ),
                               ),
                               child: Center(
                                 child: Text(
@@ -165,7 +176,7 @@ class _FeedCardState extends State<FeedCard> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 7),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -173,7 +184,7 @@ class _FeedCardState extends State<FeedCard> {
                                 Text(
                                   phrase.arabic,
                                   style: TextStyle(
-                                    fontSize: 9,
+                                    fontSize: 9.5,
                                     color: phrase.color,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -181,8 +192,9 @@ class _FeedCardState extends State<FeedCard> {
                                 Text(
                                   phrase.latin,
                                   style: TextStyle(
-                                    fontSize: 7.5,
-                                    color: phrase.color.withOpacity(0.6),
+                                    fontSize: 8,
+                                    color: phrase.color.withOpacity(0.65),
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -194,12 +206,10 @@ class _FeedCardState extends State<FeedCard> {
                         Text(
                           widget.post.title,
                           style: TextStyle(
-                            color: widget.isCenter
-                                ? kPrimaryGold
-                                : kPrimaryGold.withOpacity(0.85),
-                            fontSize: widget.isCenter ? 13 : 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.2,
+                            color: _textTitle,
+                            fontSize: widget.isCenter ? 14 : 12.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
                             height: 1.2,
                           ),
                           maxLines: widget.isCenter ? 2 : 1,
@@ -210,32 +220,32 @@ class _FeedCardState extends State<FeedCard> {
                         Text(
                           widget.post.content,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(
-                                widget.isCenter ? 0.72 : 0.45),
-                            fontSize: widget.isCenter ? 10.5 : 9.5,
-                            height: 1.35,
-                            fontWeight: FontWeight.w300,
+                            color: widget.isCenter
+                                ? _textBody
+                                : _textBody.withOpacity(0.55),
+                            fontSize: widget.isCenter ? 11 : 10,
+                            height: 1.4,
+                            fontWeight: FontWeight.w400,
                           ),
                           maxLines: widget.isCenter ? 3 : 1,
                           overflow: TextOverflow.ellipsis,
                         ),
 
-                        // FOOTER: author + lihat lebih
+                        // FOOTER: author + lihat
                         Row(
                           children: [
                             CircleAvatar(
                               radius: 7,
-                              backgroundColor: _typeColor.withOpacity(0.18),
-                              child: Icon(_typeIcon,
-                                  color: _typeColor, size: 7),
+                              backgroundColor: _typeColor.withOpacity(0.12),
+                              child: Icon(_typeIcon, color: _typeColor, size: 8),
                             ),
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
                                 '${widget.post.author} • ${widget.post.time}',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
-                                  fontSize: 9,
+                                  color: _textMeta,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w500,
                                 ),
                                 maxLines: 1,
@@ -249,22 +259,22 @@ class _FeedCardState extends State<FeedCard> {
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
+                                      horizontal: 9, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: kPrimaryGold.withOpacity(0.12),
+                                    color: const Color(0xFFC9A84C).withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: kPrimaryGold.withOpacity(0.35),
+                                      color: const Color(0xFFC9A84C).withOpacity(0.5),
                                       width: 0.8,
                                     ),
                                   ),
                                   child: const Text(
                                     'Lihat',
                                     style: TextStyle(
-                                      color: kPrimaryGold,
-                                      fontSize: 9,
+                                      color: Color(0xFFA07820),
+                                      fontSize: 9.5,
                                       fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.3,
+                                      letterSpacing: 0.2,
                                     ),
                                   ),
                                 ),
@@ -280,11 +290,11 @@ class _FeedCardState extends State<FeedCard> {
                 if (hasImage) ...[
                   const SizedBox(width: 6),
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 7),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: SizedBox(
-                        width: 68,
+                        width: 70,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -292,21 +302,21 @@ class _FeedCardState extends State<FeedCard> {
                               widget.post.assetPath!,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: _typeColor.withOpacity(0.12),
+                                color: _typeColor.withOpacity(0.08),
                                 child: Icon(_typeIcon,
                                     color: _typeColor.withOpacity(0.4),
-                                    size: 20),
+                                    size: 22),
                               ),
                             ),
                             if (widget.post.type == 'video')
                               Center(
                                 child: Container(
-                                  padding: const EdgeInsets.all(4),
+                                  padding: const EdgeInsets.all(5),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.55),
+                                    color: Colors.black.withOpacity(0.45),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white54, width: 1),
+                                        color: Colors.white70, width: 1),
                                   ),
                                   child: const Icon(Icons.play_arrow,
                                       color: Colors.white, size: 14),
@@ -321,9 +331,7 @@ class _FeedCardState extends State<FeedCard> {
 
                 // ─── DIVIDER ──────────────────────────────
                 const SizedBox(width: 5),
-                Container(
-                    width: 0.5,
-                    color: Colors.white.withOpacity(0.06)),
+                Container(width: 0.6, color: _divider),
                 const SizedBox(width: 3),
 
                 // ─── ACTION BUTTONS ───────────────────────
@@ -333,25 +341,20 @@ class _FeedCardState extends State<FeedCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _ActionBtn(
-                        icon: _liked
-                            ? Icons.favorite
-                            : Icons.favorite_border,
+                        icon: _liked ? Icons.favorite : Icons.favorite_border,
                         label: _formatCount(widget.post.likes),
-                        color: _liked
-                            ? kWarningRed
-                            : Colors.white.withOpacity(0.35),
+                        color: _liked ? const Color(0xFFD32F2F) : _textMeta,
                         onTap: () => setState(() => _liked = !_liked),
                       ),
                       _ActionBtn(
                         icon: Icons.chat_bubble_outline,
-                        label: _formatCount(
-                            (widget.post.likes / 12).floor()),
-                        color: Colors.white.withOpacity(0.35),
+                        label: _formatCount((widget.post.likes / 12).floor()),
+                        color: _textMeta,
                       ),
                       _ActionBtn(
                         icon: Icons.share_outlined,
                         label: 'Kongsi',
-                        color: Colors.white.withOpacity(0.35),
+                        color: _textMeta,
                       ),
                     ],
                   ),
@@ -394,13 +397,16 @@ class _ActionBtn extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
+          Icon(icon, size: 17, color: color),
           const SizedBox(height: 2),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 9,
-                  color: color,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.5,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
