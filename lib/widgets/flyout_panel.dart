@@ -1,151 +1,90 @@
-// lib/widgets/flyout_panel.dart (VERSI GLASS: LEBIH TERANG & JELAS)
+// lib/widgets/feed_panel.dart
+// Fix: buang useMagnifier — punca block litsinar tengah skrin
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'dart:ui'; 
-
-import '../models/sidebar_state_model.dart';
+import '../models/user_model.dart';
 import '../utils/constants.dart';
-import 'metallic_gold.dart';
+import 'feed_card.dart';
 
-// === IMPORT SEMUA VIEW ===
-import 'profile_detail_view.dart';
-import 'calendar_view.dart';
-import 'event_view.dart';
-import 'settings_view.dart'; 
-import 'about_view.dart';    
-import 'hijrah_tree.dart'; 
-import 'birthday_view.dart'; 
+class FeedPanel extends StatefulWidget {
+  const FeedPanel({Key? key}) : super(key: key);
 
-// ✅ IMPORT DUA BERADIK BARU
-import 'sirah_view.dart';    
-import 'amalan_view.dart';   
+  @override
+  State<FeedPanel> createState() => _FeedPanelState();
+}
 
-class FlyoutPanel extends StatelessWidget {
-  final double panelWidth;
-  const FlyoutPanel({Key? key, this.panelWidth = AppSizes.flyoutWidth}) : super(key: key);
+class _FeedPanelState extends State<FeedPanel> {
+  late final FixedExtentScrollController _controller;
+  int _currentIndex = 0;
 
-  // --- KANDUNGAN MENU ---
-  Widget _buildContent(String menuId) {
-    switch (menuId) {
-      case 'profil': return const ProfileDetailView();
-      case 'kalendar': return const CalendarView();
-      case 'peristiwa': return const EventView();
-      case 'notifikasi': return const SettingsView();
-      case 'info': return const AboutView();
-      
-      // POKOK SAHAJA
-      case 'tree_progress': return const HijrahTree(); 
-      
-      // HARI JADI
-      case 'birthday': return const BirthdayView();
+  static const double _diameterRatio = 1.8;
 
-      // ✅ MENU 1: SIRAH
-      case 'sirah': return const SirahView(); 
-      
-      // ✅ MENU 2: AMALAN (Misi Harian)
-      case 'amalan': return const AmalanView(); 
-      
-      case 'infaq': 
-        return const Center(
-          child: Text("Infaq - Coming Soon", style: TextStyle(color: kTextSecondary))
-        );
-      default: return const SizedBox.shrink();
-    }
+  @override
+  void initState() {
+    super.initState();
+    _controller = FixedExtentScrollController();
+    _controller.addListener(() {
+      final int newIndex = _controller.selectedItem;
+      if (newIndex != _currentIndex) {
+        setState(() => _currentIndex = newIndex);
+      }
+    });
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<SidebarStateModel>(
-      builder: (context, model, child) {
-        final double width = model.isClosed ? 0 : panelWidth;
-
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOutCubic,
-          width: width,
-          height: double.infinity,
-          child: OverflowBox(
-            minWidth: panelWidth,
-            maxWidth: panelWidth,
-            alignment: Alignment.centerLeft,
-            child: model.isClosed 
-              ? const SizedBox.shrink() 
-              : _buildGlassContainer(context, model),
-          ),
-        );
-      },
-    );
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  Widget _buildGlassContainer(BuildContext context, SidebarStateModel model) {
-    return ClipRect(
-      child: BackdropFilter(
-        // KURANGKAN BLUR SEDIKIT SUPAYA LEBIH REALISTIK
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), 
-        child: Container(
-          width: panelWidth,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            // ✅ UBAH DI SINI: Opacity diturunkan drpd 0.4 ke 0.15 (Lebih Terang)
-            color: Colors.black.withOpacity(0.15), 
-            border: Border(
-              right: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
-              left: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // HEADER MENU
-              Container(
-                padding: const EdgeInsets.only(
-                  top: 50,
-                  left: AppSpacing.md, 
-                  right: AppSpacing.sm, 
-                  bottom: AppSpacing.md
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.white.withOpacity(0.1))
-                  )
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    MetallicGold(
-                      child: Text(
-                        model.menuTitle.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: AppFontSizes.lg,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                          fontFamily: 'Playfair',
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white70),
-                      onPressed: () => model.closeMenu(),
-                    ),
-                  ],
-                ),
-              ),
+  final List<PostModel> _posts = const [
+    PostModel(id: '101', type: 'video',   title: 'Kisah Hijrah Rasulullah \uFDFA',        content: 'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda dari ancaman kaum Quraisy.',             author: 'Ustaz Don',        authorAge: '40', likes: 1240, time: '2j',  assetPath: 'assets/images/dummy_post1.jpg'),
+    PostModel(id: '102', type: 'quote',   title: 'Kata Hikmah',                       content: 'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',                                         author: "Imam Syafi'i",     authorAge: '',   likes: 850,  time: '5j'),
+    PostModel(id: '103', type: 'article', title: 'Kelebihan Selawat',                 content: 'Barangsiapa berselawat ke atasku sekali, Allah balas sepuluh kali ganda rahmat kepadanya.',                 author: 'Habib Ali',        authorAge: '52', likes: 2100, time: '1h',  assetPath: 'assets/images/dummy_post2.jpg'),
+    PostModel(id: '104', type: 'event',   title: 'Majlis Ilmu Perdana',               content: 'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah bersama ulama.',                       author: 'Admin iHijrah',    authorAge: '',   likes: 500,  time: '10j'),
+    PostModel(id: '105', type: 'quote',   title: 'Pesan Imam Malik',                  content: 'Ilmu itu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat kepada hati.',                   author: 'Imam Malik',       authorAge: '',   likes: 3200, time: '12j'),
+    PostModel(id: '106', type: 'video',   title: 'Tajwid Asas: Al-Fatihah',           content: 'Mari perbaiki bacaan Al-Fatihah kita. Setiap huruf ada makhrajnya yang tersendiri.',                       author: 'Ustaz Azhar',      authorAge: '60', likes: 890,  time: '1h'),
+    PostModel(id: '107', type: 'article', title: 'Rahsia Dhuha & Pintu Rezeki',       content: 'Konsistensi solat Dhuha membuka pintu rezeki yang tidak disangka-sangka oleh manusia biasa.',              author: 'Ustaz Wadi',       authorAge: '45', likes: 4500, time: '30m', assetPath: 'assets/images/dummy_post1.jpg'),
+    PostModel(id: '108', type: 'quote',   title: 'Nasihat Imam Ghazali',              content: 'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia. Carilah keduanya bersama.',                          author: 'Imam Ghazali',     authorAge: '',   likes: 5100, time: '2h'),
+    PostModel(id: '109', type: 'article', title: 'Keutamaan Surah Al-Mulk',           content: 'Sesiapa yang membaca Al-Mulk setiap malam, ia akan dilindungi dari azab kubur.',                            author: 'Ustazah Noor',     authorAge: '38', likes: 1870, time: '3h',  assetPath: 'assets/images/dummy_post2.jpg'),
+    PostModel(id: '110', type: 'event',   title: 'Kem Tahfiz Ramadan 1446H',          content: 'Daftar sekarang! Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',                        author: 'Markaz Quran KL',  authorAge: '',   likes: 720,  time: '4h'),
+    PostModel(id: '111', type: 'video',   title: 'Doa Pagi yang Mujarab',             content: 'Amalkan 7 doa ini setiap pagi. Nabi \uFDFA sendiri mengajarkan kepada para sahabat baginda.',                    author: 'Dr Rozaimi',       authorAge: '47', likes: 3300, time: '5h',  assetPath: 'assets/images/dummy_post1.jpg'),
+    PostModel(id: '112', type: 'quote',   title: 'Kata Ibn Qayyim',                   content: 'Hati yang kosong dari zikir adalah hati yang mati walaupun pemiliknya masih bernyawa.',                      author: 'Ibn Qayyim',       authorAge: '',   likes: 6200, time: '6h'),
+    PostModel(id: '113', type: 'article', title: 'Adab Berdoa dalam Islam',           content: 'Berdoa bukan sekadar meminta. Ada adab, waktu mustajab dan cara yang diajar oleh Rasulullah \uFDFA.',            author: 'Ust Hasrizal',     authorAge: '43', likes: 980,  time: '7h',  assetPath: 'assets/images/dummy_post2.jpg'),
+    PostModel(id: '114', type: 'event',   title: 'Forum Muallaf: Jalan Menuju Islam', content: 'Dengar kisah perjalanan rohani mereka yang menemui cahaya Islam dari seluruh dunia.',                        author: 'iHijrah Official', authorAge: '',   likes: 430,  time: '8h'),
+    PostModel(id: '115', type: 'video',   title: 'Tafsir Surah Al-Kahfi Ayat 1-10',  content: 'Perlindungan dari fitnah Dajjal bermula dengan memahami 10 ayat pertama surah ini sepenuhnya.',             author: 'Ust Fathul Bari',  authorAge: '50', likes: 7800, time: '9h',  assetPath: 'assets/images/dummy_post1.jpg'),
+  ];
 
-              // KANDUNGAN
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    children: [
-                      _buildContent(model.activeMenuId!),
-                      const SizedBox(height: 100), 
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+  @override
+  Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double itemExtent = screenHeight * 0.23;
+
+    return SizedBox.expand(
+      child: ListWheelScrollView.useDelegate(
+        controller: _controller,
+        itemExtent: itemExtent,
+        diameterRatio: _diameterRatio,
+        perspective: 0.002,
+        physics: const FixedExtentScrollPhysics(),
+        onSelectedItemChanged: (index) {
+          setState(() => _currentIndex = index);
+        },
+        childDelegate: ListWheelChildBuilderDelegate(
+          childCount: _posts.length,
+          builder: (context, index) {
+            return FeedCard(
+              post: _posts[index],
+              isCenter: index == _currentIndex,
+              onTap: () {
+                _controller.animateToItem(
+                  index,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOutCubic,
+                );
+              },
+            );
+          },
         ),
       ),
     );
