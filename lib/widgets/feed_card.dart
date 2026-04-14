@@ -23,12 +23,12 @@ class IslamicPhrase {
 }
 
 const List<IslamicPhrase> kIslamicPhrases = [
-  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽', color: Color(0xFFFFC107), bg: Color(0x22FFC107)),
-  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '☘', color: Color(0xFF26D0A0), bg: Color(0x2226D0A0)),
-  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '✦', color: Color(0xFF40C4FF), bg: Color(0x2240C4FF)),
-  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '◈', color: Color(0xFFCE93D8), bg: Color(0x22CE93D8)),
-  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: '☪', color: Color(0xFFFF7043), bg: Color(0x22FF7043)),
-  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: '❋', color: Color(0xFF80DEEA), bg: Color(0x2280DEEA)),
+  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽',  color: Color(0xFFFFC107), bg: Color(0x22FFC107)),
+  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: 'ﷲ',  color: Color(0xFF26D0A0), bg: Color(0x2226D0A0)),
+  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: 'سُبْ', color: Color(0xFF40C4FF), bg: Color(0x2240C4FF)),
+  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: 'إِنْ', color: Color(0xFFCE93D8), bg: Color(0x22CE93D8)),
+  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: 'أَكْ', color: Color(0xFFFF7043), bg: Color(0x22FF7043)),
+  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: 'مَا',  color: Color(0xFF80DEEA), bg: Color(0x2280DEEA)),
 ];
 
 // ── WARNA TEMA ────────────────────────────────────────────────
@@ -222,13 +222,13 @@ class _FeedCardState extends State<FeedCard> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
 
-                            // ISLAMIC PHRASE BADGE — redesign
+                            // ISLAMIC PHRASE BADGE
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // ── Logo bulat khat berwarna ──
+                                // ── Logo bulat khat Arab ──
                                 Container(
-                                  width: 28, height: 28,
+                                  width: 30, height: 30,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: phrase.bg,
@@ -238,9 +238,8 @@ class _FeedCardState extends State<FeedCard> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: phrase.color.withOpacity(0.25),
+                                        color: phrase.color.withOpacity(0.22),
                                         blurRadius: 6,
-                                        spreadRadius: 0,
                                       ),
                                     ],
                                   ),
@@ -248,106 +247,135 @@ class _FeedCardState extends State<FeedCard> {
                                     child: Text(
                                       phrase.symbol,
                                       style: TextStyle(
-                                        fontSize: 13,
+                                        fontSize: phrase.symbol.length > 2 ? 8 : 12,
                                         color: phrase.color,
                                         fontWeight: FontWeight.w900,
+                                        fontFamily: 'Scheherazade', // fallback ke system Arab
                                       ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 7),
-                                // ── Teks: arabic + username + gender + umur ──
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Arabic (kekal)
-                                    Text(
-                                      phrase.arabic,
-                                      style: TextStyle(
-                                        fontSize: 9.5,
-                                        color: phrase.color,
-                                        fontWeight: FontWeight.w700,
+
+                                // ── Arabic + Username + Umur ──
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Arabic phrase
+                                      Text(
+                                        phrase.arabic,
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: phrase.color,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                    ),
-                                    // Username + ikon gender
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          widget.post.author,
-                                          style: TextStyle(
-                                            fontSize: 8.0,
-                                            color: phrase.color.withOpacity(0.85),
-                                            fontWeight: FontWeight.w500,
+                                      // Username — silver gradient
+                                      ShaderMask(
+                                        blendMode: BlendMode.srcIn,
+                                        shaderCallback: (bounds) =>
+                                            const LinearGradient(
+                                          colors: [
+                                            Color(0xFFE8E8E8),
+                                            Color(0xFFFFFFFF),
+                                            Color(0xFFB0B0B0),
+                                          ],
+                                          stops: [0.0, 0.5, 1.0],
+                                        ).createShader(bounds),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              widget.post.author,
+                                              style: const TextStyle(
+                                                fontSize: 8.5,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Icon(
+                                              _isFemaleAuthor
+                                                  ? Icons.female_rounded
+                                                  : Icons.male_rounded,
+                                              size: 10,
+                                              color: Colors.white,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Umur Hijriah — silver pudar
+                                      if (widget.post.authorAge.isNotEmpty)
+                                        ShaderMask(
+                                          blendMode: BlendMode.srcIn,
+                                          shaderCallback: (bounds) =>
+                                              const LinearGradient(
+                                            colors: [
+                                              Color(0xFF909090),
+                                              Color(0xFFBBBBBB),
+                                            ],
+                                          ).createShader(bounds),
+                                          child: Text(
+                                            '${widget.post.authorAge} thn H',
+                                            style: const TextStyle(
+                                              fontSize: 7.5,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w400,
+                                            ),
                                           ),
                                         ),
-                                        const SizedBox(width: 3),
-                                        Icon(
-                                          _isFemaleAuthor
-                                              ? Icons.female_rounded
-                                              : Icons.male_rounded,
-                                          size: 10,
-                                          color: phrase.color.withOpacity(0.70),
-                                        ),
-                                      ],
+                                    ],
+                                  ),
+                                ),
+
+                                // ── Avatar profil gender kanan ──
+                                Container(
+                                  width: 28, height: 28,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: _isFemaleAuthor
+                                          ? [
+                                              const Color(0xFFCE93D8),
+                                              const Color(0xFF8E24AA),
+                                            ]
+                                          : [
+                                              const Color(0xFF40C4FF),
+                                              const Color(0xFF0288D1),
+                                            ],
                                     ),
-                                    // Umur Hijriah
-                                    if (widget.post.authorAge.isNotEmpty)
-                                      Text(
-                                        '${widget.post.authorAge} thn H',
-                                        style: TextStyle(
-                                          fontSize: 7.0,
-                                          color: phrase.color.withOpacity(0.50),
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                  ],
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.25),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    _isFemaleAuthor
+                                        ? Icons.person_rounded
+                                        : Icons.person_rounded,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ],
                             ),
 
-                            // TAJUK — Emas Kilau Metallic 3D
-                            ShaderMask(
-                              blendMode: BlendMode.srcIn,
-                              shaderCallback: (bounds) =>
-                                  const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFFFF0A0), // highlight putih emas
-                                  Color(0xFFFFD700), // emas terang
-                                  Color(0xFFC9A84C), // emas mid
-                                  Color(0xFF8B6914), // emas gelap (bayangan)
-                                  Color(0xFFFFCC00), // emas balik terang
-                                ],
-                                stops: [0.0, 0.25, 0.50, 0.75, 1.0],
-                              ).createShader(bounds),
-                              child: Text(
-                                widget.post.title,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: widget.isCenter ? 14 : 12.5,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.3,
-                                  height: 1.2,
-                                  shadows: const [
-                                    // Shadow bawah — bagi kesan 3D depth
-                                    Shadow(
-                                      color: Color(0xCC8B6914),
-                                      offset: Offset(0, 1),
-                                      blurRadius: 1,
-                                    ),
-                                    Shadow(
-                                      color: Color(0x668B6914),
-                                      offset: Offset(1, 2),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                                maxLines: widget.isCenter ? 2 : 1,
-                                overflow: TextOverflow.ellipsis,
+                            // TAJUK — Emas bersih
+                            Text(
+                              widget.post.title,
+                              style: TextStyle(
+                                color: const Color(0xFFFFD700),
+                                fontSize: widget.isCenter ? 14 : 12.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                                height: 1.2,
                               ),
+                              maxLines: widget.isCenter ? 2 : 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
 
                             // KANDUNGAN
