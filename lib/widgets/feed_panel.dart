@@ -1,92 +1,171 @@
-// lib/widgets/feed_panel.dart
-// Fix: buang useMagnifier — punca block litsinar tengah skrin
-
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
-import '../utils/constants.dart';
-import 'feed_card.dart';
 
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// MODEL
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class Post {
+  final String id;
+  final String title;
+  final String content;
+  final String author;
+  final DateTime date;
+  final String? image;
+  final int likes;
+  final int comments;
+
+  Post({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.author,
+    required this.date,
+    this.image,
+    required this.likes,
+    required this.comments,
+  });
+}
+
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// MAIN PANEL
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class FeedPanel extends StatefulWidget {
-  const FeedPanel({Key? key}) : super(key: key);
+  const FeedPanel({super.key});
 
   @override
   State<FeedPanel> createState() => _FeedPanelState();
 }
 
 class _FeedPanelState extends State<FeedPanel> {
-  late final FixedExtentScrollController _controller;
-  int _currentIndex = 0;
+  DateTime selectedDate = DateTime.now();
+  bool isPickerActive = false;
 
-  static const double _diameterRatio = 1.8;
+  final ScrollController _scrollController = ScrollController();
+  int centerIndex = 0;
+
+  List<Post> allPosts = [];
+  List<Post> filteredPosts = [];
 
   @override
   void initState() {
     super.initState();
-    _controller = FixedExtentScrollController();
-    _controller.addListener(() {
-      final int newIndex = _controller.selectedItem;
-      if (newIndex != _currentIndex) {
-        setState(() => _currentIndex = newIndex);
-      }
+    generateDummy();
+    filterPosts();
+    _scrollController.addListener(_detectCenter);
+  }
+
+  void generateDummy() {
+    allPosts = List.generate(20, (i) {
+      return Post(
+        id: "$i",
+        title: "Kata Hikmah $i",
+        content: "Ini adalah contoh isi kandungan untuk post ke-$i.",
+        author: "Ustaz $i",
+        date: DateTime.now().subtract(Duration(days: i % 5)),
+        image: i % 2 == 0
+            ? "https://picsum.photos/200?random=$i"
+            : null,
+        likes: 10 + i * 3,
+        comments: i,
+      );
     });
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void filterPosts() {
+    filteredPosts = allPosts.where((p) {
+      return p.date.day == selectedDate.day &&
+          p.date.month == selectedDate.month &&
+          p.date.year == selectedDate.year;
+    }).toList();
+
+    if (filteredPosts.isEmpty) {
+      filteredPosts = allPosts.take(5).toList(); // fallback
+    }
+
+    setState(() {});
   }
 
-  final List<PostModel> _posts = const [
-    PostModel(id: '101', type: 'video',   title: 'Kisah Hijrah Rasulullah \uFDFA',        content: 'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda dari ancaman kaum Quraisy.',             author: 'Ustaz Don',        authorAge: '40', likes: 1240, time: '2j',  assetPath: 'assets/images/dummy_post1.jpg'),
-    PostModel(id: '102', type: 'quote',   title: 'Kata Hikmah',                       content: 'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',                                         author: "Imam Syafi'i",     authorAge: '',   likes: 850,  time: '5j'),
-    PostModel(id: '103', type: 'article', title: 'Kelebihan Selawat',                 content: 'Barangsiapa berselawat ke atasku sekali, Allah balas sepuluh kali ganda rahmat kepadanya.',                 author: 'Habib Ali',        authorAge: '52', likes: 2100, time: '1h',  assetPath: 'assets/images/dummy_post2.jpg'),
-    PostModel(id: '104', type: 'event',   title: 'Majlis Ilmu Perdana',               content: 'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah bersama ulama.',                       author: 'Admin iHijrah',    authorAge: '',   likes: 500,  time: '10j'),
-    PostModel(id: '105', type: 'quote',   title: 'Pesan Imam Malik',                  content: 'Ilmu itu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat kepada hati.',                   author: 'Imam Malik',       authorAge: '',   likes: 3200, time: '12j'),
-    PostModel(id: '106', type: 'video',   title: 'Tajwid Asas: Al-Fatihah',           content: 'Mari perbaiki bacaan Al-Fatihah kita. Setiap huruf ada makhrajnya yang tersendiri.',                       author: 'Ustaz Azhar',      authorAge: '60', likes: 890,  time: '1h'),
-    PostModel(id: '107', type: 'article', title: 'Rahsia Dhuha & Pintu Rezeki',       content: 'Konsistensi solat Dhuha membuka pintu rezeki yang tidak disangka-sangka oleh manusia biasa.',              author: 'Ustaz Wadi',       authorAge: '45', likes: 4500, time: '30m', assetPath: 'assets/images/dummy_post1.jpg'),
-    PostModel(id: '108', type: 'quote',   title: 'Nasihat Imam Ghazali',              content: 'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia. Carilah keduanya bersama.',                          author: 'Imam Ghazali',     authorAge: '',   likes: 5100, time: '2h'),
-    PostModel(id: '109', type: 'article', title: 'Keutamaan Surah Al-Mulk',           content: 'Sesiapa yang membaca Al-Mulk setiap malam, ia akan dilindungi dari azab kubur.',                            author: 'Ustazah Noor',     authorAge: '38', likes: 1870, time: '3h',  assetPath: 'assets/images/dummy_post2.jpg'),
-    PostModel(id: '110', type: 'event',   title: 'Kem Tahfiz Ramadan 1446H',          content: 'Daftar sekarang! Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',                        author: 'Markaz Quran KL',  authorAge: '',   likes: 720,  time: '4h'),
-    PostModel(id: '111', type: 'video',   title: 'Doa Pagi yang Mujarab',             content: 'Amalkan 7 doa ini setiap pagi. Nabi \uFDFA sendiri mengajarkan kepada para sahabat baginda.',                    author: 'Dr Rozaimi',       authorAge: '47', likes: 3300, time: '5h',  assetPath: 'assets/images/dummy_post1.jpg'),
-    PostModel(id: '112', type: 'quote',   title: 'Kata Ibn Qayyim',                   content: 'Hati yang kosong dari zikir adalah hati yang mati walaupun pemiliknya masih bernyawa.',                      author: 'Ibn Qayyim',       authorAge: '',   likes: 6200, time: '6h'),
-    PostModel(id: '113', type: 'article', title: 'Adab Berdoa dalam Islam',           content: 'Berdoa bukan sekadar meminta. Ada adab, waktu mustajab dan cara yang diajar oleh Rasulullah \uFDFA.',            author: 'Ust Hasrizal',     authorAge: '43', likes: 980,  time: '7h',  assetPath: 'assets/images/dummy_post2.jpg'),
-    PostModel(id: '114', type: 'event',   title: 'Forum Muallaf: Jalan Menuju Islam', content: 'Dengar kisah perjalanan rohani mereka yang menemui cahaya Islam dari seluruh dunia.',                        author: 'iHijrah Official', authorAge: '',   likes: 430,  time: '8h'),
-    PostModel(id: '115', type: 'video',   title: 'Tafsir Surah Al-Kahfi Ayat 1-10',  content: 'Perlindungan dari fitnah Dajjal bermula dengan memahami 10 ayat pertama surah ini sepenuhnya.',             author: 'Ust Fathul Bari',  authorAge: '50', likes: 7800, time: '9h',  assetPath: 'assets/images/dummy_post1.jpg'),
-  ];
+  void _detectCenter() {
+    double offset = _scrollController.offset;
+    double itemHeight = 140; // adjust ikut UI sebenar
+
+    int index = (offset / itemHeight).round();
+
+    if (index != centerIndex && index < filteredPosts.length) {
+      setState(() => centerIndex = index);
+    }
+  }
+
+  void onDateChanged(DateTime date) {
+    selectedDate = date;
+    filterPosts();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double itemExtent = screenHeight * 0.23;
+    return Column(
+      children: [
+        /// ━━━━━━━━━━━━━━━━━
+        /// 🔥 PICKER (STICKY)
+        /// ━━━━━━━━━━━━━━━━━
+        Container(
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3),
+          ),
+          child: Stack(
+            children: [
+              /// Blur background
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
 
-    return SizedBox.expand(
-      child: ListWheelScrollView.useDelegate(
-        controller: _controller,
-        itemExtent: itemExtent,
-        diameterRatio: _diameterRatio,
-        perspective: 0.002,
-        physics: const FixedExtentScrollPhysics(),
-        onSelectedItemChanged: (index) {
-          setState(() => _currentIndex = index);
-        },
-        childDelegate: ListWheelChildBuilderDelegate(
-          childCount: _posts.length,
-          builder: (context, index) {
-            return FeedCard(
-              post: _posts[index],
-              isCenter: index == _currentIndex,
-              onTap: () {
-                _controller.animateToItem(
-                  index,
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOutCubic,
-                );
-              },
-            );
-          },
+              /// Picker
+              NotificationListener<ScrollNotification>(
+                onNotification: (notif) {
+                  if (notif is ScrollStartNotification) {
+                    setState(() => isPickerActive = true);
+                  } else if (notif is ScrollEndNotification) {
+                    setState(() => isPickerActive = false);
+                  }
+                  return true;
+                },
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: selectedDate,
+                  onDateTimeChanged: onDateChanged,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+
+        /// ━━━━━━━━━━━━━━━━━
+        /// 🔥 FEED
+        /// ━━━━━━━━━━━━━━━━━
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            physics: isPickerActive
+                ? const NeverScrollableScrollPhysics()
+                : const BouncingScrollPhysics(),
+            itemCount: filteredPosts.length,
+            itemBuilder: (context, index) {
+              final post = filteredPosts[index];
+
+              return FeedCard(
+                post: post,
+                index: index,
+                isCenter: index == centerIndex,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
