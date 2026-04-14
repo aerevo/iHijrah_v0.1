@@ -23,12 +23,12 @@ class IslamicPhrase {
 }
 
 const List<IslamicPhrase> kIslamicPhrases = [
-  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽',  color: Color(0xFFFFC107), bg: Color(0x22FFC107)),
-  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '☘',  color: Color(0xFF26D0A0), bg: Color(0x2226D0A0)),
-  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '✦',  color: Color(0xFF40C4FF), bg: Color(0x2240C4FF)),
-  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '◈',  color: Color(0xFFCE93D8), bg: Color(0x22CE93D8)),
-  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: '☪',  color: Color(0xFFFF7043), bg: Color(0x22FF7043)),
-  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: '❋',  color: Color(0xFF80DEEA), bg: Color(0x2280DEEA)),
+  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     symbol: '﷽', color: Color(0xFFFFC107), bg: Color(0x22FFC107)),
+  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', symbol: '﷽', color: Color(0xFF26D0A0), bg: Color(0x2226D0A0)),
+  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   symbol: '﷽', color: Color(0xFF40C4FF), bg: Color(0x2240C4FF)),
+  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    symbol: '﷽', color: Color(0xFFCE93D8), bg: Color(0x22CE93D8)),
+  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  symbol: '﷽', color: Color(0xFFFF7043), bg: Color(0x22FF7043)),
+  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   symbol: '﷽', color: Color(0xFF80DEEA), bg: Color(0x2280DEEA)),
 ];
 
 // ── WARNA TEMA ────────────────────────────────────────────────
@@ -207,10 +207,11 @@ class _FeedCardState extends State<FeedCard> {
                                     child: Text(
                                       phrase.symbol,
                                       style: TextStyle(
-                                        fontSize: 18, // symbol besar, muat penuh
+                                        // ﷽ satu char → 16px, Arab ringkas → 12px
+                                        fontSize: phrase.symbol.length <= 2 ? 16 : 12,
                                         color: phrase.color,
-                                        fontWeight: FontWeight.w900,
-                                        height: 1.0,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.1,
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
