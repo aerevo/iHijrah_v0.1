@@ -1,8 +1,8 @@
-﻿// lib/widgets/zikir_prompt.dart (UPGRADED 7.8/10)
+// lib/widgets/zikir_prompt.dart (UPGRADED 7.8/10)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../utils/constants.dart';
+import '../utils/constants.dart';
 import '../utils/audio_service.dart';
 import '../models/animation_controller_model.dart';
 
