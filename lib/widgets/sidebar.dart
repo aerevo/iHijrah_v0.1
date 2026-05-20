@@ -11,7 +11,7 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import 'metallic_gold.dart';
-import 'embun_ui/embun_ui.dart';
+
 import 'living_tree.dart'; 
 
 class Sidebar extends StatelessWidget {
@@ -49,9 +49,12 @@ class Sidebar extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 45,
-              child: CelebrationButton(
+              child: ElevatedButton(
                 onPressed: () => _launchWhatsApp(context),
-                backgroundColor: Colors.green.shade700,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadius)),
+                ),
                 child: const Text("WhatsApp Admin", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
