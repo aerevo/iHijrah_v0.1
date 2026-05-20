@@ -1,7 +1,7 @@
-﻿// lib/widgets/event_card.dart (OVERWRITE PENUH - PREMIUM UI)
+// lib/widgets/event_card.dart (OVERWRITE PENUH - PREMIUM UI)
 
 import 'package:flutter/material.dart';
-import '../../utils/constants.dart';
+import '../utils/constants.dart';
 import '../utils/event_service.dart';
 import 'feed_card.dart'; // Helper widget yang digunakan
 
