@@ -33,7 +33,7 @@ class PostModel {
 // ─── USER MODEL ───
 class UserModel extends ChangeNotifier {
   // ===== 1. BASIC INFO =====
-  String name = 'Pengguna iHijrah';
+  String name = '';
   DateTime? birthdate;
   String? hijriDOB;
   String? avatarPath;
@@ -149,7 +149,7 @@ class UserModel extends ChangeNotifier {
     final raw = prefs.getString('user_data');
     if (raw != null) {
       final data = json.decode(raw);
-      model.name = data['name'] ?? 'Pengguna iHijrah';
+      model.name = data['name'] ?? '';
       model.email = data['email'] ?? '';
       model.gender = data['gender'] ?? 'Lelaki';
       model.avatarPath = data['avatarPath'];
