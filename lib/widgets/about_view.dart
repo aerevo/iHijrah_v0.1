@@ -1,7 +1,7 @@
 // lib/widgets/about_view.dart (UPGRADED 7.8/10)
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../utils/constants.dart';
+import '../utils/constants.dart';
 import 'metallic_gold.dart';
 
 class AboutView extends StatelessWidget {
