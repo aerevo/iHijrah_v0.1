@@ -116,6 +116,7 @@ class DailyAmalanCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -173,13 +174,13 @@ class _DailyCardShell extends StatelessWidget {
     final Color accent = type.accent;
     final Color bg     = type.bg;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
+    return RepaintBoundary(
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: isCenter ? bg : bg.withOpacity(0.6),
+        color: isCenter ? bg : Color.fromARGB(
+          (bg.alpha * 0.6).round(), bg.red, bg.green, bg.blue),
         border: Border.all(
           color: isCenter
               ? accent.withOpacity(0.55)
@@ -195,7 +196,7 @@ class _DailyCardShell extends StatelessWidget {
                   offset: const Offset(0, 5),
                 ),
               ]
-            : [],
+            : const [],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
@@ -341,6 +342,7 @@ class _DailyCardShell extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
