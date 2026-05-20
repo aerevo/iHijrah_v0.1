@@ -111,9 +111,6 @@ class _FeedPanelState extends State<FeedPanel> {
   @override
   Widget build(BuildContext context) {
     final daily = context.watch<DailyContentProvider>();
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double itemExtent = screenHeight * 0.23;
-
     if (daily.isLoading) {
       return const Center(
         child: CircularProgressIndicator(
@@ -128,7 +125,7 @@ class _FeedPanelState extends State<FeedPanel> {
     return SizedBox.expand(
       child: ListWheelScrollView.useDelegate(
         controller: _controller,
-        itemExtent: itemExtent,
+        itemExtent: 180.0,
         diameterRatio: _diameterRatio,
         perspective: 0.002,
         physics: const FixedExtentScrollPhysics(),
