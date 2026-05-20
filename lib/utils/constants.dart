@@ -127,5 +127,6 @@ class AppAssets {
   
   // DATA
   static const String sirahData = '${dataPath}sirah_data.json';
-  static const String eventData = '${dataPath}events.json';
+  static const String eventData = '${dataPath}event_data.json';
+  static const String amalanSunnahData = '${dataPath}amalan_sunnah.json';
 }
