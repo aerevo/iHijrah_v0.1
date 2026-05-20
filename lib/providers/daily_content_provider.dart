@@ -128,20 +128,35 @@ class DailyContentProvider with ChangeNotifier {
       final String hijriDateStr =
           '${today.hDay} ${bulanHijrah[today.hMonth - 1]}';
 
+      // Ayyamul Bidh = 13, 14, 15 setiap bulan Hijri
+      final bool isAyyamulBidh =
+          today.hDay == 13 || today.hDay == 14 || today.hDay == 15;
+
+      // Malam = selepas Isyak (8pm) atau sebelum Subuh (5am)
+      final bool isMalam = now.hour >= 20 || now.hour < 5;
+
       for (var item in amalanData) {
         final String hariItem = item['hari'].toString();
         bool include = false;
         String type = 'mingguan';
 
         if (hariItem == hijriDateStr) {
+          // Tarikh Hijri tepat — contoh "10 Muharram", "9 Zulhijjah"
           include = true;
           type = 'khas';
+        } else if (hariItem == 'Ayyamul Bidh' && isAyyamulBidh) {
+          // 13/14/15 bulan Hijri
+          include = true;
+          type = 'khas';
+        } else if (hariItem == 'Malam' && isMalam) {
+          // Amalan malam — Tahajjud, Witir, 3 Qul, dll
+          include = true;
         } else if (hariItem.toLowerCase() == dayNameMy.toLowerCase()) {
           if (['Isnin', 'Khamis', 'Jumaat'].contains(dayNameMy)) {
             include = true;
           }
-        } else if (hariItem == 'Setiap hari' && popupMessage == null) {
-          if (now.hour > 7 && now.hour < 12) {
+        } else if (hariItem == 'Setiap hari') {
+          if (now.hour > 7 && now.hour < 12 && popupMessage == null) {
             popupMessage = 'Peringatan Dhuha: 2 rakaat yang mencukupkan rezeki.';
           }
         }
