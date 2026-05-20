@@ -9,7 +9,7 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/audio_service.dart';
 import 'metallic_gold.dart';
-import 'embun_ui/embun_ui.dart';
+
 import 'living_tree.dart';
 
 class HijrahTree extends StatefulWidget {
@@ -222,12 +222,16 @@ class _HijrahTreeState extends State<HijrahTree> with TickerProviderStateMixin {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  AnimatedProgressBar(
-                    progress: progress,
-                    height: widget.isExpanded ? 18 : 14,
-                    backgroundColor: Colors.white.withOpacity(0.05),
-                    foregroundColor: kPrimaryGold,
-                    showShimmer: progress > 0.7,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      height: widget.isExpanded ? 18 : 14,
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.white.withOpacity(0.05),
+                        valueColor: AlwaysStoppedAnimation<Color>(kPrimaryGold),
+                      ),
+                    ),
                   ),
                 ],
               ),
