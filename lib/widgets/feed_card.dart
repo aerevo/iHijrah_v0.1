@@ -92,9 +92,7 @@ class _FeedCardState extends State<FeedCard> {
     return RepaintBoundary(
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
+        child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -119,11 +117,11 @@ class _FeedCardState extends State<FeedCard> {
                       offset: const Offset(0, 2),
                     ),
                   ]
-                : [
+                : const [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Color(0x0D000000),
                       blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      offset: Offset(0, 1),
                     ),
                   ],
           ),
