@@ -116,7 +116,6 @@ class DailyAmalanCard extends StatelessWidget {
           ),
         ),
       ),
-    ),
     );
   }
 }
