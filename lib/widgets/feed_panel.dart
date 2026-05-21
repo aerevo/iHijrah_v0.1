@@ -69,10 +69,6 @@ class _FeedPanelState extends State<FeedPanel> {
   void initState() {
     super.initState();
     _controller = FixedExtentScrollController();
-    _controller.addListener(() {
-      final int n = _controller.selectedItem;
-      if (n != _currentIndex) setState(() => _currentIndex = n);
-    });
   }
 
   @override
@@ -108,6 +104,9 @@ class _FeedPanelState extends State<FeedPanel> {
     return items;
   }
 
+  List<_WheelItem> _cachedItems = [];
+  bool _itemsCached = false;
+
   @override
   Widget build(BuildContext context) {
     final daily = context.watch<DailyContentProvider>();
@@ -120,7 +119,12 @@ class _FeedPanelState extends State<FeedPanel> {
       );
     }
 
-    final List<_WheelItem> items = _buildItems(daily);
+    // Bina sekali je — content harian tak berubah sepanjang sesi
+    if (!_itemsCached) {
+      _cachedItems = _buildItems(daily);
+      _itemsCached = true;
+    }
+    final List<_WheelItem> items = _cachedItems;
 
     return SizedBox.expand(
       child: ListWheelScrollView.useDelegate(
@@ -132,10 +136,10 @@ class _FeedPanelState extends State<FeedPanel> {
         onSelectedItemChanged: (index) =>
             setState(() => _currentIndex = index),
         childDelegate: ListWheelChildBuilderDelegate(
-          childCount: items.length,
+          childCount: _cachedItems.length,
           builder: (context, index) {
             final bool isCenter = index == _currentIndex;
-            final item = items[index];
+            final item = _cachedItems[index];
 
             if (item is _DailyHadithItem) {
               return DailyHadithCard(
