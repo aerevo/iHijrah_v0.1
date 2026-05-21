@@ -31,12 +31,19 @@ const List<IslamicPhrase> kIslamicPhrases = [
 
 // ── WARNA TEMA CERAH ──────────────────────────────────────────
 // Floating mode — no card background
-const Color _titleCenter  = Color(0xFFF1F5F9);       // putih terang
-const Color _titleDim     = Color(0xFFCBD5E1);       // slate terang
-const Color _bodyCenter   = Color(0xFF94A3B8);       // slate muda
-const Color _bodyDim      = Color(0xFF475569);       // slate gelap (dim)
+const Color _titleCenter  = Color(0xFFFFFFFF);
+const Color _titleDim     = Color(0xFFE2E8F0);
+const Color _bodyCenter   = Color(0xFFE2E8F0);
+const Color _bodyDim      = Color(0xFFCBD5E1);
 const Color _metaColor    = Color(0xFF94A3B8);       // kelabu
 const Color _glowBlue     = Color(0xFF3B82F6);       // biru fokus
+
+
+// Text shadow untuk keterbacaan atas latar apapun
+const List<Shadow> kTextShadow = [
+  Shadow(color: Color(0xCC000000), blurRadius: 6, offset: Offset(0, 1)),
+  Shadow(color: Color(0x88000000), blurRadius: 14, offset: Offset(0, 2)),
+];
 
 // ── FEED CARD ─────────────────────────────────────────────────
 class FeedCard extends StatefulWidget {
@@ -94,19 +101,7 @@ class _FeedCardState extends State<FeedCard> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
-                // ─── ACCENT LINE KIRI ─────────────────────
-                // ── ACCENT LINE ──────────────────────
-                Container(
-                  width: 3.5,
-                  decoration: BoxDecoration(
-                    color: widget.isCenter
-                        ? _typeColor
-                        : Color.fromARGB(76, _typeColor.red, _typeColor.green, _typeColor.blue),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-
-                // ─── KONTEN UTAMA ──────────────────────────
+// ─── KONTEN UTAMA ──────────────────────────
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(11, 10, 10, 10),
