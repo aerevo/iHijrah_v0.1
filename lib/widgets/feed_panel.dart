@@ -43,7 +43,7 @@ class FeedPanel extends StatefulWidget {
 
 class _FeedPanelState extends State<FeedPanel> {
   late final FixedExtentScrollController _controller;
-  int _currentIndex = 0;
+  final ValueNotifier<int> _currentIndex = ValueNotifier<int>(0);
 
   static const double _diameterRatio = 1.8;
 
@@ -74,6 +74,7 @@ class _FeedPanelState extends State<FeedPanel> {
   @override
   void dispose() {
     _controller.dispose();
+    _currentIndex.dispose();
     super.dispose();
   }
 
@@ -104,9 +105,6 @@ class _FeedPanelState extends State<FeedPanel> {
     return items;
   }
 
-  List<_WheelItem> _cachedItems = [];
-  bool _itemsCached = false;
-
   @override
   Widget build(BuildContext context) {
     final daily = context.watch<DailyContentProvider>();
@@ -119,12 +117,7 @@ class _FeedPanelState extends State<FeedPanel> {
       );
     }
 
-    // Bina sekali je — content harian tak berubah sepanjang sesi
-    if (!_itemsCached) {
-      _cachedItems = _buildItems(daily);
-      _itemsCached = true;
-    }
-    final List<_WheelItem> items = _cachedItems;
+    final List<_WheelItem> items = _buildItems(daily);
 
     return SizedBox.expand(
       child: ListWheelScrollView.useDelegate(
@@ -134,46 +127,48 @@ class _FeedPanelState extends State<FeedPanel> {
         perspective: 0.002,
         physics: const FixedExtentScrollPhysics(),
         onSelectedItemChanged: (index) =>
-            setState(() => _currentIndex = index),
+            _currentIndex.value = index,
         childDelegate: ListWheelChildBuilderDelegate(
           childCount: _cachedItems.length,
           builder: (context, index) {
-            final bool isCenter = index == _currentIndex;
             final item = _cachedItems[index];
+            return ValueListenableBuilder<int>(
+              valueListenable: _currentIndex,
+              builder: (context, currentIdx, __) {
+                final bool isCenter = index == currentIdx;
 
-            if (item is _DailyHadithItem) {
-              return DailyHadithCard(
-                hadith: item.hadith,
-                isCenter: isCenter,
-              );
-            }
-
-            if (item is _DailyAmalanItem) {
-              return DailyAmalanCard(
-                amalan: item.amalan,
-                isCenter: isCenter,
-                onToggle: () =>
-                    daily.toggleAmalan(item.amalan.id),
-              );
-            }
-
-            if (item is _DailySirahItem) {
-              return DailySirahCard(
-                sirah: item.sirah,
-                isCenter: isCenter,
-              );
-            }
-
-            // Feed card biasa
-            final post = (item as _FeedItem).post;
-            return FeedCard(
-              post: post,
-              isCenter: isCenter,
-              onTap: () => _controller.animateToItem(
-                index,
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeOutCubic,
-              ),
+                if (item is _DailyHadithItem) {
+                  return DailyHadithCard(
+                    hadith: item.hadith,
+                    isCenter: isCenter,
+                  );
+                }
+                if (item is _DailyAmalanItem) {
+                  return DailyAmalanCard(
+                    amalan: item.amalan,
+                    isCenter: isCenter,
+                    onToggle: () =>
+                        daily.toggleAmalan(item.amalan.id),
+                  );
+                }
+                if (item is _DailySirahItem) {
+                  return DailySirahCard(
+                    sirah: item.sirah,
+                    isCenter: isCenter,
+                  );
+                }
+                // Feed card biasa
+                final post = (item as _FeedItem).post;
+                return FeedCard(
+                  post: post,
+                  isCenter: isCenter,
+                  onTap: () => _controller.animateToItem(
+                    index,
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutCubic,
+                  ),
+                );
+              },
             );
           },
         ),
