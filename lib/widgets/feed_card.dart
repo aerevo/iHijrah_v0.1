@@ -134,15 +134,9 @@ class _FeedCardState extends State<FeedCard> {
                 // ─── ACCENT LINE KIRI ─────────────────────
                 Container(
                   width: 3.5,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: widget.isCenter
-                          ? [_typeColor, _typeColor.withOpacity(0.3)]
-                          : [_typeColor.withOpacity(0.4), _typeColor.withOpacity(0.1)],
-                    ),
-                  ),
+                  color: widget.isCenter
+                      ? _typeColor
+                      : Color.fromARGB(102, _typeColor.red, _typeColor.green, _typeColor.blue),
                 ),
 
                 // ─── KONTEN UTAMA ──────────────────────────
@@ -347,22 +341,7 @@ class _FeedCardState extends State<FeedCard> {
                                   size: 24),
                             ),
                           ),
-                          // Blend kiri gambar
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    (widget.isCenter ? _cardCenter : _cardDim)
-                                        .withOpacity(0.3),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+
                           if (widget.post.type == 'video')
                             Center(
                               child: Container(
