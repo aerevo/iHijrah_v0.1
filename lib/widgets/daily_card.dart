@@ -206,15 +206,8 @@ class _DailyCardShell extends StatelessWidget {
             // ── ACCENT LINE KIRI ──────────────────────────
             Container(
               width: 3.5,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isCenter
-                      ? [accent, accent.withOpacity(0.2)]
-                      : [accent.withOpacity(0.3), accent.withOpacity(0.05)],
-                ),
-              ),
+              color: isCenter ? accent : Color.fromARGB(
+                76, accent.red, accent.green, accent.blue),
             ),
 
             // ── KANDUNGAN ─────────────────────────────────
@@ -321,7 +314,7 @@ class _DailyCardShell extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.04),
+                        color: Color(0x0AFFFFFF),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
