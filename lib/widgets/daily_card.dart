@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
 
+
+const List<Shadow> _kShadow = [
+  Shadow(color: Color(0xCC000000), blurRadius: 6, offset: Offset(0, 1)),
+  Shadow(color: Color(0x88000000), blurRadius: 14, offset: Offset(0, 2)),
+];
+
 // ── JENIS KAD HARIAN ─────────────────────────────────────────
 enum DailyCardType { hadith, amalan, sirah }
 
@@ -180,16 +186,6 @@ class _DailyCardShell extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
 
-            // ── ACCENT LINE KIRI ──────────────────────────
-            Container(
-              width: 3.5,
-              decoration: BoxDecoration(
-                color: isCenter
-                    ? accent
-                    : Color.fromARGB(76, accent.red, accent.green, accent.blue),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
 
             // ── KANDUNGAN ─────────────────────────────────
             Expanded(
@@ -279,10 +275,11 @@ class _DailyCardShell extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: accent.withOpacity(isCenter ? 0.65 : 0.35),
+                        color: Colors.white.withOpacity(isCenter ? 0.85 : 0.55),
                         fontSize: 9.5,
                         fontStyle: FontStyle.italic,
                         height: 1.3,
+                        shadows: _kShadow,
                       ),
                       maxLines: isCenter ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
@@ -294,10 +291,11 @@ class _DailyCardShell extends StatelessWidget {
                     Text(
                       tag,
                       style: TextStyle(
-                        color: kTextSecondary.withOpacity(
-                            isCenter ? 0.5 : 0.25),
+                        color: Colors.white.withOpacity(
+                            isCenter ? 0.6 : 0.35),
                         fontSize: 8.5,
                         letterSpacing: 0.2,
+                        shadows: _kShadow,
                       ),
                     ),
                   ],
