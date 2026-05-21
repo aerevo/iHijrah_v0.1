@@ -331,7 +331,6 @@ class _FeedCardState extends State<FeedCard> {
             ),
           ),
         ),
-      ),
     );
   }
 
