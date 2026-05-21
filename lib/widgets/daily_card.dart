@@ -174,31 +174,8 @@ class _DailyCardShell extends StatelessWidget {
     final Color bg     = type.bg;
 
     return RepaintBoundary(
-      child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: isCenter ? bg : Color.fromARGB(
-          (bg.alpha * 0.6).round(), bg.red, bg.green, bg.blue),
-        border: Border.all(
-          color: isCenter
-              ? accent.withOpacity(0.55)
-              : accent.withOpacity(0.15),
-          width: isCenter ? 1.2 : 0.6,
-        ),
-        boxShadow: isCenter
-            ? [
-                BoxShadow(
-                  color: accent.withOpacity(0.12),
-                  blurRadius: 20,
-                  spreadRadius: -2,
-                  offset: const Offset(0, 5),
-                ),
-              ]
-            : const [],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -206,8 +183,12 @@ class _DailyCardShell extends StatelessWidget {
             // ── ACCENT LINE KIRI ──────────────────────────
             Container(
               width: 3.5,
-              color: isCenter ? accent : Color.fromARGB(
-                76, accent.red, accent.green, accent.blue),
+              decoration: BoxDecoration(
+                color: isCenter
+                    ? accent
+                    : Color.fromARGB(76, accent.red, accent.green, accent.blue),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
 
             // ── KANDUNGAN ─────────────────────────────────
@@ -309,22 +290,14 @@ class _DailyCardShell extends StatelessWidget {
 
                     const SizedBox(height: 6),
 
-                    // [4] TAG BAWAH
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Color(0x0AFFFFFF),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          color: kTextSecondary.withOpacity(
-                              isCenter ? 0.6 : 0.3),
-                          fontSize: 8.5,
-                          letterSpacing: 0.2,
-                        ),
+                    // [4] TAG BAWAH — plain text
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        color: kTextSecondary.withOpacity(
+                            isCenter ? 0.5 : 0.25),
+                        fontSize: 8.5,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
@@ -334,7 +307,6 @@ class _DailyCardShell extends StatelessWidget {
           ],
         ),
       ),
-    ),
     );
   }
 }
