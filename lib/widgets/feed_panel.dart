@@ -47,6 +47,9 @@ class _FeedPanelState extends State<FeedPanel> {
 
   static const double _diameterRatio = 1.8;
 
+  List<_WheelItem> _cachedItems = [];
+  bool _itemsCached = false;
+
   static const List<PostModel> _posts = [
     PostModel(id: '101', type: 'video',   title: 'Kisah Hijrah Rasulullah ﷺ',        content: 'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda dari ancaman kaum Quraisy.',             author: 'Ustaz Don',        authorAge: '40', likes: 1240, time: '2j',  assetPath: 'assets/images/dummy_post1.jpg'),
     PostModel(id: '102', type: 'quote',   title: 'Kata Hikmah',                       content: 'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',                                         author: "Imam Syafi'i",     authorAge: '',   likes: 850,  time: '5j'),
@@ -117,7 +120,10 @@ class _FeedPanelState extends State<FeedPanel> {
       );
     }
 
-    final List<_WheelItem> items = _buildItems(daily);
+    if (!_itemsCached) {
+      _cachedItems = _buildItems(daily);
+      _itemsCached = true;
+    }
 
     return SizedBox.expand(
       child: ListWheelScrollView.useDelegate(
