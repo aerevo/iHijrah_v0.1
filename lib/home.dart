@@ -68,7 +68,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           // 1. BACKGROUND
           const Positioned.fill(child: DynamicBackground()),
 
-          // 2. FEED — penuh skrin
+          // 2. LATAR LANGIT — bawah feed
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/langit.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // 3. FEED — penuh skrin
           Positioned.fill(
             child: Stack(
               children: [
@@ -92,14 +100,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-          // 3. FLYOUT
+          // 4. FLYOUT
           Positioned(
             left: AppSizes.sidebarWidth,
             top: 0, bottom: 0,
             child: const FlyoutPanel(),
           ),
 
-          // 4. ZIKIR PROMPT
+          // 5. ZIKIR PROMPT
           if (!user.zikirDoneToday)
             Positioned.fill(
               child: ZikirPrompt(
@@ -108,7 +116,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
 
-          // 5. CONFETTI
+          // 6. CONFETTI
           Positioned.fill(
             child: IgnorePointer(
               child: Lottie.asset(
