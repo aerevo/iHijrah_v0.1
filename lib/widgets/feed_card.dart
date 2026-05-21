@@ -2,7 +2,6 @@
 // HIERARKI BETUL: Tajuk atas → Badge+Author → Content → Footer
 // Tema cerah sesuai dengan latar putih/kelabu/biru muda
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
@@ -31,14 +30,11 @@ const List<IslamicPhrase> kIslamicPhrases = [
 ];
 
 // ── WARNA TEMA CERAH ──────────────────────────────────────────
-const Color _cardCenter   = Color(0xFFFFFFFF);       // putih bersih
-const Color _cardDim      = Color(0xFFF0F4F8);       // putih kebiruan
-const Color _borderCenter = Color(0xFF93C5FD);       // biru muda
-const Color _borderDim    = Color(0xFFCDD9E8);       // kelabu biru
-const Color _titleCenter  = Color(0xFF0F172A);       // hampir hitam
-const Color _titleDim     = Color(0xFF334155);       // slate gelap
-const Color _bodyCenter   = Color(0xFF475569);       // slate
-const Color _bodyDim      = Color(0xFF94A3B8);       // slate pudar
+// Floating mode — no card background
+const Color _titleCenter  = Color(0xFFF1F5F9);       // putih terang
+const Color _titleDim     = Color(0xFFCBD5E1);       // slate terang
+const Color _bodyCenter   = Color(0xFF94A3B8);       // slate muda
+const Color _bodyDim      = Color(0xFF475569);       // slate gelap (dim)
 const Color _metaColor    = Color(0xFF94A3B8);       // kelabu
 const Color _glowBlue     = Color(0xFF3B82F6);       // biru fokus
 
@@ -92,51 +88,22 @@ class _FeedCardState extends State<FeedCard> {
     return RepaintBoundary(
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: widget.isCenter ? _cardCenter : _cardDim,
-            border: Border.all(
-              color: widget.isCenter
-                  ? _borderCenter
-                  : _borderDim,
-              width: widget.isCenter ? 1.5 : 0.8,
-            ),
-            boxShadow: widget.isCenter
-                ? [
-                    BoxShadow(
-                      color: _glowBlue.withOpacity(0.14),
-                      blurRadius: 18,
-                      spreadRadius: -2,
-                      offset: const Offset(0, 5),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : const [
-                    BoxShadow(
-                      color: Color(0x0D000000),
-                      blurRadius: 4,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Row(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
                 // ─── ACCENT LINE KIRI ─────────────────────
+                // ── ACCENT LINE ──────────────────────
                 Container(
                   width: 3.5,
-                  color: widget.isCenter
-                      ? _typeColor
-                      : Color.fromARGB(102, _typeColor.red, _typeColor.green, _typeColor.blue),
+                  decoration: BoxDecoration(
+                    color: widget.isCenter
+                        ? _typeColor
+                        : Color.fromARGB(76, _typeColor.red, _typeColor.green, _typeColor.blue),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
 
                 // ─── KONTEN UTAMA ──────────────────────────
