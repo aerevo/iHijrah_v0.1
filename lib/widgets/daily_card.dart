@@ -7,8 +7,7 @@ import '../utils/constants.dart';
 
 
 const List<Shadow> _kShadow = [
-  Shadow(color: Color(0xCC000000), blurRadius: 6, offset: Offset(0, 1)),
-  Shadow(color: Color(0x88000000), blurRadius: 14, offset: Offset(0, 2)),
+  Shadow(color: Color(0xB3000000), blurRadius: 4, offset: Offset(0, 1)),
 ];
 
 // ── JENIS KAD HARIAN ─────────────────────────────────────────
@@ -71,6 +70,7 @@ class DailyHadithCard extends StatelessWidget {
       title: hadith.text,
       subtitle: '— ${hadith.riwayat}',
       tag: hadith.kategori,
+      subtitleItalic: true,
     );
   }
 }
@@ -162,6 +162,7 @@ class _DailyCardShell extends StatelessWidget {
   final String subtitle;
   final String tag;
   final Widget? trailingWidget;
+  final bool subtitleItalic;
 
   const _DailyCardShell({
     required this.type,
@@ -172,6 +173,7 @@ class _DailyCardShell extends StatelessWidget {
     required this.subtitle,
     required this.tag,
     this.trailingWidget,
+    this.subtitleItalic = false,
   });
 
   @override
@@ -238,7 +240,7 @@ class _DailyCardShell extends StatelessWidget {
                           topRight,
                           style: TextStyle(
                             color: accent.withOpacity(
-                                isCenter ? 0.6 : 0.35),
+                                isCenter ? 0.75 : 0.60),
                             fontSize: 9,
                             fontWeight: FontWeight.w500,
                           ),
@@ -259,11 +261,12 @@ class _DailyCardShell extends StatelessWidget {
                       style: TextStyle(
                         color: isCenter
                             ? kTextPrimary
-                            : kTextPrimary.withOpacity(0.55),
+                            : kTextPrimary.withOpacity(0.88),
                         fontSize: isCenter ? 12.5 : 11,
                         fontWeight: FontWeight.w600,
                         height: 1.45,
                         letterSpacing: -0.2,
+                        shadows: _kShadow,
                       ),
                       maxLines: isCenter ? 4 : 2,
                       overflow: TextOverflow.ellipsis,
@@ -275,9 +278,9 @@ class _DailyCardShell extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(isCenter ? 0.85 : 0.55),
+                        color: Colors.white.withOpacity(isCenter ? 0.92 : 0.88),
                         fontSize: 9.5,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: subtitleItalic ? FontStyle.italic : FontStyle.normal,
                         height: 1.3,
                         shadows: _kShadow,
                       ),
@@ -292,7 +295,7 @@ class _DailyCardShell extends StatelessWidget {
                       tag,
                       style: TextStyle(
                         color: Colors.white.withOpacity(
-                            isCenter ? 0.6 : 0.35),
+                            isCenter ? 0.72 : 0.60),
                         fontSize: 8.5,
                         letterSpacing: 0.2,
                         shadows: _kShadow,
