@@ -41,8 +41,7 @@ const Color _glowBlue     = Color(0xFF3B82F6);       // biru fokus
 
 // Text shadow untuk keterbacaan atas latar apapun
 const List<Shadow> kTextShadow = [
-  Shadow(color: Color(0xCC000000), blurRadius: 6, offset: Offset(0, 1)),
-  Shadow(color: Color(0x88000000), blurRadius: 14, offset: Offset(0, 2)),
+  Shadow(color: Color(0xB3000000), blurRadius: 4, offset: Offset(0, 1)),
 ];
 
 // ── FEED CARD ─────────────────────────────────────────────────
@@ -120,6 +119,7 @@ class _FeedCardState extends State<FeedCard> {
                             fontStyle: FontStyle.normal,
                             letterSpacing: -0.4,
                             height: 1.2,
+                            shadows: kTextShadow,
                           ),
                           maxLines: widget.isCenter ? 2 : 1,
                           overflow: TextOverflow.ellipsis,
@@ -215,6 +215,7 @@ class _FeedCardState extends State<FeedCard> {
                             fontSize: widget.isCenter ? 11.5 : 10.5,
                             height: 1.45,
                             fontWeight: FontWeight.w400,
+                            shadows: kTextShadow,
                           ),
                           maxLines: widget.isCenter ? 3 : 1,
                           overflow: TextOverflow.ellipsis,
