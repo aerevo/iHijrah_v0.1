@@ -76,6 +76,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
+          // 2b. PURPLE TWILIGHT OVERLAY — kontrast text naik, aesthetic kekal
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x55481E78), // atas — purple ~33%
+                    Color(0x3D2D1050), // tengah — gelap lembut
+                    Color(0x60381060), // bawah — sedikit lebih pekat
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           // 3. FEED — penuh skrin
           Positioned.fill(
             child: Stack(
