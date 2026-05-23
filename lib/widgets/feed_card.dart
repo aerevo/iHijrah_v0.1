@@ -36,7 +36,7 @@ const Color _titleCenter  = Color(0xFFFFFFFF);
 const Color _titleDim     = Color(0xFFE2E8F0);
 const Color _bodyCenter   = Color(0xFFE2E8F0);
 const Color _bodyDim      = Color(0xFFCBD5E1);
-const Color _metaColor    = Color(0xFF94A3B8);       // kelabu
+const Color _metaColor    = Color(0xFF94A3B8);
 
 
 // Text shadow untuk keterbacaan atas latar apapun
@@ -95,15 +95,24 @@ class _FeedCardState extends State<FeedCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(widget.isCenter ? 0.18 : 0.10),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.black.withOpacity(widget.isCenter ? 0.22 : 0.12),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: Colors.white.withOpacity(widget.isCenter ? 0.08 : 0.04),
+                color: _typeColor.withOpacity(widget.isCenter ? 0.22 : 0.08),
                 width: 0.8,
               ),
+              boxShadow: widget.isCenter
+                  ? [
+                      BoxShadow(
+                        color: _typeColor.withOpacity(0.12),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -118,14 +127,13 @@ class _FeedCardState extends State<FeedCard> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
 
-                        // ══ [1] TAJUK — paling atas, paling besar ══
+                        // ══ [1] TAJUK ══
                         Text(
                           widget.post.title,
                           style: GoogleFonts.amiri(
                             color: widget.isCenter ? _titleCenter : _titleDim,
-                            fontSize: widget.isCenter ? 18 : 14,
+                            fontSize: widget.isCenter ? 17 : 13,
                             fontWeight: FontWeight.w700,
-                            fontStyle: FontStyle.normal,
                             letterSpacing: 0.1,
                             height: 1.25,
                             shadows: kTextShadow,
@@ -230,10 +238,9 @@ class _FeedCardState extends State<FeedCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
 
-                        // ══ [4] FOOTER — minimal, spiritual ══
+                        // ══ [4] FOOTER ══
                         Row(
                           children: [
-                            // Type badge
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 7, vertical: 3),
@@ -249,7 +256,8 @@ class _FeedCardState extends State<FeedCard> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(_typeIcon,
-                                      size: 9, color: _typeColor.withOpacity(0.8)),
+                                      size: 9,
+                                      color: _typeColor.withOpacity(0.8)),
                                   const SizedBox(width: 3),
                                   Text(
                                     widget.post.type.toUpperCase(),
@@ -264,10 +272,9 @@ class _FeedCardState extends State<FeedCard> {
                               ),
                             ),
                             const Spacer(),
-                            // Bookmark
                             GestureDetector(
-                              onTap: () =>
-                                  setState(() => _bookmarked = !_bookmarked),
+                              onTap: () => setState(
+                                  () => _bookmarked = !_bookmarked),
                               behavior: HitTestBehavior.opaque,
                               child: Padding(
                                 padding: const EdgeInsets.all(4),
@@ -289,44 +296,63 @@ class _FeedCardState extends State<FeedCard> {
                   ),
                 ),
 
-                // ─── THUMBNAIL — flush tepi kanan ─────────
+                // ─── THUMBNAIL — float dalam kad, ada ruang sekeliling ─
                 if (hasImage)
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(15),
-                      bottomRight: Radius.circular(15),
-                    ),
-                    child: SizedBox(
-                      width: 88,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.asset(
-                            widget.post.assetPath!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: _typeColor.withOpacity(0.08),
-                              child: Icon(_typeIcon,
-                                  color: _typeColor.withOpacity(0.35),
-                                  size: 24),
-                            ),
-                          ),
-
-                          if (widget.post.type == 'video')
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 10, 10, 10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 80,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              widget.post.assetPath!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.45),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.white70, width: 1),
+                                  color: _typeColor.withOpacity(0.10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.play_arrow_rounded,
-                                    color: Colors.white, size: 16),
+                                child: Icon(_typeIcon,
+                                    color: _typeColor.withOpacity(0.35),
+                                    size: 22),
                               ),
                             ),
-                        ],
+                            // Subtle gradient overlay bawah image
+                            Positioned(
+                              bottom: 0, left: 0, right: 0,
+                              child: Container(
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.5),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (widget.post.type == 'video')
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.50),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white60, width: 0.8),
+                                  ),
+                                  child: const Icon(Icons.play_arrow_rounded,
+                                      color: Colors.white, size: 14),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
