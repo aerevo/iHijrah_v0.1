@@ -98,10 +98,10 @@ class _FeedCardState extends State<FeedCard> {
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(widget.isCenter ? 0.22 : 0.12),
+              color: Colors.black.withOpacity(widget.isCenter ? 0.35 : 0.22),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: _typeColor.withOpacity(widget.isCenter ? 0.22 : 0.08),
+                color: _typeColor.withOpacity(widget.isCenter ? 0.28 : 0.10),
                 width: 0.8,
               ),
               boxShadow: widget.isCenter
@@ -225,17 +225,11 @@ class _FeedCardState extends State<FeedCard> {
                         ),
 
                         // ══ [3] KANDUNGAN ══
-                        Text(
-                          widget.post.content,
-                          style: TextStyle(
-                            color: widget.isCenter ? _bodyCenter : _bodyDim,
-                            fontSize: widget.isCenter ? 11.5 : 10.5,
-                            height: 1.45,
-                            fontWeight: FontWeight.w400,
-                            shadows: kTextShadow,
-                          ),
-                          maxLines: widget.isCenter ? 3 : 1,
-                          overflow: TextOverflow.ellipsis,
+                        _ExpandableContent(
+                          text: widget.post.content,
+                          isCenter: widget.isCenter,
+                          bodyColor: widget.isCenter ? _bodyCenter : _bodyDim,
+                          accentColor: _typeColor,
                         ),
 
                         // ══ [4] FOOTER ══
@@ -367,5 +361,70 @@ class _FeedCardState extends State<FeedCard> {
   String _fmt(int n) {
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
     return '$n';
+  }
+}
+
+// ── EXPANDABLE CONTENT ────────────────────────────────────────
+class _ExpandableContent extends StatefulWidget {
+  final String text;
+  final bool isCenter;
+  final Color bodyColor;
+  final Color accentColor;
+
+  const _ExpandableContent({
+    required this.text,
+    required this.isCenter,
+    required this.bodyColor,
+    required this.accentColor,
+  });
+
+  @override
+  State<_ExpandableContent> createState() => _ExpandableContentState();
+}
+
+class _ExpandableContentState extends State<_ExpandableContent> {
+  bool _expanded = false;
+
+  static const int _previewLines = 3;
+  static const int _charThreshold = 100;
+
+  bool get _isLong => widget.text.length > _charThreshold;
+
+  @override
+  Widget build(BuildContext context) {
+    final showToggle = widget.isCenter && _isLong;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.text,
+          style: TextStyle(
+            color: widget.bodyColor,
+            fontSize: widget.isCenter ? 11.5 : 10.5,
+            height: 1.45,
+            fontWeight: FontWeight.w400,
+            shadows: kTextShadow,
+          ),
+          maxLines: _expanded ? null : (widget.isCenter ? _previewLines : 1),
+          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        ),
+        if (showToggle) ...[
+          const SizedBox(height: 3),
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Text(
+              _expanded ? 'Sembunyikan ↑' : 'Baca lagi...',
+              style: TextStyle(
+                color: widget.accentColor.withOpacity(0.75),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
