@@ -45,7 +45,9 @@ class _FeedPanelState extends State<FeedPanel> {
   late final FixedExtentScrollController _controller;
   final ValueNotifier<int> _currentIndex = ValueNotifier<int>(0);
 
-  static const double _diameterRatio = 1.8;
+  static const double _diameterRatio  = 1.35;   // tighter = lengkungan lebih kuat
+  static const double _offAxis        = 0.42;   // wheel senget kanan
+  static const double _perspective    = 0.0032; // 3D distortion ketara
 
   List<_WheelItem> _cachedItems = [];
   bool _itemsCached = false;
@@ -128,9 +130,10 @@ class _FeedPanelState extends State<FeedPanel> {
     return SizedBox.expand(
       child: ListWheelScrollView.useDelegate(
         controller: _controller,
-        itemExtent: 180.0,
+        itemExtent: 195.0,
         diameterRatio: _diameterRatio,
-        perspective: 0.002,
+        offAxisFraction: _offAxis,
+        perspective: _perspective,
         physics: const FixedExtentScrollPhysics(),
         onSelectedItemChanged: (index) =>
             _currentIndex.value = index,
