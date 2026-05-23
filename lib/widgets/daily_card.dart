@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
-import 'brush_divider.dart';
 
 
 const List<Shadow> _kShadow = [
@@ -183,27 +182,36 @@ class _DailyCardShell extends StatelessWidget {
     final Color bg     = type.bg;
 
     return RepaintBoundary(
-      child: Column(
-        children: [
-
-          // ── GARIS PISAH ATAS ─────────────────────────────────
-          BrushDivider(
-            color: accent,
-            opacity: isCenter ? 0.50 : 0.28,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(isCenter ? 0.32 : 0.18),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: accent.withOpacity(isCenter ? 0.20 : 0.07),
+              width: 0.8,
+            ),
+            boxShadow: isCenter
+                ? [
+                    BoxShadow(
+                      color: accent.withOpacity(0.14),
+                      blurRadius: 18,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
           ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
 
-          // ── KANDUNGAN KAD ────────────────────────────────────
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-
-                  // ── KANDUNGAN ─────────────────────────────────
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                // ── KANDUNGAN KAD ─────────────────────────────────────
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -320,14 +328,7 @@ class _DailyCardShell extends StatelessWidget {
               ),
             ),
           ),
-
-          // ── GARIS PISAH BAWAH ────────────────────────────────
-          BrushDivider(
-            color: accent,
-            opacity: isCenter ? 0.50 : 0.28,
-          ),
-
-        ],
+        ),
       ),
     );
   }
