@@ -45,9 +45,9 @@ class _FeedPanelState extends State<FeedPanel> {
   late final FixedExtentScrollController _controller;
   final ValueNotifier<int> _currentIndex = ValueNotifier<int>(0);
 
-  static const double _diameterRatio  = 1.35;   // tighter = lengkungan lebih kuat
-  static const double _offAxis        = 0.42;   // wheel senget kanan
-  static const double _perspective    = 0.0032; // 3D distortion ketara
+  static const double _diameterRatio  = 1.15;   // lebih ketat = curve atas/bawah kembang
+  static const double _offAxis        = -0.44;  // negatif = melengkung ke kanan
+  static const double _perspective    = 0.0035; // 3D lebih ketara
 
   List<_WheelItem> _cachedItems = [];
   bool _itemsCached = false;
@@ -130,7 +130,7 @@ class _FeedPanelState extends State<FeedPanel> {
     return SizedBox.expand(
       child: ListWheelScrollView.useDelegate(
         controller: _controller,
-        itemExtent: 195.0,
+        itemExtent: 152.0,
         diameterRatio: _diameterRatio,
         offAxisFraction: _offAxis,
         perspective: _perspective,
@@ -146,36 +146,42 @@ class _FeedPanelState extends State<FeedPanel> {
               builder: (context, currentIdx, __) {
                 final bool isCenter = index == currentIdx;
 
+                // ── Tilt tetap pada setiap kad ──────────────────
+                Widget card;
+
                 if (item is _DailyHadithItem) {
-                  return DailyHadithCard(
+                  card = DailyHadithCard(
                     hadith: item.hadith,
                     isCenter: isCenter,
                   );
-                }
-                if (item is _DailyAmalanItem) {
-                  return DailyAmalanCard(
+                } else if (item is _DailyAmalanItem) {
+                  card = DailyAmalanCard(
                     amalan: item.amalan,
                     isCenter: isCenter,
-                    onToggle: () =>
-                        daily.toggleAmalan(item.amalan.id),
+                    onToggle: () => daily.toggleAmalan(item.amalan.id),
                   );
-                }
-                if (item is _DailySirahItem) {
-                  return DailySirahCard(
+                } else if (item is _DailySirahItem) {
+                  card = DailySirahCard(
                     sirah: item.sirah,
                     isCenter: isCenter,
                   );
+                } else {
+                  final post = (item as _FeedItem).post;
+                  card = FeedCard(
+                    post: post,
+                    isCenter: isCenter,
+                    onTap: () => _controller.animateToItem(
+                      index,
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeOutCubic,
+                    ),
+                  );
                 }
-                // Feed card biasa
-                final post = (item as _FeedItem).post;
-                return FeedCard(
-                  post: post,
-                  isCenter: isCenter,
-                  onTap: () => _controller.animateToItem(
-                    index,
-                    duration: const Duration(milliseconds: 350),
-                    curve: Curves.easeOutCubic,
-                  ),
+
+                // Tilt asas 3° — kekal walau di mana dalam wheel
+                return Transform.rotate(
+                  angle: -0.052, // ~3 darjah
+                  child: card,
                 );
               },
             );
