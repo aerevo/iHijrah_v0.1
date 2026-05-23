@@ -3,6 +3,7 @@
 // Tema cerah sesuai dengan latar putih/kelabu/biru muda
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 
@@ -36,7 +37,6 @@ const Color _titleDim     = Color(0xFFE2E8F0);
 const Color _bodyCenter   = Color(0xFFE2E8F0);
 const Color _bodyDim      = Color(0xFFCBD5E1);
 const Color _metaColor    = Color(0xFF94A3B8);       // kelabu
-const Color _glowBlue     = Color(0xFF3B82F6);       // biru fokus
 
 
 // Text shadow untuk keterbacaan atas latar apapun
@@ -62,7 +62,7 @@ class FeedCard extends StatefulWidget {
 }
 
 class _FeedCardState extends State<FeedCard> {
-  bool _liked = false;
+  bool _bookmarked = false;
 
   IslamicPhrase get _phrase =>
       kIslamicPhrases[widget.post.title.hashCode.abs() % kIslamicPhrases.length];
@@ -96,7 +96,16 @@ class _FeedCardState extends State<FeedCard> {
         onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(widget.isCenter ? 0.18 : 0.10),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(widget.isCenter ? 0.08 : 0.04),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
@@ -112,13 +121,13 @@ class _FeedCardState extends State<FeedCard> {
                         // ══ [1] TAJUK — paling atas, paling besar ══
                         Text(
                           widget.post.title,
-                          style: TextStyle(
+                          style: GoogleFonts.amiri(
                             color: widget.isCenter ? _titleCenter : _titleDim,
-                            fontSize: widget.isCenter ? 15 : 13,
-                            fontWeight: FontWeight.w800,
+                            fontSize: widget.isCenter ? 18 : 14,
+                            fontWeight: FontWeight.w700,
                             fontStyle: FontStyle.normal,
-                            letterSpacing: -0.4,
-                            height: 1.2,
+                            letterSpacing: 0.1,
+                            height: 1.25,
                             shadows: kTextShadow,
                           ),
                           maxLines: widget.isCenter ? 2 : 1,
@@ -221,60 +230,58 @@ class _FeedCardState extends State<FeedCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
 
-                        // ══ [4] FOOTER — action buttons ══
+                        // ══ [4] FOOTER — minimal, spiritual ══
                         Row(
                           children: [
-                            _ActionBtn(
-                              icon: _liked
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              label: _fmt(widget.post.likes),
-                              color: _liked
-                                  ? const Color(0xFFEF4444)
-                                  : _metaColor,
-                              onTap: () =>
-                                  setState(() => _liked = !_liked),
-                            ),
-                            const SizedBox(width: 14),
-                            _ActionBtn(
-                              icon: Icons.chat_bubble_outline_rounded,
-                              label: _fmt((widget.post.likes / 12).floor()),
-                              color: _metaColor,
-                            ),
-                            const SizedBox(width: 14),
-                            _ActionBtn(
-                              icon: Icons.share_rounded,
-                              label: 'Kongsi',
-                              color: _metaColor,
-                            ),
-                            if (widget.isCenter) ...[
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () {
-                                  // TODO: PostDetailPage
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: _glowBlue.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(7),
-                                    border: Border.all(
-                                      color: _glowBlue.withOpacity(0.35),
-                                      width: 0.9,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Lihat',
-                                    style: TextStyle(
-                                      color: _glowBlue.withOpacity(0.9),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                            // Type badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: _typeColor.withOpacity(0.10),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: _typeColor.withOpacity(0.25),
+                                  width: 0.7,
                                 ),
                               ),
-                            ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(_typeIcon,
+                                      size: 9, color: _typeColor.withOpacity(0.8)),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    widget.post.type.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      color: _typeColor.withOpacity(0.8),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            // Bookmark
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _bookmarked = !_bookmarked),
+                              behavior: HitTestBehavior.opaque,
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(
+                                  _bookmarked
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded,
+                                  size: 16,
+                                  color: _bookmarked
+                                      ? kPrimaryGold
+                                      : Colors.white.withOpacity(0.35),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -327,49 +334,12 @@ class _FeedCardState extends State<FeedCard> {
             ),
           ),
         ),
+      ),
     );
   }
 
   String _fmt(int n) {
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
     return '$n';
-  }
-}
-
-// ── ACTION BUTTON ─────────────────────────────────────────────
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _ActionBtn({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 9.5,
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
