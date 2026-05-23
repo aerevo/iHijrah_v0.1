@@ -328,7 +328,7 @@ class _DailyCardShell extends StatelessWidget {
             ),
           ),
         ),
-      ),
+        ),
     );
   }
 }
