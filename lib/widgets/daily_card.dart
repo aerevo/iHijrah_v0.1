@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
+import 'brush_divider.dart';
 
 
 const List<Shadow> _kShadow = [
@@ -182,131 +183,151 @@ class _DailyCardShell extends StatelessWidget {
     final Color bg     = type.bg;
 
     return RepaintBoundary(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      child: Column(
+        children: [
 
+          // ── GARIS PISAH ATAS ─────────────────────────────────
+          BrushDivider(
+            color: accent,
+            opacity: isCenter ? 0.50 : 0.28,
+          ),
 
-            // ── KANDUNGAN ─────────────────────────────────
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+          // ── KANDUNGAN KAD ────────────────────────────────────
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
 
-                    // [1] HEADER — label + tarikh/jenis
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: accent.withOpacity(0.3),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                  // ── KANDUNGAN ─────────────────────────────────
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+
+                          // [1] HEADER — label + tarikh/jenis
+                          Row(
                             children: [
-                              Icon(type.icon, size: 10, color: accent),
-                              const SizedBox(width: 4),
-                              Text(
-                                type.label,
-                                style: TextStyle(
-                                  color: accent,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: accent.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: accent.withOpacity(0.3),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(type.icon, size: 10, color: accent),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      type.label,
+                                      style: TextStyle(
+                                        color: accent,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                    if (isSpecial) ...[
+                                      const SizedBox(width: 4),
+                                      Text('✦',
+                                          style: TextStyle(
+                                              color: accent, fontSize: 8)),
+                                    ],
+                                  ],
                                 ),
                               ),
-                              if (isSpecial) ...[
-                                const SizedBox(width: 4),
-                                Text('✦',
-                                    style: TextStyle(
-                                        color: accent, fontSize: 8)),
+                              const Spacer(),
+                              Text(
+                                topRight,
+                                style: TextStyle(
+                                  color: accent.withOpacity(
+                                      isCenter ? 0.75 : 0.60),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (trailingWidget != null) ...[
+                                const SizedBox(width: 8),
+                                trailingWidget!,
                               ],
                             ],
                           ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          topRight,
-                          style: TextStyle(
-                            color: accent.withOpacity(
-                                isCenter ? 0.75 : 0.60),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w500,
+
+                          const SizedBox(height: 8),
+
+                          // [2] TEKS UTAMA
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: isCenter
+                                  ? kTextPrimary
+                                  : kTextPrimary.withOpacity(0.88),
+                              fontSize: isCenter ? 12.5 : 11,
+                              fontWeight: FontWeight.w600,
+                              height: 1.45,
+                              letterSpacing: -0.2,
+                              shadows: _kShadow,
+                            ),
+                            maxLines: isCenter ? 4 : 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (trailingWidget != null) ...[
-                          const SizedBox(width: 8),
-                          trailingWidget!,
+
+                          const SizedBox(height: 6),
+
+                          // [3] SUBTITLE — sumber/pengajaran
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(isCenter ? 0.92 : 0.88),
+                              fontSize: 9.5,
+                              fontStyle: subtitleItalic ? FontStyle.italic : FontStyle.normal,
+                              height: 1.3,
+                              shadows: _kShadow,
+                            ),
+                            maxLines: isCenter ? 2 : 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          // [4] TAG BAWAH — plain text
+                          Text(
+                            tag,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(
+                                  isCenter ? 0.72 : 0.60),
+                              fontSize: 8.5,
+                              letterSpacing: 0.2,
+                              shadows: _kShadow,
+                            ),
+                          ),
                         ],
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // [2] TEKS UTAMA
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isCenter
-                            ? kTextPrimary
-                            : kTextPrimary.withOpacity(0.88),
-                        fontSize: isCenter ? 12.5 : 11,
-                        fontWeight: FontWeight.w600,
-                        height: 1.45,
-                        letterSpacing: -0.2,
-                        shadows: _kShadow,
-                      ),
-                      maxLines: isCenter ? 4 : 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // [3] SUBTITLE — sumber/pengajaran
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(isCenter ? 0.92 : 0.88),
-                        fontSize: 9.5,
-                        fontStyle: subtitleItalic ? FontStyle.italic : FontStyle.normal,
-                        height: 1.3,
-                        shadows: _kShadow,
-                      ),
-                      maxLines: isCenter ? 2 : 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // [4] TAG BAWAH — plain text
-                    Text(
-                      tag,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(
-                            isCenter ? 0.72 : 0.60),
-                        fontSize: 8.5,
-                        letterSpacing: 0.2,
-                        shadows: _kShadow,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          // ── GARIS PISAH BAWAH ────────────────────────────────
+          BrushDivider(
+            color: accent,
+            opacity: isCenter ? 0.50 : 0.28,
+          ),
+
+        ],
       ),
     );
   }
