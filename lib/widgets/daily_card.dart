@@ -318,18 +318,17 @@ class _DailyCardShell extends StatelessWidget {
                               fontSize: 8.5,
                               letterSpacing: 0.2,
                               shadows: _kShadow,
-                            ),
                           ),
-                        ],
-                      )
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              )
-            )
-          )
-        )
-      )
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
