@@ -92,28 +92,31 @@ class _FeedCardState extends State<FeedCard> {
     final phrase = _phrase;
 
     return RepaintBoundary(
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(widget.isCenter ? 0.35 : 0.22),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: _typeColor.withOpacity(widget.isCenter ? 0.28 : 0.10),
-                width: 0.8,
+      child: Transform.rotate(
+        angle: -0.13, // ~7.5° condong tetap
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(widget.isCenter ? 0.22 : 0.12),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withOpacity(widget.isCenter ? 0.35 : 0.15),
+                  width: 0.8,
+                ),
+                boxShadow: widget.isCenter
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.18),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 6),
+                        ),
+                      ]
+                    : null,
               ),
-              boxShadow: widget.isCenter
-                  ? [
-                      BoxShadow(
-                        color: _typeColor.withOpacity(0.12),
-                        blurRadius: 16,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
-            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -353,6 +356,7 @@ class _FeedCardState extends State<FeedCard> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );
