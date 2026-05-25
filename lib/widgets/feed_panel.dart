@@ -236,14 +236,15 @@ class _FeedPanelState extends State<FeedPanel>
     // ── POKER STACK OFFSET ────────────────────────────────
     // Kad belakang nampak tersembul dari bawah seperti kad poker
     // Setiap kad belakang offset ke bawah + mengecil sikit
-    const double stackOffsetY  = 18.0; // px tersembul bawah setiap layer
-    const double scaleStep     = 0.045; // setiap layer 4.5% lebih kecil
+    const double stackOffsetY  = 30.0; // px tersembul bawah setiap layer
+    const double scaleStep     = 0.038; // setiap layer lebih kecil sikit
 
     final double baseOffsetY = slot * stackOffsetY;
     final double baseScale   = 1.0 - slot.abs() * scaleStep;
     final double baseOpacity = slot == 0 ? 1.0
-        : slot == 1 ? 0.72
-        : slot == 2 ? 0.45
+        : slot == 1 ? 0.88
+        : slot == 2 ? 0.65
+        : slot == 3 ? 0.35
         : 0.0;
 
     // Drag: kad depan bergerak penuh, kad belakang bergerak kurang
@@ -265,13 +266,8 @@ class _FeedPanelState extends State<FeedPanel>
 
     // Dim kad belakang
     if (slot != 0) {
-      card = ColorFiltered(
-        colorFilter: ColorFilter.matrix([
-          baseOpacity, 0, 0, 0, 0,
-          0, baseOpacity, 0, 0, 0,
-          0, 0, baseOpacity, 0, 0,
-          0, 0, 0,           1, 0,
-        ]),
+      card = Opacity(
+        opacity: baseOpacity.clamp(0.0, 1.0),
         child: card,
       );
     }
@@ -291,10 +287,7 @@ class _FeedPanelState extends State<FeedPanel>
         child: Transform.scale(
           scale: baseScale.clamp(0.5, 1.0),
           alignment: Alignment.topCenter,
-          child: Opacity(
-            opacity: baseOpacity.clamp(0.0, 1.0),
-            child: card,
-          ),
+          child: card,
         ),
       ),
     );
