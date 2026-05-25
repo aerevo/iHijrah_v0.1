@@ -1,6 +1,5 @@
 // lib/widgets/feed_card.dart
-// HIERARKI BETUL: Tajuk atas → Badge+Author → Content → Footer
-// Tema cerah sesuai dengan latar putih/kelabu/biru muda
+// Full-screen card — gambar penuh, caption overlay bawah
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,22 +29,35 @@ const List<IslamicPhrase> kIslamicPhrases = [
   IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   color: Color(0xFF0891B2), bg: Color(0x1F0891B2)),
 ];
 
-// ── WARNA TEMA CERAH ──────────────────────────────────────────
-// Floating mode — no card background
-const Color _titleCenter  = Color(0xFFFFFFFF);
-const Color _titleDim     = Color(0xFFE2E8F0);
-const Color _bodyCenter   = Color(0xFFE2E8F0);
-const Color _bodyDim      = Color(0xFFCBD5E1);
-const Color _metaColor    = Color(0xFF94A3B8);
+// ── WARNA IKUT TYPE ───────────────────────────────────────────
+Color _typeColor(String type) {
+  switch (type) {
+    case 'video':   return const Color(0xFFEF4444);
+    case 'article': return const Color(0xFFF59E0B);
+    case 'event':   return const Color(0xFF34D399);
+    case 'quote':   return const Color(0xFFA78BFA);
+    default:        return kPrimaryGold;
+  }
+}
 
+String _typeLabel(String type) {
+  switch (type) {
+    case 'video':   return '▶  VIDEO';
+    case 'article': return '📄  ARTIKEL';
+    case 'event':   return '📅  ACARA';
+    case 'quote':   return '❝  PETIKAN';
+    default:        return type.toUpperCase();
+  }
+}
 
-// Text shadow untuk keterbacaan atas latar apapun
-const List<Shadow> kTextShadow = [
-  Shadow(color: Color(0xB3000000), blurRadius: 4, offset: Offset(0, 1)),
+// ── SHADOWS ───────────────────────────────────────────────────
+const List<Shadow> _kShadow = [
+  Shadow(color: Color(0xCC000000), blurRadius: 8,  offset: Offset(0, 1)),
+  Shadow(color: Color(0x88000000), blurRadius: 20, offset: Offset(0, 3)),
 ];
 
 // ── FEED CARD ─────────────────────────────────────────────────
-class FeedCard extends StatefulWidget {
+class FeedCard extends StatelessWidget {
   final PostModel post;
   final bool isCenter;
   final VoidCallback? onTap;
@@ -53,310 +65,250 @@ class FeedCard extends StatefulWidget {
   const FeedCard({
     Key? key,
     required this.post,
-    this.isCenter = false,
+    required this.isCenter,
     this.onTap,
   }) : super(key: key);
 
   @override
-  State<FeedCard> createState() => _FeedCardState();
-}
-
-class _FeedCardState extends State<FeedCard> {
-  bool _bookmarked = false;
-
-  IslamicPhrase get _phrase =>
-      kIslamicPhrases[widget.post.title.hashCode.abs() % kIslamicPhrases.length];
-
-  Color get _typeColor {
-    switch (widget.post.type) {
-      case 'video':  return const Color(0xFFDC2626);
-      case 'quote':  return const Color(0xFF7C3AED);
-      case 'event':  return const Color(0xFF059669);
-      default:       return const Color(0xFFF59E0B);
-    }
-  }
-
-  IconData get _typeIcon {
-    switch (widget.post.type) {
-      case 'video':  return Icons.play_arrow_rounded;
-      case 'quote':  return Icons.format_quote_rounded;
-      case 'event':  return Icons.event_rounded;
-      default:       return Icons.article_rounded;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bool hasImage = widget.post.assetPath != null &&
-        widget.post.assetPath!.isNotEmpty;
-    final phrase = _phrase;
+    final Color accent  = _typeColor(post.type);
+    final String label  = _typeLabel(post.type);
+    final int phraseIdx = post.id.hashCode % kIslamicPhrases.length;
+    final IslamicPhrase phrase = kIslamicPhrases[phraseIdx.abs()];
 
     return RepaintBoundary(
-      child: Transform.rotate(
-        angle: -0.13, // ~7.5° condong tetap
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(widget.isCenter ? 0.22 : 0.12),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: Colors.white.withOpacity(widget.isCenter ? 0.35 : 0.15),
-                  width: 0.8,
+      child: GestureDetector(
+        onTap: onTap,
+        child: SizedBox.expand(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+
+              // ── BG IMAGE / GRADIENT ───────────────────────
+              if (post.assetPath != null)
+                Image.asset(
+                  post.assetPath!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _gradientBg(accent),
+                )
+              else
+                _gradientBg(accent),
+
+              // ── GRADIENT OVERLAY ──────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.35, 0.65, 1.0],
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.55),
+                      Colors.black.withOpacity(0.88),
+                    ],
+                  ),
                 ),
-                boxShadow: widget.isCenter
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.18),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : null,
               ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
 
-// ─── KONTEN UTAMA ──────────────────────────
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(11, 10, 10, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-
-                        // ══ [1] TAJUK ══
-                        Text(
-                          widget.post.title,
-                          style: GoogleFonts.amiri(
-                            color: widget.isCenter ? _titleCenter : _titleDim,
-                            fontSize: widget.isCenter ? 17 : 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.1,
-                            height: 1.25,
-                            shadows: kTextShadow,
-                          ),
-                          maxLines: widget.isCenter ? 2 : 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        // ══ [2] BADGE + AUTHOR ══
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // ﷽ bulatan
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: phrase.bg,
-                                border: Border.all(
-                                  color: phrase.color.withOpacity(0.25),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '﷽',
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    color: phrase.color,
-                                    height: 1.0,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Frasa arab + author
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    phrase.arabic,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: phrase.color,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    phrase.latin,
-                                    style: TextStyle(
-                                      fontSize: 8.5,
-                                      color: phrase.color.withOpacity(0.55),
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 7,
-                                        backgroundColor:
-                                            _typeColor.withOpacity(0.12),
-                                        child: Icon(_typeIcon,
-                                            color: _typeColor, size: 8),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          '${widget.post.author} • ${widget.post.time}',
-                                          style: const TextStyle(
-                                            color: _metaColor,
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // ══ [3] KANDUNGAN ══
-                        _ExpandableContent(
-                          text: widget.post.content,
-                          isCenter: widget.isCenter,
-                          bodyColor: widget.isCenter ? _bodyCenter : _bodyDim,
-                          accentColor: _typeColor,
-                        ),
-
-                        // ══ [4] FOOTER ══
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: _typeColor.withOpacity(0.10),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: _typeColor.withOpacity(0.25),
-                                  width: 0.7,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(_typeIcon,
-                                      size: 9,
-                                      color: _typeColor.withOpacity(0.8)),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    widget.post.type.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      color: _typeColor.withOpacity(0.8),
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            GestureDetector(
-                              onTap: () => setState(
-                                  () => _bookmarked = !_bookmarked),
-                              behavior: HitTestBehavior.opaque,
-                              child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: Icon(
-                                  _bookmarked
-                                      ? Icons.bookmark_rounded
-                                      : Icons.bookmark_border_rounded,
-                                  size: 16,
-                                  color: _bookmarked
-                                      ? kPrimaryGold
-                                      : Colors.white.withOpacity(0.35),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+              // ── TYPE BADGE — top left ─────────────────────
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: accent.withOpacity(0.5), width: 0.8),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      shadows: _kShadow,
                     ),
                   ),
                 ),
+              ),
 
-                // ─── THUMBNAIL — float dalam kad, ada ruang sekeliling ─
-                if (hasImage)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 10, 10, 10),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 80,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.asset(
-                              widget.post.assetPath!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                decoration: BoxDecoration(
-                                  color: _typeColor.withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(_typeIcon,
-                                    color: _typeColor.withOpacity(0.35),
-                                    size: 22),
-                              ),
-                            ),
-                            // Subtle gradient overlay bawah image
-                            Positioned(
-                              bottom: 0, left: 0, right: 0,
-                              child: Container(
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomCenter,
-                                    end: Alignment.topCenter,
-                                    colors: [
-                                      Colors.black.withOpacity(0.5),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (widget.post.type == 'video')
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.white60, width: 0.8),
-                                  ),
-                                  child: const Icon(Icons.play_arrow_rounded,
-                                      color: Colors.white, size: 14),
-                                ),
-                              ),
-                          ],
-                        ),
+              // ── ISLAMIC PHRASE — top right ────────────────
+              Positioned(
+                top: 12,
+                right: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      phrase.arabic,
+                      style: GoogleFonts.amiri(
+                        fontSize: 16,
+                        color: phrase.color,
+                        shadows: _kShadow,
                       ),
                     ),
+                    Text(
+                      phrase.latin,
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: phrase.color.withOpacity(0.7),
+                        letterSpacing: 0.3,
+                        shadows: _kShadow,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── CAPTION BLOCK — bottom ────────────────────
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      // Title
+                      Text(
+                        post.title,
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: isCenter ? 22 : 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.2,
+                          shadows: _kShadow,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // Content snippet
+                      Text(
+                        post.content,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.75),
+                          height: 1.45,
+                          shadows: _kShadow,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Footer — author + actions
+                      Row(
+                        children: [
+
+                          // Avatar
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: accent.withOpacity(0.2),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1.5),
+                            ),
+                            child: Center(
+                              child: Text(
+                                post.author.isNotEmpty
+                                    ? post.author[0]
+                                    : '?',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          // Name + time
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  post.author,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    shadows: _kShadow,
+                                  ),
+                                ),
+                                Text(
+                                  post.time,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    color:
+                                        Colors.white.withOpacity(0.5),
+                                    shadows: _kShadow,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Actions
+                          _ActionBtn(
+                            icon: Icons.favorite_border_rounded,
+                            label: _fmt(post.likes),
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 14),
+                          _ActionBtn(
+                            icon: Icons.chat_bubble_outline_rounded,
+                            label: _fmt(post.likes ~/ 8),
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 14),
+                          _ActionBtn(
+                            icon: Icons.share_rounded,
+                            label: '',
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _gradientBg(Color accent) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black,
+            accent.withOpacity(0.3),
+            Colors.black,
+          ],
         ),
       ),
     );
@@ -368,66 +320,36 @@ class _FeedCardState extends State<FeedCard> {
   }
 }
 
-// ── EXPANDABLE CONTENT ────────────────────────────────────────
-class _ExpandableContent extends StatefulWidget {
-  final String text;
-  final bool isCenter;
-  final Color bodyColor;
-  final Color accentColor;
+// ── ACTION BUTTON ─────────────────────────────────────────────
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
 
-  const _ExpandableContent({
-    required this.text,
-    required this.isCenter,
-    required this.bodyColor,
-    required this.accentColor,
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
   });
 
   @override
-  State<_ExpandableContent> createState() => _ExpandableContentState();
-}
-
-class _ExpandableContentState extends State<_ExpandableContent> {
-  bool _expanded = false;
-
-  static const int _previewLines = 3;
-  static const int _charThreshold = 100;
-
-  bool get _isLong => widget.text.length > _charThreshold;
-
-  @override
   Widget build(BuildContext context) {
-    final showToggle = widget.isCenter && _isLong;
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          widget.text,
-          style: TextStyle(
-            color: widget.bodyColor,
-            fontSize: widget.isCenter ? 11.5 : 10.5,
-            height: 1.45,
-            fontWeight: FontWeight.w400,
-            shadows: kTextShadow,
-          ),
-          maxLines: _expanded ? null : (widget.isCenter ? _previewLines : 1),
-          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-        ),
-        if (showToggle) ...[
-          const SizedBox(height: 3),
-          GestureDetector(
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Text(
-              _expanded ? 'Sembunyikan ↑' : 'Baca lagi...',
-              style: TextStyle(
-                color: widget.accentColor.withOpacity(0.75),
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-              ),
+        Icon(icon, size: 20, color: color,
+            shadows: const [Shadow(color: Color(0xCC000000), blurRadius: 8)]),
+        if (label.isNotEmpty)
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              color: color,
+              shadows: const [
+                Shadow(color: Color(0xCC000000), blurRadius: 6)
+              ],
             ),
           ),
-        ],
       ],
     );
   }
