@@ -195,8 +195,9 @@ class _FeedPanelState extends State<FeedPanel>
           return Stack(
             clipBehavior: Clip.hardEdge,
             children: [
-              // Render stack: 1 prev + current + 3 behind
-              for (int i = _current - 1; i <= _current + 3; i++)
+              // Render stack: slot+3 dulu (bawah), slot-1 last (atas)
+              // Flutter Stack: last child = paling atas
+              for (int i = _current + 3; i >= _current - 1; i--)
                 if (i >= 0 && i < _items.length)
                   _buildCardSlot(context, i, h, w, daily),
 
@@ -226,7 +227,7 @@ class _FeedPanelState extends State<FeedPanel>
     // ── KAD SEGI EMPAT SAMA ──────────────────────────────
     // Lebar = w - margin 28px kiri kanan
     final double cardW = w - 28;
-    final double cardH = cardW; // 1:1 ratio
+    final double cardH = cardW; // 1:1 ratio — jangan ubah
 
     // Pusat kad di tengah panel secara menegak
     final double centerTop = (h - cardH) / 2;
@@ -234,17 +235,16 @@ class _FeedPanelState extends State<FeedPanel>
     final int slot = index - _current; // -1 = prev, 0 = front, 1+ = belakang
 
     // ── POKER STACK OFFSET ────────────────────────────────
-    // Kad belakang nampak tersembul dari bawah seperti kad poker
-    // Setiap kad belakang offset ke bawah + mengecil sikit
-    const double stackOffsetY  = 30.0; // px tersembul bawah setiap layer
-    const double scaleStep     = 0.038; // setiap layer lebih kecil sikit
+    // Kad belakang tersembul sikit dari bawah seperti kad poker
+    const double stackOffsetY  = 22.0; // jarak antara kad
+    const double scaleStep     = 0.032;
 
     final double baseOffsetY = slot * stackOffsetY;
     final double baseScale   = 1.0 - slot.abs() * scaleStep;
     final double baseOpacity = slot == 0 ? 1.0
-        : slot == 1 ? 0.88
-        : slot == 2 ? 0.65
-        : slot == 3 ? 0.35
+        : slot == 1 ? 0.80
+        : slot == 2 ? 0.50
+        : slot == 3 ? 0.25
         : 0.0;
 
     // Drag: kad depan bergerak penuh, kad belakang bergerak kurang
