@@ -2,7 +2,6 @@
 // [FIX 5] PrayerTimeOverlay dibuang — FeedPanel isi penuh skrin
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 
@@ -45,15 +44,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  bool _onScroll(UserScrollNotification notification, BuildContext context) {
-    final sidebarModel = Provider.of<SidebarStateModel>(context, listen: false);
-    if (notification.direction == ScrollDirection.reverse && sidebarModel.isVisible) {
-      sidebarModel.setSidebarVisibility(false);
-    } else if (notification.direction == ScrollDirection.forward && !sidebarModel.isVisible) {
-      sidebarModel.setSidebarVisibility(true);
-    }
-    return true;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,15 +89,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               children: [
                 Positioned.fill(
                   child: sidebarModel.isClosed
-                      ? NotificationListener<UserScrollNotification>(
-                          onNotification: (n) => _onScroll(n, context),
-                          child: AnimatedPadding(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                            padding: EdgeInsets.only(
-                              left: sidebarModel.isVisible ? AppSizes.sidebarWidth : 0,
-                            ),
-                            child: const FeedPanel(),
+                      ? AnimatedPadding(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          padding: EdgeInsets.only(
+                            left: sidebarModel.isVisible ? AppSizes.sidebarWidth : 0,
+                          ),
+                          child: FeedPanel(
+                            onScrollDirection: (scrollingDown) {
+                              final sidebar = Provider.of<SidebarStateModel>(
+                                  context, listen: false);
+                              if (scrollingDown && sidebar.isVisible) {
+                                sidebar.setSidebarVisibility(false);
+                              } else if (!scrollingDown && !sidebar.isVisible) {
+                                sidebar.setSidebarVisibility(true);
+                              }
+                            },
                           ),
                         )
                       : const SizedBox.shrink(),
