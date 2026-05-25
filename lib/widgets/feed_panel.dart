@@ -35,7 +35,8 @@ class _SirahItem extends _FeedItem {
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
-  const FeedPanel({Key? key}) : super(key: key);
+  final void Function(bool scrollingDown)? onScrollDirection;
+  const FeedPanel({Key? key, this.onScrollDirection}) : super(key: key);
 
   @override
   State<FeedPanel> createState() => _FeedPanelState();
@@ -133,6 +134,11 @@ class _FeedPanelState extends State<FeedPanel>
     if (!_dragging) return;
     _dragDy = d.globalPosition.dy - _dragStartY;
 
+    // Notify sidebar
+    if (_dragDy.abs() > 10) {
+      widget.onScrollDirection?.call(_dragDy < 0); // true = scroll down
+    }
+
     // Resistance at ends
     double dy = _dragDy;
     if ((_current == 0 && dy > 0) ||
@@ -217,32 +223,45 @@ class _FeedPanelState extends State<FeedPanel>
     double w,
     DailyContentProvider daily,
   ) {
+    // Card height = 80% of panel height, peek = 10% each side
+    final double cardH  = h * 0.80;
+    final double peekH  = (h - cardH) / 2; // ~10% top & bottom
+
     final int slot = index - _current; // -1, 0, 1
-    final double baseY = slot * h;
-    final double y = baseY + _liveOffset * (slot == 0 ? 1.0 : 0.35);
-    final double scale = slot == 0 ? 1.0 : 0.93;
-    final double opacity = slot == 0 ? 1.0 : 0.5;
-    final double blur = slot == 0 ? 0.0 : 4.0;
+    // slot 0 = tengah, slot -1 = atas, slot 1 = bawah
+    final double baseY  = slot * (cardH + peekH * 0.6);
+    final double dy     = _liveOffset * (slot == 0 ? 1.0 : 0.4);
+    final double y      = baseY + dy;
+
+    final double scale   = slot == 0 ? 1.0  : 0.90;
+    final double opacity = slot == 0 ? 1.0  : 0.45;
+    final bool   isPeek  = slot != 0;
 
     Widget card = _buildCard(context, index, daily);
 
-    if (blur > 0) {
-      card = ImageFiltered(
-        imageFilter: ColorFilter.matrix([
-          0.7, 0, 0, 0, 0,
-          0, 0.7, 0, 0, 0,
-          0, 0, 0.7, 0, 0,
-          0, 0, 0, 1, 0,
+    if (isPeek) {
+      card = ColorFiltered(
+        colorFilter: ColorFilter.matrix([
+          0.6, 0,   0,   0, 0,
+          0,   0.6, 0,   0, 0,
+          0,   0,   0.6, 0, 0,
+          0,   0,   0,   1, 0,
         ]),
         child: card,
       );
     }
 
+    // Wrap dalam ClipRRect supaya border radius kena
+    card = ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: card,
+    );
+
     return Positioned(
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
+      left: 14,
+      right: 14,
+      top: peekH,
+      height: cardH,
       child: Transform.translate(
         offset: Offset(0, y),
         child: Transform.scale(
