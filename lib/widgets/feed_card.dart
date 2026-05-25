@@ -165,13 +165,29 @@ class FeedCard extends StatelessWidget {
                 ),
               ),
 
-              // ── CAPTION BLOCK — bottom ────────────────────
+              // ── CAPTION BLOCK — bottom frosted ────────────
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(22),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.55),
+                          Colors.black.withOpacity(0.78),
+                        ],
+                      ),
+                    ),
+                    child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -288,6 +304,8 @@ class FeedCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    ),
+                  ),
                   ),
                 ),
               ),
