@@ -225,52 +225,48 @@ class _FeedPanelState extends State<FeedPanel>
     DailyContentProvider daily,
   ) {
     // ── KAD SEGI EMPAT SAMA ──────────────────────────────
-    // Lebar = w - margin 28px kiri kanan
     final double cardW = w - 28;
-    final double cardH = cardW; // 1:1 ratio — jangan ubah
+    final double cardH = cardW; // 1:1 ratio
 
-    // Pusat kad di tengah panel secara menegak
-    final double centerTop = (h - cardH) / 2;
+    final int slot = index - _current;
 
-    final int slot = index - _current; // -1 = prev, 0 = front, 1+ = belakang
+    if (slot < 0 || slot > 3) return const SizedBox.shrink();
 
-    // ── POKER STACK OFFSET ────────────────────────────────
-    // Kad belakang tersembul sikit dari bawah seperti kad poker
-    const double stackOffsetY  = 22.0; // jarak antara kad
-    const double scaleStep     = 0.032;
+    // ── NETFLIX STACK LAYOUT ──────────────────────────────
+    // Kad depan (slot 0) duduk di tengah panel
+    // Kad belakang tersembul dari bawah makin kecil
+    // Nampak macam timbun kad — slot 1 tersembul ~70px, slot 2 ~50px dll
+    const double peekAmount = 70.0; // berapa px kad belakang tersembul
+    const double peekStep   = 15.0; // makin belakang makin sikit nampak
+    const double scaleStep  = 0.06; // setiap layer mengecil 6%
 
-    final double baseOffsetY = slot * stackOffsetY;
-    final double baseScale   = 1.0 - slot.abs() * scaleStep;
-    final double baseOpacity = slot == 0 ? 1.0
-        : slot == 1 ? 0.80
-        : slot == 2 ? 0.50
-        : slot == 3 ? 0.25
-        : 0.0;
+    // Top position untuk slot 0 — centr vertically
+    final double slot0Top = (h - cardH) / 2;
 
-    // Drag: kad depan bergerak penuh, kad belakang bergerak kurang
-    final double dragFactor = slot == 0 ? 1.0
-        : slot == -1 ? 0.5
-        : 0.25;
+    // Kad belakang duduk di bawah kad depan, tersembul sikit
+    // slot 1 top = slot0Top + cardH - peekAmount
+    // slot 2 top = slot 1 top + peekAmount - peekStep
+    double topY;
+    if (slot == 0) {
+      topY = slot0Top;
+    } else {
+      topY = slot0Top + cardH - peekAmount;
+      for (int s = 2; s <= slot; s++) {
+        topY += (peekAmount - peekStep * (s - 1));
+      }
+    }
+
+    final double scale = (1.0 - slot * scaleStep).clamp(0.7, 1.0);
+    final double opacity = slot == 0 ? 1.0
+        : slot == 1 ? 0.85
+        : slot == 2 ? 0.60
+        : 0.35;
+
+    // Drag offset — slot 0 bergerak penuh, belakang separuh
+    final double dragFactor = slot == 0 ? 1.0 : (0.5 / slot);
     final double dragY = _liveOffset * dragFactor;
 
-    final double finalY = baseOffsetY + dragY;
-
-    // Kad yang dah lepas (slot < 0) — keluar atas
-    if (slot < -1) return const SizedBox.shrink();
-    if (slot > 3)  return const SizedBox.shrink();
-
-    // Z-order: slot 0 paling depan
-    final int zIndex = 10 - slot.abs();
-
     Widget card = _buildCard(context, index, daily);
-
-    // Dim kad belakang
-    if (slot != 0) {
-      card = Opacity(
-        opacity: baseOpacity.clamp(0.0, 1.0),
-        child: card,
-      );
-    }
 
     card = ClipRRect(
       borderRadius: BorderRadius.circular(22),
@@ -280,12 +276,12 @@ class _FeedPanelState extends State<FeedPanel>
     return Positioned(
       left: 14,
       width: cardW,
-      top: centerTop,
+      top: topY + dragY,
       height: cardH,
-      child: Transform.translate(
-        offset: Offset(0, finalY),
+      child: Opacity(
+        opacity: opacity,
         child: Transform.scale(
-          scale: baseScale.clamp(0.5, 1.0),
+          scale: scale,
           alignment: Alignment.topCenter,
           child: card,
         ),
