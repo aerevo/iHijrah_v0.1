@@ -237,7 +237,6 @@ class _FeedPanelState extends State<FeedPanel>
     // Kad belakang nampak tersembul dari bawah seperti kad poker
     // Setiap kad belakang offset ke bawah + mengecil sikit
     const double stackOffsetY  = 18.0; // px tersembul bawah setiap layer
-    const double stackOffsetX  = 0.0;
     const double scaleStep     = 0.045; // setiap layer 4.5% lebih kecil
 
     final double baseOffsetY = slot * stackOffsetY;
@@ -288,7 +287,7 @@ class _FeedPanelState extends State<FeedPanel>
       top: centerTop,
       height: cardH,
       child: Transform.translate(
-        offset: Offset(baseOffsetX, finalY),
+        offset: Offset(0, finalY),
         child: Transform.scale(
           scale: baseScale.clamp(0.5, 1.0),
           alignment: Alignment.topCenter,
