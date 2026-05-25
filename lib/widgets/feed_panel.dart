@@ -195,8 +195,8 @@ class _FeedPanelState extends State<FeedPanel>
           return Stack(
             clipBehavior: Clip.hardEdge,
             children: [
-              // Render current + 1 prev + 1 next
-              for (int i = _current - 1; i <= _current + 1; i++)
+              // Render stack: 1 prev + current + 3 behind
+              for (int i = _current - 1; i <= _current + 3; i++)
                 if (i >= 0 && i < _items.length)
                   _buildCardSlot(context, i, h, w, daily),
 
@@ -223,51 +223,77 @@ class _FeedPanelState extends State<FeedPanel>
     double w,
     DailyContentProvider daily,
   ) {
-    // Card height = 80% of panel height, peek = 10% each side
-    final double cardH  = h * 0.80;
-    final double peekH  = (h - cardH) / 2; // ~10% top & bottom
+    // ── KAD SEGI EMPAT SAMA ──────────────────────────────
+    // Lebar = w - margin 28px kiri kanan
+    final double cardW = w - 28;
+    final double cardH = cardW; // 1:1 ratio
 
-    final int slot = index - _current; // -1, 0, 1
-    // slot 0 = tengah, slot -1 = atas, slot 1 = bawah
-    final double baseY  = slot * (cardH + peekH * 0.6);
-    final double dy     = _liveOffset * (slot == 0 ? 1.0 : 0.4);
-    final double y      = baseY + dy;
+    // Pusat kad di tengah panel secara menegak
+    final double centerTop = (h - cardH) / 2;
 
-    final double scale   = slot == 0 ? 1.0  : 0.90;
-    final double opacity = slot == 0 ? 1.0  : 0.45;
-    final bool   isPeek  = slot != 0;
+    final int slot = index - _current; // -1 = prev, 0 = front, 1+ = belakang
+
+    // ── POKER STACK OFFSET ────────────────────────────────
+    // Kad belakang nampak tersembul dari bawah seperti kad poker
+    // Setiap kad belakang offset ke bawah + mengecil sikit
+    const double stackOffsetY  = 18.0; // px tersembul bawah setiap layer
+    const double stackOffsetX  = 0.0;
+    const double scaleStep     = 0.045; // setiap layer 4.5% lebih kecil
+
+    final double baseOffsetY = slot * stackOffsetY;
+    final double baseScale   = 1.0 - slot.abs() * scaleStep;
+    final double baseOpacity = slot == 0 ? 1.0
+        : slot == 1 ? 0.72
+        : slot == 2 ? 0.45
+        : 0.0;
+
+    // Drag: kad depan bergerak penuh, kad belakang bergerak kurang
+    final double dragFactor = slot == 0 ? 1.0
+        : slot == -1 ? 0.5
+        : 0.25;
+    final double dragY = _liveOffset * dragFactor;
+
+    final double finalY = baseOffsetY + dragY;
+
+    // Kad yang dah lepas (slot < 0) — keluar atas
+    if (slot < -1) return const SizedBox.shrink();
+    if (slot > 3)  return const SizedBox.shrink();
+
+    // Z-order: slot 0 paling depan
+    final int zIndex = 10 - slot.abs();
 
     Widget card = _buildCard(context, index, daily);
 
-    if (isPeek) {
+    // Dim kad belakang
+    if (slot != 0) {
       card = ColorFiltered(
         colorFilter: ColorFilter.matrix([
-          0.6, 0,   0,   0, 0,
-          0,   0.6, 0,   0, 0,
-          0,   0,   0.6, 0, 0,
-          0,   0,   0,   1, 0,
+          baseOpacity, 0, 0, 0, 0,
+          0, baseOpacity, 0, 0, 0,
+          0, 0, baseOpacity, 0, 0,
+          0, 0, 0,           1, 0,
         ]),
         child: card,
       );
     }
 
-    // Wrap dalam ClipRRect supaya border radius kena
     card = ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       child: card,
     );
 
     return Positioned(
       left: 14,
-      right: 14,
-      top: peekH,
+      width: cardW,
+      top: centerTop,
       height: cardH,
       child: Transform.translate(
-        offset: Offset(0, y),
+        offset: Offset(baseOffsetX, finalY),
         child: Transform.scale(
-          scale: scale,
+          scale: baseScale.clamp(0.5, 1.0),
+          alignment: Alignment.topCenter,
           child: Opacity(
-            opacity: opacity,
+            opacity: baseOpacity.clamp(0.0, 1.0),
             child: card,
           ),
         ),
