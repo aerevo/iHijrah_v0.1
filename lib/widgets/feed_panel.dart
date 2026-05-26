@@ -1,7 +1,7 @@
 // lib/widgets/feed_panel.dart
+// Netflix-style card stack — full width, drag follows finger, spring snap
 
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../providers/daily_content_provider.dart';
@@ -11,33 +11,15 @@ import 'daily_card.dart';
 
 // ── ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
-
-class _PostItem extends _FeedItem {
-  final PostModel post;
-  _PostItem(this.post);
-}
-
-class _HadithItem extends _FeedItem {
-  final HadithToday hadith;
-  _HadithItem(this.hadith);
-}
-
-class _AmalanItem extends _FeedItem {
-  final AmalanToday amalan;
-  final int index;
-  _AmalanItem(this.amalan, this.index);
-}
-
-class _SirahItem extends _FeedItem {
-  final SirahToday sirah;
-  _SirahItem(this.sirah);
-}
+class _PostItem   extends _FeedItem { final PostModel post;     _PostItem(this.post); }
+class _HadithItem extends _FeedItem { final HadithToday hadith; _HadithItem(this.hadith); }
+class _AmalanItem extends _FeedItem { final AmalanToday amalan; final int idx; _AmalanItem(this.amalan, this.idx); }
+class _SirahItem  extends _FeedItem { final SirahToday sirah;   _SirahItem(this.sirah); }
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
   final void Function(bool scrollingDown)? onScrollDirection;
   const FeedPanel({Key? key, this.onScrollDirection}) : super(key: key);
-
   @override
   State<FeedPanel> createState() => _FeedPanelState();
 }
@@ -45,121 +27,116 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel>
     with SingleTickerProviderStateMixin {
 
-  int _current = 0;
-  List<_FeedItem> _items = [];
-  bool _itemsCached = false;
+  int    _current     = 0;
+  double _dragOffset  = 0; // live drag offset in px
+  bool   _dragging    = false;
+  double _startY      = 0;
 
-  // Drag state
-  double _dragStartY = 0;
-  double _dragDy = 0;
-  bool _dragging = false;
+  late AnimationController _spring;
+  late Animation<double>   _springAnim;
 
-  // Animation
-  late AnimationController _animCtrl;
-  late Animation<double> _anim;
-  double _animFrom = 0;
-  double _animTo   = 0;
-  double _liveOffset = 0; // px offset dari posisi snap
+  List<_FeedItem> _items     = [];
+  bool            _cached    = false;
 
-  // Peek amount — how much of next/prev card shows
-  static const double kPeek = 60.0;
+  // Peek — how many px of next/prev card peeks from bottom
+  static const double _peek = 52.0;
 
   static const List<PostModel> _posts = [
-    PostModel(id: '101', type: 'video',   title: 'Kisah Hijrah Rasulullah ﷺ',        content: 'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda dari ancaman kaum Quraisy.',        author: 'Ustaz Don',       authorAge: '40', likes: 1240, time: '2j',  assetPath: 'assets/images/dummy_post1.jpg'),
-    PostModel(id: '102', type: 'quote',   title: 'Kata Hikmah',                       content: 'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',                                    author: "Imam Syafi'i",    authorAge: '',   likes: 850,  time: '5j'),
-    PostModel(id: '103', type: 'article', title: 'Kelebihan Selawat',                 content: 'Barangsiapa berselawat ke atasku sekali, Allah balas sepuluh kali ganda rahmat kepadanya.',            author: 'Habib Ali',       authorAge: '52', likes: 2100, time: '1h',  assetPath: 'assets/images/dummy_post2.jpg'),
-    PostModel(id: '104', type: 'event',   title: 'Majlis Ilmu Perdana',               content: 'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah bersama ulama.',                  author: 'Admin iHijrah',   authorAge: '',   likes: 500,  time: '10j'),
-    PostModel(id: '105', type: 'quote',   title: 'Pesan Imam Malik',                  content: 'Ilmu itu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat kepada hati.',              author: 'Imam Malik',      authorAge: '',   likes: 3200, time: '12j'),
-    PostModel(id: '106', type: 'video',   title: 'Tajwid Asas: Al-Fatihah',           content: 'Mari perbaiki bacaan Al-Fatihah kita. Setiap huruf ada makhrajnya yang tersendiri.',                  author: 'Ustaz Azhar',     authorAge: '60', likes: 890,  time: '1h'),
-    PostModel(id: '107', type: 'article', title: 'Rahsia Dhuha & Pintu Rezeki',       content: 'Konsistensi solat Dhuha membuka pintu rezeki yang tidak disangka-sangka oleh manusia biasa.',         author: 'Ustaz Wadi',      authorAge: '45', likes: 4500, time: '30m', assetPath: 'assets/images/dummy_post1.jpg'),
-    PostModel(id: '108', type: 'quote',   title: 'Nasihat Imam Ghazali',              content: 'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia. Carilah keduanya bersama.',                    author: 'Imam Ghazali',    authorAge: '',   likes: 5100, time: '2h'),
-    PostModel(id: '109', type: 'article', title: 'Keutamaan Surah Al-Mulk',           content: 'Sesiapa yang membaca Al-Mulk setiap malam, ia akan dilindungi dari azab kubur.',                      author: 'Ustazah Noor',    authorAge: '38', likes: 1870, time: '3h',  assetPath: 'assets/images/dummy_post2.jpg'),
-    PostModel(id: '110', type: 'event',   title: 'Kem Tahfiz Ramadan 1446H',          content: 'Daftar sekarang! Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',                  author: 'Markaz Quran KL', authorAge: '',   likes: 720,  time: '4h'),
-    PostModel(id: '111', type: 'video',   title: 'Doa Pagi yang Mujarab',             content: 'Amalkan 7 doa ini setiap pagi. Nabi ﷺ sendiri mengajarkan kepada para sahabat baginda.',             author: 'Dr Rozaimi',      authorAge: '47', likes: 3300, time: '5h',  assetPath: 'assets/images/dummy_post1.jpg'),
-    PostModel(id: '112', type: 'quote',   title: 'Kata Ibn Qayyim',                   content: 'Hati yang kosong dari zikir adalah hati yang mati walaupun pemiliknya masih bernyawa.',               author: 'Ibn Qayyim',      authorAge: '',   likes: 6200, time: '6h'),
-    PostModel(id: '115', type: 'video',   title: 'Tafsir Surah Al-Kahfi Ayat 1-10',  content: 'Perlindungan dari fitnah Dajjal bermula dengan memahami 10 ayat pertama surah ini sepenuhnya.',      author: 'Ust Fathul Bari', authorAge: '50', likes: 7800, time: '9h',  assetPath: 'assets/images/dummy_post1.jpg'),
+    PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda dari ancaman Quraisy.',      author:'Ustaz Don',      authorAge:'40',likes:1240,time:'2j', assetPath:'assets/images/dummy_post1.jpg'),
+    PostModel(id:'102',type:'quote',  title:'Kata Hikmah',                      content:'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',                            author:"Imam Syafi'i",   authorAge:'',  likes:850, time:'5j'),
+    PostModel(id:'103',type:'article',title:'Kelebihan Selawat',                content:'Barangsiapa berselawat ke atasku sekali, Allah balas sepuluh kali ganda rahmat kepadanya.',   author:'Habib Ali',      authorAge:'52',likes:2100,time:'1h', assetPath:'assets/images/dummy_post2.jpg'),
+    PostModel(id:'104',type:'event',  title:'Majlis Ilmu Perdana',              content:'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah bersama ulama.',         author:'Admin iHijrah',  authorAge:'',  likes:500, time:'10j'),
+    PostModel(id:'105',type:'quote',  title:'Pesan Imam Malik',                 content:'Ilmu itu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat kepada hati.',     author:'Imam Malik',     authorAge:'',  likes:3200,time:'12j'),
+    PostModel(id:'106',type:'video',  title:'Tajwid Asas: Al-Fatihah',          content:'Mari perbaiki bacaan Al-Fatihah kita. Setiap huruf ada makhrajnya yang tersendiri.',         author:'Ustaz Azhar',    authorAge:'60',likes:890, time:'1h'),
+    PostModel(id:'107',type:'article',title:'Rahsia Dhuha & Pintu Rezeki',      content:'Konsistensi solat Dhuha membuka pintu rezeki yang tidak disangka-sangka.',                   author:'Ustaz Wadi',     authorAge:'45',likes:4500,time:'30m',assetPath:'assets/images/dummy_post1.jpg'),
+    PostModel(id:'108',type:'quote',  title:'Nasihat Imam Ghazali',             content:'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia. Carilah keduanya bersama.',           author:'Imam Ghazali',   authorAge:'',  likes:5100,time:'2h'),
+    PostModel(id:'109',type:'article',title:'Keutamaan Surah Al-Mulk',          content:'Sesiapa yang membaca Al-Mulk setiap malam, ia akan dilindungi dari azab kubur.',             author:'Ustazah Noor',   authorAge:'38',likes:1870,time:'3h', assetPath:'assets/images/dummy_post2.jpg'),
+    PostModel(id:'110',type:'event',  title:'Kem Tahfiz Ramadan 1446H',         content:'Daftar sekarang! Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',         author:'Markaz Quran KL',authorAge:'',  likes:720, time:'4h'),
+    PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi ﷺ sendiri mengajarkan kepada para sahabat baginda.',    author:'Dr Rozaimi',     authorAge:'47',likes:3300,time:'5h', assetPath:'assets/images/dummy_post1.jpg'),
+    PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun pemiliknya masih bernyawa.',      author:'Ibn Qayyim',     authorAge:'',  likes:6200,time:'6h'),
+    PostModel(id:'115',type:'video',  title:'Tafsir Surah Al-Kahfi Ayat 1-10', content:'Perlindungan dari fitnah Dajjal bermula dengan memahami 10 ayat pertama surah ini.',         author:'Ust Fathul Bari',authorAge:'50',likes:7800,time:'9h', assetPath:'assets/images/dummy_post1.jpg'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
+    _spring = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 380),
     );
   }
 
   @override
   void dispose() {
-    _animCtrl.dispose();
+    _spring.dispose();
     super.dispose();
   }
 
-  List<_FeedItem> _buildItems(DailyContentProvider daily) {
-    final List<_FeedItem> items = [];
-    if (daily.todayHadith != null) items.add(_HadithItem(daily.todayHadith!));
-    for (int i = 0; i < daily.todayAmalanList.length && i < 3; i++) {
-      items.add(_AmalanItem(daily.todayAmalanList[i], i));
+  List<_FeedItem> _buildItems(DailyContentProvider d) {
+    final items = <_FeedItem>[];
+    if (d.todayHadith != null) items.add(_HadithItem(d.todayHadith!));
+    for (int i = 0; i < d.todayAmalanList.length && i < 3; i++) {
+      items.add(_AmalanItem(d.todayAmalanList[i], i));
     }
-    if (daily.todaySirah != null) items.add(_SirahItem(daily.todaySirah!));
+    if (d.todaySirah != null) items.add(_SirahItem(d.todaySirah!));
     for (final p in _posts) items.add(_PostItem(p));
     return items;
   }
 
-  void _snapTo(int target) {
-    final int clamped = target.clamp(0, _items.length - 1);
-    final double from = _liveOffset;
-    final double to   = 0;
+  // ── SNAP with spring physics ──────────────────────────────
+  void _snapTo(int target, {double velocity = 0}) {
+    final int idx = target.clamp(0, _items.length - 1);
+    _current = idx;
 
-    _current = clamped;
-    _liveOffset = from; // start anim from current drag offset
-
-    _anim = Tween<double>(begin: from, end: to).animate(
-      CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic),
+    // Spring from current dragOffset back to 0
+    final from = _dragOffset;
+    _springAnim = Tween<double>(begin: from, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _spring,
+        curve: velocity.abs() > 800
+            ? Curves.easeOutBack
+            : Curves.easeOutCubic,
+      ),
     )..addListener(() {
-      setState(() => _liveOffset = _anim.value);
+      setState(() => _dragOffset = _springAnim.value);
     });
-
-    _animCtrl.forward(from: 0);
+    _spring.forward(from: 0);
   }
 
-  void _onDragStart(DragStartDetails d) {
-    _animCtrl.stop();
+  // ── GESTURE ───────────────────────────────────────────────
+  void _onPanStart(DragStartDetails d) {
+    _spring.stop();
     _dragging = true;
-    _dragStartY = d.globalPosition.dy;
-    _dragDy = 0;
+    _startY   = d.globalPosition.dy;
   }
 
-  void _onDragUpdate(DragUpdateDetails d) {
+  void _onPanUpdate(DragUpdateDetails d) {
     if (!_dragging) return;
-    _dragDy = d.globalPosition.dy - _dragStartY;
+    double dy = d.globalPosition.dy - _startY;
 
-    // Notify sidebar
-    if (_dragDy.abs() > 10) {
-      widget.onScrollDirection?.call(_dragDy < 0); // true = scroll down
-    }
-
-    // Resistance at ends
-    double dy = _dragDy;
+    // Rubber band at ends
     if ((_current == 0 && dy > 0) ||
         (_current == _items.length - 1 && dy < 0)) {
-      dy *= 0.18;
+      dy *= 0.15;
     }
 
-    setState(() => _liveOffset = dy);
+    // Notify sidebar
+    if (dy.abs() > 8) {
+      widget.onScrollDirection?.call(dy < 0);
+    }
+
+    setState(() => _dragOffset = dy);
   }
 
-  void _onDragEnd(DragEndDetails d) {
+  void _onPanEnd(DragEndDetails d) {
     if (!_dragging) return;
     _dragging = false;
 
-    final double velocity = d.primaryVelocity ?? 0;
-    final double threshold = 55.0;
-
-    if (_dragDy < -threshold || velocity < -400) {
-      _snapTo(_current + 1);
-    } else if (_dragDy > threshold || velocity > 400) {
-      _snapTo(_current - 1);
+    final vel = d.primaryVelocity ?? 0;
+    if (_dragOffset < -60 || vel < -500) {
+      _snapTo(_current + 1, velocity: vel);
+    } else if (_dragOffset > 60 || vel > 500) {
+      _snapTo(_current - 1, velocity: vel);
     } else {
       _snapTo(_current);
     }
@@ -178,37 +155,36 @@ class _FeedPanelState extends State<FeedPanel>
       );
     }
 
-    if (!_itemsCached) {
+    if (!_cached) {
       _items = _buildItems(daily);
-      _itemsCached = true;
+      _cached = true;
     }
 
     return GestureDetector(
-      onVerticalDragStart: _onDragStart,
-      onVerticalDragUpdate: _onDragUpdate,
-      onVerticalDragEnd: _onDragEnd,
+      behavior: HitTestBehavior.opaque,
+      onPanStart:  _onPanStart,
+      onPanUpdate: _onPanUpdate,
+      onPanEnd:    _onPanEnd,
       child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double h = constraints.maxHeight;
-          final double w = constraints.maxWidth;
+        builder: (ctx, box) {
+          final double h = box.maxHeight;
+          final double w = box.maxWidth;
 
           return Stack(
             clipBehavior: Clip.hardEdge,
             children: [
-              // Render stack: slot+3 dulu (bawah), slot-1 last (atas)
-              // Flutter Stack: last child = paling atas
-              for (int i = _current + 3; i >= _current - 1; i--)
-                if (i >= 0 && i < _items.length)
-                  _buildCardSlot(context, i, h, w, daily),
+              // Render: 1 prev + current + 3 next (back to front)
+              for (int i = (_current + 3).clamp(0, _items.length - 1);
+                   i >= (_current - 1).clamp(0, _items.length - 1);
+                   i--)
+                _cardSlot(ctx, i, h, w, daily),
 
-              // Dots — right side
+              // Dots indicator — right side
               Positioned(
-                right: 12,
+                right: 10,
                 top: 0,
                 bottom: 0,
-                child: Center(
-                  child: _buildDots(),
-                ),
+                child: Center(child: _dots()),
               ),
             ],
           );
@@ -217,121 +193,103 @@ class _FeedPanelState extends State<FeedPanel>
     );
   }
 
-  Widget _buildCardSlot(
-    BuildContext context,
+  // ── CARD SLOT ─────────────────────────────────────────────
+  Widget _cardSlot(
+    BuildContext ctx,
     int index,
     double h,
     double w,
     DailyContentProvider daily,
   ) {
-    // ── KAD SEGI EMPAT SAMA ──────────────────────────────
-    final double cardW = w - 28;
-    final double cardH = cardW; // 1:1 ratio
+    final int slot = index - _current; // -1=prev, 0=front, 1,2,3=back
 
-    final int slot = index - _current;
+    // Full width — no margin
+    // Card height = h - peek (so next card peeks from bottom)
+    final double cardH = h - _peek;
 
-    if (slot < 0 || slot > 3) return const SizedBox.shrink();
+    // Y positions:
+    // slot 0 → top = 0 (fill top, peek shows at bottom)
+    // slot 1 → top = cardH - peekStep*0 (just below front)
+    // slot 2 → top = cardH + peekStep*1
+    // slot -1 → top = -cardH (off top)
+    const double peekStep = 14.0; // each stacked card shows 14px more
 
-    // ── NETFLIX STACK LAYOUT ──────────────────────────────
-    // Kad depan (slot 0) duduk di tengah panel
-    // Kad belakang tersembul dari bawah makin kecil
-    // Nampak macam timbun kad — slot 1 tersembul ~70px, slot 2 ~50px dll
-    const double peekAmount = 70.0; // berapa px kad belakang tersembul
-    const double peekStep   = 15.0; // makin belakang makin sikit nampak
-    const double scaleStep  = 0.06; // setiap layer mengecil 6%
-
-    // Top position untuk slot 0 — centr vertically
-    final double slot0Top = (h - cardH) / 2;
-
-    // Kad belakang duduk di bawah kad depan, tersembul sikit
-    // slot 1 top = slot0Top + cardH - peekAmount
-    // slot 2 top = slot 1 top + peekAmount - peekStep
-    double topY;
+    double baseTop;
     if (slot == 0) {
-      topY = slot0Top;
+      baseTop = 0;
+    } else if (slot > 0) {
+      baseTop = cardH + (slot - 1) * peekStep;
     } else {
-      topY = slot0Top + cardH - peekAmount;
-      for (int s = 2; s <= slot; s++) {
-        topY += (peekAmount - peekStep * (s - 1));
-      }
+      baseTop = -cardH; // off screen top
     }
 
-    final double scale = (1.0 - slot * scaleStep).clamp(0.7, 1.0);
-    final double opacity = slot == 0 ? 1.0
-        : slot == 1 ? 0.85
+    // Drag: front card moves with finger, back cards move proportionally
+    double dragY;
+    if (slot == 0) {
+      dragY = _dragOffset;
+    } else if (slot == -1) {
+      // Prev card comes down from top as we drag down
+      dragY = _dragOffset * 0.7;
+    } else {
+      // Back cards inch up slightly as front drags up
+      dragY = _dragOffset * (0.3 / slot);
+    }
+
+    final double top = baseTop + dragY;
+
+    // Opacity: front=1, each layer slightly darker
+    final double opacity = slot == 0  ? 1.0
+        : slot == 1 ? 0.82
         : slot == 2 ? 0.60
-        : 0.35;
+        : slot == 3 ? 0.35
+        : slot == -1 ? (1.0 + _dragOffset / cardH).clamp(0.0, 1.0)
+        : 0.0;
 
-    // Drag offset — slot 0 bergerak penuh, belakang separuh
-    final double dragFactor = slot == 0 ? 1.0 : (0.5 / slot);
-    final double dragY = _liveOffset * dragFactor;
+    if (opacity <= 0) return const SizedBox.shrink();
 
-    Widget card = _buildCard(context, index, daily);
-
-    card = ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: card,
+    Widget card = ClipRRect(
+      borderRadius: BorderRadius.circular(slot == 0 ? 20 : 18),
+      child: _buildCard(ctx, index, daily),
     );
 
     return Positioned(
-      left: 14,
-      width: cardW,
-      top: topY + dragY,
+      left: 0,
+      right: 0,
+      top: top,
       height: cardH,
       child: Opacity(
-        opacity: opacity,
-        child: Transform.scale(
-          scale: scale,
-          alignment: Alignment.topCenter,
-          child: card,
-        ),
+        opacity: opacity.clamp(0.0, 1.0),
+        child: card,
       ),
     );
   }
 
-  Widget _buildCard(
-    BuildContext context,
-    int index,
-    DailyContentProvider daily,
-  ) {
-    final item = _items[index];
-    final bool isCenter = index == _current;
-
-    if (item is _HadithItem) {
-      return DailyHadithCard(hadith: item.hadith, isCenter: isCenter);
-    }
-    if (item is _AmalanItem) {
-      return DailyAmalanCard(
-        amalan: item.amalan,
-        isCenter: isCenter,
-        onToggle: () => daily.toggleAmalan(item.amalan.id),
-      );
-    }
-    if (item is _SirahItem) {
-      return DailySirahCard(sirah: item.sirah, isCenter: isCenter);
-    }
-    final post = (item as _PostItem).post;
-    return FeedCard(post: post, isCenter: isCenter);
+  Widget _buildCard(BuildContext ctx, int i, DailyContentProvider d) {
+    final item = _items[i];
+    final bool front = i == _current;
+    if (item is _HadithItem) return DailyHadithCard(hadith: item.hadith, isCenter: front);
+    if (item is _AmalanItem) return DailyAmalanCard(amalan: item.amalan, isCenter: front, onToggle: () => d.toggleAmalan(item.amalan.id));
+    if (item is _SirahItem)  return DailySirahCard(sirah: item.sirah, isCenter: front);
+    return FeedCard(post: (item as _PostItem).post, isCenter: front);
   }
 
-  Widget _buildDots() {
+  Widget _dots() {
+    final int total = _items.length.clamp(0, 15);
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-        _items.length.clamp(0, 12),
-        (i) => AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+      children: List.generate(total, (i) {
+        final bool on = i == _current;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 280),
           margin: const EdgeInsets.symmetric(vertical: 2.5),
           width: 4,
-          height: i == _current ? 14 : 4,
+          height: on ? 16 : 4,
           decoration: BoxDecoration(
-            color: i == _current
-                ? kPrimaryGold
-                : Colors.white.withOpacity(0.25),
+            color: on ? kPrimaryGold : Colors.white.withOpacity(0.22),
             borderRadius: BorderRadius.circular(2),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }
