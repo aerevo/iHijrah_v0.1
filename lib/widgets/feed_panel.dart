@@ -203,24 +203,30 @@ class _FeedPanelState extends State<FeedPanel>
   ) {
     final int slot = index - _current; // -1=prev, 0=front, 1,2,3=back
 
-    // Full width — no margin
-    // Card height = h - peek (so next card peeks from bottom)
-    final double cardH = h - _peek;
+    // 1:1 ratio — lebar = tinggi
+    final double cardH = w;
 
-    // Y positions:
-    // slot 0 → top = 0 (fill top, peek shows at bottom)
-    // slot 1 → top = cardH - peekStep*0 (just below front)
-    // slot 2 → top = cardH + peekStep*1
-    // slot -1 → top = -cardH (off top)
-    const double peekStep = 14.0; // each stacked card shows 14px more
+    // Kad depan duduk di tengah panel vertically
+    final double centerTop = (h - cardH) / 2;
+
+    // Kad belakang tersembul dari bawah kad depan
+    // slot 1: top = centerTop + cardH - peek1
+    // slot 2: top = slot1 top + peek2
+    const double peek1 = 56.0;
+    const double peek2 = 38.0;
+    const double peek3 = 24.0;
 
     double baseTop;
     if (slot == 0) {
-      baseTop = 0;
-    } else if (slot > 0) {
-      baseTop = cardH + (slot - 1) * peekStep;
+      baseTop = centerTop;
+    } else if (slot == 1) {
+      baseTop = centerTop + cardH - peek1;
+    } else if (slot == 2) {
+      baseTop = centerTop + cardH - peek1 + peek1 - peek2;
+    } else if (slot == 3) {
+      baseTop = centerTop + cardH - peek1 + peek1 - peek2 + peek2 - peek3;
     } else {
-      baseTop = -cardH; // off screen top
+      baseTop = -cardH; // off screen top (prev card)
     }
 
     // Drag: front card moves with finger, back cards move proportionally
