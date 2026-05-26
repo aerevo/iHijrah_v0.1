@@ -1,5 +1,5 @@
 // lib/widgets/feed_card.dart
-// Full-screen card — gambar penuh, caption overlay bawah
+// Netflix-style — full width, image cover, frosted caption bottom
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,31 +7,24 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 
 // ── FRASA ISLAMIK ─────────────────────────────────────────────
-class IslamicPhrase {
-  final String arabic;
-  final String latin;
-  final Color color;
-  final Color bg;
-  const IslamicPhrase({
-    required this.arabic,
-    required this.latin,
-    required this.color,
-    required this.bg,
-  });
-}
-
-const List<IslamicPhrase> kIslamicPhrases = [
-  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     color: Color(0xFFF59E0B), bg: Color(0x1FF59E0B)),
-  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', color: Color(0xFF059669), bg: Color(0x1F059669)),
-  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   color: Color(0xFF0284C7), bg: Color(0x1F0284C7)),
-  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    color: Color(0xFF7C3AED), bg: Color(0x1F7C3AED)),
-  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  color: Color(0xFFDC2626), bg: Color(0x1FDC2626)),
-  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   color: Color(0xFF0891B2), bg: Color(0x1F0891B2)),
+const List<_Phrase> _phrases = [
+  _Phrase('بِسْمِ اللَّهِ',     'Bismillah',     Color(0xFFD4A017), Color(0x25D4A017)),
+  _Phrase('الْحَمْدُ لِلَّهِ',  'Alhamdulillah', Color(0xFF22C55E), Color(0x2522C55E)),
+  _Phrase('سُبْحَانَ اللَّهِ',  'Subhanallah',   Color(0xFF38BDF8), Color(0x2538BDF8)),
+  _Phrase('إِنْ شَاءَ اللَّهُ','InsyaAllah',    Color(0xFFA78BFA), Color(0x25A78BFA)),
+  _Phrase('اللَّهُ أَكْبَرُ',  'Allahuakbar',  Color(0xFFEF4444), Color(0x25EF4444)),
+  _Phrase('مَا شَاءَ اللَّهُ', 'MashaAllah',   Color(0xFF0EA5E9), Color(0x250EA5E9)),
 ];
 
-// ── WARNA IKUT TYPE ───────────────────────────────────────────
-Color _typeColor(String type) {
-  switch (type) {
+class _Phrase {
+  final String ar, latin;
+  final Color color, bg;
+  const _Phrase(this.ar, this.latin, this.color, this.bg);
+}
+
+// ── TYPE COLOR ────────────────────────────────────────────────
+Color _tc(String t) {
+  switch (t) {
     case 'video':   return const Color(0xFFEF4444);
     case 'article': return const Color(0xFFF59E0B);
     case 'event':   return const Color(0xFF34D399);
@@ -39,21 +32,29 @@ Color _typeColor(String type) {
     default:        return kPrimaryGold;
   }
 }
-
-String _typeLabel(String type) {
-  switch (type) {
+String _tl(String t) {
+  switch (t) {
     case 'video':   return '▶  VIDEO';
     case 'article': return '📄  ARTIKEL';
     case 'event':   return '📅  ACARA';
     case 'quote':   return '❝  PETIKAN';
-    default:        return type.toUpperCase();
+    default:        return t.toUpperCase();
   }
 }
 
-// ── SHADOWS ───────────────────────────────────────────────────
-const List<Shadow> _kShadow = [
-  Shadow(color: Color(0xCC000000), blurRadius: 8,  offset: Offset(0, 1)),
-  Shadow(color: Color(0x88000000), blurRadius: 20, offset: Offset(0, 3)),
+const List<Shadow> _sh = [
+  Shadow(color: Color(0xCC000000), blurRadius: 8,  offset: Offset(0,1)),
+  Shadow(color: Color(0x88000000), blurRadius: 18, offset: Offset(0,3)),
+];
+
+// ── GRADIENT BG PALETTES ──────────────────────────────────────
+const List<List<Color>> _palettes = [
+  [Color(0xFF0A0E1A), Color(0xFF1B2A4A), Color(0xFF0d1b2e)],
+  [Color(0xFF1A0A00), Color(0xFF3D2000), Color(0xFF6B3800)],
+  [Color(0xFF001A0A), Color(0xFF003D1A), Color(0xFF005A2E)],
+  [Color(0xFF10001A), Color(0xFF2D1060), Color(0xFF4A1890)],
+  [Color(0xFF001520), Color(0xFF003355), Color(0xFF005A8A)],
+  [Color(0xFF1A0010), Color(0xFF3D0030), Color(0xFF6B0050)],
 ];
 
 // ── FEED CARD ─────────────────────────────────────────────────
@@ -71,10 +72,11 @@ class FeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color accent  = _typeColor(post.type);
-    final String label  = _typeLabel(post.type);
-    final int phraseIdx = post.id.hashCode % kIslamicPhrases.length;
-    final IslamicPhrase phrase = kIslamicPhrases[phraseIdx.abs()];
+    final Color accent = _tc(post.type);
+    final int pi = post.id.hashCode.abs() % _palettes.length;
+    final int phi = post.id.hashCode.abs() % _phrases.length;
+    final _Phrase phrase = _phrases[phi];
+    final List<Color> pal = _palettes[pi];
 
     return RepaintBoundary(
       child: GestureDetector(
@@ -84,27 +86,27 @@ class FeedCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
 
-              // ── BG IMAGE / GRADIENT ───────────────────────
-              if (post.assetPath != null)
-                Image.asset(
-                  post.assetPath!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _gradientBg(accent),
-                )
-              else
-                _gradientBg(accent),
+              // ── BG ───────────────────────────────────────
+              post.assetPath != null
+                  ? Image.asset(
+                      post.assetPath!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _gradBg(pal),
+                    )
+                  : _gradBg(pal),
 
-              // ── GRADIENT OVERLAY ──────────────────────────
+              // ── DARK OVERLAY — top subtle, heavy at bottom ──
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.35, 0.65, 1.0],
+                    stops: const [0.0, 0.38, 0.62, 0.82, 1.0],
                     colors: [
+                      Colors.black.withOpacity(0.25),
                       Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.55),
+                      Colors.black.withOpacity(0.18),
+                      Colors.black.withOpacity(0.60),
                       Colors.black.withOpacity(0.88),
                     ],
                   ),
@@ -113,25 +115,30 @@ class FeedCard extends StatelessWidget {
 
               // ── TYPE BADGE — top left ─────────────────────
               Positioned(
-                top: 16,
-                left: 16,
+                top: 18, left: 16,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                      horizontal: 11, vertical: 5),
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.2),
+                    color: accent.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                         color: accent.withOpacity(0.5), width: 0.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                   child: Text(
-                    label,
+                    _tl(post.type),
                     style: TextStyle(
                       color: accent,
-                      fontSize: 9,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6,
-                      shadows: _kShadow,
+                      letterSpacing: 0.7,
+                      shadows: _sh,
                     ),
                   ),
                 ),
@@ -139,115 +146,102 @@ class FeedCard extends StatelessWidget {
 
               // ── ISLAMIC PHRASE — top right ────────────────
               Positioned(
-                top: 12,
-                right: 14,
+                top: 14, right: 14,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      phrase.arabic,
+                      phrase.ar,
                       style: GoogleFonts.amiri(
-                        fontSize: 16,
+                        fontSize: 18,
                         color: phrase.color,
-                        shadows: _kShadow,
+                        shadows: _sh,
                       ),
                     ),
                     Text(
                       phrase.latin,
                       style: TextStyle(
-                        fontSize: 8,
-                        color: phrase.color.withOpacity(0.7),
-                        letterSpacing: 0.3,
-                        shadows: _kShadow,
+                        fontSize: 8.5,
+                        color: phrase.color.withOpacity(0.75),
+                        letterSpacing: 0.4,
+                        shadows: _sh,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // ── CAPTION BLOCK — bottom frosted ────────────
+              // ── CAPTION BLOCK — bottom ────────────────────
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(22),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.55),
-                          Colors.black.withOpacity(0.78),
-                        ],
-                      ),
-                    ),
-                    child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
+                bottom: 0, left: 0, right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
 
-                      // Title
+                      // Title — big bold serif
                       Text(
                         post.title,
                         style: GoogleFonts.playfairDisplay(
-                          fontSize: isCenter ? 22 : 17,
+                          fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          height: 1.2,
-                          shadows: _kShadow,
+                          height: 1.15,
+                          shadows: _sh,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
 
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 7),
 
                       // Content snippet
                       Text(
                         post.content,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.75),
+                          fontSize: 12.5,
+                          color: Colors.white.withOpacity(0.78),
                           height: 1.45,
-                          shadows: _kShadow,
+                          shadows: _sh,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
-                      // Footer — author + actions
+                      // Author row + actions
                       Row(
                         children: [
 
-                          // Avatar
+                          // Avatar circle
                           Container(
-                            width: 34,
-                            height: 34,
+                            width: 36, height: 36,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: accent.withOpacity(0.2),
+                              color: accent.withOpacity(0.22),
                               border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                  width: 1.5),
+                                color: Colors.white.withOpacity(0.35),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.4),
+                                  blurRadius: 6,
+                                ),
+                              ],
                             ),
                             child: Center(
                               child: Text(
                                 post.author.isNotEmpty
-                                    ? post.author[0]
+                                    ? post.author[0].toUpperCase()
                                     : '?',
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -258,54 +252,49 @@ class FeedCard extends StatelessWidget {
                           // Name + time
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   post.author,
                                   style: const TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
-                                    shadows: _kShadow,
+                                    shadows: _sh,
                                   ),
                                 ),
                                 Text(
                                   post.time,
                                   style: TextStyle(
-                                    fontSize: 9.5,
-                                    color:
-                                        Colors.white.withOpacity(0.5),
-                                    shadows: _kShadow,
+                                    fontSize: 10,
+                                    color: Colors.white.withOpacity(0.5),
+                                    shadows: _sh,
                                   ),
                                 ),
                               ],
                             ),
                           ),
 
-                          // Actions
-                          _ActionBtn(
+                          // Like
+                          _Btn(
                             icon: Icons.favorite_border_rounded,
                             label: _fmt(post.likes),
-                            color: Colors.white.withOpacity(0.7),
                           ),
-                          const SizedBox(width: 14),
-                          _ActionBtn(
+                          const SizedBox(width: 18),
+                          // Comment
+                          _Btn(
                             icon: Icons.chat_bubble_outline_rounded,
                             label: _fmt(post.likes ~/ 8),
-                            color: Colors.white.withOpacity(0.7),
                           ),
-                          const SizedBox(width: 14),
-                          _ActionBtn(
+                          const SizedBox(width: 18),
+                          // Share
+                          _Btn(
                             icon: Icons.share_rounded,
                             label: '',
-                            color: Colors.white.withOpacity(0.7),
                           ),
                         ],
                       ),
                     ],
-                    ),
-                  ),
                   ),
                 ),
               ),
@@ -316,59 +305,44 @@ class FeedCard extends StatelessWidget {
     );
   }
 
-  Widget _gradientBg(Color accent) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.black,
-            accent.withOpacity(0.3),
-            Colors.black,
-          ],
-        ),
+  Widget _gradBg(List<Color> pal) => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: pal,
       ),
-    );
-  }
+    ),
+  );
 
-  String _fmt(int n) {
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
-    return '$n';
-  }
+  String _fmt(int n) =>
+      n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
 }
 
 // ── ACTION BUTTON ─────────────────────────────────────────────
-class _ActionBtn extends StatelessWidget {
+class _Btn extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
-
-  const _ActionBtn({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+  const _Btn({required this.icon, required this.label});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 20, color: color,
-            shadows: const [Shadow(color: Color(0xCC000000), blurRadius: 8)]),
-        if (label.isNotEmpty)
-          Text(
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 22, color: Colors.white.withOpacity(0.85),
+          shadows: const [Shadow(color: Color(0xCC000000), blurRadius: 8)]),
+      if (label.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(
             label,
             style: TextStyle(
-              fontSize: 9,
-              color: color,
-              shadows: const [
-                Shadow(color: Color(0xCC000000), blurRadius: 6)
-              ],
+              fontSize: 9.5,
+              color: Colors.white.withOpacity(0.75),
+              shadows: const [Shadow(color: Color(0xCC000000), blurRadius: 6)],
             ),
           ),
-      ],
-    );
-  }
+        ),
+    ],
+  );
 }
