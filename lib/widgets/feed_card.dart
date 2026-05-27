@@ -302,7 +302,7 @@ class FeedCard extends StatelessWidget {
                       Text(
                         phrase.ar,
                         style: GoogleFonts.amiri(
-                          fontSize: 13,
+                          fontSize: 18,
                           color: phrase.color,
                           shadows: _sh,
                         ),
@@ -335,7 +335,7 @@ class FeedCard extends StatelessWidget {
                         sigmaY: 18,
                       ),
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.06),
                           borderRadius: BorderRadius.circular(24),
@@ -354,7 +354,7 @@ class FeedCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.playfairDisplay(
-                                fontSize: 14,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                                 height: 1.15,
@@ -362,25 +362,25 @@ class FeedCard extends StatelessWidget {
                               ),
                             ),
 
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 8),
 
                             Text(
                               post.content,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: Colors.white.withOpacity(0.76),
                                 height: 1.45,
                                 shadows: _sh,
                               ),
                             ),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
 
+                            // ── Row 1: author ──────────────────────────
                             Row(
                               children: [
-
                                 Container(
                                   width: 26,
                                   height: 26,
@@ -405,29 +405,27 @@ class FeedCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-
-                                const SizedBox(width: 10),
-
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-
                                       Text(
                                         post.author,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                          fontSize: 9,
+                                          fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
                                           shadows: _sh,
                                         ),
                                       ),
-
                                       Text(
                                         post.time,
                                         style: TextStyle(
-                                          fontSize: 9,
+                                          fontSize: 8,
                                           color: Colors.white.withOpacity(0.55),
                                           shadows: _sh,
                                         ),
@@ -435,21 +433,24 @@ class FeedCard extends StatelessWidget {
                                     ],
                                   ),
                                 ),
+                              ],
+                            ),
 
+                            const SizedBox(height: 8),
+
+                            // ── Row 2: actions ─────────────────────────
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceEvenly,
+                              children: [
                                 _Btn(
                                   icon: Icons.favorite_border_rounded,
                                   label: _fmt(post.likes),
                                 ),
-
-                                const SizedBox(width: 18),
-
                                 _Btn(
                                   icon: Icons.chat_bubble_outline_rounded,
                                   label: _fmt(post.likes ~/ 8),
                                 ),
-
-                                const SizedBox(width: 18),
-
                                 const _Btn(
                                   icon: Icons.share_rounded,
                                   label: '',
