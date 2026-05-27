@@ -56,7 +56,7 @@ class _FeedPanelState extends State<FeedPanel>
   double                      _lastX    = 0;
   double                      _lastTime = 0;
 
-  late final Ticker _ticker;
+  late final _ticker;
 
   List<_FeedItem> _items  = [];
   bool            _cached = false;
