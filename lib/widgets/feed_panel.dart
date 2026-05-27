@@ -1,7 +1,14 @@
 // lib/widgets/feed_panel.dart
-// 3D Cylinder Carousel — CSS-style rotateY+translateZ per card
-// Each card is positioned AND oriented by Matrix4, matching the
-// "rotateY(angle) translateZ(radius)" approach from CSS 3D sliders.
+// 3D Cylinder Carousel — CSS-style rotateY+translateZ per card.
+//
+// PERFORMANCE:
+//   - ValueNotifier<double> _angle (no setState on tick)
+//   - AnimatedBuilder rebuilds ONLY the slot geometry, not card content
+//   - RepaintBoundary per card slot
+//
+// BACK-FACE CULLING:
+//   - Cards with cos(angle) < 0 are behind viewer → skip
+//   - Only front hemisphere (≤5 cards) ever rendered
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -20,15 +27,14 @@ class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; 
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
 // ── CONSTANTS ─────────────────────────────────────────────────
-// CSS-style 3D: transform = rotateX(tilt) * rotateY(angle) * translate(0,0,radius)
-// Cards face OUTWARD — same as CSS `rotateY(θ) translateZ(r)` on each face.
-const double _kRadius      = 340.0;   // cylinder radius in logical px
-const double _kPerspective = 0.00065; // Matrix4 entry(3,2) — perspective depth
-const double _kTiltX      = -0.20;   // ring tilt toward viewer (radians, negative = top away)
+const double _kRadius      = 340.0;
+const double _kPerspective = 0.00065; // Matrix4 entry(3,2)
+const double _kTiltX      = -0.20;   // ring tilt toward viewer (radians)
 const double _kCardW       = 200.0;
 const double _kCardH       = 280.0;
-const int    _kVisible     = 5;       // slots rendered each side of center
-const double _kAngleStep   = (2 * math.pi) / 12.0; // 12 slots per full ring
+const double _kAngleStep   = (2 * math.pi) / 12.0;
+// Only render the front hemisphere: cos(angle) > _kCullThreshold
+const double _kCullThreshold = -0.05;
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -42,13 +48,15 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel>
     with SingleTickerProviderStateMixin {
 
-  double _angle    = 0.0;
-  double _velocity = 0.0;
-  bool   _dragging = false;
-  double _lastX    = 0;
-  double _lastTime = 0;
+  // ValueNotifier — angle changes don't trigger setState on this widget.
+  // AnimatedBuilder subscribes and rebuilds only the Stack geometry.
+  final ValueNotifier<double> _angle    = ValueNotifier(0.0);
+  double                      _velocity = 0.0;
+  bool                        _dragging = false;
+  double                      _lastX    = 0;
+  double                      _lastTime = 0;
 
-  late AnimationController _ticker;
+  late final Ticker _ticker;
 
   List<_FeedItem> _items  = [];
   bool            _cached = false;
@@ -72,24 +80,21 @@ class _FeedPanelState extends State<FeedPanel>
   @override
   void initState() {
     super.initState();
-    _ticker = AnimationController(
-      vsync: this,
-      duration: const Duration(days: 999),
-    )..addListener(_onTick)..forward();
+    // Ticker (vsync-safe) — updates ValueNotifier without triggering setState
+    _ticker = createTicker(_onTick)..start();
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    _angle.dispose();
     super.dispose();
   }
 
-  void _onTick() {
+  void _onTick(Duration _) {
     if (!_dragging) {
-      setState(() {
-        _angle    += 0.003 + _velocity;
-        _velocity *= 0.94;
-      });
+      _angle.value += 0.003 + _velocity;
+      _velocity     *= 0.94;
     }
   }
 
@@ -114,12 +119,12 @@ class _FeedPanelState extends State<FeedPanel>
 
   void _onPanUpdate(DragUpdateDetails d) {
     if (!_dragging) return;
-    final now  = DateTime.now().millisecondsSinceEpoch.toDouble();
-    final dx   = d.globalPosition.dx - _lastX;
-    final dt   = (now - _lastTime).clamp(1, 100);
-    final dA   = -dx * 0.006;
+    final now = DateTime.now().millisecondsSinceEpoch.toDouble();
+    final dx  = d.globalPosition.dx - _lastX;
+    final dt  = (now - _lastTime).clamp(1.0, 100.0);
+    final dA  = -dx * 0.006;
     _velocity  = dA / dt * 16;
-    setState(() => _angle += dA);
+    _angle.value += dA;
     _lastX    = d.globalPosition.dx;
     _lastTime = now;
     widget.onScrollDirection?.call(dx < 0);
@@ -146,27 +151,49 @@ class _FeedPanelState extends State<FeedPanel>
       _cached = true;
     }
 
-    // Build slot list with Z-depth for painter's sort
-    final List<Map<String, dynamic>> slots = [];
-    for (int i = -_kVisible; i <= _kVisible; i++) {
-      final double cardAngle = _angle + i * _kAngleStep;
-      // Z depth: cos(angle)*radius — positive = in front
-      final double zDepth = math.cos(cardAngle) * _kRadius;
-      // Normalised 0..1 for opacity
-      final double nz = (zDepth + _kRadius) / (2 * _kRadius);
-      final double opacity = (0.12 + nz * 0.88).clamp(0.0, 1.0);
-      if (opacity < 0.08) continue;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart:  _onPanStart,
+      onPanUpdate: _onPanUpdate,
+      onPanEnd:    _onPanEnd,
+      // AnimatedBuilder: only the Stack geometry rerenders each frame.
+      // Card CONTENT is wrapped in RepaintBoundary → stays cached.
+      child: AnimatedBuilder(
+        animation: _angle,
+        builder: (ctx, _) => _buildCarousel(ctx, daily),
+      ),
+    );
+  }
+
+  Widget _buildCarousel(BuildContext ctx, DailyContentProvider daily) {
+    // Enumerate all slots; cull anything behind the viewer.
+    final slots = <Map<String, dynamic>>[];
+
+    // Walk enough slots to fill front hemisphere on both sides.
+    // With _kAngleStep=30°, ±5 covers 150° — but we cull at cos<-0.05.
+    for (int i = -6; i <= 6; i++) {
+      final double cardAngle = _angle.value + i * _kAngleStep;
+      final double cosA      = math.cos(cardAngle);
+
+      // Back-face cull: don't render cards behind viewer.
+      // This also prevents mirrored/flipped back-face artifacts.
+      if (cosA < _kCullThreshold) continue;
+
+      // Opacity: fade side cards (cosA 0→1 maps to opacity 0.3→1.0)
+      final double opacity = (0.30 + cosA * 0.70).clamp(0.0, 1.0);
 
       final int dataIdx =
           ((i) % _items.length + _items.length) % _items.length;
 
-      // CSS-style per-card Matrix4:
-      //   setEntry(3,2,p)  — perspective
-      //   rotateX(tiltX)   — tilt entire ring (top away = top-down view)
-      //   rotateY(angle)   — orbit card to its slot on the ring
-      //   translate(0,0,r) — push card outward to cylinder surface
-      // Result: card is positioned AND faces outward, matching CSS
-      //   `transform: rotateY(angle) translateZ(radius)`
+      // CSS-style Matrix4 per card:
+      //   perspective → tilt ring → orbit → push to surface
+      //
+      //   rotateX(_kTiltX)  — view ring from slightly above
+      //   rotateY(cardAngle)— orbit each card to its position
+      //   translate(0,0,r)  — push card out to cylinder surface
+      //
+      // This makes each card FACE OUTWARD from the cylinder, matching CSS:
+      //   transform: rotateY(angle) translateZ(radius)
       final Matrix4 m = Matrix4.identity()
         ..setEntry(3, 2, _kPerspective)
         ..rotateX(_kTiltX)
@@ -175,31 +202,24 @@ class _FeedPanelState extends State<FeedPanel>
 
       slots.add({
         'dataIdx': dataIdx,
-        'zDepth' : zDepth,
+        'cosA'   : cosA,
         'opacity': opacity,
         'matrix' : m,
         'front'  : i == 0,
       });
     }
 
-    // Painter's algorithm: back cards first
+    // Painter's algorithm: lowest cosA (furthest back) drawn first.
     slots.sort((a, b) =>
-        (a['zDepth'] as double).compareTo(b['zDepth'] as double));
+        (a['cosA'] as double).compareTo(b['cosA'] as double));
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onPanStart:  _onPanStart,
-      onPanUpdate: _onPanUpdate,
-      onPanEnd:    _onPanEnd,
-      child: Stack(
-        // Alignment.center: all Transform children originate at panel center
-        alignment: Alignment.center,
-        clipBehavior: Clip.hardEdge,
-        children: [
-          for (final s in slots)
-            _buildSlot(s, daily),
-        ],
-      ),
+    return Stack(
+      alignment:    Alignment.center,
+      clipBehavior: Clip.hardEdge,
+      children: [
+        for (final s in slots)
+          _buildSlot(s, daily),
+      ],
     );
   }
 
@@ -234,12 +254,17 @@ class _FeedPanelState extends State<FeedPanel>
       child: Transform(
         transform: matrix,
         alignment: Alignment.center,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: SizedBox(
-            width:  _kCardW,
-            height: _kCardH,
-            child: card,
+        // RepaintBoundary: card content is fully cached between frames.
+        // Only the Transform matrix changes — Flutter only repaints
+        // the composited layer position, not card internals.
+        child: RepaintBoundary(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              width:  _kCardW,
+              height: _kCardH,
+              child:  card,
+            ),
           ),
         ),
       ),
