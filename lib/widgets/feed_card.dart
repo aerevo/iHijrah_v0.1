@@ -302,7 +302,7 @@ class FeedCard extends StatelessWidget {
                       Text(
                         phrase.ar,
                         style: GoogleFonts.amiri(
-                          fontSize: 18,
+                          fontSize: 13,
                           color: phrase.color,
                           shadows: _sh,
                         ),
@@ -335,7 +335,7 @@ class FeedCard extends StatelessWidget {
                         sigmaY: 18,
                       ),
                       child: Container(
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.06),
                           borderRadius: BorderRadius.circular(24),
@@ -354,7 +354,7 @@ class FeedCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.playfairDisplay(
-                                fontSize: 20,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                                 height: 1.15,
@@ -362,28 +362,28 @@ class FeedCard extends StatelessWidget {
                               ),
                             ),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 5),
 
                             Text(
                               post.content,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 10,
                                 color: Colors.white.withOpacity(0.76),
                                 height: 1.45,
                                 shadows: _sh,
                               ),
                             ),
 
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 8),
 
                             Row(
                               children: [
 
                                 Container(
-                                  width: 34,
-                                  height: 34,
+                                  width: 26,
+                                  height: 26,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: accent.withOpacity(0.20),
@@ -398,7 +398,7 @@ class FeedCard extends StatelessWidget {
                                           ? post.author[0].toUpperCase()
                                           : '?',
                                       style: const TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                         color: Colors.white,
                                       ),
@@ -417,7 +417,7 @@ class FeedCard extends StatelessWidget {
                                       Text(
                                         post.author,
                                         style: const TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
                                           shadows: _sh,
