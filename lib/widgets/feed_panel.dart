@@ -19,7 +19,7 @@ class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this
 
 // ── CONSTANTS ─────────────────────────────────────────────────
 const double _kRadius      = 620.0;  // cylinder radius — larger = more spread
-const double _kPerspective = 0.0010; // 1/focal = smaller number = more cinematic
+const double _kPerspective = 0.00020; // 1/focal — was 0.0010 → front card scale was 2.56×, now ≈1.15×
 const double _kTiltX      = -0.18;  // radians — tilt ring toward viewer (top-down)
 const double _kCardW       = 200.0;
 const double _kCardH       = 260.0;
@@ -208,7 +208,7 @@ class _FeedPanelState extends State<FeedPanel>
           slots.sort((a, b) => (a['z3d'] as double).compareTo(b['z3d'] as double));
 
           return Stack(
-            clipBehavior: Clip.none,
+            clipBehavior: Clip.hardEdge, // was Clip.none — cards overflowed panel
             children: [
               for (final s in slots)
                 _buildSlot(ctx, s, daily),
