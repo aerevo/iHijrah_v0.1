@@ -1,5 +1,7 @@
 // lib/widgets/feed_panel.dart
-// 3D Cylinder Carousel — Matrix4 orbit, cinematic depth
+// 3D Cylinder Carousel — CSS-style rotateY+translateZ per card
+// Each card is positioned AND oriented by Matrix4, matching the
+// "rotateY(angle) translateZ(radius)" approach from CSS 3D sliders.
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -18,13 +20,15 @@ class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; 
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
 // ── CONSTANTS ─────────────────────────────────────────────────
-const double _kRadius      = 620.0;  // cylinder radius — larger = more spread
-const double _kPerspective = 0.00020; // 1/focal — was 0.0010 → front card scale was 2.56×, now ≈1.15×
-const double _kTiltX      = -0.18;  // radians — tilt ring toward viewer (top-down)
+// CSS-style 3D: transform = rotateX(tilt) * rotateY(angle) * translate(0,0,radius)
+// Cards face OUTWARD — same as CSS `rotateY(θ) translateZ(r)` on each face.
+const double _kRadius      = 340.0;   // cylinder radius in logical px
+const double _kPerspective = 0.00065; // Matrix4 entry(3,2) — perspective depth
+const double _kTiltX      = -0.20;   // ring tilt toward viewer (radians, negative = top away)
 const double _kCardW       = 200.0;
-const double _kCardH       = 260.0;
-const int    _kVisible     = 10;     // render cards on each side of current
-const double _kAngleStep   = (2 * math.pi) / 14; // 14 slots in full ring
+const double _kCardH       = 280.0;
+const int    _kVisible     = 5;       // slots rendered each side of center
+const double _kAngleStep   = (2 * math.pi) / 12.0; // 12 slots per full ring
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -38,12 +42,11 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel>
     with SingleTickerProviderStateMixin {
 
-  // ── ORBIT STATE ───────────────────────────────────────────
-  double _angle       = 0.0;  // current orbit angle in radians
-  double _velocity    = 0.0;  // angular velocity rad/frame
-  bool   _dragging    = false;
-  double _lastX       = 0;
-  double _lastTime    = 0;
+  double _angle    = 0.0;
+  double _velocity = 0.0;
+  bool   _dragging = false;
+  double _lastX    = 0;
+  double _lastTime = 0;
 
   late AnimationController _ticker;
 
@@ -69,7 +72,6 @@ class _FeedPanelState extends State<FeedPanel>
   @override
   void initState() {
     super.initState();
-    // Ticker runs every frame for smooth auto-rotation + momentum decay
     _ticker = AnimationController(
       vsync: this,
       duration: const Duration(days: 999),
@@ -85,10 +87,7 @@ class _FeedPanelState extends State<FeedPanel>
   void _onTick() {
     if (!_dragging) {
       setState(() {
-        // Auto rotate
-        _angle += 0.003;
-        // Momentum decay
-        _angle    += _velocity;
+        _angle    += 0.003 + _velocity;
         _velocity *= 0.94;
       });
     }
@@ -115,26 +114,18 @@ class _FeedPanelState extends State<FeedPanel>
 
   void _onPanUpdate(DragUpdateDetails d) {
     if (!_dragging) return;
-    final now = DateTime.now().millisecondsSinceEpoch.toDouble();
-    final dx  = d.globalPosition.dx - _lastX;
-    final dt  = (now - _lastTime).clamp(1, 100);
-
-    // Convert pixel drag to radians — negative so drag right = rotate right
-    final dAngle = -dx * 0.006;
-    _velocity = dAngle / dt * 16;
-
-    setState(() => _angle += dAngle);
-
+    final now  = DateTime.now().millisecondsSinceEpoch.toDouble();
+    final dx   = d.globalPosition.dx - _lastX;
+    final dt   = (now - _lastTime).clamp(1, 100);
+    final dA   = -dx * 0.006;
+    _velocity  = dA / dt * 16;
+    setState(() => _angle += dA);
     _lastX    = d.globalPosition.dx;
     _lastTime = now;
-
-    // Notify sidebar
     widget.onScrollDirection?.call(dx < 0);
   }
 
-  void _onPanEnd(DragEndDetails d) {
-    _dragging = false;
-  }
+  void _onPanEnd(DragEndDetails _) => _dragging = false;
 
   // ── BUILD ─────────────────────────────────────────────────
   @override
@@ -155,84 +146,68 @@ class _FeedPanelState extends State<FeedPanel>
       _cached = true;
     }
 
+    // Build slot list with Z-depth for painter's sort
+    final List<Map<String, dynamic>> slots = [];
+    for (int i = -_kVisible; i <= _kVisible; i++) {
+      final double cardAngle = _angle + i * _kAngleStep;
+      // Z depth: cos(angle)*radius — positive = in front
+      final double zDepth = math.cos(cardAngle) * _kRadius;
+      // Normalised 0..1 for opacity
+      final double nz = (zDepth + _kRadius) / (2 * _kRadius);
+      final double opacity = (0.12 + nz * 0.88).clamp(0.0, 1.0);
+      if (opacity < 0.08) continue;
+
+      final int dataIdx =
+          ((i) % _items.length + _items.length) % _items.length;
+
+      // CSS-style per-card Matrix4:
+      //   setEntry(3,2,p)  — perspective
+      //   rotateX(tiltX)   — tilt entire ring (top away = top-down view)
+      //   rotateY(angle)   — orbit card to its slot on the ring
+      //   translate(0,0,r) — push card outward to cylinder surface
+      // Result: card is positioned AND faces outward, matching CSS
+      //   `transform: rotateY(angle) translateZ(radius)`
+      final Matrix4 m = Matrix4.identity()
+        ..setEntry(3, 2, _kPerspective)
+        ..rotateX(_kTiltX)
+        ..rotateY(cardAngle)
+        ..translate(0.0, 0.0, _kRadius);
+
+      slots.add({
+        'dataIdx': dataIdx,
+        'zDepth' : zDepth,
+        'opacity': opacity,
+        'matrix' : m,
+        'front'  : i == 0,
+      });
+    }
+
+    // Painter's algorithm: back cards first
+    slots.sort((a, b) =>
+        (a['zDepth'] as double).compareTo(b['zDepth'] as double));
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onPanStart:  _onPanStart,
       onPanUpdate: _onPanUpdate,
       onPanEnd:    _onPanEnd,
-      child: LayoutBuilder(
-        builder: (ctx, box) {
-          final double cx = box.maxWidth  / 2 - _kCardW / 2;
-          final double cy = box.maxHeight / 2 - _kCardH / 2;
-
-          // Sort cards by Z depth (back to front) for correct painter's order
-          final List<Map<String, dynamic>> slots = [];
-          for (int i = -_kVisible; i <= _kVisible; i++) {
-            final int dataIdx = ((i) % _items.length + _items.length) % _items.length;
-            final double cardAngle = _angle + i * _kAngleStep;
-            final double sinA = math.sin(cardAngle);
-            final double cosA = math.cos(cardAngle);
-
-            // 3D position on cylinder
-            final double x3d = sinA * _kRadius;
-            final double z3d = cosA * _kRadius;
-
-            // Apply tiltX — rotate around X axis
-            final double y3d = -z3d * math.sin(_kTiltX);
-            final double z3dT = z3d * math.cos(_kTiltX);
-
-            // Perspective projection
-            final double scale = 1.0 / (1.0 + _kPerspective * (-z3dT));
-
-            // Projected 2D position
-            final double px = cx + x3d * scale;
-            final double py = cy + y3d * scale;
-
-            // Opacity — fade cards that are behind
-            final double normalizedZ = (z3dT + _kRadius) / (2 * _kRadius);
-            final double opacity = (0.2 + normalizedZ * 0.8).clamp(0.0, 1.0);
-
-            slots.add({
-              'i':       i,
-              'dataIdx': dataIdx,
-              'px':      px,
-              'py':      py,
-              'scale':   scale,
-              'opacity': opacity,
-              'z3d':     z3dT,
-              'front':   i == 0,
-            });
-          }
-
-          // Sort: back cards first (painter's algorithm)
-          slots.sort((a, b) => (a['z3d'] as double).compareTo(b['z3d'] as double));
-
-          return Stack(
-            clipBehavior: Clip.hardEdge, // was Clip.none — cards overflowed panel
-            children: [
-              for (final s in slots)
-                _buildSlot(ctx, s, daily),
-            ],
-          );
-        },
+      child: Stack(
+        // Alignment.center: all Transform children originate at panel center
+        alignment: Alignment.center,
+        clipBehavior: Clip.hardEdge,
+        children: [
+          for (final s in slots)
+            _buildSlot(s, daily),
+        ],
       ),
     );
   }
 
-  Widget _buildSlot(
-    BuildContext ctx,
-    Map<String, dynamic> s,
-    DailyContentProvider daily,
-  ) {
-    final int    dataIdx = s['dataIdx'] as int;
-    final double px      = s['px']      as double;
-    final double py      = s['py']      as double;
-    final double scale   = s['scale']   as double;
-    final double opacity = s['opacity'] as double;
-    final bool   isFront = s['front']   as bool;
-
-    // Skip nearly invisible cards
-    if (opacity < 0.08) return const SizedBox.shrink();
+  Widget _buildSlot(Map<String, dynamic> s, DailyContentProvider daily) {
+    final int     dataIdx = s['dataIdx'] as int;
+    final double  opacity = s['opacity'] as double;
+    final Matrix4 matrix  = s['matrix']  as Matrix4;
+    final bool    isFront = s['front']   as bool;
 
     final item = _items[dataIdx];
 
@@ -254,18 +229,16 @@ class _FeedPanelState extends State<FeedPanel>
       );
     }
 
-    return Positioned(
-      left: px,
-      top:  py,
-      width:  _kCardW,
-      height: _kCardH,
-      child: Opacity(
-        opacity: opacity.clamp(0.0, 1.0),
-        child: Transform.scale(
-          scale: scale,
-          alignment: Alignment.center,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+    return Opacity(
+      opacity: opacity,
+      child: Transform(
+        transform: matrix,
+        alignment: Alignment.center,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: SizedBox(
+            width:  _kCardW,
+            height: _kCardH,
             child: card,
           ),
         ),
