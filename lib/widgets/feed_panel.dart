@@ -274,7 +274,7 @@ class _FeedPanelState extends State<FeedPanel>
     } else if (item is _AmalanItem) {
       return DailyAmalanCard(
         amalan: item.amalan,
-        isCenter: isCenter,
+        isCenter: isFront,
         onToggle: () => daily.toggleAmalan(item.amalan.id),
       );
     } else if (item is _SirahItem) {
