@@ -26,13 +26,13 @@ class _HadithItem extends _FeedItem { final HadithToday hadith;  _HadithItem(thi
 class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; _AmalanItem(this.amalan, this.idx); }
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
-// ── CONSTANTS ─────────────────────────────────────────────────
-const double _kRadius      = 265.0;
-const double _kPerspective = 0.00010; // Matrix4 entry(3,2)
-const double _kTiltX      = -0.15;   // ring tilt toward viewer (radians)
+// ── CONSTANTS (UPDATED TO MATCH SIMULATOR) ────────────────────
+const double _kRadius      = 340.0;        // Saiz silinder (simulator: 340)
+const double _kPerspective = 0.00065;      // Kekuatan perspektif (simulator: 0.00065)
+const double _kTiltX       = -0.20;        // Condong ring (simulator: -0.20)
 const double _kCardW       = 200.0;
-const double _kCardH       = 200.0;  // 1:1 square card
-const double _kAngleStep   = (2 * math.pi) / 8.0;
+const double _kCardH       = 200.0;        // 1:1 square card
+const double _kAngleStep   = (2 * math.pi) / 12.0;  // 12 slots (simulator: 12)
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -132,7 +132,7 @@ class _FeedPanelState extends State<FeedPanel>
 
   void _onPanEnd(DragEndDetails _) => _dragging = false;
 
-  // ── BUILD ─────────────────────────────────────────────────
+  // ── BUILD ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final daily = context.watch<DailyContentProvider>();
@@ -274,7 +274,7 @@ class _FeedPanelState extends State<FeedPanel>
     } else if (item is _AmalanItem) {
       return DailyAmalanCard(
         amalan: item.amalan,
-        isCenter: isFront,
+        isCenter: isCenter,
         onToggle: () => daily.toggleAmalan(item.amalan.id),
       );
     } else if (item is _SirahItem) {
