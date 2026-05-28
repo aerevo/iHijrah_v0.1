@@ -27,14 +27,12 @@ class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; 
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
 // ── CONSTANTS ─────────────────────────────────────────────────
-const double _kRadius      = 340.0;
-const double _kPerspective = 0.00065; // Matrix4 entry(3,2)
-const double _kTiltX      = -0.20;   // ring tilt toward viewer (radians)
+const double _kRadius      = 265.0;
+const double _kPerspective = 0.00010; // Matrix4 entry(3,2)
+const double _kTiltX      = -0.15;   // ring tilt toward viewer (radians)
 const double _kCardW       = 200.0;
-const double _kCardH       = 280.0;
-const double _kAngleStep   = (2 * math.pi) / 12.0;
-// Only render the front hemisphere: cos(angle) > _kCullThreshold
-const double _kCullThreshold = -0.05;
+const double _kCardH       = 200.0;  // 1:1 square card
+const double _kAngleStep   = (2 * math.pi) / 8.0;
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -179,8 +177,9 @@ class _FeedPanelState extends State<FeedPanel>
       // This also prevents mirrored/flipped back-face artifacts.
       if (cosA < _kCullThreshold) continue;
 
-      // Opacity: fade side cards (cosA 0→1 maps to opacity 0.3→1.0)
-      final double opacity = (0.30 + cosA * 0.70).clamp(0.0, 1.0);
+      // Opacity: 0.12 (back) → 0.575 (side) → 1.0 (front) — matches simulator
+      final double opacity = (0.12 + ((cosA + 1) / 2) * 0.88).clamp(0.0, 1.0);
+      if (opacity < 0.05) continue;
 
       final int dataIdx =
           ((i) % _items.length + _items.length) % _items.length;
@@ -228,46 +227,61 @@ class _FeedPanelState extends State<FeedPanel>
     final double  opacity = s['opacity'] as double;
     final Matrix4 matrix  = s['matrix']  as Matrix4;
     final bool    isFront = s['front']   as bool;
+    final double  cosA    = s['cosA']    as double;
 
-    final item = _items[dataIdx];
-
-    Widget card;
-    if (item is _HadithItem) {
-      card = DailyHadithCard(hadith: item.hadith, isCenter: isFront);
-    } else if (item is _AmalanItem) {
-      card = DailyAmalanCard(
-        amalan: item.amalan,
-        isCenter: isFront,
-        onToggle: () => daily.toggleAmalan(item.amalan.id),
-      );
-    } else if (item is _SirahItem) {
-      card = DailySirahCard(sirah: item.sirah, isCenter: isFront);
-    } else {
-      card = FeedCard(
-        post: (item as _PostItem).post,
-        isCenter: isFront,
-      );
-    }
+    // Back-face: when card faces away (cosA < 0), show dark shape instead
+    // of mirrored card content — matches CSS backface-visibility:hidden + back face element
+    final Widget child = cosA >= 0
+        ? RepaintBoundary(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: SizedBox(
+                width:  _kCardW,
+                height: _kCardH,
+                child: _buildCardWidget(dataIdx, isFront, daily),
+              ),
+            ),
+          )
+        : Container(
+            width:  _kCardW,
+            height: _kCardH,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: const Color(0xFF0a0812),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.04),
+                width: 1,
+              ),
+            ),
+          );
 
     return Opacity(
       opacity: opacity,
       child: Transform(
         transform: matrix,
         alignment: Alignment.center,
-        // RepaintBoundary: card content is fully cached between frames.
-        // Only the Transform matrix changes — Flutter only repaints
-        // the composited layer position, not card internals.
-        child: RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: SizedBox(
-              width:  _kCardW,
-              height: _kCardH,
-              child:  card,
-            ),
-          ),
-        ),
+        child: child,
       ),
     );
+  }
+
+  Widget _buildCardWidget(int dataIdx, bool isFront, DailyContentProvider daily) {
+    final item = _items[dataIdx];
+    if (item is _HadithItem) {
+      return DailyHadithCard(hadith: item.hadith, isCenter: isFront);
+    } else if (item is _AmalanItem) {
+      return DailyAmalanCard(
+        amalan: item.amalan,
+        isCenter: isFront,
+        onToggle: () => daily.toggleAmalan(item.amalan.id),
+      );
+    } else if (item is _SirahItem) {
+      return DailySirahCard(sirah: item.sirah, isCenter: isFront);
+    } else {
+      return FeedCard(
+        post: (item as _PostItem).post,
+        isCenter: isFront,
+      );
+    }
   }
 }
