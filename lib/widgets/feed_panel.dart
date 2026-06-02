@@ -26,13 +26,13 @@ class _HadithItem extends _FeedItem { final HadithToday hadith;  _HadithItem(thi
 class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; _AmalanItem(this.amalan, this.idx); }
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
-// ── CONSTANTS (MODE B: WHEEL REALISTIC) ───────────────────────
-const double _kRadius      = 220.0;        // Saiz silinder
-const double _kPerspective = 0.0022;       // Kekuatan perspektif
-const double _kTiltX       = -0.38;        // Condong ring (radian)
+// ── CONSTANTS (REVERTED + TWEAKED) ────────────────────────────
+const double _kRadius      = 220.0;
+const double _kPerspective = 0.00150;  // ✅ Reverted from 0.0022
+const double _kTiltX       = -0.32;    // ✅ Reverted from -0.38
 const double _kCardW       = 200.0;
-const double _kCardH       = 200.0;        // 1:1 square card
-const double _kAngleStep   = (2 * math.pi) / 12.0;  // 12 slots untuk wheel yang smooth
+const double _kCardH       = 200.0;
+const double _kAngleStep   = (2 * math.pi) / 7.0;  // ✅ Reverted from /12.0
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -57,7 +57,7 @@ class _FeedPanelState extends State<FeedPanel>
   List<_FeedItem> _items  = [];
   bool            _cached = false;
 
-  static const double _kCullThreshold = -0.25; // Updated for Mode B
+  static const double _kCullThreshold = -0.75; // ✅ Changed from -0.25
 
   static const List<PostModel> _posts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',                         author:'Ustaz Don',      authorAge:'40',likes:1240,time:'2j', assetPath:'assets/images/dummy_post1.jpg'),
@@ -169,7 +169,7 @@ class _FeedPanelState extends State<FeedPanel>
 
       if (cosA < _kCullThreshold) continue;
 
-      final double opacity = (0.05 + ((cosA + 1.0) / 2.0) * 0.95).clamp(0.0, 1.0);
+      final double opacity = (0.18 + ((cosA + 1.0) / 2.0) * 0.82).clamp(0.0, 1.0); // ✅ Changed from 0.05/0.95
       if (opacity < 0.05) continue;
 
       final double scale = 0.85 + ((cosA + 1.0) / 2.0) * 0.20;
@@ -188,7 +188,7 @@ class _FeedPanelState extends State<FeedPanel>
         'opacity': opacity,
         'scale'  : scale,
         'matrix' : m,
-        'front'  : false, // Akan di-update di bawah
+        'front'  : false,
       });
     }
 
@@ -229,29 +229,17 @@ class _FeedPanelState extends State<FeedPanel>
     final bool    isFront = s['front']   as bool;
     final double  cosA    = s['cosA']    as double;
 
-    final Widget child = cosA >= 0
-        ? RepaintBoundary(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: SizedBox(
-                width:  _kCardW,
-                height: _kCardH,
-                child: _buildCardWidget(dataIdx, isFront, daily),
-              ),
-            ),
-          )
-        : Container(
-            width:  _kCardW,
-            height: _kCardH,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: const Color(0xFF0a0812),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.04),
-                width: 1,
-              ),
-            ),
-          );
+    // ✅ REMOVED fake back-face Container — sekarang semua kad tunjuk content sebenar
+    final Widget child = RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          width:  _kCardW,
+          height: _kCardH,
+          child: _buildCardWidget(dataIdx, isFront, daily),
+        ),
+      ),
+    );
 
     return Opacity(
       opacity: opacity,
@@ -270,7 +258,7 @@ class _FeedPanelState extends State<FeedPanel>
     } else if (item is _AmalanItem) {
       return DailyAmalanCard(
         amalan: item.amalan,
-        isCenter: isFront, // ✅ Sudah di-fix dari isCenter ke isFront
+        isCenter: isFront,
         onToggle: () => daily.toggleAmalan(item.amalan.id),
       );
     } else if (item is _SirahItem) {
