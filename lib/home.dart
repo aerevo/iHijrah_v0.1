@@ -14,7 +14,6 @@ import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
 import 'widgets/feed_panel.dart';
-import 'widgets/dynamic_background.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -51,34 +50,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final user = Provider.of<UserModel>(context);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF14121A),
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 1. BACKGROUND
-          const Positioned.fill(child: DynamicBackground()),
-
-          // 2. LATAR LANGIT — bawah feed
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/langit.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // 2b. PURPLE TWILIGHT OVERLAY — kontrast text naik, aesthetic kekal
-          Positioned.fill(
+          // 2. BACKGROUND OVERLAY — grey gelap, ringan tanpa image
+          const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x55481E78), // atas — purple ~33%
-                    Color(0x3D2D1050), // tengah — gelap lembut
-                    Color(0x60381060), // bawah — sedikit lebih pekat
-                  ],
-                ),
+                color: Color(0xFF14121A),
               ),
             ),
           ),
