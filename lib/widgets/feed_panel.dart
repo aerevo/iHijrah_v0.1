@@ -5,10 +5,6 @@
 //   - ValueNotifier<double> _angle (no setState on tick)
 //   - AnimatedBuilder rebuilds ONLY the slot geometry, not card content
 //   - RepaintBoundary per card slot
-//
-// BACK-FACE CULLING:
-//   - Cards with cos(angle) < 0 are behind viewer → skip
-//   - Only front hemisphere rendered
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -19,20 +15,20 @@ import '../utils/constants.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
 
-// ── ITEM MODELS ───────────────────────────────────────────────
+// ─ ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
 class _PostItem   extends _FeedItem { final PostModel post;      _PostItem(this.post); }
 class _HadithItem extends _FeedItem { final HadithToday hadith;  _HadithItem(this.hadith); }
 class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; _AmalanItem(this.amalan, this.idx); }
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
-// ── CONSTANTS (REVERTED + TWEAKED) ────────────────────────────
+// ── CONSTANTS (MATCH SIMULATOR: radius=220, persp=0.00150, tilt=-0.32, 7 slots) ──
 const double _kRadius      = 220.0;
-const double _kPerspective = 0.00150;  // ✅ Reverted from 0.0022
-const double _kTiltX       = -0.32;    // ✅ Reverted from -0.38
+const double _kPerspective = 0.00150;
+const double _kTiltX       = -0.32;
 const double _kCardW       = 200.0;
 const double _kCardH       = 200.0;
-const double _kAngleStep   = (2 * math.pi) / 7.0;  // ✅ Reverted from /12.0
+const double _kAngleStep   = (2 * math.pi) / 7.0;  // 7 slots = rapat macam simulator
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -57,7 +53,8 @@ class _FeedPanelState extends State<FeedPanel>
   List<_FeedItem> _items  = [];
   bool            _cached = false;
 
-  static const double _kCullThreshold = -0.75; // ✅ Changed from -0.25
+  // ✅ CULLING SANGAT LONGGAR — biar kad belakang nampak (mirrored)
+  static const double _kCullThreshold = -0.95;
 
   static const List<PostModel> _posts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',                         author:'Ustaz Don',      authorAge:'40',likes:1240,time:'2j', assetPath:'assets/images/dummy_post1.jpg'),
@@ -163,16 +160,19 @@ class _FeedPanelState extends State<FeedPanel>
   Widget _buildCarousel(BuildContext ctx, DailyContentProvider daily) {
     final slots = <Map<String, dynamic>>[];
 
-    for (int i = -6; i <= 6; i++) {
+    // ✅ Loop lebih luas untuk tangkap kad belakang (-8 sampai 8)
+    for (int i = -8; i <= 8; i++) {
       final double cardAngle = _angle.value + i * _kAngleStep;
       final double cosA      = math.cos(cardAngle);
 
+      // Culling longgar — biar kad belakang render
       if (cosA < _kCullThreshold) continue;
 
-      final double opacity = (0.18 + ((cosA + 1.0) / 2.0) * 0.82).clamp(0.0, 1.0); // ✅ Changed from 0.05/0.95
-      if (opacity < 0.05) continue;
-
-      final double scale = 0.85 + ((cosA + 1.0) / 2.0) * 0.20;
+      // ✅ Opacity: belakang = 0.20, depan = 1.0
+      final double opacity = (0.20 + ((cosA + 1.0) / 2.0) * 0.80).clamp(0.0, 1.0);
+      
+      // ✅ Scale: belakang = 0.75, depan = 1.05 (depan lagi besar sikit)
+      final double scale = 0.75 + ((cosA + 1.0) / 2.0) * 0.30;
 
       final int dataIdx = ((i) % _items.length + _items.length) % _items.length;
 
@@ -192,18 +192,17 @@ class _FeedPanelState extends State<FeedPanel>
       });
     }
 
-    // Cari front card sebenar berdasarkan cosA tertinggi
+    // ✅ Cari kad depan sebenar (cosA paling tinggi = paling depan)
     double bestCos = -999.0;
     for (final s in slots) {
       final c = s['cosA'] as double;
       if (c > bestCos) bestCos = c;
     }
-
     for (final s in slots) {
-      s['front'] = (s['cosA'] as double) == bestCos;
+      s['front'] = ((s['cosA'] as double) - bestCos).abs() < 0.001;
     }
 
-    // Painter's algorithm: lowest cosA (furthest back) drawn first.
+    // Painter's algorithm: draw furthest first
     slots.sort((a, b) =>
         (a['cosA'] as double).compareTo(b['cosA'] as double));
 
@@ -212,7 +211,7 @@ class _FeedPanelState extends State<FeedPanel>
       offset: Offset(0, yOffset),
       child: Stack(
         alignment:    Alignment.center,
-        clipBehavior: Clip.hardEdge,
+        clipBehavior: Clip.none,  // ✅ Jangan clip — biar kad tepi nampak
         children: [
           for (final s in slots)
             _buildSlot(s, daily),
@@ -229,7 +228,8 @@ class _FeedPanelState extends State<FeedPanel>
     final bool    isFront = s['front']   as bool;
     final double  cosA    = s['cosA']    as double;
 
-    // ✅ REMOVED fake back-face Container — sekarang semua kad tunjuk content sebenar
+    // ✅ SEMUA kad render content — belakang akan auto-mirror sebab rotateY > 90°
+    // Ini yang bagi efek "text terbalik" macam dalam simulator
     final Widget child = RepaintBoundary(
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
