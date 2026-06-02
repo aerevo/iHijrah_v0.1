@@ -1,5 +1,5 @@
 // lib/home.dart
-// [FIX 5] PrayerTimeOverlay dibuang — FeedPanel isi penuh skrin
+// [FIX] Background Deep Spatial Premium (Tidak Suram/Kelam) + Glassmorphism Ready
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -43,23 +43,73 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final sidebarModel = Provider.of<SidebarStateModel>(context);
     final user = Provider.of<UserModel>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF252535),
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 2. BACKGROUND — grey gelap, tanpa image
-          const Positioned.fill(
-            child: ColoredBox(color: Color(0xFF252535)),
+          // ── 1. BACKGROUND: DEEP SPATIAL (Premium, Tidak Suram) ──────────
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                // Gradient asas yang KAYA (Rich Slate), BUKAN hitam mati atau kelabu suram
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1E293B), // Slate 800 (Cukup gelap untuk kaca, tapi ada warna)
+                    Color(0xFF0F172A), // Slate 900
+                  ],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  // Cahaya Ambient Emas di penjuru atas (Simbol cahaya ilmu/murni)
+                  Positioned(
+                    top: -100,
+                    left: -100,
+                    child: Container(
+                      width: 400,
+                      height: 400,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFF59E0B).withOpacity(0.12), // Emas lembut
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Cahaya Ambient Biru di penjuru bawah (Simbol ketenangan/tech)
+                  Positioned(
+                    bottom: -150,
+                    right: -150,
+                    child: Container(
+                      width: 500,
+                      height: 500,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFF3B82F6).withOpacity(0.10), // Biru lembut
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
 
-          // 3. FEED — penuh skrin
+          // ── 2. FEED: PENUH SKRIN ────────────────────────────────────────
           Positioned.fill(
             child: Stack(
               children: [
@@ -90,14 +140,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-          // 4. FLYOUT
+          // ── 3. FLYOUT ───────────────────────────────────────────────────
           Positioned(
             left: AppSizes.sidebarWidth,
             top: 0, bottom: 0,
             child: const FlyoutPanel(),
           ),
 
-          // 5. ZIKIR PROMPT
+          // ── 4. ZIKIR PROMPT ─────────────────────────────────────────────
           if (!user.zikirDoneToday)
             Positioned.fill(
               child: ZikirPrompt(
@@ -106,7 +156,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
 
-          // 6. CONFETTI
+          // ── 5. CONFETTI ─────────────────────────────────────────────────
           Positioned.fill(
             child: IgnorePointer(
               child: Lottie.asset(
