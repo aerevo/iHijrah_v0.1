@@ -1,12 +1,12 @@
 // lib/widgets/feed_panel.dart
-// 3D Cylinder Carousel — CSS-style rotateY+translateZ per card.
+// Apple Vision Pro Style Carousel — Horizontal, Smooth, Zero 3D Bugs.
 //
-// PERFORMANCE:
-//   - ValueNotifier<double> _angle (no setState on tick)
-//   - AnimatedBuilder rebuilds ONLY the slot geometry, not card content
-//   - RepaintBoundary per card slot
+// CARA IA BERFUNGSI:
+//   - Guna PageView standard Flutter (sangat stabil).
+//   - Kira jarak kad dari tengah (_currentIndex).
+//   - Kad tengah: Scale 1.0, Opacity 1.0.
+//   - Kad tepi: Scale 0.85, Opacity 0.5 (Nampak depth tanpa 3D matrix).
 
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
@@ -15,20 +15,12 @@ import '../utils/constants.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
 
-// ─ ITEM MODELS ───────────────────────────────────────────────
+// ── ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
 class _PostItem   extends _FeedItem { final PostModel post;      _PostItem(this.post); }
 class _HadithItem extends _FeedItem { final HadithToday hadith;  _HadithItem(this.hadith); }
 class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; _AmalanItem(this.amalan, this.idx); }
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
-
-// ── CONSTANTS (MATCH SIMULATOR: radius=220, persp=0.00150, tilt=-0.32, 7 slots) ──
-const double _kRadius      = 220.0;
-const double _kPerspective = 0.00150;
-const double _kTiltX       = -0.32;
-const double _kCardW       = 200.0;
-const double _kCardH       = 200.0;
-const double _kAngleStep   = (2 * math.pi) / 7.0;  // 7 slots = rapat macam simulator
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -39,22 +31,11 @@ class FeedPanel extends StatefulWidget {
   State<FeedPanel> createState() => _FeedPanelState();
 }
 
-class _FeedPanelState extends State<FeedPanel>
-    with SingleTickerProviderStateMixin {
-
-  final ValueNotifier<double> _angle    = ValueNotifier(0.0);
-  double                      _velocity = 0.0;
-  bool                        _dragging = false;
-  double                      _lastX    = 0;
-  double                      _lastTime = 0;
-
-  late final _ticker;
-
-  List<_FeedItem> _items  = [];
-  bool            _cached = false;
-
-  // ✅ CULLING SANGAT LONGGAR — biar kad belakang nampak (mirrored)
-  static const double _kCullThreshold = -0.95;
+class _FeedPanelState extends State<FeedPanel> {
+  late final PageController _pageController;
+  int _currentIndex = 0;
+  bool _cached = false;
+  List<_FeedItem> _items = [];
 
   static const List<PostModel> _posts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',                         author:'Ustaz Don',      authorAge:'40',likes:1240,time:'2j', assetPath:'assets/images/dummy_post1.jpg'),
@@ -67,7 +48,7 @@ class _FeedPanelState extends State<FeedPanel>
     PostModel(id:'108',type:'quote',  title:'Nasihat Imam Ghazali',             content:'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia.',                                     author:'Imam Ghazali',   authorAge:'',  likes:5100,time:'2h'),
     PostModel(id:'109',type:'article',title:'Keutamaan Surah Al-Mulk',          content:'Sesiapa yang membaca Al-Mulk setiap malam, dilindungi dari azab kubur.',                    author:'Ustazah Noor',   authorAge:'38',likes:1870,time:'3h', assetPath:'assets/images/dummy_post2.jpg'),
     PostModel(id:'110',type:'event',  title:'Kem Tahfiz Ramadan 1446H',         content:'Daftar sekarang! Kem intensif hafazan 10 hari untuk semua peringkat umur.',                  author:'Markaz Quran KL',authorAge:'',  likes:720, time:'4h'),
-    PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi ﷺ mengajarkan kepada para sahabat.',                   author:'Dr Rozaimi',     authorAge:'47',likes:3300,time:'5h', assetPath:'assets/images/dummy_post1.jpg'),
+    PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi  mengajarkan kepada para sahabat.',                   author:'Dr Rozaimi',     authorAge:'47',likes:3300,time:'5h', assetPath:'assets/images/dummy_post1.jpg'),
     PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun bernyawa.',                      author:'Ibn Qayyim',     authorAge:'',  likes:6200,time:'6h'),
     PostModel(id:'115',type:'video',  title:'Tafsir Surah Al-Kahfi Ayat 1-10', content:'Perlindungan dari fitnah Dajjal bermula dengan 10 ayat pertama surah ini.',                  author:'Ust Fathul Bari',authorAge:'50',likes:7800,time:'9h', assetPath:'assets/images/dummy_post1.jpg'),
   ];
@@ -75,21 +56,13 @@ class _FeedPanelState extends State<FeedPanel>
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick)..start();
+    _pageController = PageController(viewportFraction: 0.8); // 0.8 = Nampak sikit kad tepi
   }
 
   @override
   void dispose() {
-    _ticker.dispose();
-    _angle.dispose();
+    _pageController.dispose();
     super.dispose();
-  }
-
-  void _onTick(Duration _) {
-    if (!_dragging) {
-      _angle.value += 0.003 + _velocity;
-      _velocity     *= 0.94;
-    }
   }
 
   List<_FeedItem> _buildItems(DailyContentProvider d) {
@@ -102,29 +75,6 @@ class _FeedPanelState extends State<FeedPanel>
     for (final p in _posts) items.add(_PostItem(p));
     return items;
   }
-
-  // ── GESTURE ───────────────────────────────────────────────
-  void _onPanStart(DragStartDetails d) {
-    _dragging = true;
-    _lastX    = d.globalPosition.dx;
-    _lastTime = DateTime.now().millisecondsSinceEpoch.toDouble();
-    _velocity = 0;
-  }
-
-  void _onPanUpdate(DragUpdateDetails d) {
-    if (!_dragging) return;
-    final now = DateTime.now().millisecondsSinceEpoch.toDouble();
-    final dx  = d.globalPosition.dx - _lastX;
-    final dt  = (now - _lastTime).clamp(1.0, 100.0);
-    final dA  = -dx * 0.006;
-    _velocity  = dA / dt * 16;
-    _angle.value += dA;
-    _lastX    = d.globalPosition.dx;
-    _lastTime = now;
-    widget.onScrollDirection?.call(dx < 0);
-  }
-
-  void _onPanEnd(DragEndDetails _) => _dragging = false;
 
   // ── BUILD ────────────────────────────────────────────────
   @override
@@ -145,114 +95,90 @@ class _FeedPanelState extends State<FeedPanel>
       _cached = true;
     }
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onPanStart:  _onPanStart,
-      onPanUpdate: _onPanUpdate,
-      onPanEnd:    _onPanEnd,
-      child: AnimatedBuilder(
-        animation: _angle,
-        builder: (ctx, _) => _buildCarousel(ctx, daily),
-      ),
-    );
-  }
-
-  Widget _buildCarousel(BuildContext ctx, DailyContentProvider daily) {
-    final slots = <Map<String, dynamic>>[];
-
-    // ✅ Loop lebih luas untuk tangkap kad belakang (-8 sampai 8)
-    for (int i = -8; i <= 8; i++) {
-      final double cardAngle = _angle.value + i * _kAngleStep;
-      final double cosA      = math.cos(cardAngle);
-
-      // Culling longgar — biar kad belakang render
-      if (cosA < _kCullThreshold) continue;
-
-      // ✅ Opacity: belakang = 0.20, depan = 1.0
-      final double opacity = (0.20 + ((cosA + 1.0) / 2.0) * 0.80).clamp(0.0, 1.0);
-      
-      // ✅ Scale: belakang = 0.75, depan = 1.05 (depan lagi besar sikit)
-      final double scale = 0.75 + ((cosA + 1.0) / 2.0) * 0.30;
-
-      final int dataIdx = ((i) % _items.length + _items.length) % _items.length;
-
-      final Matrix4 m = Matrix4.identity()
-        ..setEntry(3, 2, _kPerspective)
-        ..rotateX(_kTiltX)
-        ..rotateY(cardAngle)
-        ..translate(0.0, 0.0, _kRadius);
-
-      slots.add({
-        'dataIdx': dataIdx,
-        'cosA'   : cosA,
-        'opacity': opacity,
-        'scale'  : scale,
-        'matrix' : m,
-        'front'  : false,
-      });
+    if (_items.isEmpty) {
+      return const Center(child: Text('Tiada konten', style: TextStyle(color: Colors.white)));
     }
 
-    // ✅ Cari kad depan sebenar (cosA paling tinggi = paling depan)
-    double bestCos = -999.0;
-    for (final s in slots) {
-      final c = s['cosA'] as double;
-      if (c > bestCos) bestCos = c;
-    }
-    for (final s in slots) {
-      s['front'] = ((s['cosA'] as double) - bestCos).abs() < 0.001;
-    }
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollNotification) {
+        if (scrollNotification is ScrollUpdateNotification) {
+          widget.onScrollDirection?.call(scrollNotification.scrollDelta! > 0);
+        }
+        return false;
+      },
+      child: PageView.builder(
+        controller: _pageController,
+        itemCount: _items.length,
+        // Guna PageMetrics untuk kira offset scroll secara real-time
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          // Kira jarak dari kad tengah
+          double pageOffset = 0;
+          if (_pageController.position.haveDimensions && _pageController.page != null) {
+            pageOffset = (_pageController.page! - index).abs();
+          } else {
+            pageOffset = (_currentIndex - index).abs().toDouble();
+          }
 
-    // Painter's algorithm: draw furthest first
-    slots.sort((a, b) =>
-        (a['cosA'] as double).compareTo(b['cosA'] as double));
+          // Apple Vision Pro Math: 
+          // Kad tengah (offset 0) = Scale 1.0
+          // Kad tepi (offset 1) = Scale 0.85
+          double scale = 1.0 - (pageOffset * 0.15);
+          scale = scale.clamp(0.85, 1.0);
 
-    final double yOffset = _kRadius * math.sin(_kTiltX);
-    return Transform.translate(
-      offset: Offset(0, yOffset),
-      child: Stack(
-        alignment:    Alignment.center,
-        clipBehavior: Clip.none,  // ✅ Jangan clip — biar kad tepi nampak
-        children: [
-          for (final s in slots)
-            _buildSlot(s, daily),
-        ],
-      ),
-    );
-  }
+          // Opacity: Kad tengah 1.0, Kad tepi 0.4
+          double opacity = 1.0 - (pageOffset * 0.6);
+          opacity = opacity.clamp(0.4, 1.0);
 
-  Widget _buildSlot(Map<String, dynamic> s, DailyContentProvider daily) {
-    final int     dataIdx = s['dataIdx'] as int;
-    final double  opacity = s['opacity'] as double;
-    final double  scale   = s['scale'] as double;
-    final Matrix4 matrix  = s['matrix']  as Matrix4;
-    final bool    isFront = s['front']   as bool;
-    final double  cosA    = s['cosA']    as double;
+          final bool isFront = (index == _currentIndex);
 
-    // ✅ SEMUA kad render content — belakang akan auto-mirror sebab rotateY > 90°
-    // Ini yang bagi efek "text terbalik" macam dalam simulator
-    final Widget child = RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: SizedBox(
-          width:  _kCardW,
-          height: _kCardH,
-          child: _buildCardWidget(dataIdx, isFront, daily),
-        ),
-      ),
-    );
-
-    return Opacity(
-      opacity: opacity,
-      child: Transform(
-        alignment: Alignment.center,
-        transform: matrix.clone()..scale(scale),
-        child: child,
+          return AnimatedBuilder(
+            animation: _pageController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: opacity,
+                child: Transform(
+                  alignment: Alignment.center,
+                  // Sedikit rotate Y untuk rasa 3D tanpa guna Matrix4 berat
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001) // Perspective ringan
+                    ..rotateY(pageOffset * 0.15 * (index < _currentIndex ? 1 : -1)),
+                  child: Transform.scale(
+                    scale: scale,
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: _buildCardWidget(index, isFront, daily),
+          );
+        },
       ),
     );
   }
 
   Widget _buildCardWidget(int dataIdx, bool isFront, DailyContentProvider daily) {
     final item = _items[dataIdx];
+    
+    // Wrapper dengan padding & alignment supaya kad duduk cantik di tengah skrin
+    return Center(
+      child: Container(
+        width: double.infinity,
+        height: 400, // Boleh adjust tinggi kad di sini
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: _getCardContent(item, isFront, daily),
+        ),
+      ),
+    );
+  }
+
+  Widget _getCardContent(_FeedItem item, bool isFront, DailyContentProvider daily) {
     if (item is _HadithItem) {
       return DailyHadithCard(hadith: item.hadith, isCenter: isFront);
     } else if (item is _AmalanItem) {
