@@ -50,17 +50,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final user = Provider.of<UserModel>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF14121A),
+      backgroundColor: const Color(0xFF252535),
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 2. BACKGROUND OVERLAY — grey gelap, ringan tanpa image
+          // 2. BACKGROUND — grey gelap, tanpa image
           const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Color(0xFF14121A),
-              ),
-            ),
+            child: ColoredBox(color: Color(0xFF252535)),
           ),
 
           // 3. FEED — penuh skrin
