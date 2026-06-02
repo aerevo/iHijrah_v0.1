@@ -27,12 +27,12 @@ class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; 
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
 // ── CONSTANTS (UPDATED TO MATCH SIMULATOR) ────────────────────
-const double _kRadius      = 215.0;
-const double _kPerspective = 0.00200;
+const double _kRadius      = 220.0;
+const double _kPerspective = 0.00150;
 const double _kTiltX       = -0.32;
 const double _kCardW       = 200.0;
 const double _kCardH       = 200.0;        // 1:1 square card
-const double _kAngleStep   = (2 * math.pi) / 16.0;
+const double _kAngleStep   = (2 * math.pi) / 7.0;
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -59,7 +59,7 @@ class _FeedPanelState extends State<FeedPanel>
   List<_FeedItem> _items  = [];
   bool            _cached = false;
 
-  static const double _kCullThreshold = 0.10; // cos(84°) — tighter, less overlap 
+  static const double _kCullThreshold = -0.05; 
 
   static const List<PostModel> _posts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',                         author:'Ustaz Don',      authorAge:'40',likes:1240,time:'2j', assetPath:'assets/images/dummy_post1.jpg'),
@@ -121,15 +121,13 @@ class _FeedPanelState extends State<FeedPanel>
     if (!_dragging) return;
     final now = DateTime.now().millisecondsSinceEpoch.toDouble();
     final dx  = d.globalPosition.dx - _lastX;
-    final dy  = d.globalPosition.dy - _lastX; // unused for carousel
     final dt  = (now - _lastTime).clamp(1.0, 100.0);
     final dA  = -dx * 0.006;
     _velocity  = dA / dt * 16;
     _angle.value += dA;
     _lastX    = d.globalPosition.dx;
     _lastTime = now;
-    // Sidebar: any leftward/downward swipe hides, rightward/upward shows
-    if (dx.abs() > 2) widget.onScrollDirection?.call(dx < 0);
+    widget.onScrollDirection?.call(dx < 0);
   }
 
   void _onPanEnd(DragEndDetails _) => _dragging = false;
@@ -216,13 +214,17 @@ class _FeedPanelState extends State<FeedPanel>
     slots.sort((a, b) =>
         (a['cosA'] as double).compareTo(b['cosA'] as double));
 
-    return Stack(
-      alignment:    Alignment.center,
-      clipBehavior: Clip.hardEdge,
-      children: [
-        for (final s in slots)
-          _buildSlot(s, daily),
-      ],
+    final double yOffset = _kRadius * math.sin(_kTiltX);
+    return Transform.translate(
+      offset: Offset(0, yOffset),
+      child: Stack(
+        alignment:    Alignment.center,
+        clipBehavior: Clip.hardEdge,
+        children: [
+          for (final s in slots)
+            _buildSlot(s, daily),
+        ],
+      ),
     );
   }
 
