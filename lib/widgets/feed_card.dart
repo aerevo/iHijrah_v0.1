@@ -92,14 +92,8 @@ class FeedCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
 
-              // ── 1. FULL-BLEED BACKGROUND ──────────────────
-              post.assetPath != null
-                  ? Image.asset(
-                      post.assetPath!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _gradBg(pal),
-                    )
-                  : _gradBg(pal),
+              // ── 1. FULL-BLEED BACKGROUND — grey gradient, no image ──
+              _gradBg(pal),
 
               // ── 2. BOTTOM GRADIENT OVERLAY ────────────────
               // Strong dark gradient from bottom ~65% — same feel
