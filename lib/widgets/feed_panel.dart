@@ -27,12 +27,12 @@ class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; 
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
 // ── CONSTANTS (UPDATED TO MATCH SIMULATOR) ────────────────────
-const double _kRadius      = 340.0;        // Saiz silinder (simulator: 340)
-const double _kPerspective = 0.00065;      // Kekuatan perspektif (simulator: 0.00065)
-const double _kTiltX       = -0.20;        // Condong ring (simulator: -0.20)
+const double _kRadius      = 215.0;
+const double _kPerspective = 0.00200;
+const double _kTiltX       = -0.32;
 const double _kCardW       = 200.0;
 const double _kCardH       = 200.0;        // 1:1 square card
-const double _kAngleStep   = (2 * math.pi) / 12.0;  // 12 slots (simulator: 12)
+const double _kAngleStep   = (2 * math.pi) / 16.0;
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
