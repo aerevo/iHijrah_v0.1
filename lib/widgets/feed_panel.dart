@@ -8,7 +8,7 @@
 //
 // BACK-FACE CULLING:
 //   - Cards with cos(angle) < 0 are behind viewer → skip
-//   - Only front hemisphere (≤5 cards) ever rendered
+//   - Only front hemisphere rendered
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -26,13 +26,13 @@ class _HadithItem extends _FeedItem { final HadithToday hadith;  _HadithItem(thi
 class _AmalanItem extends _FeedItem { final AmalanToday amalan;  final int idx; _AmalanItem(this.amalan, this.idx); }
 class _SirahItem  extends _FeedItem { final SirahToday sirah;    _SirahItem(this.sirah); }
 
-// ── CONSTANTS (UPDATED TO MATCH SIMULATOR) ────────────────────
-const double _kRadius      = 220.0;
-const double _kPerspective = 0.00150;
-const double _kTiltX       = -0.32;
+// ── CONSTANTS (MODE B: WHEEL REALISTIC) ───────────────────────
+const double _kRadius      = 220.0;        // Saiz silinder
+const double _kPerspective = 0.0022;       // Kekuatan perspektif
+const double _kTiltX       = -0.38;        // Condong ring (radian)
 const double _kCardW       = 200.0;
 const double _kCardH       = 200.0;        // 1:1 square card
-const double _kAngleStep   = (2 * math.pi) / 7.0;
+const double _kAngleStep   = (2 * math.pi) / 12.0;  // 12 slots untuk wheel yang smooth
 
 // ── FEED PANEL ────────────────────────────────────────────────
 class FeedPanel extends StatefulWidget {
@@ -46,8 +46,6 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel>
     with SingleTickerProviderStateMixin {
 
-  // ValueNotifier — angle changes don't trigger setState on this widget.
-  // AnimatedBuilder subscribes and rebuilds only the Stack geometry.
   final ValueNotifier<double> _angle    = ValueNotifier(0.0);
   double                      _velocity = 0.0;
   bool                        _dragging = false;
@@ -59,7 +57,7 @@ class _FeedPanelState extends State<FeedPanel>
   List<_FeedItem> _items  = [];
   bool            _cached = false;
 
-  static const double _kCullThreshold = -0.05; 
+  static const double _kCullThreshold = -0.25; // Updated for Mode B
 
   static const List<PostModel> _posts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',                         author:'Ustaz Don',      authorAge:'40',likes:1240,time:'2j', assetPath:'assets/images/dummy_post1.jpg'),
@@ -80,7 +78,6 @@ class _FeedPanelState extends State<FeedPanel>
   @override
   void initState() {
     super.initState();
-    // Ticker (vsync-safe) — updates ValueNotifier without triggering setState
     _ticker = createTicker(_onTick)..start();
   }
 
@@ -156,8 +153,6 @@ class _FeedPanelState extends State<FeedPanel>
       onPanStart:  _onPanStart,
       onPanUpdate: _onPanUpdate,
       onPanEnd:    _onPanEnd,
-      // AnimatedBuilder: only the Stack geometry rerenders each frame.
-      // Card CONTENT is wrapped in RepaintBoundary → stays cached.
       child: AnimatedBuilder(
         animation: _angle,
         builder: (ctx, _) => _buildCarousel(ctx, daily),
@@ -166,35 +161,21 @@ class _FeedPanelState extends State<FeedPanel>
   }
 
   Widget _buildCarousel(BuildContext ctx, DailyContentProvider daily) {
-    // Enumerate all slots; cull anything behind the viewer.
     final slots = <Map<String, dynamic>>[];
 
-    // Walk enough slots to fill front hemisphere on both sides.
-    // With _kAngleStep=30°, ±5 covers 150° — but we cull at cos<-0.05.
     for (int i = -6; i <= 6; i++) {
       final double cardAngle = _angle.value + i * _kAngleStep;
       final double cosA      = math.cos(cardAngle);
 
-      // Back-face cull: don't render cards behind viewer.
-      // This also prevents mirrored/flipped back-face artifacts.
       if (cosA < _kCullThreshold) continue;
 
-      // Opacity: 0.12 (back) → 0.575 (side) → 1.0 (front) — matches simulator
-      final double opacity = (0.12 + ((cosA + 1) / 2) * 0.88).clamp(0.0, 1.0);
+      final double opacity = (0.05 + ((cosA + 1.0) / 2.0) * 0.95).clamp(0.0, 1.0);
       if (opacity < 0.05) continue;
 
-      final int dataIdx =
-          ((i) % _items.length + _items.length) % _items.length;
+      final double scale = 0.85 + ((cosA + 1.0) / 2.0) * 0.20;
 
-      // CSS-style Matrix4 per card:
-      //   perspective → tilt ring → orbit → push to surface
-      //
-      //   rotateX(_kTiltX)  — view ring from slightly above
-      //   rotateY(cardAngle)— orbit each card to its position
-      //   translate(0,0,r)  — push card out to cylinder surface
-      //
-      // This makes each card FACE OUTWARD from the cylinder, matching CSS:
-      //   transform: rotateY(angle) translateZ(radius)
+      final int dataIdx = ((i) % _items.length + _items.length) % _items.length;
+
       final Matrix4 m = Matrix4.identity()
         ..setEntry(3, 2, _kPerspective)
         ..rotateX(_kTiltX)
@@ -205,9 +186,21 @@ class _FeedPanelState extends State<FeedPanel>
         'dataIdx': dataIdx,
         'cosA'   : cosA,
         'opacity': opacity,
+        'scale'  : scale,
         'matrix' : m,
-        'front'  : i == 0,
+        'front'  : false, // Akan di-update di bawah
       });
+    }
+
+    // Cari front card sebenar berdasarkan cosA tertinggi
+    double bestCos = -999.0;
+    for (final s in slots) {
+      final c = s['cosA'] as double;
+      if (c > bestCos) bestCos = c;
+    }
+
+    for (final s in slots) {
+      s['front'] = (s['cosA'] as double) == bestCos;
     }
 
     // Painter's algorithm: lowest cosA (furthest back) drawn first.
@@ -231,12 +224,11 @@ class _FeedPanelState extends State<FeedPanel>
   Widget _buildSlot(Map<String, dynamic> s, DailyContentProvider daily) {
     final int     dataIdx = s['dataIdx'] as int;
     final double  opacity = s['opacity'] as double;
+    final double  scale   = s['scale'] as double;
     final Matrix4 matrix  = s['matrix']  as Matrix4;
     final bool    isFront = s['front']   as bool;
     final double  cosA    = s['cosA']    as double;
 
-    // Back-face: when card faces away (cosA < 0), show dark shape instead
-    // of mirrored card content — matches CSS backface-visibility:hidden + back face element
     final Widget child = cosA >= 0
         ? RepaintBoundary(
             child: ClipRRect(
@@ -264,8 +256,8 @@ class _FeedPanelState extends State<FeedPanel>
     return Opacity(
       opacity: opacity,
       child: Transform(
-        transform: matrix,
         alignment: Alignment.center,
+        transform: matrix.clone()..scale(scale),
         child: child,
       ),
     );
@@ -278,7 +270,7 @@ class _FeedPanelState extends State<FeedPanel>
     } else if (item is _AmalanItem) {
       return DailyAmalanCard(
         amalan: item.amalan,
-        isCenter: isFront,
+        isCenter: isFront, // ✅ Sudah di-fix dari isCenter ke isFront
         onToggle: () => daily.toggleAmalan(item.amalan.id),
       );
     } else if (item is _SirahItem) {
