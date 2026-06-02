@@ -1,262 +1,443 @@
 // lib/widgets/feed_card.dart
-// NETFLIX-STYLE FEED CARD
-// Layout: full-bleed image/gradient → bottom gradient overlay
-//         → title + meta + description overlaid → circular action button
+// APPLE VISION PRO STYLE — Dark Glassmorphism Theme
+// HIERARKI: Tajuk atas → Badge+Author → Content → Footer
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
+import 'dart:ui';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 
-// ── HELPERS ───────────────────────────────────────────────────
-
-const List<Shadow> _sh = [
-  Shadow(color: Color(0xDD000000), blurRadius: 8,  offset: Offset(0, 1)),
-  Shadow(color: Color(0x99000000), blurRadius: 20, offset: Offset(0, 3)),
-];
-
-Color _typeColor(String t) {
-  switch (t) {
-    case 'video':   return const Color(0xFFEF4444);
-    case 'article': return const Color(0xFFF59E0B);
-    case 'event':   return const Color(0xFF34D399);
-    case 'quote':   return const Color(0xFFA78BFA);
-    default:        return kPrimaryGold;
-  }
-}
-
-String _typeLabel(String t) {
-  switch (t) {
-    case 'video':   return '▶  VIDEO';
-    case 'article': return '📄  ARTIKEL';
-    case 'event':   return '📅  ACARA';
-    case 'quote':   return '❝  PETIKAN';
-    default:        return t.toUpperCase();
-  }
-}
-
-// Background gradient palettes (used when no image)
-const List<List<Color>> _pals = [
-  [Color(0xFF0A1628), Color(0xFF1B3A6B), Color(0xFF0d1b2e)],
-  [Color(0xFF1A0A00), Color(0xFF4A2800), Color(0xFF1a0e00)],
-  [Color(0xFF001A0A), Color(0xFF004D1A), Color(0xFF001a0a)],
-  [Color(0xFF10001A), Color(0xFF3D0D7A), Color(0xFF1a0030)],
-  [Color(0xFF001520), Color(0xFF004466), Color(0xFF001020)],
-];
-
-// Islamic phrases
-const List<_Phrase> _phrases = [
-  _Phrase('بِسْمِ اللَّهِ',   'Bismillah',    Color(0xFFD4A017)),
-  _Phrase('الْحَمْدُ لِلَّهِ','Alhamdulillah', Color(0xFF22C55E)),
-  _Phrase('سُبْحَانَ اللَّهِ','Subhanallah',   Color(0xFF38BDF8)),
-  _Phrase('إِنْ شَاءَ اللَّهُ','InsyaAllah',   Color(0xFFA78BFA)),
-  _Phrase('اللَّهُ أَكْبَرُ', 'Allahuakbar',  Color(0xFFEF4444)),
-  _Phrase('مَا شَاءَ اللَّهُ','MashaAllah',    Color(0xFF0EA5E9)),
-];
-
-class _Phrase {
-  final String ar, latin;
+// ── FRASA ISLAMIK ─────────────────────────────────────────────
+class IslamicPhrase {
+  final String arabic;
+  final String latin;
   final Color color;
-  const _Phrase(this.ar, this.latin, this.color);
+  final Color bg;
+  const IslamicPhrase({
+    required this.arabic,
+    required this.latin,
+    required this.color,
+    required this.bg,
+  });
 }
 
-// ── CARD ──────────────────────────────────────────────────────
+const List<IslamicPhrase> kIslamicPhrases = [
+  IslamicPhrase(arabic: 'بِسْمِ اللَّهِ',     latin: 'Bismillah',     color: Color(0xFF60A5FA), bg: Color(0x3360A5FA)),
+  IslamicPhrase(arabic: 'الْحَمْدُ لِلَّهِ',  latin: 'Alhamdulillah', color: Color(0xFF34D399), bg: Color(0x3334D399)),
+  IslamicPhrase(arabic: 'سُبْحَانَ اللَّهِ',  latin: 'Subhanallah',   color: Color(0xFF60A5FA), bg: Color(0x3360A5FA)),
+  IslamicPhrase(arabic: 'إِنْ شَاءَ اللَّهُ', latin: 'InsyaAllah',    color: Color(0xFFA78BFA), bg: Color(0x33A78BFA)),
+  IslamicPhrase(arabic: 'اللَّهُ أَكْبَرُ',   latin: 'Allahuakbar',  color: Color(0xFFF87171), bg: Color(0x33F87171)),
+  IslamicPhrase(arabic: 'مَا شَاءَ اللَّهُ',  latin: 'MashaAllah',   color: Color(0xFF22D3EE), bg: Color(0x3322D3EE)),
+];
 
-class FeedCard extends StatelessWidget {
-  final PostModel   post;
-  final bool        isCenter;
+// ── WARNA TEMA GELAP (APPLE VISION PRO) ──────────────────────
+const Color _cardBg        = Color(0xFF1E293B);      // slate-800
+const Color _cardBgGlass   = Color(0x661E293B);      // semi-transparent
+const Color _titleCenter   = Color(0xFFFFFFFF);
+const Color _titleDim      = Color(0xFF94A3B8);
+const Color _bodyCenter    = Color(0xFFE2E8F0);
+const Color _bodyDim       = Color(0xFF64748B);
+const Color _metaColor     = Color(0xFF94A3B8);
+const Color _glowBlue      = Color(0xFF3B82F6);
+const Color _borderColor   = Color(0x33FFFFFF);
+
+// ── FEED CARD ─────────────────────────────────────────────────
+class FeedCard extends StatefulWidget {
+  final PostModel post;
+  final bool isCenter;
   final VoidCallback? onTap;
 
   const FeedCard({
     Key? key,
     required this.post,
-    required this.isCenter,
+    this.isCenter = false,
     this.onTap,
   }) : super(key: key);
 
   @override
+  State<FeedCard> createState() => _FeedCardState();
+}
+
+class _FeedCardState extends State<FeedCard> {
+  bool _liked = false;
+
+  IslamicPhrase get _phrase =>
+      kIslamicPhrases[widget.post.title.hashCode.abs() % kIslamicPhrases.length];
+
+  Color get _typeColor {
+    switch (widget.post.type) {
+      case 'video':  return const Color(0xFFEF4444);
+      case 'quote':  return const Color(0xFFA78BFA);
+      case 'event':  return const Color(0xFF34D399);
+      default:       return const Color(0xFFF59E0B);
+    }
+  }
+
+  IconData get _typeIcon {
+    switch (widget.post.type) {
+      case 'video':  return Icons.play_arrow_rounded;
+      case 'quote':  return Icons.format_quote_rounded;
+      case 'event':  return Icons.event_rounded;
+      default:       return Icons.article_rounded;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final Color  accent = _typeColor(post.type);
-    final int    pi     = post.id.hashCode.abs() % _pals.length;
-    final int    phi    = post.id.hashCode.abs() % _phrases.length;
-    final phrase        = _phrases[phi];
-    final pal           = _pals[pi];
+    final bool hasImage = widget.post.assetPath != null &&
+        widget.post.assetPath!.isNotEmpty;
+    final phrase = _phrase;
 
     return RepaintBoundary(
       child: GestureDetector(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-
-              // ── 1. FULL-BLEED BACKGROUND — grey gradient, no image ──
-              _gradBg(pal),
-
-              // ── 2. BOTTOM GRADIENT OVERLAY ────────────────
-              // Strong dark gradient from bottom ~65% — same feel
-              // as Mandalorian card, text readable without separate box
-              const DecoratedBox(
+        onTap: widget.onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _cardBgGlass,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: _borderColor,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+              if (widget.isCenter)
+                BoxShadow(
+                  color: _glowBlue.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 0),
+                ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.0, 0.30, 0.55, 0.78, 1.0],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
-                      Color(0x00000000),
-                      Color(0x00000000),
-                      Color(0x88000000),
-                      Color(0xCC000000),
-                      Color(0xF2000000),
+                      _cardBg.withOpacity(0.9),
+                      _cardBg.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ══ [1] BADGE + TYPE + AUTHOR (Top Bar) ══
+                      Row(
+                        children: [
+                          // Type badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _typeColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _typeColor.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(_typeIcon, size: 12, color: _typeColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.post.type.toUpperCase(),
+                                  style: TextStyle(
+                                    color: _typeColor,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          // Islamic phrase badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: phrase.bg,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: phrase.color.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              phrase.latin,
+                              style: TextStyle(
+                                color: phrase.color,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ══ [2] TAJUK — besar & bold ══
+                      Text(
+                        widget.post.title,
+                        style: TextStyle(
+                          color: widget.isCenter ? _titleCenter : _titleDim,
+                          fontSize: widget.isCenter ? 18 : 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          height: 1.3,
+                        ),
+                        maxLines: widget.isCenter ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // ══ [3] AUTHOR + TIME ══
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: _typeColor.withOpacity(0.2),
+                            child: Icon(
+                              Icons.person_rounded,
+                              size: 14,
+                              color: _typeColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${widget.post.author} • ${widget.post.time}',
+                              style: const TextStyle(
+                                color: _metaColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ══ [4] CONTENT ══
+                      Text(
+                        widget.post.content,
+                        style: TextStyle(
+                          color: widget.isCenter ? _bodyCenter : _bodyDim,
+                          fontSize: widget.isCenter ? 13 : 12,
+                          height: 1.5,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: widget.isCenter ? 3 : 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ══ [5] THUMBNAIL (if has image) ══
+                      if (hasImage)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.asset(
+                                  widget.post.assetPath!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: _typeColor.withOpacity(0.1),
+                                    child: Icon(
+                                      _typeIcon,
+                                      color: _typeColor.withOpacity(0.5),
+                                      size: 40,
+                                    ),
+                                  ),
+                                ),
+                                // Gradient overlay
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.6),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Play button for video
+                                if (widget.post.type == 'video')
+                                  Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.9),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.3),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        Icons.play_arrow_rounded,
+                                        color: _cardBg,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 16),
+
+                      // ══ [6] ACTION BUTTONS ══
+                      Row(
+                        children: [
+                          _ActionBtn(
+                            icon: _liked
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            label: _fmt(_liked ? widget.post.likes + 1 : widget.post.likes),
+                            color: _liked
+                                ? const Color(0xFFEF4444)
+                                : _metaColor,
+                            onTap: () => setState(() => _liked = !_liked),
+                          ),
+                          const SizedBox(width: 16),
+                          _ActionBtn(
+                            icon: Icons.chat_bubble_outline_rounded,
+                            label: _fmt((widget.post.likes / 12).floor()),
+                            color: _metaColor,
+                          ),
+                          const SizedBox(width: 16),
+                          _ActionBtn(
+                            icon: Icons.share_rounded,
+                            label: 'Kongsi',
+                            color: _metaColor,
+                          ),
+                          if (widget.isCenter) ...[
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [_glowBlue, _glowBlue.withOpacity(0.7)],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _glowBlue.withOpacity(0.4),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Text(
+                                'Lihat Penuh',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
                 ),
               ),
-
-              // ── 3. PHRASE (top-right) ─────────────────────
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      phrase.ar,
-                      style: GoogleFonts.amiri(
-                        fontSize: 14,
-                        color: phrase.color.withOpacity(0.85),
-                        shadows: _sh,
-                      ),
-                    ),
-                    Text(
-                      phrase.latin,
-                      style: TextStyle(
-                        fontSize: 7,
-                        color: phrase.color.withOpacity(0.60),
-                        letterSpacing: 0.3,
-                        shadows: _sh,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── 4. BOTTOM INFO (overlaid, no box) ─────────
-              Positioned(
-                left: 12,
-                right: 52, // leave space for the circular button
-                bottom: 12,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-
-                    // Title
-                    Text(
-                      post.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        height: 1.2,
-                        shadows: _sh,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Meta row: type · likes · time
-                    Row(
-                      children: [
-                        Text(
-                          _typeLabel(post.type),
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: accent,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            shadows: _sh,
-                          ),
-                        ),
-                        Text(
-                          '  ·  ${_fmt(post.likes)} suka  ·  ${post.time}',
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: Colors.white.withOpacity(0.55),
-                            shadows: _sh,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 5),
-
-                    // Description
-                    Text(
-                      post.content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: Colors.white.withOpacity(0.68),
-                        height: 1.4,
-                        shadows: _sh,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── 5. CIRCULAR ACTION BUTTON (bottom-right) ──
-              // Matches the play button position in the reference
-              Positioned(
-                right: 10,
-                bottom: 10,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.92),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    post.type == 'video'
-                        ? Icons.play_arrow_rounded
-                        : Icons.favorite_border_rounded,
-                    size: 20,
-                    color: accent,
-                  ),
-                ),
-              ),
-
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _gradBg(List<Color> pal) => DecoratedBox(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: pal,
-      ),
-    ),
-  );
+  String _fmt(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
+  }
+}
 
-  static String _fmt(int n) =>
-      n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
+// ── ACTION BUTTON ─────────────────────────────────────────────
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
