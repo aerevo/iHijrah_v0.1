@@ -1,0 +1,74 @@
+name: ihijrah_app
+description: "Aplikasi iHijrah Embun Jiwa - Peneman Ibadah & Rohani Premium"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── UI & FONT ──────────────────────────────────────────────
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.2.1
+
+  # ── STATE MANAGEMENT & STORAGE ─────────────────────────────
+  provider: ^6.1.2
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.3
+
+  # ── ANIMATION & MEDIA ──────────────────────────────────────
+  lottie: ^3.1.2
+  audioplayers: ^6.0.0
+  video_player: ^2.8.6
+
+  # ── ISLAMIC & CALENDAR ─────────────────────────────────────
+  adhan: ^2.0.0+1
+  hijri: ^3.0.0
+  intl: ^0.19.0
+
+  # ── SYSTEM ─────────────────────────────────────────────────
+  permission_handler: ^11.3.0
+  url_launcher: ^6.2.5
+  flutter_local_notifications: ^17.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/sounds/
+    - assets/animations/
+    - assets/videos/
+    - assets/data/sirah_data.json
+    - assets/data/amalan_sunnah.json
+    - assets/data/event_data.json
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+    # Guna Poppins sementara — ganti dengan Playfair Display TTF bila ada
+    - family: Playfair
+      fonts:
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-Regular.ttf
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#1E1E1E"
+  adaptive_icon_foreground: "assets/images/logo.png"
