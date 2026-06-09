@@ -1,50 +1,47 @@
-﻿// lib/models/animation_controller_model.dart (FIXED V2)
+// lib/models/animation_controller_model.dart
 import 'package:flutter/material.dart';
 
 class AnimationControllerModel extends ChangeNotifier {
-  bool _shouldSprayParticles = false;
-  bool _isProcessing = false;
-  int _queuedTriggers = 0;
+  bool _spraying   = false;
+  bool _processing = false;
+  int  _queued     = 0;
 
-  bool get shouldSprayParticles => _shouldSprayParticles;
-  bool get isProcessing => _isProcessing;
+  bool get shouldSprayParticles => _spraying;
+  bool get isProcessing         => _processing;
 
   Future<bool> triggerParticleSpray() async {
-    if (_isProcessing) {
-      if (_queuedTriggers < 3) _queuedTriggers++;
+    if (_processing) {
+      if (_queued < 3) _queued++;
       return false;
     }
-    await _playAnimation();
-    if (_queuedTriggers > 0) {
-      _queuedTriggers--;
-      await Future.delayed(const Duration(milliseconds: 500));
-      await _playAnimation();
+    await _play();
+    while (_queued > 0) {
+      _queued--;
+      await Future.delayed(const Duration(milliseconds: 400));
+      await _play();
     }
     return true;
   }
 
-  Future<void> _playAnimation() async {
-    _isProcessing = true;
-    _shouldSprayParticles = true;
+  Future<void> _play() async {
+    _processing = true;
+    _spraying   = true;
     notifyListeners();
-
     await Future.delayed(const Duration(seconds: 2));
-
-    _shouldSprayParticles = false;
-    _isProcessing = false;
+    _spraying   = false;
+    _processing = false;
     notifyListeners();
   }
 
-  // ✅ FIX: Added missing method
   void resetParticleSpray() {
-    _shouldSprayParticles = false;
+    _spraying = false;
     notifyListeners();
   }
 
   void stopAnimation() {
-    _shouldSprayParticles = false;
-    _isProcessing = false;
-    _queuedTriggers = 0;
+    _spraying   = false;
+    _processing = false;
+    _queued     = 0;
     notifyListeners();
   }
 }

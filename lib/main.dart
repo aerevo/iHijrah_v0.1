@@ -1,39 +1,35 @@
-// lib/main.dart (GATEWAY TO ZYAMINA)
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-// Import Screens & Utils
-import 'screens/splash_screen.dart'; 
+import 'screens/splash_screen.dart';
 import 'utils/constants.dart';
-
-// Import Models & Services for Provider
 import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'models/animation_controller_model.dart';
+import 'providers/daily_content_provider.dart';
 import 'utils/audio_service.dart';
 import 'utils/prayer_service.dart';
 import 'utils/sirah_service.dart';
 
 void main() async {
-  // 1. Ensure Bindings
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Load User Data
-  final userModel = await UserModel.load();
-
-  // 3. Lock Orientation (Portrait)
-  SystemChrome.setPreferredOrientations([
+  // Lock orientasi potret
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 4. Set Status Bar (Transparent untuk Fullscreen feel)
+  // Status bar transparent, ikon terang
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light, 
+    statusBarColor:           Colors.transparent,
+    statusBarIconBrightness:  Brightness.light,
+    systemNavigationBarColor: Colors.black,
   ));
 
+  final userModel = await UserModel.load();
   runApp(IHijrahApp(userModel: userModel));
 }
 
@@ -45,40 +41,46 @@ class IHijrahApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Data Providers
+        // ── Model ────────────────────────────────────────────
         ChangeNotifierProvider.value(value: userModel),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
 
-        // Service Providers
+        // ── Kandungan Harian ─────────────────────────────────
+        ChangeNotifierProvider(create: (_) => DailyContentProvider()),
+
+        // ── Servis ───────────────────────────────────────────
         Provider(create: (_) => AudioService()),
-        ChangeNotifierProxyProvider<UserModel, PrayerService>(
-            create: (context) => PrayerService(context.read<UserModel>()),
-            update: (context, user, prayerService) => prayerService!..updateUser(user),
-        ),
         Provider(create: (_) => SirahService()),
+        ChangeNotifierProxyProvider<UserModel, PrayerService>(
+          create: (ctx) => PrayerService(ctx.read<UserModel>()),
+          update: (ctx, user, prev) => prev!..updateUser(user),
+        ),
       ],
       child: MaterialApp(
-        title: 'iHijrah Embun Jiwa',
+        title:                    'iHijrah Embun Jiwa',
         debugShowCheckedModeBanner: false,
-
-        // GLOBAL THEME
         theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: Colors.black, // Default Black
-          primaryColor: kPrimaryGold,
-          fontFamily: 'Roboto', // Font moden & clean
-
+          brightness:              Brightness.dark,
+          scaffoldBackgroundColor: kBackgroundDark,
+          primaryColor:            kPrimaryGold,
+          fontFamily:              'Poppins',
           colorScheme: const ColorScheme.dark(
-            primary: kPrimaryGold,
-            secondary: kAccentOlive,
-            surface: kCardDark,
+            primary:    kPrimaryGold,
+            secondary:  kAccentOlive,
+            surface:    kCardDark,
             background: kBackgroundDark,
           ),
+          // Override text supaya Poppins dipakai seluruh app
+          textTheme: const TextTheme(
+            bodyLarge:   TextStyle(fontFamily: 'Poppins', color: kTextPrimary),
+            bodyMedium:  TextStyle(fontFamily: 'Poppins', color: kTextPrimary),
+            bodySmall:   TextStyle(fontFamily: 'Poppins', color: kTextSecondary),
+            titleLarge:  TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: kTextPrimary),
+            titleMedium: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: kTextPrimary),
+          ),
         ),
-
-        // PINTU MASUK: INTRO ZYAMINA STUDIO
-        home: const SplashScreen(), 
+        home: const SplashScreen(),
       ),
     );
   }

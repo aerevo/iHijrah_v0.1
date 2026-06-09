@@ -1,14 +1,12 @@
-// lib/screens/onboarding_screen.dart (PREMIUM WHEEL DATE PICKER)
-import 'dart:ui';
+// lib/screens/onboarding_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // ✅ WAJIB: Untuk Kalendar Pusing
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:hijri/hijri_calendar.dart';
 
-import '../home.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-import '../widgets/dynamic_background.dart';
+import '../utils/hijri_service.dart';
+import '../home.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -18,284 +16,539 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  DateTime? _selectedDate;
-  String _hijriString = "";
+  final PageController _pages  = PageController();
+  final TextEditingController _nameCtrl = TextEditingController();
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
+  int      _step           = 0;
+  DateTime _selectedDate   = DateTime(1995, 1, 1);
+  String   _selectedGender = 'Lelaki';
+  bool     _saving         = false;
+
+  // Preview Hijri selepas pilih tarikh
+  String get _hijriPreview {
+    final h = HijriService.fromDate(_selectedDate);
+    return '${h.hDay} ${HijriService.bulanMelayu(h.hMonth)} ${h.hYear}H';
   }
 
-  // ✅ FUNGSI PILIH TARIKH BARU (GAYA PUSING/WHEEL)
-  void _pickDate() {
-    // Kalau belum pilih, set default ke tahun 2000
-    if (_selectedDate == null) {
-      _selectedDate = DateTime(2000, 1, 1);
-      _updateHijri(_selectedDate!);
-    }
+  String get _hijriAge {
+    return HijriService.calculateHijriAge(_selectedDate.toIso8601String());
+  }
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: kCardDark, // Latar Gelap
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  void _next() {
+    if (_step == 1 && _nameCtrl.text.trim().isEmpty) {
+      _snack('Sila masukkan nama anda');
+      return;
+    }
+    if (_step < 2) {
+      _pages.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _submit();
+    }
+  }
+
+  void _back() {
+    if (_step > 0) {
+      _pages.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: kWarningRed,
+        behavior: SnackBarBehavior.floating,
       ),
-      builder: (BuildContext builder) {
-        return Container(
-          height: 300, // Tinggi panel pusing
-          child: Column(
-            children: [
-              // 1. Toolbar (Butang Selesai)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: const BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Pilih Tarikh Lahir", style: TextStyle(color: kTextSecondary)),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        "SELESAI",
-                        style: TextStyle(
-                          color: kPrimaryGold, 
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // 2. Roda Pusing (Spinner)
-              Expanded(
-                child: CupertinoTheme(
-                  // Paksa tema gelap supaya tulisan roda jadi Putih
-                  data: const CupertinoThemeData(
-                    brightness: Brightness.dark, 
-                    textTheme: CupertinoTextThemeData(
-                      dateTimePickerTextStyle: TextStyle(
-                        color: Colors.white, 
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500
-                      ),
-                    ),
-                  ),
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.date,
-                    initialDateTime: _selectedDate,
-                    minimumDate: DateTime(1940),
-                    maximumDate: DateTime.now(),
-                    // Tukar format tarikh ikut susunan Malaysia (Hari - Bulan - Tahun)
-                    dateOrder: DatePickerDateOrder.dmy, 
-                    onDateTimeChanged: (DateTime newDate) {
-                      setState(() {
-                        _selectedDate = newDate;
-                        _updateHijri(newDate);
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
-  void _updateHijri(DateTime date) {
-    HijriCalendar hDate = HijriCalendar.fromDate(date);
-    _hijriString = hDate.toFormat("dd MMMM yyyy"); 
-  }
+  Future<void> _submit() async {
+    setState(() => _saving = true);
+    try {
+      final user = Provider.of<UserModel>(context, listen: false);
+      user.name      = _nameCtrl.text.trim().isEmpty
+          ? 'Hamba Allah'
+          : _nameCtrl.text.trim();
+      user.birthdate = _selectedDate;
+      user.gender    = _selectedGender;
+      // Simpan hijriDOB sebagai ISO string supaya HijriService boleh parse
+      user.hijriDOB  = _selectedDate.toIso8601String();
+      await user.save();
 
-  void _submitData() async {
-    final String name = _nameController.text.trim();
-
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: kWarningRed,
-          content: Text("Sila masukkan nama panggilan sahabat.", style: TextStyle(color: Colors.white)),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: kWarningRed,
-          content: Text("Sila pilih tarikh lahir anda.", style: TextStyle(color: Colors.white)),
-        ),
-      );
-      return;
-    }
-
-    // Simpan Data
-    final user = Provider.of<UserModel>(context, listen: false);
-    
-    await user.updateProfile(
-      name: name,
-      // Simpan ISO string untuk data, Hijri untuk display nanti
-      hijriDOB: _selectedDate!.toIso8601String(), 
-    );
-
-    // Animasi Masuk Home
-    if (mounted) {
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const HomePage(),
-          transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-          transitionDuration: const Duration(milliseconds: 1000),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 800),
         ),
       );
+    } catch (e) {
+      setState(() => _saving = false);
+      _snack('Ralat menyimpan data. Cuba lagi.');
     }
+  }
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    _nameCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false, 
-      body: Stack(
-        children: [
-          // 1. Background Alam
-          const Positioned.fill(child: DynamicBackground()),
+      backgroundColor: kBackgroundDark,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
 
-          // 2. Glass Form
-          Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        border: Border.all(color: Colors.white10),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Logo / Icon
-                          const Icon(Icons.mosque, size: 50, color: kPrimaryGold),
-                          const SizedBox(height: 20),
-                          
-                          const Text(
-                            "Selamat Datang",
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Playfair',
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Mari mulakan perjalanan Hijrah ini.",
-                            style: TextStyle(color: kTextSecondary, fontSize: 14),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 40),
+            // Latar
+            Positioned.fill(
+              child: Image.asset(
+                AppAssets.langit,
+                fit: BoxFit.cover,
+                opacity: const AlwaysStoppedAnimation(0.12),
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
 
-                          // Input Nama
-                          TextField(
-                            controller: _nameController,
-                            style: const TextStyle(color: Colors.white),
-                            cursorColor: kPrimaryGold,
-                            decoration: const InputDecoration(
-                              labelText: "Nama Panggilan",
-                              labelStyle: TextStyle(color: kTextSecondary),
-                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: kPrimaryGold)),
-                              prefixIcon: Icon(Icons.person_outline, color: kPrimaryGold),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
+            SafeArea(
+              child: Column(
+                children: [
 
-                          // Input Tarikh Lahir (TRIGGER RODA PUSING)
-                          InkWell(
-                            onTap: _pickDate,
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: "Tarikh Lahir",
-                                labelStyle: TextStyle(color: kTextSecondary),
-                                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                                prefixIcon: Icon(Icons.cake_outlined, color: kPrimaryGold),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _selectedDate == null 
-                                      ? "Sentuh untuk pilih" 
-                                      : "${_selectedDate!.day} / ${_selectedDate!.month} / ${_selectedDate!.year}",
-                                    style: TextStyle(
-                                      color: _selectedDate == null ? Colors.white38 : Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const Icon(Icons.arrow_drop_down, color: kTextSecondary),
-                                ],
-                              ),
-                            ),
-                          ),
+                  const SizedBox(height: 24),
 
-                          // Paparan Hijrah Preview
-                          if (_hijriString.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12.0),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: kAccentOlive.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: kAccentOlive.withOpacity(0.5)),
-                                ),
-                                child: Text(
-                                  "Tarikh Hijrah: $_hijriString",
-                                  style: const TextStyle(color: kAccentOlive, fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-
-                          const SizedBox(height: 40),
-
-                          // Submit Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _submitData,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kPrimaryGold,
-                                foregroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                elevation: 10,
-                                shadowColor: kPrimaryGold.withOpacity(0.4),
-                              ),
-                              child: const Text(
-                                "MULA HIJRAH",
-                                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                  // ── Logo kecil ──────────────────────────────
+                  Text(
+                    'iHijrah',
+                    style: const TextStyle(
+                      color: kGoldLight,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Playfair',
+                      letterSpacing: 2,
                     ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Progress dots ───────────────────────────
+                  _buildDots(),
+
+                  const SizedBox(height: 8),
+
+                  // ── Pages ───────────────────────────────────
+                  Expanded(
+                    child: PageView(
+                      controller: _pages,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (i) => setState(() => _step = i),
+                      children: [
+                        _stepWelcome(),
+                        _stepIdentity(),
+                        _stepGender(),
+                      ],
+                    ),
+                  ),
+
+                  // ── Bottom nav ──────────────────────────────
+                  _buildNav(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── STEP 1 — SELAMAT DATANG ──────────────────────────────────
+  Widget _stepWelcome() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+
+          Container(
+            width: 90, height: 90,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: kPrimaryGold.withOpacity(0.5), width: 1.5),
+              color: kPrimaryGold.withOpacity(0.08),
+            ),
+            child: const Icon(Icons.cruelty_free_outlined,
+                color: kPrimaryGold, size: 48),
+          ),
+
+          const SizedBox(height: 28),
+
+          const Text(
+            'Assalamualaikum',
+            style: TextStyle(
+              color: kGoldLight,
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Playfair',
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 12),
+
+          const Text(
+            'Selamat datang ke iHijrah Embun Jiwa.\nPeneman ibadah harian anda.',
+            style: TextStyle(
+              color: kTextSecondary,
+              fontSize: 14,
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 40),
+
+          // Ciri-ciri ringkas
+          ...[
+            ('🌙', 'Umur & identiti Hijrah anda'),
+            ('🌳', 'Pokok Hijrah yang tumbuh bersama ibadah'),
+            ('📿', 'Amalan, hadith & sirah harian'),
+            ('🤝', 'Komuniti Muslim tempatan'),
+          ].map((e) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Text(e.$1, style: const TextStyle(fontSize: 20)),
+                const SizedBox(width: 12),
+                Text(e.$2,
+                    style: const TextStyle(
+                        color: kTextPrimary, fontSize: 13)),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  // ── STEP 2 — NAMA & TARIKH LAHIR ────────────────────────────
+  Widget _stepIdentity() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          const Text(
+            'Siapakah anda?',
+            style: TextStyle(
+              color: kGoldLight,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Playfair',
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          const Text(
+            'Nama dan tarikh lahir untuk mengira identiti Hijrah anda.',
+            style: TextStyle(color: kTextSecondary, fontSize: 12, height: 1.5),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Input nama
+          _inputLabel('Nama Penuh'),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _nameCtrl,
+            style: const TextStyle(color: kTextPrimary, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: 'Masukkan nama anda',
+              hintStyle: TextStyle(color: kTextMuted),
+              prefixIcon: const Icon(Icons.badge_outlined, color: kPrimaryGold, size: 20),
+              filled: true,
+              fillColor: kCardDark,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+                borderSide: const BorderSide(color: kPrimaryGold, width: 1),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Tarikh lahir
+          _inputLabel('Tarikh Lahir (Masihi)'),
+          const SizedBox(height: 6),
+
+          Container(
+            height: 160,
+            decoration: BoxDecoration(
+              color: kCardDark,
+              borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+            ),
+            child: CupertinoTheme(
+              data: CupertinoThemeData(
+                brightness: Brightness.dark,
+                textTheme: CupertinoTextThemeData(
+                  dateTimePickerTextStyle: TextStyle(
+                    color: kPrimaryGold,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.date,
+                initialDateTime: _selectedDate,
+                minimumDate: DateTime(1900),
+                maximumDate: DateTime.now(),
+                backgroundColor: kCardDark,
+                onDateTimeChanged: (d) => setState(() => _selectedDate = d),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Preview Hijri
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: kPrimaryGold.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+              border: Border.all(color: kPrimaryGold.withOpacity(0.25)),
+            ),
+            child: Row(
+              children: [
+                const Text('🌙', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _hijriPreview,
+                      style: const TextStyle(
+                          color: kGoldLight,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'Umur Hijrah: $_hijriAge',
+                      style: const TextStyle(
+                          color: kTextSecondary, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── STEP 3 — JANTINA ────────────────────────────────────────
+  Widget _stepGender() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+
+          const Text(
+            'Pilih Jantina',
+            style: TextStyle(
+              color: kGoldLight,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Playfair',
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'Untuk pengalaman yang lebih personal.',
+            style: TextStyle(color: kTextSecondary, fontSize: 13),
+          ),
+
+          const SizedBox(height: 40),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _genderCard('Lelaki', '🧔', Icons.male),
+              const SizedBox(width: 20),
+              _genderCard('Wanita', '🧕', Icons.female),
+            ],
+          ),
+
+          const SizedBox(height: 40),
+
+          // Preview profil ringkas
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: kCardDark,
+              borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: kPrimaryGold.withOpacity(0.15),
+                  child: Icon(
+                    _selectedGender == 'Lelaki' ? Icons.person : Icons.person_3,
+                    color: kPrimaryGold,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _nameCtrl.text.trim().isEmpty
+                          ? 'Hamba Allah'
+                          : _nameCtrl.text.trim(),
+                      style: const TextStyle(
+                          color: kTextPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      _hijriPreview,
+                      style: const TextStyle(
+                          color: kPrimaryGold, fontSize: 11),
+                    ),
+                    Text(
+                      _hijriAge,
+                      style: const TextStyle(
+                          color: kTextSecondary, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── WIDGET HELPERS ────────────────────────────────────────────
+  Widget _inputLabel(String text) => Text(
+    text,
+    style: const TextStyle(
+      color: kTextSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+  );
+
+  Widget _genderCard(String label, String emoji, IconData icon) {
+    final bool sel = _selectedGender == label;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedGender = label),
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
+        width: 130, height: 130,
+        decoration: BoxDecoration(
+          color: sel ? kPrimaryGold.withOpacity(0.15) : kCardDark,
+          borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+          border: Border.all(
+            color: sel ? kPrimaryGold : kBorderSubtle,
+            width: sel ? 1.5 : 0.8,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 36)),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: sel ? kGoldLight : kTextSecondary,
+                fontSize: 13,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDots() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (i) => AnimatedContainer(
+        duration: AppDurations.fast,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: _step == i ? 24 : 7,
+        height: 7,
+        decoration: BoxDecoration(
+          color: _step == i ? kPrimaryGold : kBorderSubtle,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      )),
+    );
+  }
+
+  Widget _buildNav() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      child: Row(
+        children: [
+
+          if (_step > 0)
+            TextButton(
+              onPressed: _back,
+              child: const Text('Kembali',
+                  style: TextStyle(color: kTextSecondary)),
+            )
+          else
+            const Spacer(),
+
+          const Spacer(),
+
+          SizedBox(
+            width: 140,
+            height: AppSizes.buttonHeightMd,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _next,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryGold,
+                foregroundColor: Colors.black,
+                disabledBackgroundColor: kPrimaryGold.withOpacity(0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSizes.cardRadius)),
+              ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.black))
+                  : Text(
+                      _step == 2 ? 'Mulakan' : 'Seterusnya',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                    ),
             ),
           ),
         ],

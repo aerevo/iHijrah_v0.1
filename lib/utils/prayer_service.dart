@@ -1,189 +1,153 @@
-// lib/utils/prayer_service.dart (RE-CONFIRMED FIX)
-
+// lib/utils/prayer_service.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'constants.dart'; // ✅ INI YANG MESTI ADA
+import 'constants.dart';
 import '../models/user_model.dart';
-import 'settings_enums.dart';
 
 class PrayerService with ChangeNotifier {
-  UserModel _userModel;
 
-  late PrayerTimes _prayerTimes;
-  Coordinates? _coordinates;
+  UserModel _user;
 
-  String? nextPrayerName;
-  Duration? timeUntilNextPrayer;
+  // Nullable — belum tentu ada kalau gagal init
+  PrayerTimes? _times;
+  Coordinates?  _coords;
+
+  String   nextPrayerName        = '--';
+  Duration timeUntilNextPrayer   = Duration.zero;
 
   Timer? _ticker;
-  Timer? _dailyRefreshTimer;
+  Timer? _daily;
 
-  // Koordinat Semasa (Guna constant yang diimport)
-  double _currentLat = DEFAULT_LATITUDE;
-  double _currentLng = DEFAULT_LONGITUDE;
+  double _lat = DEFAULT_LATITUDE;
+  double _lng = DEFAULT_LONGITUDE;
 
-  PrayerService(this._userModel) {
-    _loadSettings();
-    _startTimers(); // Start the timer for next prayer countdown
+  PrayerService(this._user) {
+    _boot();
   }
 
-  void updateUser(UserModel newUserModel) {
-    _userModel = newUserModel;
+  void updateUser(UserModel u) {
+    _user = u;
   }
 
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // ✅ Penggunaan DEFAULT_LATITUDE/LONGITUDE kini merujuk kepada constants.dart
-    _currentLat = prefs.getDouble('latitude') ?? DEFAULT_LATITUDE;
-    _currentLng = prefs.getDouble('longitude') ?? DEFAULT_LONGITUDE;
-
-    _initPrayerTimes();
+  // ── BOOT ──────────────────────────────────────────────────────
+  Future<void> _boot() async {
+    final p = await SharedPreferences.getInstance();
+    _lat = p.getDouble('pref_lat') ?? DEFAULT_LATITUDE;
+    _lng = p.getDouble('pref_lng') ?? DEFAULT_LONGITUDE;
+    _compute();
+    _startTimers();
   }
 
-  void _initPrayerTimes() {
+  void _compute() {
     try {
-      _coordinates = Coordinates(_currentLat, _currentLng);
-      final now = DateTime.now();
-      final dateComps = DateComponents.from(now);
-      
-      final params = CalculationMethod.singapore.getParameters();
-      params.madhab = Madhab.shafi;
-      
-      _prayerTimes = PrayerTimes(_coordinates!, dateComps, params);
-      
-      _updateNextPrayer();
-      _calculateQibla();
+      _coords = Coordinates(_lat, _lng);
+      final params = CalculationMethod.singapore.getParameters()
+        ..madhab = Madhab.shafi;
+      _times = PrayerTimes(
+          _coords!, DateComponents.from(DateTime.now()), params);
+      _tick();
     } catch (e) {
-      if (kDebugMode) {
-        print("Ralat mengira waktu solat: $e");
-      }
-    }
-  }
-  
-  void _updateNextPrayer() {
-    if (_prayerTimes == null) return;
-    
-    final next = _prayerTimes!.nextPrayer();
-    nextPrayerName = _getPrayerName(next);
-    
-    final nextTime = _prayerTimes!.timeForPrayer(next);
-    if (nextTime != null) {
-      timeUntilNextPrayer = nextTime.difference(DateTime.now());
-    } else {
-      timeUntilNextPrayer = null;
-    }
-    notifyListeners();
-  }
-  
-  Future<void> updateLocation(double lat, double lng) async {
-    _currentLat = lat;
-    _currentLng = lng;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('latitude', lat);
-    await prefs.setDouble('longitude', lng);
-    
-    _initPrayerTimes(); 
-    notifyListeners();
-  }
-  
-  void _calculateQibla() {
-    if (_coordinates != null) {
-      // Logic untuk Qibla (Jika ada)
+      if (kDebugMode) debugPrint('PrayerService._compute: $e');
     }
   }
 
-  String _getPrayerName(Prayer prayer) {
-    switch (prayer) {
-      case Prayer.fajr: return "Subuh";
-      case Prayer.sunrise: return "Syuruk";
-      case Prayer.dhuhr: return "Zohor";
-      case Prayer.asr: return "Asar";
-      case Prayer.maghrib: return "Maghrib";
-      case Prayer.isha: return "Isyak";
-      case Prayer.none: return "Subuh";
-      default: return "--";
-    }
+  void _tick() {
+    if (_times == null) return;
+    try {
+      final Prayer next = _times!.nextPrayer();
+      nextPrayerName = _name(next);
+      final DateTime? t = _times!.timeForPrayer(next);
+      timeUntilNextPrayer =
+          t != null ? t.difference(DateTime.now()) : Duration.zero;
+      notifyListeners();
+    } catch (_) {}
   }
-  
+
   void _startTimers() {
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateNextPrayer();
-    });
-
-    _dailyRefreshTimer?.cancel();
-    _dailyRefreshTimer = Timer.periodic(const Duration(hours: 1), (timer) {
-      _initPrayerTimes();
-    });
+    // Setiap minit — bukan setiap saat
+    _ticker = Timer.periodic(
+        const Duration(minutes: 1), (_) => _tick());
+    // Refresh waktu solat setiap jam
+    _daily = Timer.periodic(
+        const Duration(hours: 1), (_) => _compute());
   }
 
-  String getPrayerTime(String prayerName) {
+  // ── PUBLIC API ────────────────────────────────────────────────
+  Future<void> updateLocation(double lat, double lng) async {
+    _lat = lat; _lng = lng;
+    final p = await SharedPreferences.getInstance();
+    await p.setDouble('pref_lat', lat);
+    await p.setDouble('pref_lng', lng);
+    _compute();
+  }
+
+  /// Waktu solat tunggal — format "5:43 AM"
+  String timeFor(String name) {
+    if (_times == null) return '--:--';
     try {
-      if (_prayerTimes == null) return '--:--';
-      switch (prayerName.toLowerCase()) {
-        case 'subuh':
-        case 'fajr':
-          return DateFormat.jm().format(_prayerTimes.fajr);
-        case 'syuruk':
-        case 'sunrise':
-          return DateFormat.jm().format(_prayerTimes.sunrise);
-        case 'zohor':
-        case 'dhuhr':
-          return DateFormat.jm().format(_prayerTimes.dhuhr);
-        case 'asar':
-        case 'asr':
-          return DateFormat.jm().format(_prayerTimes.asr);
-        case 'maghrib':
-          return DateFormat.jm().format(_prayerTimes.maghrib);
-        case 'isyak':
-        case 'isha':
-          return DateFormat.jm().format(_prayerTimes.isha);
-        default:
-          return '--:--';
+      final fmt = DateFormat('h:mm a');
+      switch (name.toLowerCase()) {
+        case 'subuh':   return fmt.format(_times!.fajr);
+        case 'syuruk':  return fmt.format(_times!.sunrise);
+        case 'zohor':   return fmt.format(_times!.dhuhr);
+        case 'asar':    return fmt.format(_times!.asr);
+        case 'maghrib': return fmt.format(_times!.maghrib);
+        case 'isyak':   return fmt.format(_times!.isha);
+        default:        return '--:--';
       }
-    } catch (e) {
-      return '--:--';
-    }
+    } catch (_) { return '--:--'; }
   }
 
-  Map<String, String> getAllPrayerTimes() {
+  /// Semua waktu solat
+  Map<String, String> get allTimes {
+    if (_times == null) return _empty;
     try {
-      if (_prayerTimes == null) return {
-        'Subuh': '--:--', 'Zohor': '--:--', 'Asar': '--:--', 'Maghrib': '--:--', 'Isyak': '--:--'
-      };
-      
+      final fmt = DateFormat('h:mm a');
       return {
-        'Subuh': DateFormat.jm().format(_prayerTimes.fajr),
-        'Syuruk': DateFormat.jm().format(_prayerTimes.sunrise),
-        'Zohor': DateFormat.jm().format(_prayerTimes.dhuhr),
-        'Asar': DateFormat.jm().format(_prayerTimes.asr),
-        'Maghrib': DateFormat.jm().format(_prayerTimes.maghrib),
-        'Isyak': DateFormat.jm().format(_prayerTimes.isha),
+        'Subuh':   fmt.format(_times!.fajr),
+        'Syuruk':  fmt.format(_times!.sunrise),
+        'Zohor':   fmt.format(_times!.dhuhr),
+        'Asar':    fmt.format(_times!.asr),
+        'Maghrib': fmt.format(_times!.maghrib),
+        'Isyak':   fmt.format(_times!.isha),
       };
-    } catch (e) {
-      return {
-        'Subuh': '--:--', 'Zohor': '--:--', 'Asar': '--:--', 'Maghrib': '--:--', 'Isyak': '--:--'
-      };
-    }
+    } catch (_) { return _empty; }
   }
 
-  String get formattedTimeUntilNextPrayer {
-    if (timeUntilNextPrayer == null) return '--:--';
-    final h = timeUntilNextPrayer!.inHours;
-    final m = timeUntilNextPrayer!.inMinutes.remainder(60);
-    return '${h}j ${m}m';
+  static const Map<String, String> _empty = {
+    'Subuh':'--:--','Syuruk':'--:--','Zohor':'--:--',
+    'Asar':'--:--','Maghrib':'--:--','Isyak':'--:--',
+  };
+
+  /// "2j 15m" lagi ke waktu solat seterusnya
+  String get countdown {
+    if (timeUntilNextPrayer <= Duration.zero) return '--:--';
+    final h = timeUntilNextPrayer.inHours;
+    final m = timeUntilNextPrayer.inMinutes.remainder(60);
+    if (h > 0) return '${h}j ${m}m';
+    return '${m}m lagi';
+  }
+
+  String _name(Prayer p) {
+    switch (p) {
+      case Prayer.fajr:    return 'Subuh';
+      case Prayer.sunrise: return 'Syuruk';
+      case Prayer.dhuhr:   return 'Zohor';
+      case Prayer.asr:     return 'Asar';
+      case Prayer.maghrib: return 'Maghrib';
+      case Prayer.isha:    return 'Isyak';
+      default:             return 'Subuh';
+    }
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
-    _dailyRefreshTimer?.cancel();
+    _daily?.cancel();
     super.dispose();
   }
 }

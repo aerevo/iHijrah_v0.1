@@ -1,7 +1,8 @@
-// lib/widgets/sirah_card.dart (UPGRADED 7.8/10)
+// lib/widgets/sirah_card.dart
 import 'package:flutter/material.dart';
-import '../../utils/constants.dart';
-import '../utils/sirah_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/daily_content_provider.dart';
+import '../utils/constants.dart';
 import 'metallic_gold.dart';
 
 class SirahCard extends StatelessWidget {
@@ -9,81 +10,170 @@ class SirahCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>( // Ubah Result kepada Map direct atau handle result
-      future: SirahService.getSirahForToday().then((res) => res.dataOr({})), // Helper untuk extract data
-      builder: (context, snapshot) {
+    final provider = context.watch<DailyContentProvider>();
+    final sirah    = provider.todaySirah;
+    final loading  = provider.isLoading;
 
-        // 1. Loading State
-        if (snapshot.connectionState == ConnectionState.waiting) {
-             return Container(
-               height: 120,
-               decoration: BoxDecoration(color: kCardDark, borderRadius: BorderRadius.circular(AppSizes.cardRadius)),
-               child: const Center(child: CircularProgressIndicator(color: kPrimaryGold))
-             );
-        }
+    if (loading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(
+              strokeWidth: 2, color: kPrimaryGold),
+        ),
+      );
+    }
 
-        // 2. Data Handling
-        final sirahData = snapshot.data ?? {};
-        final String title = sirahData['peristiwa'] ?? 'Peringatan Harian';
-        final String content = sirahData['pengajaran'] ?? sirahData['event'] ?? 'Tiada peristiwa khas hari ini.';
-        final String footer = sirahData['hadith'] ?? sirahData['pengajaran'] ?? '';
+    if (sirah == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: kCardDark,
+          borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+          border: Border.all(color: kBorderSubtle),
+        ),
+        child: const Text(
+          'Tiada data sirah untuk hari ini.',
+          style: TextStyle(color: kTextSecondary, fontSize: 13),
+        ),
+      );
+    }
 
-        // 3. Paparan Kad
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: kAccentOlive.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-            border: Border.all(color: kAccentOlive.withOpacity(0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Tajuk Emas Berkilau
-              Row(
-                children: [
-                  const MetallicGold(child: Icon(Icons.menu_book, color: Colors.white, size: AppSizes.iconSm)),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: MetallicGold(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Playfair',
-                          fontSize: AppFontSizes.lg
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: kCardDark,
+        borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+        border: Border.all(color: kBorderSubtle),
+        boxShadow: [
+          BoxShadow(
+              color: kAccentTeal.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
 
-              // Huraian
-              Text(
-                content,
-                style: const TextStyle(color: kTextPrimary, height: 1.5, fontSize: AppFontSizes.sm + 1),
-              ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              // Footer / Sumber
-              if (footer.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    footer,
-                    style: TextStyle(color: kPrimaryGold.withOpacity(0.8), fontStyle: FontStyle.italic, fontSize: AppFontSizes.xs),
+          // ── HEADER ─────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            decoration: BoxDecoration(
+              color: kAccentTeal.withOpacity(0.06),
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppSizes.cardRadiusLg)),
+              border: const Border(
+                  bottom: BorderSide(color: kBorderSubtle, width: 0.5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.auto_stories_rounded,
+                    color: kAccentTeal, size: 16),
+                const SizedBox(width: 8),
+                const Text(
+                  'SIRAH HARI INI',
+                  style: TextStyle(
+                    color: kAccentTeal,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
                   ),
                 ),
-            ],
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: kPrimaryGold.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: kPrimaryGold.withOpacity(0.25)),
+                  ),
+                  child: Text(
+                    sirah.tahun,
+                    style: const TextStyle(
+                        color: kPrimaryGold,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+
+          // ── BODY ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                // Tajuk
+                Text(
+                  sirah.tajuk,
+                  style: const TextStyle(
+                    color: kTextPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                    fontFamily: 'Playfair',
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                // Lokasi
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded,
+                        color: kTextMuted, size: 13),
+                    const SizedBox(width: 4),
+                    Text(
+                      sirah.lokasi,
+                      style: const TextStyle(
+                          color: kTextMuted,
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // Pengajaran
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.04),
+                    borderRadius:
+                        BorderRadius.circular(AppSizes.cardRadius),
+                    border: Border.all(color: kBorderSubtle),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('💡',
+                          style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          sirah.pengajaran,
+                          style: const TextStyle(
+                            color: kTextSecondary,
+                            fontSize: 12,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,4 +1,6 @@
-// lib/widgets/sidebar.dart (UPDATED: LIVING TREE INTEGRATION)
+// lib/widgets/sidebar.dart
+// Top navbar — Facebook style
+// Scroll bawah = sembunyi, scroll atas = floating button, tap = keluar semula
 
 import 'dart:io';
 import 'dart:ui';
@@ -9,285 +11,318 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/sidebar_state_model.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-import '../utils/hijri_service.dart';
+import 'living_tree.dart';
 import 'metallic_gold.dart';
-import 'embun_ui/embun_ui.dart';
-import 'living_tree.dart'; // ✅ IMPORT PENTING: Panggil widget pokok hidup
 
-class Sidebar extends StatelessWidget {
-  final double dockWidth;
-  final Color backgroundColor;
+// ── TINGGI NAVBAR ─────────────────────────────────────────────
+const double kNavbarHeight     = 100.0; // Baris 1 (logo+profile) + Baris 2 (tabs)
+const double kNavbarRow1Height = 54.0;
+const double kNavbarRow2Height = 46.0;
 
-  const Sidebar({
-    Key? key,
-    this.dockWidth = AppSizes.sidebarWidth, 
-    this.backgroundColor = Colors.transparent, 
-  }) : super(key: key);
+class Sidebar extends StatefulWidget {
+  const Sidebar({Key? key}) : super(key: key);
 
-  final String _whatsappNumber = '+60133662440';
-  final String _whatsappMessage = 'Assalamualaikum Admin, saya berminat untuk membuat Infaq Pembangunan iHijrah.';
+  @override
+  State<Sidebar> createState() => _SidebarState();
+}
 
-  Future<void> _launchWhatsApp(BuildContext context) async {
-    final url = 'whatsapp://send?phone=$_whatsappNumber&text=${Uri.encodeComponent(_whatsappMessage)}';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } 
+class _SidebarState extends State<Sidebar>
+    with SingleTickerProviderStateMixin {
+
+  final String _whatsappNumber  = '+60133662440';
+  final String _whatsappMessage =
+      'Assalamualaikum Admin, saya berminat untuk membuat Infaq Pembangunan iHijrah.';
+
+  Future<void> _launchWhatsApp() async {
+    final url =
+        'whatsapp://send?phone=$_whatsappNumber&text=${Uri.encodeComponent(_whatsappMessage)}';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
-  void _showInfaqDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: kCardDark.withOpacity(0.9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg)),
-        title: const MetallicGold(child: Text('Infaq Pembangunan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Sumbangan anda amat dihargai untuk pembangunan iHijrah.", style: TextStyle(color: kTextSecondary, fontSize: AppFontSizes.sm)),
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              width: double.infinity,
-              height: 45,
-              child: CelebrationButton(
-                onPressed: () => _launchWhatsApp(context),
-                backgroundColor: Colors.green.shade700,
-                child: const Text("WhatsApp Admin", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ✅ KEMASKINI: Menggunakan Logik Video (Sama macam HijrahTree)
   String _getTreeAsset(int level) {
-    // Pastikan path ini SAMA dengan yang ada dalam hijrah_tree.dart
-    if (level <= 1) return 'assets/videos/tree_v1.mp4'; 
-    if (level <= 3) return 'assets/videos/tree_v2.mp4'; // Placeholder
-    // Fallback selamat
-    return 'assets/videos/tree_v1.mp4'; 
-  }
-
-  Widget _buildMenuItem(BuildContext context, {required IconData icon, required String title, required String id, bool isComingSoon = false}) {
-    final model = Provider.of<SidebarStateModel>(context);
-    final isActive = model.activeMenuId == id;
-
-    return InkWell(
-      onTap: isComingSoon ? null : () => model.setActiveMenu(id),
-      child: Container(
-        width: dockWidth,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.08) : Colors.transparent,
-          border: isActive ? Border(left: BorderSide(color: kPrimaryGold.withOpacity(0.8), width: 2)) : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MetallicGold(
-              child: Icon(
-                icon,
-                color: isComingSoon ? Colors.grey.withOpacity(0.3) : Colors.white, 
-                size: 22, 
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(
-                color: isComingSoon ? Colors.grey.withOpacity(0.3) : (isActive ? kPrimaryGold : kTextSecondary.withOpacity(0.6)),
-                fontSize: 8, 
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
+    if (level <= 1) return AppAssets.treeV1;
+    if (level <= 2) return AppAssets.treeV2;
+    if (level <= 3) return AppAssets.treeV3;
+    return AppAssets.treeV4;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SidebarStateModel>(
-      builder: (context, model, child) {
-        final double xOffset = model.isVisible ? 0.0 : -dockWidth;
+    final model = context.watch<SidebarStateModel>();
+    final user  = context.watch<UserModel>();
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          transform: Matrix4.translationValues(xOffset, 0, 0),
-          width: dockWidth + 1,
-          height: MediaQuery.of(context).size.height,
-          child: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  border: Border(right: BorderSide(color: Colors.white.withOpacity(0.08), width: 1)),
-                ),
-                child: SafeArea(
-                  child: SingleChildScrollView(
-                    child: Column(
+    return Stack(
+      children: [
+
+        // ── TOP NAVBAR ─────────────────────────────────────
+        AnimatedPositioned(
+          duration: AppDurations.normal,
+          curve: AppCurves.smooth,
+          top: model.isVisible ? 0 : -kNavbarHeight,
+          left: 0, right: 0,
+          height: kNavbarHeight,
+          child: _buildNavbar(context, model, user),
+        ),
+
+        // ── FAB TERAPUNG — muncul bila navbar sembunyi ──────
+        AnimatedPositioned(
+          duration: AppDurations.normal,
+          curve: AppCurves.smooth,
+          top: model.isVisible ? -50 : MediaQuery.of(context).padding.top + 8,
+          right: 14,
+          child: _buildFab(context, model),
+        ),
+      ],
+    );
+  }
+
+  // ── NAVBAR ────────────────────────────────────────────────────
+  Widget _buildNavbar(
+      BuildContext ctx, SidebarStateModel model, UserModel user) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          decoration: BoxDecoration(
+            color: kBackgroundDark.withOpacity(0.82),
+            border: const Border(
+              bottom: BorderSide(color: Color(0x1AFFFFFF), width: 0.5),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // Baris 1 — logo + profil + ikon
+                SizedBox(
+                  height: kNavbarRow1Height,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20, bottom: 5),
-                          child: Consumer<UserModel>(
-                            builder: (context, user, _) {
-                              String rawAgeString = "";
-                              if (user.hijriDOB != null && user.hijriDOB!.isNotEmpty) {
-                                rawAgeString = HijriService.calculateHijriAge(user.hijriDOB!);
-                              }
-                              String ageDisplay = rawAgeString.contains(RegExp(r'\d')) 
-                                  ? "${RegExp(r'(\d+)').firstMatch(rawAgeString)?.group(1)} Thn"
-                                  : "--";
 
-                              String fullName = user.name.isNotEmpty ? user.name : "User";
-                              List<String> nameParts = fullName.trim().split(' ');
-                              String firstName = nameParts.isNotEmpty ? nameParts.first : "";
-                              String lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : "";
-
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                        // Avatar + nama
+                        GestureDetector(
+                          onTap: () => model.setActiveMenu('profil'),
+                          child: Row(
+                            children: [
+                              _avatar(user),
+                              const SizedBox(width: 8),
+                              Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 38, height: 38,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.5),
-                                    ),
-                                    child: ClipOval(
-                                      child: user.avatarPath != null
-                                        ? Image.file(File(user.avatarPath!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset(AppAssets.profileDefault, fit: BoxFit.cover))
-                                        : Image.asset(AppAssets.profileDefault, fit: BoxFit.cover),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  MetallicGold(
-                                    child: Text(
-                                      firstName,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.white, 
-                                        fontSize: 11, 
-                                        fontWeight: FontWeight.w900
-                                      ),
-                                    ),
-                                  ),
-                                  if (lastName.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 1.0),
-                                      child: ShaderMask(
-                                        shaderCallback: (bounds) => const LinearGradient(
-                                          colors: [
-                                            Color(0xFFB0BEC5), 
-                                            Color(0xFFFFFFFF), 
-                                            Color(0xFF78909C), 
-                                            Color(0xFFFFFFFF), 
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          stops: [0.0, 0.45, 0.55, 1.0], 
-                                        ).createShader(bounds),
-                                        child: Text(
-                                          lastName,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: Colors.white, 
-                                            fontSize: 9, 
-                                            fontWeight: FontWeight.w900, 
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    ageDisplay,
-                                    style: TextStyle(color: kPrimaryGold, fontSize: 9, fontWeight: FontWeight.bold),
+                                    user.name.isEmpty
+                                        ? 'Hamba Allah'
+                                        : user.name.split(' ').first,
+                                    style: const TextStyle(
+                                      color: kTextPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  Text("Hijriah", style: TextStyle(color: kTextSecondary.withOpacity(0.7), fontSize: 7, fontStyle: FontStyle.italic)),
+                                  Text(
+                                    user.hijriAge,
+                                    style: const TextStyle(
+                                      color: kPrimaryGold,
+                                      fontSize: 10,
+                                    ),
+                                  ),
                                 ],
-                              );
-                            },
+                              ),
+                            ],
                           ),
                         ),
-                        
-                        // ✅ AREA MENU POKOK HIDUP
-                        Consumer<UserModel>(
-                          builder: (context, user, _) {
-                            return InkWell(
-                              onTap: () => Provider.of<SidebarStateModel>(context, listen: false).setActiveMenu('tree_progress'),
-                              child: Container(
-                                height: 60,
-                                width: dockWidth,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    // GANTI Image.asset DENGAN LivingTree (Video)
-                                    // Kita set height 50 supaya muat elok dalam kotak 60
-                                    IgnorePointer( // Supaya tak ganggu scroll sidebar
-                                      child: LivingTree(
-                                        assetPath: _getTreeAsset(user.treeLevel),
-                                        height: 50, 
-                                        onTap: null, // Menu Sidebar handle tap
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 0, 
-                                      child: Text(
-                                        "LVL ${user.treeLevel}", 
-                                        style: TextStyle(
-                                          color: kPrimaryGold.withOpacity(0.9), 
-                                          fontSize: 7, 
-                                          fontWeight: FontWeight.w900,
-                                          shadows: [Shadow(color: Colors.black, blurRadius: 2)]
-                                        )
-                                      )
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+
+                        const Spacer(),
+
+                        // Logo tengah
+                        const Text(
+                          'iHijrah',
+                          style: TextStyle(
+                            color: kGoldLight,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Playfair',
+                            letterSpacing: 1,
+                          ),
                         ),
 
-                        Divider(color: Colors.white.withOpacity(0.1), height: 1),
-                        _buildMenuItem(context, icon: Icons.calendar_month, title: 'Kalendar', id: 'kalendar'),
-                        _buildMenuItem(context, icon: Icons.menu_book, title: 'Sirah', id: 'sirah'),
-                        _buildMenuItem(context, icon: Icons.cake, title: 'H.Jadi', id: 'birthday'),
-                        _buildMenuItem(context, icon: Icons.event, title: 'Peristiwa', id: 'peristiwa'),
-                        _buildMenuItem(context, icon: Icons.notifications, title: 'Notifikasi', id: 'notifikasi'),
-                        _buildMenuItem(context, icon: Icons.person, title: 'Profil', id: 'profil'),
-                        const SizedBox(height: 5),
-                        _buildMenuItem(context, icon: Icons.mosque, title: 'Qiblat', id: 'qiblat', isComingSoon: true),
-                        _buildMenuItem(context, icon: Icons.book, title: 'Quran', id: 'quran', isComingSoon: true),
-                        const SizedBox(height: 15),
-                        _buildMenuItem(context, icon: Icons.favorite, title: 'Infaq', id: 'infaq'),
-                        _buildMenuItem(context, icon: Icons.info, title: 'Info', id: 'info'),
-                        Consumer<SidebarStateModel>(
-                          builder: (ctx, m, _) {
-                            if (m.activeMenuId == 'infaq') {
-                              WidgetsBinding.instance.addPostFrameCallback((_) { m.closeMenu(); _showInfaqDialog(context); });
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
+                        const Spacer(),
+
+                        // Ikon kanan
+                        _iconBtn(Icons.notifications_none_rounded,
+                            () => model.setActiveMenu('notifikasi')),
+                        const SizedBox(width: 4),
+                        _iconBtn(Icons.search_rounded,
+                            () => model.setActiveMenu('carian')),
                       ],
                     ),
                   ),
                 ),
-              ),
+
+                // Baris 2 — tab menu
+                SizedBox(
+                  height: kNavbarRow2Height,
+                  child: _buildTabs(ctx, model, user),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── TAB MENU ──────────────────────────────────────────────────
+  Widget _buildTabs(
+      BuildContext ctx, SidebarStateModel model, UserModel user) {
+    final tabs = [
+      _TabItem('utama',    Icons.home_rounded,             'Utama'),
+      _TabItem('sirah',    Icons.auto_stories_rounded,     'Sirah'),
+      _TabItem('amalan',   Icons.spa_rounded,              'Amalan'),
+      _TabItem('kalendar', Icons.calendar_month_rounded,   'Jadual'),
+      _TabItem('pokok',    Icons.park_rounded,             'Pokok'),
+      _TabItem('profil',   Icons.person_rounded,           'Profil'),
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: tabs.map((t) {
+        final bool active = model.activeMenuId == t.id;
+        return GestureDetector(
+          onTap: () => model.setActiveMenu(t.id),
+          child: AnimatedContainer(
+            duration: AppDurations.fast,
+            padding: const EdgeInsets.symmetric(
+                horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: active
+                  ? kPrimaryGold.withOpacity(0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(t.icon,
+                    size: 18,
+                    color: active ? kPrimaryGold : kTextMuted),
+                const SizedBox(height: 1),
+                Text(
+                  t.label,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: active
+                        ? FontWeight.w700
+                        : FontWeight.w400,
+                    color: active ? kPrimaryGold : kTextMuted,
+                  ),
+                ),
+              ],
             ),
           ),
         );
-      },
+      }).toList(),
     );
   }
+
+  // ── FAB TERAPUNG ──────────────────────────────────────────────
+  Widget _buildFab(BuildContext ctx, SidebarStateModel model) {
+    return GestureDetector(
+      onTap: () => model.setSidebarVisibility(true),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: kBackgroundDark.withOpacity(0.75),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: kPrimaryGold.withOpacity(0.35), width: 0.8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.menu_rounded,
+                    color: kPrimaryGold, size: 16),
+                SizedBox(width: 5),
+                Text(
+                  'iHijrah',
+                  style: TextStyle(
+                    color: kGoldLight,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Playfair',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── HELPER WIDGETS ────────────────────────────────────────────
+  Widget _avatar(UserModel user) {
+    final bool hasAvatar =
+        user.avatarPath != null && user.avatarPath!.isNotEmpty;
+    return Container(
+      width: 32, height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+            color: kPrimaryGold.withOpacity(0.5), width: 1.2),
+        color: kPrimaryGold.withOpacity(0.12),
+      ),
+      child: ClipOval(
+        child: hasAvatar
+            ? Image.file(File(user.avatarPath!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _avatarFallback(user))
+            : _avatarFallback(user),
+      ),
+    );
+  }
+
+  Widget _avatarFallback(UserModel user) => Center(
+    child: Text(
+      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'H',
+      style: const TextStyle(
+          color: kPrimaryGold,
+          fontSize: 14,
+          fontWeight: FontWeight.w700),
+    ),
+  );
+
+  Widget _iconBtn(IconData icon, VoidCallback onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 34, height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.05),
+          ),
+          child: Icon(icon, color: kTextSecondary, size: 18),
+        ),
+      );
+}
+
+// ── DATA ──────────────────────────────────────────────────────
+class _TabItem {
+  final String id, label;
+  final IconData icon;
+  const _TabItem(this.id, this.icon, this.label);
 }

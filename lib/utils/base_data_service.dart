@@ -1,51 +1,40 @@
-﻿import 'dart:convert';
+// lib/utils/base_data_service.dart
+import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart'; // Penting untuk 'compute'
+import 'package:flutter/foundation.dart';
 
-// Fungsi Top-Level (Mesti di luar class) untuk background process
-dynamic _jsonDecodeIsolated(String source) {
-  return json.decode(source);
-}
+dynamic _decode(String source) => json.decode(source);
 
 abstract class BaseDataService {
-  // Cache mudah untuk elak baca fail berulang kali
   static final Map<String, dynamic> _cache = {};
 
-  static Future<T> load<T>(String assetPath) async {
-    // 1. Cek Cache
-    if (_cache.containsKey(assetPath)) {
-      return _cache[assetPath] as T;
-    }
-
+  static Future<T> load<T>(String path) async {
+    if (_cache.containsKey(path)) return _cache[path] as T;
     try {
-      // 2. Baca fail
-      final raw = await rootBundle.loadString(assetPath);
-
-      // 3. Parse JSON di Background Thread (Elak Lag)
-      final parsed = await compute(_jsonDecodeIsolated, raw);
-
+      final raw    = await rootBundle.loadString(path);
+      final parsed = await compute(_decode, raw);
       if (parsed is List) {
-        final data = parsed.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-        _cache[assetPath] = data;
-        return data as T;
+        final d = parsed.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        _cache[path] = d;
+        return d as T;
       } else if (parsed is Map) {
-        final data = Map<String, dynamic>.from(parsed);
-        _cache[assetPath] = data;
-        return data as T;
+        final d = Map<String, dynamic>.from(parsed);
+        _cache[path] = d;
+        return d as T;
       }
-      throw Exception('Format data salah: $assetPath');
-
+      throw Exception('Format JSON tidak dikenali: $path');
     } catch (e) {
-      if (kDebugMode) print('Error Load $assetPath: $e');
-      // Return nilai kosong yang selamat
-      if (T.toString().contains("List")) return <Map<String, dynamic>>[] as T;
+      if (kDebugMode) debugPrint('BaseDataService.load [$path]: $e');
+      if (T.toString().contains('List')) return <Map<String, dynamic>>[] as T;
       return <String, dynamic>{} as T;
     }
   }
 
-  static T get<T>(String assetPath) {
-    if (_cache.containsKey(assetPath)) return _cache[assetPath] as T;
-    if (T.toString().contains("List")) return <Map<String, dynamic>>[] as T;
+  static T get<T>(String path) {
+    if (_cache.containsKey(path)) return _cache[path] as T;
+    if (T.toString().contains('List')) return <Map<String, dynamic>>[] as T;
     return <String, dynamic>{} as T;
   }
+
+  static void clearCache() => _cache.clear();
 }

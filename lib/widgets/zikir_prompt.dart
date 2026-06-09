@@ -1,8 +1,8 @@
-﻿// lib/widgets/zikir_prompt.dart (UPGRADED 7.8/10)
+// lib/widgets/zikir_prompt.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../utils/constants.dart';
+import '../utils/constants.dart';
 import '../utils/audio_service.dart';
 import '../models/animation_controller_model.dart';
 
@@ -10,114 +10,203 @@ class ZikirPrompt extends StatefulWidget {
   final bool zikirDone;
   final VoidCallback onDone;
 
-  const ZikirPrompt({Key? key, required this.zikirDone, required this.onDone}) : super(key: key);
+  const ZikirPrompt({
+    Key? key,
+    required this.zikirDone,
+    required this.onDone,
+  }) : super(key: key);
 
   @override
   State<ZikirPrompt> createState() => _ZikirPromptState();
 }
 
-class _ZikirPromptState extends State<ZikirPrompt> with SingleTickerProviderStateMixin {
-  bool _isDismissed = false;
-  late AnimationController _enterController;
+class _ZikirPromptState extends State<ZikirPrompt>
+    with SingleTickerProviderStateMixin {
+
+  late AnimationController _ctrl;
+  bool _dismissed = false;
 
   @override
   void initState() {
     super.initState();
-    // Animasi Masuk: SlideUp + FadeIn
-    _enterController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
 
     if (!widget.zikirDone) {
-      // Mainkan audio prompt jika belum zikir
+      _ctrl.forward();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-         Provider.of<AudioService>(context, listen: false).playZikirPrompt();
+        if (mounted) {
+          Provider.of<AudioService>(context, listen: false)
+              .playZikirPrompt();
+        }
       });
-      _enterController.forward();
     }
   }
 
   @override
   void dispose() {
-    _enterController.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
-  void _handleDone() {
+  void _done() {
     HapticFeedback.mediumImpact();
     Provider.of<AudioService>(context, listen: false).playAlhamdulillah();
-    Provider.of<AnimationControllerModel>(context, listen: false).triggerParticleSpray();
+    Provider.of<AnimationControllerModel>(context, listen: false)
+        .triggerParticleSpray();
     widget.onDone();
   }
 
-  void _handleBelum() {
+  void _later() {
     HapticFeedback.selectionClick();
     Provider.of<AudioService>(context, listen: false).playInsyaallah();
-    setState(() => _isDismissed = true);
+    setState(() => _dismissed = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.zikirDone || _isDismissed) return const SizedBox.shrink();
+    if (widget.zikirDone || _dismissed) return const SizedBox.shrink();
 
     return SlideTransition(
-      position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-        CurvedAnimation(parent: _enterController, curve: Curves.easeOutCubic)
-      ),
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.25),
+        end:   Offset.zero,
+      ).animate(CurvedAnimation(
+          parent: _ctrl, curve: Curves.easeOutCubic)),
       child: FadeTransition(
-        opacity: _enterController,
+        opacity: _ctrl,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenH, vertical: AppSpacing.screenV),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenH,
+              vertical:   AppSpacing.screenV),
           child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: kCardDark,
-              borderRadius: BorderRadius.circular(AppSizes.cardRadiusXl),
-              border: Border.all(color: kPrimaryGold.withOpacity(0.15)),
+              borderRadius:
+                  BorderRadius.circular(AppSizes.cardRadiusXl),
+              border: Border.all(
+                  color: kPrimaryGold.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withOpacity(0.5),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
-                )
+                ),
               ],
             ),
-            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+
+                // Ikon embun
+                Container(
+                  width: 56, height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: kPrimaryGold.withOpacity(0.08),
+                    border: Border.all(
+                        color: kPrimaryGold.withOpacity(0.3),
+                        width: 1.2),
+                  ),
+                  child: const Center(
+                    child: Text('💧',
+                        style: TextStyle(fontSize: 26)),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
                 const Text(
-                  'Assalamualaikum,\nDah zikir pagi/petang hari ni?',
+                  'Assalamualaikum,',
+                  style: TextStyle(
+                    color: kPrimaryGold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                const Text(
+                  'Dah zikir pagi/petang hari ni?',
                   style: TextStyle(
                     color: kTextPrimary,
-                    fontSize: AppFontSizes.lg,
-                    height: 1.5,
-                    fontFamily: 'Playfair'
+                    fontSize: 17,
+                    fontFamily: 'Playfair',
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.lg),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Setiap zikir = +10 XP untuk pokok hijrah kamu 🌱',
+                  style: TextStyle(
+                    color: kTextSecondary,
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 24),
 
                 Row(
                   children: [
+
+                    // Nanti
                     Expanded(
                       child: TextButton(
-                        onPressed: _handleBelum,
+                        onPressed: _later,
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14)
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppSizes.cardRadius),
+                            side: BorderSide(
+                                color: kBorderSubtle),
+                          ),
                         ),
-                        child: const Text('Nanti Sekejap', style: TextStyle(color: kTextSecondary)),
+                        child: const Text(
+                          'InsyaAllah nanti',
+                          style: TextStyle(
+                              color: kTextSecondary, fontSize: 12),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
+
+                    const SizedBox(width: 10),
+
+                    // Sudah
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _handleDone,
+                        onPressed: _done,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryGold,
-                          foregroundColor: kBackgroundDark,
+                          foregroundColor: Colors.black,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.cardRadius)),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppSizes.cardRadius),
+                          ),
                         ),
-                        child: const Text('SUDAH', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        child: const Text(
+                          'ALHAMDULILLAH',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ),
                   ],

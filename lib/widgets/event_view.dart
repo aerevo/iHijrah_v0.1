@@ -1,4 +1,4 @@
-// lib/widgets/event_view.dart (UPGRADED 7.8/10)
+// lib/widgets/event_view.dart
 import 'package:flutter/material.dart';
 import '../screens/event_screen.dart';
 
@@ -8,7 +8,7 @@ class EventView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SizedBox(
-      height: 700,
+      height: 680,
       child: EventScreen(),
     );
   }

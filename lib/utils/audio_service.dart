@@ -1,117 +1,94 @@
-// lib/utils/audio_service.dart (VERSI MUKTAMAD - COMPLETE)
-
+// lib/utils/audio_service.dart
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
-import '../models/user_model.dart';
-import 'settings_enums.dart';
 import 'constants.dart';
 
-class AudioService extends ChangeNotifier {
-  final AudioPlayer _mainPlayer = AudioPlayer();
-  final AudioPlayer _introPlayer = AudioPlayer(); 
-  final AudioPlayer _sfxPlayer = AudioPlayer(); 
+class AudioService with ChangeNotifier {
 
-  bool _isPlaying = false;
-  String? _currentTrack;
-  Timer? _autoStopTimer;
+  final AudioPlayer _main = AudioPlayer();
+  final AudioPlayer _sfx  = AudioPlayer();
+  Timer? _stopTimer;
 
-  bool get isPlaying => _isPlaying;
-
-  Future<bool> _playAudio(
+  // ── PRIVATE HELPER ────────────────────────────────────────────
+  Future<void> _play(
     AudioPlayer player,
-    String assetPath, {
+    String path, {
     double volume = 1.0,
-    Duration? autoStopAfter,
+    Duration? stopAfter,
   }) async {
     try {
       await player.stop();
-      await player.setSource(AssetSource(assetPath));
       await player.setVolume(volume);
-      await player.resume();
-      _isPlaying = true;
-      _currentTrack = assetPath;
-      notifyListeners();
-
-      if (autoStopAfter != null) {
-        _autoStopTimer?.cancel();
-        _autoStopTimer = Timer(autoStopAfter, () async {
-          await player.stop();
-          _isPlaying = false;
-          _currentTrack = null;
-          notifyListeners();
-        });
+      await player.play(AssetSource(path));
+      if (stopAfter != null) {
+        _stopTimer?.cancel();
+        _stopTimer = Timer(stopAfter, () => player.stop());
       }
-      return true;
     } catch (e) {
-      if (kDebugMode) print('Error playing audio: $e');
-      return false;
+      if (kDebugMode) debugPrint('AudioService._play: $e');
     }
   }
 
-  // MAIN AUDIO
-  Future<bool> playIntroAudio() async => await playSplashAudio();
-  Future<bool> playSplashAudio() async => await _playAudio(_mainPlayer, AppAssets.splash, volume: 0.8, autoStopAfter: const Duration(milliseconds: 1500));
-  Future<bool> playAlhamdulillah() async => await _playAudio(_mainPlayer, AppAssets.suaraAlhamdulillah, volume: 1.0, autoStopAfter: const Duration(seconds: 2));
-  Future<bool> playInsyaallah() async => await _playAudio(_mainPlayer, AppAssets.suaraInsyaAllah, volume: 1.0, autoStopAfter: const Duration(seconds: 2));
-  Future<bool> playHi() async => await _playAudio(_mainPlayer, AppAssets.suaraHi, volume: 1.0, autoStopAfter: const Duration(seconds: 2));
-  Future<bool> playZikirPrompt() async => playHi();
+  // ── PUBLIC API ────────────────────────────────────────────────
 
-  Future<bool> playAdhan(BuildContext context) async {
-    try {
-      final user = Provider.of<UserModel>(context, listen: false);
-      final AdhanMode currentMode = AdhanMode.values[user.adhanModeIndex];
-      if (currentMode == AdhanMode.off) return false;
+  /// Audio intro splash
+  Future<void> playIntroAudio() => _play(
+    _main, AppAssets.splash,
+    volume: 0.8,
+    stopAfter: const Duration(milliseconds: 1500),
+  );
 
-      final success = await _playAudio(_mainPlayer, AppAssets.adhan, volume: 1.0);
-      if (!success) return false;
+  /// Bunyi siraman pokok
+  Future<void> playSiraman() => _play(
+    _sfx, AppAssets.splash, // ganti dengan sounds/siraman.mp3 bila ada
+    volume: 0.9,
+    stopAfter: const Duration(seconds: 3),
+  );
 
-      if (currentMode == AdhanMode.short) {
-        _autoStopTimer?.cancel();
-        _autoStopTimer = Timer(const Duration(seconds: 15), () async {
-          await _mainPlayer.stop();
-        });
-      }
-      return true;
-    } catch (e) {
-      return false;
+  /// Azan — ambil modeIndex dari UserModel terus
+  Future<void> playAdhan({int modeIndex = 2}) async {
+    if (modeIndex == 0) return; // off
+    await _play(_main, AppAssets.adhan, volume: 1.0);
+    if (modeIndex == 2) {
+      // tone — stop selepas 15 saat
+      _stopTimer?.cancel();
+      _stopTimer = Timer(
+        const Duration(seconds: 15),
+        () => _main.stop(),
+      );
     }
   }
 
-  // SFX (POKOK INTERACTION)
-  Future<void> playSound(String type) async {
-    if (type == 'siraman') {
-      await playSiraman();
-    } else if (type == 'embun_ringan') {
-      await playEmbun();
-    }
-  }
+  /// Suara Alhamdulillah
+  Future<void> playAlhamdulillah() => _play(
+    _main, AppAssets.suaraAlhamdulillah,
+    stopAfter: const Duration(seconds: 3),
+  );
 
-  Future<void> playSiraman() async {
-    await _playAudio(_sfxPlayer, 'sounds/siraman.mp3', volume: 1.0);
-  }
+  /// Suara InsyaAllah
+  Future<void> playInsyaallah() => _play(
+    _main, AppAssets.suaraInsyaAllah,
+    stopAfter: const Duration(seconds: 3),
+  );
 
-  Future<void> playEmbun() async {
-    await _playAudio(_sfxPlayer, 'sounds/embun_ringan.mp3', volume: 0.7);
-  }
+  /// Prompt zikir
+  Future<void> playZikirPrompt() => _play(
+    _main, AppAssets.suaraHi,
+    stopAfter: const Duration(seconds: 2),
+  );
 
   Future<void> stopAll() async {
-    await _mainPlayer.stop();
-    await _introPlayer.stop();
-    await _sfxPlayer.stop();
-    _autoStopTimer?.cancel();
-    _isPlaying = false;
-    notifyListeners();
+    _stopTimer?.cancel();
+    await _main.stop();
+    await _sfx.stop();
   }
 
   @override
   void dispose() {
-    _mainPlayer.dispose();
-    _introPlayer.dispose();
-    _sfxPlayer.dispose();
-    _autoStopTimer?.cancel();
+    _stopTimer?.cancel();
+    _main.dispose();
+    _sfx.dispose();
     super.dispose();
   }
 }

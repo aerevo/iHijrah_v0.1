@@ -1,198 +1,139 @@
-// lib/models/user_model.dart (FULL FIX: recordSelawat & nextLevelPoints ADDED)
-
+// lib/models/user_model.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; 
-
-import '../utils/settings_enums.dart';
+import 'dart:convert';
 import '../utils/hijri_service.dart';
 
-class UserModel extends ChangeNotifier {
-  // ===== 1. BASIC INFO =====
-  String name = 'Pengguna iHijrah';
-  DateTime? birthdate;
-  String? hijriDOB;
-  String? avatarPath;
-  String? gender;
+// ═══════════════════════════════════════════
+// POST MODEL — Komuniti Feed
+// ═══════════════════════════════════════════
+class PostModel {
+  final String  id;
+  final String  type;         // video | article | event | quote | hadith | amalan | sirah
+  final String  title;
+  final String  content;
+  final String  author;
+  final String  authorId;
+  final String  authorAge;    // umur Hijri penulis
+  final String  time;
+  final int     likes;
+  final int     commentsCount;
+  final bool    isLiked;
+  final String? assetPath;
+  final String? category;     // kategori komuniti
 
-  // ===== 2. LEVEL & POINTS SYSTEM =====
-  int treeLevel = 1;
-  int totalPoints = 0;
-
-  // ===== 3. DAILY TRACKING =====
-  Map<String, bool> dailyFardhuLog = {};
-  Map<String, bool> dailyAmalanLog = {};
-  int selawatCountToday = 0;
-  DateTime? lastResetDate;
-  
-  // State Zikir Harian
-  bool _zikirDoneToday = false; 
-  String _lastZikirDate = '';
-
-  // ===== 4. SETTINGS (PRAYER & ALARM) =====
-  int adhanModeIndex = 1; 
-  bool isFajrAlarmEnabled = true;
-  bool isDhuhrAlarmEnabled = true;
-  bool isAsrAlarmEnabled = true;
-  bool isMaghribAlarmEnabled = true;
-  bool isIshaAlarmEnabled = true;
-
-  // Getter Zikir
-  bool get zikirDoneToday => _zikirDoneToday;
-
-  // ✅ GETTER BARU (WAJIB ADA UNTUK HIJRAH TREE)
-  // Logic: Level 1 target 100, Level 2 target 200, dst.
-  int get nextLevelPoints => treeLevel * 100;
-
-  // Constructor
-  UserModel({
-    this.name = 'Pengguna iHijrah',
-    this.birthdate,
-    this.hijriDOB,
-    this.avatarPath,
-    this.gender,
+  const PostModel({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.content,
+    required this.author,
+    this.authorId       = '',
+    this.authorAge      = '',
+    this.time           = '',
+    this.likes          = 0,
+    this.commentsCount  = 0,
+    this.isLiked        = false,
+    this.assetPath,
+    this.category,
   });
 
-  // =========================================================
-  // FUNGSI LOAD
-  // =========================================================
-  static Future<UserModel> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final user = UserModel();
+  PostModel copyWith({bool? isLiked, int? likes}) => PostModel(
+    id:            id,
+    type:          type,
+    title:         title,
+    content:       content,
+    author:        author,
+    authorId:      authorId,
+    authorAge:     authorAge,
+    time:          time,
+    likes:         likes ?? this.likes,
+    commentsCount: commentsCount,
+    isLiked:       isLiked ?? this.isLiked,
+    assetPath:     assetPath,
+    category:      category,
+  );
+}
 
-    // A. Load Basic Info
-    user.name = prefs.getString('user_name') ?? 'Pengguna iHijrah';
-    user.hijriDOB = prefs.getString('user_hijri_dob');
-    user.avatarPath = prefs.getString('user_avatar_path');
-    user.gender = prefs.getString('user_gender');
-    
-    String? dobIso = prefs.getString('user_birthdate');
-    if (dobIso != null) {
-      user.birthdate = DateTime.tryParse(dobIso);
-    }
+// ═══════════════════════════════════════════
+// USER MODEL
+// ═══════════════════════════════════════════
+class UserModel extends ChangeNotifier {
 
-    // B. Load Points & Level
-    user.treeLevel = prefs.getInt('user_tree_level') ?? 1;
-    user.totalPoints = prefs.getInt('user_total_points') ?? 0;
+  // ── 1. IDENTITI ASAS ─────────────────────────────────────────
+  String    name        = '';
+  DateTime? birthdate;          // tarikh lahir Masihi
+  String?   hijriDOB;           // "1410/09/12" atau ISO string
+  String?   avatarPath;
+  String    gender      = 'Lelaki';
+  String    email       = '';
+  String    authMethod  = 'Guest';
 
-    // C. Load Daily Logs
-    String? fardhuJson = prefs.getString('daily_fardhu_log');
-    if (fardhuJson != null) {
-      user.dailyFardhuLog = Map<String, bool>.from(json.decode(fardhuJson));
-    }
-    
-    String? amalanJson = prefs.getString('daily_amalan_log');
-    if (amalanJson != null) {
-      user.dailyAmalanLog = Map<String, bool>.from(json.decode(amalanJson));
-    }
+  // ── 2. IDENTITI KOMUNITI ──────────────────────────────────────
+  String bio            = '';   // bio pendek
+  int    followersCount = 0;
+  int    followingCount = 0;
+  int    postsCount     = 0;
 
-    user.selawatCountToday = prefs.getInt('selawat_count_today') ?? 0;
+  // ── 3. POKOK HIJRAH — LEVEL & POIN ───────────────────────────
+  int treeLevel   = 1;
+  int totalPoints = 0;
 
-    // D. Load Settings
-    user.adhanModeIndex = prefs.getInt('adhan_mode_index') ?? 1;
-    user.isFajrAlarmEnabled = prefs.getBool('alarm_fajr') ?? true;
-    user.isDhuhrAlarmEnabled = prefs.getBool('alarm_dhuhr') ?? true;
-    user.isAsrAlarmEnabled = prefs.getBool('alarm_asr') ?? true;
-    user.isMaghribAlarmEnabled = prefs.getBool('alarm_maghrib') ?? true;
-    user.isIshaAlarmEnabled = prefs.getBool('alarm_isha') ?? true;
+  // ── 4. STREAK & TRACKING HARIAN ──────────────────────────────
+  int      currentStreak    = 0;   // hari berturut-turut ada aktiviti
+  int      longestStreak    = 0;
+  DateTime? lastActiveDate;
+  Map<String, bool> dailyFardhuLog  = {};
+  Map<String, bool> dailyAmalanLog  = {};
+  int      selawatCountToday = 0;
+  bool     _zikirDoneToday   = false;
 
-    // E. Logic Reset Harian & Zikir
-    String? lastResetIso = prefs.getString('last_reset_date');
-    if (lastResetIso != null) {
-      user.lastResetDate = DateTime.tryParse(lastResetIso);
-    }
-    
-    // Check Zikir Status
-    final todayStr = DateTime.now().toIso8601String().split('T')[0];
-    final lastZikirStr = prefs.getString('user_last_zikir_date') ?? '';
-    
-    if (lastZikirStr == todayStr) {
-      user._zikirDoneToday = prefs.getBool('user_zikir_done_today') ?? false;
-    } else {
-      user._zikirDoneToday = false;
-    }
-    user._lastZikirDate = lastZikirStr;
+  // ── 5. TETAPAN SOLAT ─────────────────────────────────────────
+  int  adhanModeIndex         = 1;
+  bool isFajrAlarmEnabled     = true;
+  bool isDhuhrAlarmEnabled    = true;
+  bool isAsrAlarmEnabled      = true;
+  bool isMaghribAlarmEnabled  = true;
+  bool isIshaAlarmEnabled     = true;
 
-    // Reset harian jika perlu
-    user._checkAndResetDailyData();
+  // ── GETTERS ───────────────────────────────────────────────────
+  bool get zikirDoneToday  => _zikirDoneToday;
+  int  get nextLevelPoints => treeLevel * 100;
+  int  get progressPoints  => totalPoints % 100;
 
-    return user;
-  }
+  /// "34 Tahun" dalam Hijri
+  String get hijriAge => HijriService.calculateHijriAge(
+    birthdate?.toIso8601String() ?? hijriDOB,
+  );
 
-  // =========================================================
-  // FUNGSI SAVE
-  // =========================================================
-  Future<void> save() async {
-    final prefs = await SharedPreferences.getInstance();
+  /// "15 Ramadan" — tarikh lahir Hijri
+  String get hijriBirthdayDisplay => HijriService.birthdayDisplay(
+    birthdate?.toIso8601String() ?? hijriDOB,
+  );
 
-    await prefs.setString('user_name', name);
-    if (hijriDOB != null) await prefs.setString('user_hijri_dob', hijriDOB!);
-    if (avatarPath != null) await prefs.setString('user_avatar_path', avatarPath!);
-    if (gender != null) await prefs.setString('user_gender', gender!);
-    if (birthdate != null) await prefs.setString('user_birthdate', birthdate!.toIso8601String());
+  /// Berapa hari lagi hari jadi Hijri
+  int get daysUntilBirthday => HijriService.getDaysUntilNextBirthday(
+    birthdate?.toIso8601String() ?? hijriDOB,
+  );
 
-    await prefs.setInt('user_tree_level', treeLevel);
-    await prefs.setInt('user_total_points', totalPoints);
+  /// Adakah hari ini hari jadi Hijri?
+  bool get isBirthdayToday => HijriService.isBirthdayToday(
+    birthdate?.toIso8601String() ?? hijriDOB,
+  );
 
-    await prefs.setString('daily_fardhu_log', json.encode(dailyFardhuLog));
-    await prefs.setString('daily_amalan_log', json.encode(dailyAmalanLog));
-    await prefs.setInt('selawat_count_today', selawatCountToday);
+  /// Fasa kenabian
+  String get propheticPhase => HijriService.propheticAgeComparison(
+    birthdate?.toIso8601String() ?? hijriDOB,
+  );
 
-    await prefs.setInt('adhan_mode_index', adhanModeIndex);
-    await prefs.setBool('alarm_fajr', isFajrAlarmEnabled);
-    await prefs.setBool('alarm_dhuhr', isDhuhrAlarmEnabled);
-    await prefs.setBool('alarm_asr', isAsrAlarmEnabled);
-    await prefs.setBool('alarm_maghrib', isMaghribAlarmEnabled);
-    await prefs.setBool('alarm_isha', isIshaAlarmEnabled);
-
-    if (lastResetDate != null) {
-      await prefs.setString('last_reset_date', lastResetDate!.toIso8601String());
-    }
-  }
-
-  // =========================================================
-  // UPDATE PROFILE (ONBOARDING)
-  // =========================================================
-  Future<void> updateProfile({String? name, String? hijriDOB, String? avatarPath}) async {
-    if (name != null) this.name = name;
-    if (hijriDOB != null) this.hijriDOB = hijriDOB;
-    if (avatarPath != null) this.avatarPath = avatarPath;
-    
-    await save();
-    notifyListeners();
-  }
-
-  // =========================================================
-  // RECORD ZIKIR (HOME PROMPT)
-  // =========================================================
-  Future<void> recordZikir() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toIso8601String().split('T')[0];
-
+  // ── METHODS — IBADAH ─────────────────────────────────────────
+  void recordZikir() {
     _zikirDoneToday = true;
-    _lastZikirDate = today;
-
-    addPoints(10); 
-
-    await prefs.setString('user_last_zikir_date', today);
-    await prefs.setBool('user_zikir_done_today', true);
-    
-    notifyListeners();
-  }
-
-  // =========================================================
-  // ✅ RECORD SELAWAT (WAJIB ADA UNTUK POKOK)
-  // =========================================================
-  void recordSelawat() {
-    selawatCountToday++;
-    addPoints(5); // Dapat 5 point setiap kali selawat
+    addPoints(10);
+    _updateStreak();
     save();
     notifyListeners();
   }
-
-  // =========================================================
-  // POINTS & LOGIC LAIN
-  // =========================================================
 
   void addPoints(int points) {
     totalPoints += points;
@@ -202,13 +143,35 @@ class UserModel extends ChangeNotifier {
   }
 
   void _checkLevelUp() {
-    int calculatedLevel = (totalPoints / 100).floor() + 1;
-    if (calculatedLevel > 5) calculatedLevel = 5;
+    int level = (totalPoints / 100).floor() + 1;
+    if (level > 5) level = 5;
+    if (level > treeLevel) treeLevel = level;
+  }
 
-    if (calculatedLevel > treeLevel) {
-      treeLevel = calculatedLevel;
-      // Boleh tambah sound play di sini nanti
+  bool isFardhuDoneToday(String prayer) => dailyFardhuLog[prayer] ?? false;
+
+  void recordFardhu(String prayer) {
+    dailyFardhuLog[prayer] = true;
+    addPoints(20);
+    _updateStreak();
+    notifyListeners();
+  }
+
+  void _updateStreak() {
+    final today = DateTime.now();
+    if (lastActiveDate != null) {
+      final diff = today.difference(lastActiveDate!).inDays;
+      if (diff == 1) {
+        currentStreak++;
+        if (currentStreak > longestStreak) longestStreak = currentStreak;
+      } else if (diff > 1) {
+        currentStreak = 1;
+      }
+    } else {
+      currentStreak = 1;
     }
+    lastActiveDate = today;
+    save();
   }
 
   void setAdhanMode(int modeIndex) {
@@ -217,32 +180,78 @@ class UserModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPrayerAlarm(String prayerName, bool isEnabled) {
-    switch (prayerName) {
-      case 'Subuh': isFajrAlarmEnabled = isEnabled; break;
-      case 'Zohor': isDhuhrAlarmEnabled = isEnabled; break;
-      case 'Asar': isAsrAlarmEnabled = isEnabled; break;
-      case 'Maghrib': isMaghribAlarmEnabled = isEnabled; break;
-      case 'Isyak': isIshaAlarmEnabled = isEnabled; break;
+  void setPrayerAlarm(String prayer, bool enabled) {
+    switch (prayer) {
+      case 'Subuh':   isFajrAlarmEnabled    = enabled; break;
+      case 'Zohor':   isDhuhrAlarmEnabled   = enabled; break;
+      case 'Asar':    isAsrAlarmEnabled     = enabled; break;
+      case 'Maghrib': isMaghribAlarmEnabled = enabled; break;
+      case 'Isyak':   isIshaAlarmEnabled    = enabled; break;
     }
     save();
     notifyListeners();
   }
 
-  void _checkAndResetDailyData() {
-    final now = DateTime.now();
-    // Reset jika tarikh last reset berbeza dengan hari ini
-    if (lastResetDate == null || !_isSameDay(now, lastResetDate!)) {
-      dailyFardhuLog.clear();
-      dailyAmalanLog.clear();
-      selawatCountToday = 0;
-      
-      lastResetDate = now;
-      save();
-    }
+  // ── STORAGE ───────────────────────────────────────────────────
+  Future<void> save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_data', json.encode({
+      'name':                 name,
+      'email':                email,
+      'gender':               gender,
+      'bio':                  bio,
+      'avatarPath':           avatarPath,
+      'authMethod':           authMethod,
+      'birthdate':            birthdate?.toIso8601String(),
+      'hijriDOB':             hijriDOB,
+      'followersCount':       followersCount,
+      'followingCount':       followingCount,
+      'postsCount':           postsCount,
+      'treeLevel':            treeLevel,
+      'totalPoints':          totalPoints,
+      'currentStreak':        currentStreak,
+      'longestStreak':        longestStreak,
+      'lastActiveDate':       lastActiveDate?.toIso8601String(),
+      'zikirDoneToday':       _zikirDoneToday,
+      'adhanModeIndex':       adhanModeIndex,
+      'isFajrAlarmEnabled':   isFajrAlarmEnabled,
+      'isDhuhrAlarmEnabled':  isDhuhrAlarmEnabled,
+      'isAsrAlarmEnabled':    isAsrAlarmEnabled,
+      'isMaghribAlarmEnabled':isMaghribAlarmEnabled,
+      'isIshaAlarmEnabled':   isIshaAlarmEnabled,
+    }));
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+  static Future<UserModel> load() async {
+    final m = UserModel();
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('user_data');
+    if (raw == null) return m;
+
+    final d = json.decode(raw);
+    m.name           = d['name']       ?? '';
+    m.email          = d['email']      ?? '';
+    m.gender         = d['gender']     ?? 'Lelaki';
+    m.bio            = d['bio']        ?? '';
+    m.avatarPath     = d['avatarPath'];
+    m.authMethod     = d['authMethod'] ?? 'Guest';
+    m.hijriDOB       = d['hijriDOB'];
+    if (d['birthdate'] != null) m.birthdate = DateTime.parse(d['birthdate']);
+    m.followersCount       = d['followersCount']   ?? 0;
+    m.followingCount       = d['followingCount']   ?? 0;
+    m.postsCount           = d['postsCount']       ?? 0;
+    m.treeLevel            = d['treeLevel']        ?? 1;
+    m.totalPoints          = d['totalPoints']      ?? 0;
+    m.currentStreak        = d['currentStreak']    ?? 0;
+    m.longestStreak        = d['longestStreak']    ?? 0;
+    if (d['lastActiveDate'] != null) m.lastActiveDate = DateTime.parse(d['lastActiveDate']);
+    m._zikirDoneToday      = d['zikirDoneToday']   ?? false;
+    m.adhanModeIndex       = d['adhanModeIndex']   ?? 1;
+    m.isFajrAlarmEnabled   = d['isFajrAlarmEnabled']    ?? true;
+    m.isDhuhrAlarmEnabled  = d['isDhuhrAlarmEnabled']   ?? true;
+    m.isAsrAlarmEnabled    = d['isAsrAlarmEnabled']     ?? true;
+    m.isMaghribAlarmEnabled= d['isMaghribAlarmEnabled'] ?? true;
+    m.isIshaAlarmEnabled   = d['isIshaAlarmEnabled']    ?? true;
+    return m;
   }
 }

@@ -1,7 +1,5 @@
-// lib/home.dart (FIXED: PHANTOM SCROLL RESTORED)
-
+// lib/home.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'; 
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 
@@ -13,9 +11,7 @@ import 'utils/audio_service.dart';
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
-import 'widgets/prayer_time_overlay.dart';
-import 'widgets/feed_panel.dart'; 
-import 'widgets/dynamic_background.dart';
+import 'widgets/feed_panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -24,13 +20,18 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late AnimationController _particleController;
+class _HomePageState extends State<HomePage>
+    with TickerProviderStateMixin {
+
+  late AnimationController _confettiCtrl;
 
   @override
   void initState() {
     super.initState();
-    _particleController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _confettiCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AudioService>(context, listen: false).playIntroAudio();
     });
@@ -38,87 +39,124 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _particleController.dispose();
+    _confettiCtrl.dispose();
     super.dispose();
   }
 
-  // LOGIK SOROK SIDEBAR (PHANTOM MODE)
-  bool _onScroll(UserScrollNotification notification, BuildContext context) {
-    final sidebarModel = Provider.of<SidebarStateModel>(context, listen: false);
-    
-    // Jika user scroll ke bawah (Forward) dan sidebar sedang nampak -> SOROKKAN
-    if (notification.direction == ScrollDirection.reverse && sidebarModel.isVisible) {
-       sidebarModel.setSidebarVisibility(false); // Sorok
+  // ── SCROLL CALLBACK dari FeedPanel ───────────────────────────
+  void _onFeedScroll(bool scrollingDown) {
+    final sidebar =
+        Provider.of<SidebarStateModel>(context, listen: false);
+    if (scrollingDown && sidebar.isVisible) {
+      sidebar.setSidebarVisibility(false);
+    } else if (!scrollingDown && !sidebar.isVisible) {
+      sidebar.setSidebarVisibility(true);
     }
-    // Jika user scroll ke atas (Reverse/Up) -> TUNJUK BALIK (Optional, kalau nak)
-    else if (notification.direction == ScrollDirection.forward && !sidebarModel.isVisible) {
-       sidebarModel.setSidebarVisibility(true); // Tunjuk
-    }
-    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    final sidebarModel = Provider.of<SidebarStateModel>(context);
     final user = Provider.of<UserModel>(context);
+    final sidebar = Provider.of<SidebarStateModel>(context);
 
-    bool showZikirPrompt = !user.zikirDoneToday;
+    // Padding atas untuk bagi ruang navbar
+    final double topPad = kNavbarHeight +
+        MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: Colors.black, 
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 1. DYNAMIC BACKGROUND
-          const Positioned.fill(
-            child: DynamicBackground(),
-          ),
 
-          // 2. MAIN CONTENT (FEED) + SCROLL LISTENER
+          // ── 1. BACKGROUND ─────────────────────────────────
           Positioned.fill(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: sidebarModel.isClosed
-                      ? NotificationListener<UserScrollNotification>( // <--- SENSOR SKROL DIPASANG SINI
-                          onNotification: (notification) => _onScroll(notification, context),
-                          child: AnimatedPadding(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                            padding: EdgeInsets.only(
-                              left: sidebarModel.isVisible ? AppSizes.sidebarWidth : 0
-                            ),
-                            child: const FeedPanel(), 
-                          ),
-                        )
-                      : const SizedBox.shrink(),
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1E293B),
+                    Color(0xFF0F172A),
+                  ],
                 ),
-
-                // SIDEBAR
-                const Positioned(
-                  left: 0, top: 0, bottom: 0,
-                  child: Sidebar(),
-                ),
-              ],
+              ),
+              child: Stack(
+                children: [
+                  // Cahaya emas atas
+                  Positioned(
+                    top: -100, left: -100,
+                    child: Container(
+                      width: 400, height: 400,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(colors: [
+                          const Color(0xFFF59E0B).withOpacity(0.10),
+                          Colors.transparent,
+                        ]),
+                      ),
+                    ),
+                  ),
+                  // Cahaya biru bawah
+                  Positioned(
+                    bottom: -150, right: -150,
+                    child: Container(
+                      width: 500, height: 500,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(colors: [
+                          const Color(0xFF3B82F6).withOpacity(0.08),
+                          Colors.transparent,
+                        ]),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // 3. FLYOUT PANEL
+          // ── 2. FEED — penuh skrin, padding atas ikut navbar ──
           Positioned(
-            left: AppSizes.sidebarWidth,
-            top: 0, bottom: 0,
+            top: topPad,
+            left: 0, right: 0, bottom: 0,
+            child: sidebar.isClosed
+                ? FeedPanel(onScrollDirection: _onFeedScroll)
+                : const SizedBox.shrink(),
+          ),
+
+          // ── 3. TOP NAVBAR + FAB ───────────────────────────
+          Positioned.fill(
+            child: const Sidebar(),
+          ),
+
+          // ── 4. FLYOUT PANEL ───────────────────────────────
+          Positioned(
+            top: topPad,
+            left: 0, right: 0, bottom: 0,
             child: const FlyoutPanel(),
           ),
 
-          // 4. OVERLAYS
-          if (showZikirPrompt)
-            Positioned.fill(child: ZikirPrompt(zikirDone: user.zikirDoneToday, onDone: () => user.recordZikir())),
+          // ── 5. ZIKIR PROMPT ───────────────────────────────
+          if (!user.zikirDoneToday)
+            Positioned.fill(
+              child: ZikirPrompt(
+                zikirDone: user.zikirDoneToday,
+                onDone: () => user.recordZikir(),
+              ),
+            ),
 
-          const Positioned(left: 0, right: 0, bottom: 0, child: PrayerTimeOverlay()),
-
-          // 5. CONFETTI
+          // ── 6. CONFETTI ───────────────────────────────────
           Positioned.fill(
             child: IgnorePointer(
-              child: Lottie.asset('assets/animations/confetti.json', controller: _particleController, repeat: false, fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => const SizedBox.shrink()),
+              child: Lottie.asset(
+                AppAssets.animPath + 'confetti.json',
+                controller: _confettiCtrl,
+                repeat: false,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const SizedBox.shrink(),
+              ),
             ),
           ),
         ],
