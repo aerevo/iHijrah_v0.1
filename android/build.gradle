@@ -1,18 +1,34 @@
-allprojects {
+buildscript {
+    ext.kotlin_version = '1.7.10'
     repositories {
         google()
+        // ✅ JALAN TIKUS: Guna Mirror Google untuk elak error 403
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
         mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
-rootProject.buildDir = "../build"
+allprojects {
+    repositories {
+        google()
+        // ✅ JALAN TIKUS UNTUK SEMUA PROJECT
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+    }
+}
 
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-
 subprojects {
-    project.evaluationDependsOn(":app")
+    project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {

@@ -45,6 +45,9 @@ class IHijrahApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: userModel),
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
+        
+        // ✅ [PENYELAMAT] OTAK DATA HARIAN DIHIDUPKAN DI SINI:
+        ChangeNotifierProvider(create: (_) => DailyContentProvider()), 
 
         // ── Kandungan Harian ─────────────────────────────────
         ChangeNotifierProvider(create: (_) => DailyContentProvider()),

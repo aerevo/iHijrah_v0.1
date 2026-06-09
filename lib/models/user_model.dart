@@ -174,6 +174,14 @@ class UserModel extends ChangeNotifier {
     save();
   }
 
+  bool isFardhuDoneToday(String prayerName) => dailyFardhuLog[prayerName] ?? false;
+
+  void recordFardhu(String prayerName) {
+    dailyFardhuLog[prayerName] = true;
+    addPoints(20);
+    notifyListeners();
+  }
+
   void setAdhanMode(int modeIndex) {
     adhanModeIndex = modeIndex;
     save();

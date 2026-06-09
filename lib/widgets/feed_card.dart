@@ -72,6 +72,34 @@ class _FeedCardState extends State<FeedCard> {
       n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
 
   @override
+  State<FeedCard> createState() => _FeedCardState();
+}
+
+class _FeedCardState extends State<FeedCard> {
+  bool _liked = false;
+
+  IslamicPhrase get _phrase =>
+      kIslamicPhrases[widget.post.title.hashCode.abs() % kIslamicPhrases.length];
+
+  Color get _typeColor {
+    switch (widget.post.type) {
+      case 'video':  return const Color(0xFFEF4444);
+      case 'quote':  return const Color(0xFFA78BFA);
+      case 'event':  return const Color(0xFF34D399);
+      default:       return const Color(0xFFF59E0B);
+    }
+  }
+
+  IconData get _typeIcon {
+    switch (widget.post.type) {
+      case 'video':  return Icons.play_arrow_rounded;
+      case 'quote':  return Icons.format_quote_rounded;
+      case 'event':  return Icons.event_rounded;
+      default:       return Icons.article_rounded;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final Color  accent  = _typeColor(widget.post.type);
     final int    pi      = widget.post.id.hashCode.abs() % _palettes.length;
