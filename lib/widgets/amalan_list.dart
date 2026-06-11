@@ -82,9 +82,6 @@ class AmalanList extends StatelessWidget {
                         : kTextMuted.withOpacity(0.4),
                     width: 1.5,
                   ),
-                  trailing: amalan.source.isNotEmpty 
-                    ? const Icon(Icons.info_outline, size: 16, color: Colors.grey)
-                    : null,
                 ),
                 child: amalan.isCompleted
                     ? const Icon(Icons.check_rounded,
