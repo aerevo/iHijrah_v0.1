@@ -69,13 +69,8 @@ class _FeedCardState extends State<FeedCard> {
   bool _liked = false;
 
   String _fmt(int n) =>
-      n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
+      n >= 1000 ? '\${(n / 1000).toStringAsFixed(1)}k' : '\$n';
 
-  @override
-  State<FeedCard> createState() => _FeedCardState();
-}
-
-class _FeedCardState extends State<FeedCard> {
   bool _liked = false;
 
   IslamicPhrase get _phrase =>
