@@ -45,12 +45,12 @@ String _typeLabel(String t) {
 
 // ── GRADIENT PALETTES ─────────────────────────────────────────
 const List<List<Color>> _palettes = [
-  [Color(0xFF0A0E1A), Color(0xFF1B3060)],
-  [Color(0xFF1A0800), Color(0xFF4A1800)],
-  [Color(0xFF001A0A), Color(0xFF005028)],
-  [Color(0xFF100018), Color(0xFF3A0868)],
-  [Color(0xFF001520), Color(0xFF00456A)],
-  [Color(0xFF1A0010), Color(0xFF5A0038)],
+  [Color(0xFF1B2A5E), Color(0xFF3D5FC4)],  // biru
+  [Color(0xFF7A3B12), Color(0xFFC97A2E)],  // jingga
+  [Color(0xFF0B5C3E), Color(0xFF229464)],  // hijau
+  [Color(0xFF4A2470), Color(0xFF7D52B8)],  // ungu
+  [Color(0xFF0D5468), Color(0xFF1E8FA8)],  // teal
+  [Color(0xFF7A1F42), Color(0xFFC24A72)],  // magenta
 ];
 
 // ── FEED CARD ─────────────────────────────────────────────────

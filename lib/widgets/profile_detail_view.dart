@@ -1,6 +1,5 @@
 // lib/widgets/profile_detail_view.dart
 import 'dart:io';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,13 +19,7 @@ class ProfileDetailView extends StatelessWidget {
         user.nextLevelPoints > 0 ? user.progressPoints / 100.0 : 0.0;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF0A0A0A), Color(0xFF1A1A1A)],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: kBgGradient),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -199,7 +192,7 @@ class ProfileDetailView extends StatelessWidget {
                   gradient: kGoldGradient,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: const Color(0xFF0A0A0A), width: 2),
+                      color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: kPrimaryGold.withOpacity(0.5),
@@ -295,76 +288,70 @@ class ProfileDetailView extends StatelessWidget {
 
   // ── LEVEL BAR ─────────────────────────────────────────────────
   Widget _buildLevelBar(int level, double progress) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: kPrimaryGold.withOpacity(0.3), width: 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kSurfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: kBorderSubtle, width: 1),
+        boxShadow: [kCardShadow()],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('LEVEL $level',
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1)),
-                  Text('LEVEL ${level + 1}',
-                      style: const TextStyle(
-                          color: kGoldLight,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1)),
-                ],
+              Text('LEVEL $level',
+                  style: const TextStyle(
+                      color: kTextSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1)),
+              Text('LEVEL ${level + 1}',
+                  style: const TextStyle(
+                      color: kGoldDark,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: kBgSoft,
+                  borderRadius: BorderRadius.circular(6),
+                ),
               ),
-              const SizedBox(height: 12),
-              Stack(
-                children: [
-                  Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: progress.clamp(0.0, 1.0),
-                    child: Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        gradient: kGoldGradient,
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: [
-                          BoxShadow(
-                            color: kPrimaryGold.withOpacity(0.6),
-                            blurRadius: 12,
-                          ),
-                        ],
+              FractionallySizedBox(
+                widthFactor: progress.clamp(0.0, 1.0),
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    gradient: kGoldGradient,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: kPrimaryGold.withOpacity(0.45),
+                        blurRadius: 10,
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${(progress * 100).toInt()}% ke Level ${level + 1}',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 10),
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 6),
+          Text(
+            '${(progress * 100).toInt()}% ke Level ${level + 1}',
+            style: const TextStyle(
+                color: kTextMuted,
+                fontSize: 10),
+          ),
+        ],
       ),
     );
   }
@@ -408,21 +395,21 @@ class ProfileDetailView extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(label,
-              style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+              style: const TextStyle(
+                  color: kTextSecondary,
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
           const SizedBox(height: 4),
           Text(value,
               style: const TextStyle(
-                  color: Colors.white,
+                  color: kTextPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   height: 1)),
           Text(unit,
-              style: TextStyle(
-                  color: Colors.white.withOpacity(0.5), fontSize: 9)),
+              style: const TextStyle(
+                  color: kTextMuted, fontSize: 9)),
         ],
       ),
     );
@@ -435,51 +422,46 @@ class ProfileDetailView extends StatelessWidget {
     required String   value,
     required Color    accent,
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: accent.withOpacity(0.25), width: 1),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: kSurfaceCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: accent.withOpacity(0.22), width: 1),
+        boxShadow: [kCardShadow(opacity: 0.04)],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: accent, size: 18),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: accent, size: 18),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: TextStyle(
-                            color: Colors.white.withOpacity(0.55),
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5)),
-                    const SizedBox(height: 3),
-                    Text(value,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700)),
-                  ],
-                ),
-              ),
-            ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: kTextSecondary,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5)),
+                const SizedBox(height: 3),
+                Text(value,
+                    style: const TextStyle(
+                        color: kTextPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -510,42 +492,36 @@ class ProfileDetailView extends StatelessWidget {
         final bool on    = it['unlocked'] as bool;
         final Color col  = it['color']    as Color;
 
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: on
-                    ? col.withOpacity(0.14)
-                    : Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: on
-                      ? col.withOpacity(0.4)
-                      : Colors.white.withOpacity(0.08),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(it['icon'] as IconData,
-                      size: 26,
-                      color: on ? col : Colors.white.withOpacity(0.2)),
-                  const SizedBox(height: 6),
-                  Text(it['title'] as String,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: on
-                              ? Colors.white.withOpacity(0.85)
-                              : Colors.white.withOpacity(0.2),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2)),
-                ],
-              ),
+        return Container(
+          decoration: BoxDecoration(
+            color: on
+                ? col.withOpacity(0.12)
+                : kBgSoft,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: on
+                  ? col.withOpacity(0.4)
+                  : kBorderSubtle,
+              width: 1.5,
             ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(it['icon'] as IconData,
+                  size: 26,
+                  color: on ? col : kTextMuted),
+              const SizedBox(height: 6),
+              Text(it['title'] as String,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: on
+                          ? kTextPrimary
+                          : kTextMuted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2)),
+            ],
           ),
         );
       },

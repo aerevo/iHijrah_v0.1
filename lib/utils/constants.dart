@@ -2,53 +2,89 @@
 import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════
-// WARNA TERAS
+// WARNA TERAS — Tema Cerah
+// Gabungan: struktur bersih (professional) + tenaga warna (ceria)
+// Jenama emas iHijrah dikekalkan sebagai teras identiti.
 // ═══════════════════════════════════════════
-const Color kPrimaryGold    = Color(0xFFC9A84C); // Emas matang
-const Color kGoldLight      = Color(0xFFE8C97A); // Emas cerah (heading)
-const Color kGoldDark       = Color(0xFF8B6914); // Emas gelap (shadow)
-const Color kBackgroundDark = Color(0xFF080C18); // Biru malam sangat gelap
-const Color kSurfaceDark    = Color(0xFF0F1628); // Surface card
-const Color kCardDark       = Color(0xFF151E35); // Kad
-const Color kAccentOlive    = Color(0xFF9DBA7F); // Hijau zaitun
-const Color kAccentTeal     = Color(0xFF38BDF8); // Biru sirah
-const Color kAccentGreen    = Color(0xFF4ADE80); // Hijau amalan
-const Color kTextPrimary    = Color(0xFFF1F5F9); // Putih lembut
-const Color kTextSecondary  = Color(0xFF94A3B8); // Kelabu
-const Color kTextMuted      = Color(0xFF475569); // Dim
-const Color kWarningRed     = Color(0xFFEF4444);
-const Color kSuccessGreen   = Color(0xFF22C55E);
-const Color kBorderSubtle   = Color(0x1AFFFFFF); // Border 10% putih
+
+// ── Latar & Permukaan ──────────────────────
+const Color kBgBase       = Color(0xFFF7F8FA); // putih-kelabu sejuk — sepadan navy
+const Color kBgSoft       = Color(0xFFEDF0F4); // kelabu sejuk pekat — panel sekunder
+const Color kSurfaceCard  = Color(0xFFFFFFFF); // kad — putih bersih
+
+// ── Navy/Teal — WARNA UTAMA baharu ─────────
+// (Gemini + keputusan Tuan: navy/teal jadi utama, emas turun jadi aksen)
+const Color kPrimaryNavy     = Color(0xFF1B3A63); // utama — rel, butang, CTA
+const Color kPrimaryNavyDeep = Color(0xFF12294A); // navy lebih gelap — dasar rel
+const Color kPrimaryTeal     = Color(0xFF1AA3B0); // segar — status aktif atas rel gelap
+const Color kRailIconMuted   = Color(0xFFB8C4D6); // ikon/label rel yang tak aktif
+
+// ── Jenama Emas — kini AKSEN sahaja ────────
+const Color kPrimaryGold  = Color(0xFFC79A38); // aksen istimewa — badge, hadith, streak
+const Color kGoldLight    = Color(0xFFE8C46B); // emas cerah — highlight/gradient
+const Color kGoldDark     = Color(0xFF96721F); // emas pekat — selamat untuk teks kecil
+
+// ── Aksen Fungsian ──────────────────────────
+const Color kAccentBlue    = Color(0xFF4A90D9); // biru cerah — beza drpd navy utama
+const Color kAccentCoral   = Color(0xFFFF6F5E); // tenaga — streak, CTA meriah
+const Color kAccentEmerald = Color(0xFF159E71); // hijau Islamik — amalan/kejayaan
+const Color kAccentTeal    = Color(0xFF2AA7C4); // sirah/ilmu
+
+// ── Teks ────────────────────────────────────
+const Color kTextPrimary   = Color(0xFF1A1D24); // hampir-hitam sejuk
+const Color kTextSecondary = Color(0xFF5F6672); // kelabu sejuk — AA-safe atas putih
+const Color kTextMuted     = Color(0xFF9AA1AC); // kelabu cerah — tertiari sahaja
+
+// ── Garis & Status ──────────────────────────
+const Color kBorderSubtle = Color(0xFFE6E9EE);
+const Color kWarningRed   = Color(0xFFEF4444);
+const Color kSuccessGreen = Color(0xFF22C55E);
+
+// ── ALIAS WARISAN ────────────────────────────
+// Nama lama dikekalkan (nilai baharu) supaya semua widget sedia ada
+// terus berfungsi tanpa perlu disunting satu-satu. Guna nama baharu
+// di atas untuk kod baharu; alias ini boleh dimigrasi perlahan-lahan.
+const Color kBackgroundDark = kBgBase;
+const Color kSurfaceDark    = kBgSoft;
+const Color kCardDark       = kSurfaceCard;
+const Color kAccentOlive    = kAccentEmerald;
+const Color kAccentGreen    = kAccentEmerald; // "hijau amalan" — dipetakan ke emerald baharu
 
 // ═══════════════════════════════════════════
-// WARNA KOMUNITI & FEED
+// WARNA KOMUNITI & FEED (jenis kandungan)
 // ═══════════════════════════════════════════
-const Color kTypeVideo   = Color(0xFFEF4444);
-const Color kTypeArticle = Color(0xFFF59E0B);
-const Color kTypeEvent   = Color(0xFF34D399);
-const Color kTypeQuote   = Color(0xFFA78BFA);
-const Color kTypeHadith  = Color(0xFFC9A84C);
-const Color kTypeAmalan  = Color(0xFF4ADE80);
-const Color kTypeSirah   = Color(0xFF38BDF8);
+const Color kTypeVideo   = Color(0xFFF2415A);
+const Color kTypeArticle = Color(0xFFF0932B);
+const Color kTypeEvent   = Color(0xFF159E71);
+const Color kTypeQuote   = Color(0xFF8266E0);
+const Color kTypeHadith  = Color(0xFFC79A38);
+const Color kTypeAmalan  = Color(0xFF33B673);
+const Color kTypeSirah   = Color(0xFF2AA7C4);
 
 // ═══════════════════════════════════════════
 // GRADIENTS
 // ═══════════════════════════════════════════
 const LinearGradient kGoldGradient = LinearGradient(
-  colors: [Color(0xFF8B6914), Color(0xFFE8C97A), Color(0xFFC9A84C)],
+  colors: [Color(0xFF96721F), Color(0xFFE8C46B), Color(0xFFC79A38)],
   stops: [0.0, 0.5, 1.0],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );
 
+const LinearGradient kNavyGradient = LinearGradient(
+  colors: [kPrimaryNavy, kPrimaryNavyDeep],
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+);
+
 const LinearGradient kBgGradient = LinearGradient(
-  colors: [Color(0xFF0A0E1A), Color(0xFF080C18)],
+  colors: [Color(0xFFFBFCFD), Color(0xFFF7F8FA)],
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
 );
 
 const LinearGradient kCardGradient = LinearGradient(
-  colors: [Color(0xFF151E35), Color(0xFF0F1628)],
+  colors: [Color(0xFFFFFFFF), Color(0xFFFCFAF5)],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );
@@ -56,15 +92,23 @@ const LinearGradient kCardGradient = LinearGradient(
 // ═══════════════════════════════════════════
 // SHADOWS
 // ═══════════════════════════════════════════
+// Guna untuk teks yang duduk atas gambar/gradient (bukan atas latar app)
 const List<Shadow> kTextShadow = [
-  Shadow(color: Color(0xCC000000), blurRadius: 8,  offset: Offset(0, 1)),
-  Shadow(color: Color(0x88000000), blurRadius: 18, offset: Offset(0, 3)),
+  Shadow(color: Color(0x66000000), blurRadius: 6,  offset: Offset(0, 1)),
+  Shadow(color: Color(0x33000000), blurRadius: 14, offset: Offset(0, 2)),
 ];
 
-BoxShadow kGoldGlow({double opacity = 0.25}) => BoxShadow(
+BoxShadow kGoldGlow({double opacity = 0.18}) => BoxShadow(
   color: kPrimaryGold.withOpacity(opacity),
   blurRadius: 20,
   spreadRadius: 2,
+);
+
+// Bayang kad lembut — guna sebagai ganti border tebal bila boleh
+BoxShadow kCardShadow({double opacity = 0.05}) => BoxShadow(
+  color: Colors.black.withOpacity(opacity),
+  blurRadius: 18,
+  offset: const Offset(0, 6),
 );
 
 // ═══════════════════════════════════════════
@@ -77,7 +121,7 @@ const double DEFAULT_LONGITUDE = 101.693207;
 // SAIZ & SPACING
 // ═══════════════════════════════════════════
 class AppSizes {
-  static const double sidebarWidth   = 65.0;
+  static const double sidebarWidth   = 72.0;
   static const double flyoutWidth    = 300.0;
   static const double cardRadius     = 14.0;
   static const double cardRadiusLg   = 20.0;

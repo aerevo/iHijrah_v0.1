@@ -22,11 +22,13 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Status bar transparent, ikon terang
+  // Status bar transparent, ikon gelap (latar app kini cerah)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor:           Colors.transparent,
-    statusBarIconBrightness:  Brightness.light,
-    systemNavigationBarColor: Colors.black,
+    statusBarIconBrightness:  Brightness.dark,   // Android
+    statusBarBrightness:      Brightness.light,  // iOS
+    systemNavigationBarColor: Color(0xFFF8F5EE), // sepadan kBgBase
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
 
   final userModel = await UserModel.load();
@@ -46,9 +48,6 @@ class IHijrahApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SidebarStateModel()),
         ChangeNotifierProvider(create: (_) => AnimationControllerModel()),
         
-        // ✅ [PENYELAMAT] OTAK DATA HARIAN DIHIDUPKAN DI SINI:
-        ChangeNotifierProvider(create: (_) => DailyContentProvider()), 
-
         // ── Kandungan Harian ─────────────────────────────────
         ChangeNotifierProvider(create: (_) => DailyContentProvider()),
 
@@ -64,11 +63,11 @@ class IHijrahApp extends StatelessWidget {
         title:                    'iHijrah Embun Jiwa',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          brightness:              Brightness.dark,
+          brightness:              Brightness.light,
           scaffoldBackgroundColor: kBackgroundDark,
           primaryColor:            kPrimaryGold,
           fontFamily:              'Poppins',
-          colorScheme: const ColorScheme.dark(
+          colorScheme: const ColorScheme.light(
             primary:    kPrimaryGold,
             secondary:  kAccentOlive,
             surface:    kCardDark,

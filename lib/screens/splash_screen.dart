@@ -89,17 +89,14 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: kBgBase,
       body: Stack(
         children: [
 
-          // ── Latar langit gelap ──────────────────────────────
-          Positioned.fill(
-            child: Image.asset(
-              AppAssets.langit,
-              fit: BoxFit.cover,
-              opacity: const AlwaysStoppedAnimation(0.08),
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          // ── Latar ivory lembut ───────────────────────────────
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: kBgGradient),
             ),
           ),
 

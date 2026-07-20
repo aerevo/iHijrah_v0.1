@@ -19,23 +19,23 @@ extension _Style on DailyCardType {
   }
   List<Color> get gradColors {
     switch (this) {
-      case DailyCardType.hadith: return [const Color(0xFF1A1200), const Color(0xFF4A3200)];
-      case DailyCardType.amalan: return [const Color(0xFF001A0A), const Color(0xFF005030)];
-      case DailyCardType.sirah:  return [const Color(0xFF001018), const Color(0xFF003858)];
+      case DailyCardType.hadith: return [const Color(0xFF8A6215), const Color(0xFFD9A62A)];
+      case DailyCardType.amalan: return [const Color(0xFF0B5C3E), const Color(0xFF159E71)];
+      case DailyCardType.sirah:  return [const Color(0xFF0F5A73), const Color(0xFF2AA7C4)];
     }
   }
   String get label {
     switch (this) {
-      case DailyCardType.hadith: return '📖  HADITH HARIAN';
-      case DailyCardType.amalan: return '⭐  AMALAN HARI INI';
-      case DailyCardType.sirah:  return '📜  SIRAH HARI INI';
+      case DailyCardType.hadith: return 'HADITH HARIAN';
+      case DailyCardType.amalan: return 'AMALAN HARI INI';
+      case DailyCardType.sirah:  return 'SIRAH HARI INI';
     }
   }
-  String get emoji {
+  IconData get iconData {
     switch (this) {
-      case DailyCardType.hadith: return '📖';
-      case DailyCardType.amalan: return '⭐';
-      case DailyCardType.sirah:  return '📜';
+      case DailyCardType.hadith: return Icons.menu_book_rounded;
+      case DailyCardType.amalan: return Icons.spa_rounded;
+      case DailyCardType.sirah:  return Icons.auto_stories_rounded;
     }
   }
 }
@@ -182,13 +182,12 @@ class _DailyShell extends StatelessWidget {
                     ),
                   ),
 
-                  // Emoji besar tengah
+                  // Ikon besar tengah
                   Center(
-                    child: Text(
-                      type.emoji,
-                      style: TextStyle(
-                        fontSize: isCenter ? 52 : 40,
-                      ),
+                    child: Icon(
+                      type.iconData,
+                      size: isCenter ? 56 : 44,
+                      color: Colors.white.withOpacity(0.85),
                     ),
                   ),
                 ],
@@ -252,9 +251,10 @@ class _DailyShell extends StatelessWidget {
                                 color: accent.withOpacity(0.35), width: 1),
                           ),
                           child: Center(
-                            child: Text(
-                              type.emoji,
-                              style: const TextStyle(fontSize: 12),
+                            child: Icon(
+                              type.iconData,
+                              size: 13,
+                              color: accent,
                             ),
                           ),
                         ),

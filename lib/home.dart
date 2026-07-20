@@ -59,9 +59,8 @@ class _HomePageState extends State<HomePage>
     final user = Provider.of<UserModel>(context);
     final sidebar = Provider.of<SidebarStateModel>(context);
 
-    // Padding atas untuk bagi ruang navbar
-    final double topPad = kNavbarHeight +
-        MediaQuery.of(context).padding.top;
+    // Padding kiri untuk bagi ruang rel navigasi
+    final double leftPad = kRailWidthCollapsed;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -72,14 +71,7 @@ class _HomePageState extends State<HomePage>
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF1E293B),
-                    Color(0xFF0F172A),
-                  ],
-                ),
+                gradient: kBgGradient,
               ),
               child: Stack(
                 children: [
@@ -91,13 +83,13 @@ class _HomePageState extends State<HomePage>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(colors: [
-                          const Color(0xFFF59E0B).withOpacity(0.10),
+                          kPrimaryGold.withOpacity(0.07),
                           Colors.transparent,
                         ]),
                       ),
                     ),
                   ),
-                  // Cahaya biru bawah
+                  // Cahaya biru lembut bawah
                   Positioned(
                     bottom: -150, right: -150,
                     child: Container(
@@ -105,7 +97,7 @@ class _HomePageState extends State<HomePage>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(colors: [
-                          const Color(0xFF3B82F6).withOpacity(0.08),
+                          kAccentBlue.withOpacity(0.05),
                           Colors.transparent,
                         ]),
                       ),
@@ -116,24 +108,24 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // ── 2. FEED — penuh skrin, padding atas ikut navbar ──
+          // ── 2. FEED — penuh skrin, padding kiri ikut rel ─────
           Positioned(
-            top: topPad,
-            left: 0, right: 0, bottom: 0,
+            top: 0,
+            left: leftPad, right: 0, bottom: 0,
             child: sidebar.isClosed
                 ? FeedPanel(onScrollDirection: _onFeedScroll)
                 : const SizedBox.shrink(),
           ),
 
-          // ── 3. TOP NAVBAR + FAB ───────────────────────────
+          // ── 3. REL NAVIGASI KIRI + HANDLE ─────────────────
           Positioned.fill(
             child: const Sidebar(),
           ),
 
           // ── 4. FLYOUT PANEL ───────────────────────────────
           Positioned(
-            top: topPad,
-            left: 0, right: 0, bottom: 0,
+            top: 0,
+            left: leftPad, right: 0, bottom: 0,
             child: const FlyoutPanel(),
           ),
 
