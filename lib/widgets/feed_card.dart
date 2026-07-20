@@ -206,6 +206,7 @@ class _FeedCardState extends State<FeedCard> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
 
                     // Tajuk
@@ -236,7 +237,7 @@ class _FeedCardState extends State<FeedCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const Spacer(),
+                    const SizedBox(height: 18),
 
                     // ── FOOTER ─────────────────────────────
                     Row(
