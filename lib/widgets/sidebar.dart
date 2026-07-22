@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import '../models/sidebar_state_model.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-import 'metallic_gold.dart';
 
 // ── SAIZ REL ──────────────────────────────────────────────────
 const double kRailWidthCollapsed = 72.0;
@@ -72,10 +71,10 @@ class Sidebar extends StatelessWidget {
               width: width,
               height: double.infinity,
               decoration: const BoxDecoration(
-                gradient: kNavyGradient,
+                gradient: kRailGoldGradient,
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x33000000),
+                    color: Color(0x40000000),
                     blurRadius: 24,
                     offset: Offset(6, 0),
                   ),
@@ -144,7 +143,7 @@ class Sidebar extends StatelessWidget {
 
   Widget _divider() => Container(
         height: 0.6,
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.black.withOpacity(0.14),
         margin: const EdgeInsets.symmetric(horizontal: 16),
       );
 
@@ -163,19 +162,18 @@ class Sidebar extends StatelessWidget {
                     _logoMark(),
                     const SizedBox(width: 10),
                     const Expanded(
-                      child: MetallicGold(
-                        child: Text(
-                          'iHijrah',
-                          style: TextStyle(
-                            fontFamily: 'Playfair',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
+                      child: Text(
+                        'iHijrah',
+                        style: TextStyle(
+                          fontFamily: 'Playfair',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: kPrimaryNavy,
                         ),
                       ),
                     ),
                     Icon(Icons.chevron_left_rounded,
-                        color: Colors.white.withOpacity(0.45), size: 20),
+                        color: kRailTextDark.withOpacity(0.55), size: 20),
                   ],
                 ),
               )
@@ -184,17 +182,30 @@ class Sidebar extends StatelessWidget {
     );
   }
 
+  // Bebola emas 3D — cahaya dari atas-kiri, ikon navy sebagai kontras
   Widget _logoMark() => Container(
         width: 38, height: 38,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: kGoldGradient,
+          gradient: const RadialGradient(
+            center: Alignment(-0.35, -0.35),
+            radius: 0.9,
+            colors: [kGoldHighlight, kGoldMid, kGoldDeep],
+            stops: [0.0, 0.55, 1.0],
+          ),
           boxShadow: [
-            BoxShadow(color: kPrimaryGold.withOpacity(0.45), blurRadius: 10),
+            BoxShadow(
+                color: kGoldHighlight.withOpacity(0.7),
+                blurRadius: 3,
+                offset: const Offset(-1, -1)),
+            BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 7,
+                offset: const Offset(2, 3)),
           ],
         ),
         child: const Icon(Icons.nights_stay_rounded,
-            color: Colors.white, size: 18),
+            color: kPrimaryNavy, size: 18),
       );
 
   // ── AVATAR ──────────────────────────────────────────────────
@@ -225,17 +236,17 @@ class Sidebar extends StatelessWidget {
                               ? 'Hamba Allah'
                               : user.name.split(' ').first,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: kPrimaryNavy,
                             fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           user.hijriAge,
-                          style: const TextStyle(
-                              color: kPrimaryGold, fontSize: 10.5),
+                          style: TextStyle(
+                              color: kPrimaryNavy.withOpacity(0.7), fontSize: 10.5),
                         ),
                       ],
                     ),
@@ -252,8 +263,8 @@ class Sidebar extends StatelessWidget {
       width: size, height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: kPrimaryGold.withOpacity(0.7), width: 1.3),
-        color: kPrimaryGold.withOpacity(0.18),
+        border: Border.all(color: kPrimaryNavy.withOpacity(0.75), width: 1.4),
+        color: Colors.white.withOpacity(0.55),
       ),
       child: ClipOval(
         child: hasAvatar
@@ -269,7 +280,7 @@ class Sidebar extends StatelessWidget {
         child: Text(
           user.name.isNotEmpty ? user.name[0].toUpperCase() : 'H',
           style: const TextStyle(
-              color: kPrimaryGold, fontSize: 13, fontWeight: FontWeight.w700),
+              color: kPrimaryNavy, fontSize: 13, fontWeight: FontWeight.w800),
         ),
       );
 
@@ -289,23 +300,31 @@ class Sidebar extends StatelessWidget {
           vertical: model.isExpanded ? 11 : 9,
         ),
         decoration: BoxDecoration(
-          color: active ? kPrimaryTeal.withOpacity(0.2) : Colors.transparent,
+          color: active ? kPrimaryNavy : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2)),
+                ]
+              : null,
         ),
         child: model.isExpanded
             ? Row(
                 children: [
                   Icon(t.icon,
                       size: 20,
-                      color: active ? kPrimaryTeal : kRailIconMuted),
+                      color: active ? Colors.white : kRailTextDark),
                   const SizedBox(width: 14),
                   Text(
                     t.label,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w500,
-                      color: active ? Colors.white : kRailIconMuted,
+                          active ? FontWeight.w700 : FontWeight.w600,
+                      color: active ? Colors.white : kRailTextDark,
                     ),
                   ),
                 ],
@@ -315,7 +334,7 @@ class Sidebar extends StatelessWidget {
                 children: [
                   Icon(t.icon,
                       size: 20,
-                      color: active ? kPrimaryTeal : kRailIconMuted),
+                      color: active ? Colors.white : kRailTextDark),
                   const SizedBox(height: 3),
                   Text(
                     t.label,
@@ -324,8 +343,8 @@ class Sidebar extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 8.6,
                       fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w500,
-                      color: active ? Colors.white : kRailIconMuted,
+                          active ? FontWeight.w700 : FontWeight.w600,
+                      color: active ? Colors.white : kRailTextDark,
                     ),
                   ),
                 ],
@@ -341,12 +360,16 @@ class Sidebar extends StatelessWidget {
       child: Container(
         width: 30, height: 60,
         decoration: BoxDecoration(
-          color: kPrimaryNavy.withOpacity(0.95),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [kGoldMid, kGoldDeep],
+          ),
           borderRadius:
               const BorderRadius.horizontal(right: Radius.circular(18)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.22),
+              color: Colors.black.withOpacity(0.28),
               blurRadius: 14,
               offset: const Offset(3, 0),
             ),

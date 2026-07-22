@@ -14,12 +14,28 @@ const Color kSurfaceCard  = Color(0xFFFFFFFF); // kad — putih bersih
 
 // ── Navy/Teal — WARNA UTAMA baharu ─────────
 // (Gemini + keputusan Tuan: navy/teal jadi utama, emas turun jadi aksen)
-const Color kPrimaryNavy     = Color(0xFF1B3A63); // utama — rel, butang, CTA
-const Color kPrimaryNavyDeep = Color(0xFF12294A); // navy lebih gelap — dasar rel
-const Color kPrimaryTeal     = Color(0xFF1AA3B0); // segar — status aktif atas rel gelap
-const Color kRailIconMuted   = Color(0xFFB8C4D6); // ikon/label rel yang tak aktif
+const Color kPrimaryNavy     = Color(0xFF1B3A63); // utama — butang, CTA, aksen aktif atas rel emas
+const Color kPrimaryNavyDeep = Color(0xFF12294A); // navy lebih gelap
+const Color kPrimaryTeal     = Color(0xFF1AA3B0); // segar — status aktif alternatif
+const Color kRailIconMuted   = Color(0xFFB8C4D6); // (warisan — tak lagi dipakai pada rel emas)
 
-// ── Jenama Emas — kini AKSEN sahaja ────────
+// ── Emas 3D — rawatan khas REL KIRI sahaja ─
+// Rel kekal di kiri, tapi kini emas timbul/bertona, bukan navy rata.
+// Navy jadi AKSEN kontras di atas emas (pill status aktif), bukan sebaliknya.
+const Color kGoldHighlight = Color(0xFFF5DFA0); // titik cahaya paling terang
+const Color kGoldMid       = Color(0xFFD9A62A); // teras emas
+const Color kGoldDeep      = Color(0xFF8A6215); // bayang emas
+const Color kGoldBronze    = Color(0xFF5C4415); // gangsa — dasar paling gelap, beri kedalaman
+const Color kRailTextDark  = Color(0xFF3D2E0F); // teks/ikon tak aktif atas emas — kontras selamat
+
+const LinearGradient kRailGoldGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [kGoldHighlight, kGoldMid, kGoldDeep, kGoldBronze],
+  stops: [0.0, 0.32, 0.72, 1.0],
+);
+
+// ── Jenama Emas — kini AKSEN sahaja (kandungan) ────
 const Color kPrimaryGold  = Color(0xFFC79A38); // aksen istimewa — badge, hadith, streak
 const Color kGoldLight    = Color(0xFFE8C46B); // emas cerah — highlight/gradient
 const Color kGoldDark     = Color(0xFF96721F); // emas pekat — selamat untuk teks kecil

@@ -1,26 +1,10 @@
 // lib/widgets/feed_card.dart
-// Gaya screenshot — gambar atas, info bawah, rounded besar
+// Kad grid bersih — gaya FB (kad putih, bayang lembut), saiz kompak untuk
+// susunan 2-lajur ala CapCut. Ketik kad untuk buka butiran penuh (masa depan).
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-
-// ── FRASA ISLAMIK ─────────────────────────────────────────────
-const List<_Phrase> _phrases = [
-  _Phrase('بِسْمِ اللَّهِ',     'Bismillah',     kPrimaryGold,            Color(0x22C9A84C)),
-  _Phrase('الْحَمْدُ لِلَّهِ',  'Alhamdulillah', Color(0xFF22C55E),       Color(0x2222C55E)),
-  _Phrase('سُبْحَانَ اللَّهِ',  'Subhanallah',   Color(0xFF38BDF8),       Color(0x2238BDF8)),
-  _Phrase('إِنْ شَاءَ اللَّهُ','InsyaAllah',    Color(0xFFA78BFA),       Color(0x22A78BFA)),
-  _Phrase('اللَّهُ أَكْبَرُ',  'Allahuakbar',  Color(0xFFEF4444),       Color(0x22EF4444)),
-  _Phrase('مَا شَاءَ اللَّهُ', 'MashaAllah',   Color(0xFF0EA5E9),       Color(0x220EA5E9)),
-];
-
-class _Phrase {
-  final String arabic, latin;
-  final Color  color, bg;
-  const _Phrase(this.arabic, this.latin, this.color, this.bg);
-}
 
 // ── TYPE ──────────────────────────────────────────────────────
 Color _typeColor(String t) {
@@ -33,17 +17,27 @@ Color _typeColor(String t) {
   }
 }
 
+IconData _typeIcon(String t) {
+  switch (t) {
+    case 'video':   return Icons.play_arrow_rounded;
+    case 'article': return Icons.article_rounded;
+    case 'event':   return Icons.event_rounded;
+    case 'quote':   return Icons.format_quote_rounded;
+    default:        return Icons.circle;
+  }
+}
+
 String _typeLabel(String t) {
   switch (t) {
-    case 'video':   return '▶  VIDEO';
-    case 'article': return '📄  ARTIKEL';
-    case 'event':   return '📅  ACARA';
-    case 'quote':   return '❝  PETIKAN';
+    case 'video':   return 'VIDEO';
+    case 'article': return 'ARTIKEL';
+    case 'event':   return 'ACARA';
+    case 'quote':   return 'PETIKAN';
     default:        return t.toUpperCase();
   }
 }
 
-// ── GRADIENT PALETTES ─────────────────────────────────────────
+// ── GRADIENT PALETTES (fallback bila tiada imej) ──────────────
 const List<List<Color>> _palettes = [
   [Color(0xFF1B2A5E), Color(0xFF3D5FC4)],  // biru
   [Color(0xFF7A3B12), Color(0xFFC97A2E)],  // jingga
@@ -53,325 +47,148 @@ const List<List<Color>> _palettes = [
   [Color(0xFF7A1F42), Color(0xFFC24A72)],  // magenta
 ];
 
-// ── FEED CARD ─────────────────────────────────────────────────
-class FeedCard extends StatefulWidget {
+String _fmtCount(int n) =>
+    n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
+
+// ── FEED CARD (kompak, untuk grid) ────────────────────────────
+class FeedCard extends StatelessWidget {
   final PostModel post;
-  final bool isCenter;
+  final VoidCallback? onTap;
 
-  const FeedCard({Key? key, required this.post, required this.isCenter})
-      : super(key: key);
-
-  @override
-  State<FeedCard> createState() => _FeedCardState();
-}
-
-class _FeedCardState extends State<FeedCard> {
-  bool _liked = false;
-
-  String _fmt(int n) =>
-      n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
+  const FeedCard({Key? key, required this.post, this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final Color  accent  = _typeColor(widget.post.type);
-    final int    pi      = widget.post.id.hashCode.abs() % _palettes.length;
-    final int    phi     = widget.post.id.hashCode.abs() % _phrases.length;
-    final _Phrase phrase = _phrases[phi];
-    final bool   hasImg  = widget.post.assetPath != null &&
-        widget.post.assetPath!.isNotEmpty;
+    final Color accent = _typeColor(post.type);
+    final int   pi     = post.id.hashCode.abs() % _palettes.length;
+    final bool  hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
 
     return RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
-          color: kCardDark,
-          boxShadow: [
-            BoxShadow(
-              color: accent.withOpacity(0.12),
-              blurRadius: 24,
-              spreadRadius: 0,
-              offset: const Offset(0, 8),
-            ),
-            const BoxShadow(
-              color: Color(0x40000000),
-              blurRadius: 16,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: kSurfaceCard,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            // ── BAHAGIAN ATAS — Gambar (55%) ───────────────
-            Expanded(
-              flex: 55,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
+              // ── THUMBNAIL ──────────────────────────────────
+              AspectRatio(
+                aspectRatio: 1.35,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    hasImg
+                        ? Image.asset(
+                            post.assetPath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _gradBg(_palettes[pi]),
+                          )
+                        : _gradBg(_palettes[pi]),
 
-                  // Gambar atau gradient
-                  hasImg
-                      ? Image.asset(
-                          widget.post.assetPath!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              _gradBg(_palettes[pi]),
-                        )
-                      : _gradBg(_palettes[pi]),
-
-                  // Gradient fade bawah
-                  Positioned(
-                    bottom: 0, left: 0, right: 0,
-                    height: 80,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            kCardDark.withOpacity(0.95),
+                    // Badge jenis — kiri atas
+                    Positioned(
+                      top: 8, left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.34),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_typeIcon(post.type),
+                                size: 10, color: accent),
+                            const SizedBox(width: 3),
+                            Text(
+                              _typeLabel(post.type),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 7.8,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-
-                  // Frasa Islamik — kanan atas
-                  Positioned(
-                    top: 14, right: 14,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          phrase.arabic,
-                          style: GoogleFonts.amiri(
-                            fontSize: 17,
-                            color: phrase.color,
-                            shadows: kTextShadow,
-                          ),
-                        ),
-                        Text(
-                          phrase.latin,
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: phrase.color.withOpacity(0.7),
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Type badge — kiri atas
-                  Positioned(
-                    top: 12, left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: accent.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: accent.withOpacity(0.45), width: 0.8),
-                      ),
-                      child: Text(
-                        _typeLabel(widget.post.type),
-                        style: TextStyle(
-                          color: accent,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── GARIS PEMISAH ──────────────────────────────
-            Container(
-              height: 0.5,
-              color: kBorderSubtle,
-            ),
-
-            // ── BAHAGIAN BAWAH — Info (45%) ────────────────
-            Expanded(
-              flex: 45,
-              child: Container(
-                padding:
-                    const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                decoration: BoxDecoration(
-                  color: kCardDark,
+                  ],
                 ),
+              ),
+
+              // ── MAKLUMAT ───────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    // Tajuk
                     Text(
-                      widget.post.title,
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: widget.isCenter ? 18 : 15,
+                      post.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: kTextPrimary,
-                        height: 1.2,
-                        letterSpacing: -0.3,
+                        height: 1.28,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-
                     const SizedBox(height: 6),
-
-                    // Kandungan ringkas
-                    Text(
-                      widget.post.content,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: kTextSecondary,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const Spacer(),
-
-                    // ── FOOTER ─────────────────────────────
                     Row(
                       children: [
-
-                        // Avatar
-                        Container(
-                          width: 30, height: 30,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accent.withOpacity(0.15),
-                            border: Border.all(
-                                color: accent.withOpacity(0.4),
-                                width: 1.2),
-                          ),
-                          child: Center(
-                            child: Text(
-                              widget.post.author.isNotEmpty
-                                  ? widget.post.author[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: accent,
-                              ),
+                        Expanded(
+                          child: Text(
+                            '${post.author} · ${post.time}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 9.3,
+                              color: kTextSecondary,
                             ),
                           ),
                         ),
-
-                        const SizedBox(width: 8),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.post.author,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: kTextPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                widget.post.time,
-                                style: const TextStyle(
-                                  fontSize: 9.5,
-                                  color: kTextSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Like
-                        _ActionBtn(
-                          icon: _liked
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          label: _fmt(widget.post.likes + (_liked ? 1 : 0)),
-                          color: _liked ? kWarningRed : kTextSecondary,
-                          onTap: () => setState(() => _liked = !_liked),
-                        ),
-                        const SizedBox(width: 14),
-                        // Comment
-                        _ActionBtn(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          label: _fmt(widget.post.likes ~/ 8),
-                          color: kTextSecondary,
-                        ),
-                        const SizedBox(width: 14),
-                        // Share
-                        _ActionBtn(
-                          icon: Icons.share_rounded,
-                          label: '',
-                          color: kTextSecondary,
+                        const SizedBox(width: 4),
+                        Icon(Icons.favorite_rounded,
+                            size: 10.5, color: kTextMuted),
+                        const SizedBox(width: 2),
+                        Text(
+                          _fmtCount(post.likes),
+                          style: const TextStyle(
+                              fontSize: 9.3, color: kTextMuted),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _gradBg(List<Color> pal) => Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: pal,
-      ),
-    ),
-  );
-}
-
-// ── ACTION BUTTON ─────────────────────────────────────────────
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final String   label;
-  final Color    color;
-  final VoidCallback? onTap;
-
-  const _ActionBtn({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        if (label.isNotEmpty) ...[
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
+  Widget _gradBg(List<Color> colors) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ],
-    ),
-  );
+        ),
+      );
 }
