@@ -205,22 +205,21 @@ class _DailyShell extends StatelessWidget {
                 color: kCardDark,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
 
                     // Tajuk/teks utama
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: isCenter ? 16 : 13,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w700,
-                          color: kTextPrimary,
-                          height: 1.35,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      title,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: isCenter ? 16 : 13,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w700,
+                        color: kTextPrimary,
+                        height: 1.35,
                       ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
 
                     const SizedBox(height: 4),
