@@ -29,10 +29,10 @@ const Color kGoldBronze    = Color(0xFF5C4415); // gangsa — dasar paling gelap
 const Color kRailTextDark  = Color(0xFF3D2E0F); // teks/ikon tak aktif atas emas — kontras selamat
 
 const LinearGradient kRailGoldGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
   colors: [kGoldHighlight, kGoldMid, kGoldDeep, kGoldBronze],
-  stops: [0.0, 0.32, 0.72, 1.0],
+  stops: [0.0, 0.45, 0.85, 1.0],
 );
 
 // ── Jenama Emas — kini AKSEN sahaja (kandungan) ────

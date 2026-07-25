@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
+import '../widgets/metallic_gold.dart';
 import '../home.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -112,13 +113,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Stack(
           children: [
 
-            // Latar
-            Positioned.fill(
-              child: Image.asset(
-                AppAssets.langit,
-                fit: BoxFit.cover,
-                opacity: const AlwaysStoppedAnimation(0.12),
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            // Latar — gradient ivory lembut, bukan lagi tekstur langit gelap
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: kBgGradient),
               ),
             ),
 
@@ -128,15 +126,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Logo kecil ──────────────────────────────
-                  Text(
-                    'iHijrah',
-                    style: const TextStyle(
-                      color: kGoldLight,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Playfair',
-                      letterSpacing: 2,
+                  // ── Logo kecil — kilau emas ─────────────────
+                  MetallicGold(
+                    child: Text(
+                      'iHijrah',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Playfair',
+                        letterSpacing: 2,
+                      ),
                     ),
                   ),
 
@@ -180,28 +179,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
 
+          // Lambang pokok kanopi — emas timbul
           Container(
-            width: 90, height: 90,
+            width: 92, height: 92,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: kPrimaryGold.withOpacity(0.5), width: 1.5),
-              color: kPrimaryGold.withOpacity(0.08),
+              gradient: const RadialGradient(
+                center: Alignment(-0.3, -0.3),
+                radius: 0.9,
+                colors: [kGoldHighlight, kGoldMid, kGoldDeep],
+                stops: [0.0, 0.55, 1.0],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: kGoldHighlight.withOpacity(0.55),
+                  blurRadius: 4,
+                  offset: const Offset(-1, -1),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 14,
+                  offset: const Offset(3, 5),
+                ),
+              ],
             ),
-            child: const Icon(Icons.cruelty_free_outlined,
-                color: kPrimaryGold, size: 48),
+            child: const Icon(Icons.forest_rounded,
+                color: Colors.white, size: 42),
           ),
 
           const SizedBox(height: 28),
 
-          const Text(
-            'Assalamualaikum',
-            style: TextStyle(
-              color: kGoldLight,
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Playfair',
+          MetallicGold(
+            child: const Text(
+              'Assalamualaikum',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Playfair',
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
 
           const SizedBox(height: 12),
@@ -218,21 +235,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           const SizedBox(height: 40),
 
-          // Ciri-ciri ringkas
+          // Ciri-ciri ringkas — ikon sebenar, bukan emoji
           ...[
-            ('🌙', 'Umur & identiti Hijrah anda'),
-            ('🌳', 'Pokok Hijrah yang tumbuh bersama ibadah'),
-            ('📿', 'Amalan, hadith & sirah harian'),
-            ('🤝', 'Komuniti Muslim tempatan'),
+            (Icons.nights_stay_rounded, 'Umur & identiti Hijrah anda'),
+            (Icons.park_rounded,        'Pokok Hijrah yang tumbuh bersama ibadah'),
+            (Icons.spa_rounded,         'Amalan, hadith & sirah harian'),
+            (Icons.groups_rounded,      'Komuniti Muslim tempatan'),
           ].map((e) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 14),
             child: Row(
               children: [
-                Text(e.$1, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 12),
-                Text(e.$2,
-                    style: const TextStyle(
-                        color: kTextPrimary, fontSize: 13)),
+                Container(
+                  width: 34, height: 34,
+                  decoration: BoxDecoration(
+                    color: kPrimaryGold.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(e.$1, color: kGoldDark, size: 18),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(e.$2,
+                      style: const TextStyle(
+                          color: kTextPrimary, fontSize: 13)),
+                ),
               ],
             ),
           )),
@@ -249,13 +275,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          const Text(
-            'Siapakah anda?',
-            style: TextStyle(
-              color: kGoldLight,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Playfair',
+          MetallicGold(
+            child: const Text(
+              'Siapakah anda?',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Playfair',
+              ),
             ),
           ),
 
@@ -276,7 +303,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: const TextStyle(color: kTextPrimary, fontSize: 15),
             decoration: InputDecoration(
               hintText: 'Masukkan nama anda',
-              hintStyle: TextStyle(color: kTextMuted),
+              hintStyle: const TextStyle(color: kTextMuted),
               prefixIcon: const Icon(Icons.badge_outlined, color: kPrimaryGold, size: 20),
               filled: true,
               fillColor: kCardDark,
@@ -302,15 +329,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             decoration: BoxDecoration(
               color: kCardDark,
               borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+              border: Border.all(color: kBorderSubtle, width: 1),
             ),
             child: CupertinoTheme(
               data: CupertinoThemeData(
-                brightness: Brightness.dark,
+                // BUG DIBAIKI: dulu Brightness.dark atas latar yang kini
+                // cerah — teks kalendar Cupertino jadi pudar/hilang.
+                brightness: Brightness.light,
                 textTheme: CupertinoTextThemeData(
                   dateTimePickerTextStyle: TextStyle(
-                    color: kPrimaryGold,
+                    color: kGoldDark,
                     fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -333,11 +363,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             decoration: BoxDecoration(
               color: kPrimaryGold.withOpacity(0.08),
               borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-              border: Border.all(color: kPrimaryGold.withOpacity(0.25)),
+              border: Border.all(color: kPrimaryGold.withOpacity(0.3)),
             ),
             child: Row(
               children: [
-                const Text('🌙', style: TextStyle(fontSize: 20)),
+                Icon(Icons.nights_stay_rounded, color: kGoldDark, size: 20),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,9 +375,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Text(
                       _hijriPreview,
                       style: const TextStyle(
-                          color: kGoldLight,
+                          color: kGoldDark,
                           fontSize: 14,
-                          fontWeight: FontWeight.w600),
+                          fontWeight: FontWeight.w700),
                     ),
                     Text(
                       'Umur Hijrah: $_hijriAge',
@@ -372,13 +402,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
 
-          const Text(
-            'Pilih Jantina',
-            style: TextStyle(
-              color: kGoldLight,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Playfair',
+          MetallicGold(
+            child: const Text(
+              'Pilih Jantina',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Playfair',
+              ),
             ),
           ),
 
@@ -394,9 +425,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _genderCard('Lelaki', '🧔', Icons.male),
+              _genderCard('Lelaki', Icons.man_rounded),
               const SizedBox(width: 20),
-              _genderCard('Wanita', '🧕', Icons.female),
+              _genderCard('Wanita', Icons.woman_rounded),
             ],
           ),
 
@@ -408,6 +439,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             decoration: BoxDecoration(
               color: kCardDark,
               borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+              border: Border.all(color: kBorderSubtle, width: 1),
             ),
             child: Row(
               children: [
@@ -415,9 +447,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   radius: 24,
                   backgroundColor: kPrimaryGold.withOpacity(0.15),
                   child: Icon(
-                    _selectedGender == 'Lelaki' ? Icons.person : Icons.person_3,
-                    color: kPrimaryGold,
-                    size: 28,
+                    _selectedGender == 'Lelaki'
+                        ? Icons.man_rounded
+                        : Icons.woman_rounded,
+                    color: kGoldDark,
+                    size: 26,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -436,7 +470,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Text(
                       _hijriPreview,
                       style: const TextStyle(
-                          color: kPrimaryGold, fontSize: 11),
+                          color: kGoldDark, fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       _hijriAge,
@@ -460,7 +494,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       color: kTextSecondary, fontSize: 12, fontWeight: FontWeight.w500),
   );
 
-  Widget _genderCard(String label, String emoji, IconData icon) {
+  Widget _genderCard(String label, IconData icon) {
     final bool sel = _selectedGender == label;
     return GestureDetector(
       onTap: () => setState(() => _selectedGender = label),
@@ -468,7 +502,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         duration: AppDurations.fast,
         width: 130, height: 130,
         decoration: BoxDecoration(
-          color: sel ? kPrimaryGold.withOpacity(0.15) : kCardDark,
+          color: sel ? kPrimaryGold.withOpacity(0.14) : kCardDark,
           borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
           border: Border.all(
             color: sel ? kPrimaryGold : kBorderSubtle,
@@ -478,12 +512,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 36)),
-            const SizedBox(height: 8),
+            Icon(icon, size: 38, color: sel ? kGoldDark : kTextMuted),
+            const SizedBox(height: 10),
             Text(
               label,
               style: TextStyle(
-                color: sel ? kGoldLight : kTextSecondary,
+                color: sel ? kGoldDark : kTextSecondary,
                 fontSize: 13,
                 fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
               ),

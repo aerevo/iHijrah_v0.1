@@ -59,8 +59,9 @@ class _HomePageState extends State<HomePage>
     final user = Provider.of<UserModel>(context);
     final sidebar = Provider.of<SidebarStateModel>(context);
 
-    // Padding kiri untuk bagi ruang rel navigasi
-    final double leftPad = kRailWidthCollapsed;
+    // Padding kiri untuk bagi ruang rel navigasi — ikut status tampak,
+    // supaya kandungan kembang penuh bila rel tersembunyi (bukan lompang kekal)
+    final double leftPad = sidebar.isVisible ? kRailWidthCollapsed : 10.0;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -108,8 +109,10 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // ── 2. FEED — penuh skrin, padding kiri ikut rel ─────
-          Positioned(
+          // ── 2. FEED — penuh skrin, kembang bila rel tersembunyi ──
+          AnimatedPositioned(
+            duration: AppDurations.normal,
+            curve: AppCurves.smooth,
             top: 0,
             left: leftPad, right: 0, bottom: 0,
             child: sidebar.isClosed
@@ -123,7 +126,9 @@ class _HomePageState extends State<HomePage>
           ),
 
           // ── 4. FLYOUT PANEL ───────────────────────────────
-          Positioned(
+          AnimatedPositioned(
+            duration: AppDurations.normal,
+            curve: AppCurves.smooth,
             top: 0,
             left: leftPad, right: 0, bottom: 0,
             child: const FlyoutPanel(),

@@ -169,18 +169,19 @@ class _DailyShell extends StatelessWidget {
                     ),
                   ),
 
-                  // Meta — kanan atas
-                  Positioned(
-                    top: 16, right: 14,
-                    child: Text(
-                      meta,
-                      style: TextStyle(
-                        color: accent.withOpacity(0.65),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
+                  // Meta — kanan atas (sorok bila kad kecil, tiada ruang cukup)
+                  if (isCenter)
+                    Positioned(
+                      top: 16, right: 14,
+                      child: Text(
+                        meta,
+                        style: TextStyle(
+                          color: accent.withOpacity(0.65),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
 
                   // Ikon besar tengah
                   Center(
