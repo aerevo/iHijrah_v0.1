@@ -137,9 +137,12 @@ class _HomePageState extends State<HomePage>
           // ── 5. ZIKIR PROMPT ───────────────────────────────
           if (!user.zikirDoneToday)
             Positioned.fill(
-              child: ZikirPrompt(
-                zikirDone: user.zikirDoneToday,
-                onDone: () => user.recordZikir(),
+              child: Align(
+                alignment: Alignment.center,
+                child: ZikirPrompt(
+                  zikirDone: user.zikirDoneToday,
+                  onDone: () => user.recordZikir(),
+                ),
               ),
             ),
 

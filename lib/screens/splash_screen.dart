@@ -8,6 +8,7 @@ import '../models/user_model.dart';
 import '../screens/onboarding_screen.dart';
 import '../utils/audio_service.dart';
 import '../utils/constants.dart';
+import '../widgets/metallic_gold.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -112,33 +113,47 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
 
-                      // Logo / ikon
+                      // Logo — pokok kanopi emas timbul
                       Container(
                         width: 80, height: 80,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                              color: kPrimaryGold.withOpacity(0.6), width: 1.5),
-                          color: kPrimaryGold.withOpacity(0.08),
+                          gradient: const RadialGradient(
+                            center: Alignment(-0.3, -0.3),
+                            radius: 0.9,
+                            colors: [kGoldHighlight, kGoldMid, kGoldDeep],
+                            stops: [0.0, 0.55, 1.0],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                                color: kGoldHighlight.withOpacity(0.5),
+                                blurRadius: 4,
+                                offset: const Offset(-1, -1)),
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.16),
+                                blurRadius: 12,
+                                offset: const Offset(2, 4)),
+                          ],
                         ),
                         child: const Icon(
-                          Icons.cruelty_free_outlined, // placeholder — ganti logo.png
-                          color: kPrimaryGold,
-                          size: 42,
+                          Icons.forest_rounded,
+                          color: Colors.white,
+                          size: 38,
                         ),
                       ),
 
                       const SizedBox(height: 24),
 
-                      // Nama app
-                      Text(
-                        'iHijrah',
-                        style: TextStyle(
-                          color: kGoldLight,
-                          fontSize: 40,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Playfair',
-                          letterSpacing: _letterSpacing.value,
+                      // Nama app — kilau emas sebenar
+                      MetallicGold(
+                        child: Text(
+                          'iHijrah',
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Playfair',
+                            letterSpacing: _letterSpacing.value,
+                          ),
                         ),
                       ),
 

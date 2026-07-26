@@ -112,8 +112,8 @@ class _ZikirPromptState extends State<ZikirPrompt>
                         width: 1.2),
                   ),
                   child: const Center(
-                    child: Text('💧',
-                        style: TextStyle(fontSize: 26)),
+                    child: Icon(Icons.water_drop_rounded,
+                        color: kPrimaryGold, size: 26),
                   ),
                 ),
 
@@ -146,7 +146,7 @@ class _ZikirPromptState extends State<ZikirPrompt>
                 const SizedBox(height: 8),
 
                 const Text(
-                  'Setiap zikir = +10 XP untuk pokok hijrah kamu 🌱',
+                  'Setiap zikir = +10 XP untuk pokok hijrah kamu',
                   style: TextStyle(
                     color: kTextSecondary,
                     fontSize: 11,
