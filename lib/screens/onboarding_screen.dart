@@ -425,9 +425,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _genderCard('Lelaki', Icons.man_rounded),
+              _genderCard('Lelaki'),
               const SizedBox(width: 20),
-              _genderCard('Wanita', Icons.woman_rounded),
+              _genderCard('Wanita'),
             ],
           ),
 
@@ -446,12 +446,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: kPrimaryGold.withOpacity(0.15),
-                  child: Icon(
-                    _selectedGender == 'Lelaki'
-                        ? Icons.man_rounded
-                        : Icons.woman_rounded,
-                    color: kGoldDark,
-                    size: 26,
+                  child: Text(
+                    _nameCtrl.text.trim().isNotEmpty
+                        ? _nameCtrl.text.trim()[0].toUpperCase()
+                        : 'H',
+                    style: const TextStyle(
+                      color: kGoldDark,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Playfair',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -494,7 +498,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       color: kTextSecondary, fontSize: 12, fontWeight: FontWeight.w500),
   );
 
-  Widget _genderCard(String label, IconData icon) {
+  Widget _genderCard(String label) {
     final bool sel = _selectedGender == label;
     return GestureDetector(
       onTap: () => setState(() => _selectedGender = label),
@@ -502,26 +506,62 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         duration: AppDurations.fast,
         width: 130, height: 130,
         decoration: BoxDecoration(
-          color: sel ? kPrimaryGold.withOpacity(0.14) : kCardDark,
+          color: sel ? kPrimaryGold.withOpacity(0.12) : kCardDark,
           borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
           border: Border.all(
             color: sel ? kPrimaryGold : kBorderSubtle,
             width: sel ? 1.5 : 0.8,
           ),
+          boxShadow: sel
+              ? [
+                  BoxShadow(
+                      color: kPrimaryGold.withOpacity(0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6)),
+                ]
+              : null,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Icon(icon, size: 38, color: sel ? kGoldDark : kTextMuted),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: TextStyle(
-                color: sel ? kGoldDark : kTextSecondary,
-                fontSize: 13,
-                fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Playfair',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: sel ? kGoldDark : kTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  AnimatedContainer(
+                    duration: AppDurations.fast,
+                    width: sel ? 28 : 16,
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      color: sel ? kPrimaryGold : kBorderSubtle,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
               ),
             ),
+            if (sel)
+              Positioned(
+                top: 10, right: 10,
+                child: Container(
+                  width: 20, height: 20,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: kGoldGradient,
+                  ),
+                  child: const Icon(Icons.check_rounded,
+                      size: 13, color: Colors.white),
+                ),
+              ),
           ],
         ),
       ),

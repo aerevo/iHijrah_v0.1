@@ -22,17 +22,17 @@ const Color kRailIconMuted   = Color(0xFFB8C4D6); // (warisan — tak lagi dipak
 // ── Emas 3D — rawatan khas REL KIRI sahaja ─
 // Rel kekal di kiri, tapi kini emas timbul/bertona, bukan navy rata.
 // Navy jadi AKSEN kontras di atas emas (pill status aktif), bukan sebaliknya.
-const Color kGoldHighlight = Color(0xFFF5DFA0); // titik cahaya paling terang
-const Color kGoldMid       = Color(0xFFD9A62A); // teras emas
+const Color kGoldHighlight = Color(0xFFFBEBC0); // titik cahaya paling terang
+const Color kGoldMid       = Color(0xFFE0AC2E); // teras emas — lebih tepu
 const Color kGoldDeep      = Color(0xFF8A6215); // bayang emas
-const Color kGoldBronze    = Color(0xFF5C4415); // gangsa — dasar paling gelap, beri kedalaman
+const Color kGoldBronze    = Color(0xFF4A3410); // gangsa — dasar paling gelap, beri kedalaman
 const Color kRailTextDark  = Color(0xFF3D2E0F); // teks/ikon tak aktif atas emas — kontras selamat
 
 const LinearGradient kRailGoldGradient = LinearGradient(
   begin: Alignment.centerLeft,
   end: Alignment.centerRight,
-  colors: [kGoldHighlight, kGoldMid, kGoldDeep, kGoldBronze],
-  stops: [0.0, 0.45, 0.85, 1.0],
+  colors: [kGoldHighlight, kGoldMid, kGoldMid, kGoldDeep, kGoldBronze],
+  stops: [0.0, 0.22, 0.68, 0.9, 1.0],
 );
 
 // ── Jenama Emas — kini AKSEN sahaja (kandungan) ────

@@ -93,9 +93,9 @@ class FeedCard extends StatelessWidget {
                         ? Image.asset(
                             post.assetPath!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _gradBg(_palettes[pi]),
+                            errorBuilder: (_, __, ___) => _gradBg(_palettes[pi], post.type),
                           )
-                        : _gradBg(_palettes[pi]),
+                        : _gradBg(_palettes[pi], post.type),
 
                     // Badge jenis — kiri atas
                     Positioned(
@@ -182,13 +182,25 @@ class FeedCard extends StatelessWidget {
     );
   }
 
-  Widget _gradBg(List<Color> colors) => Container(
+  Widget _gradBg(List<Color> colors, String type) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: colors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -14, bottom: -14,
+              child: Icon(
+                _typeIcon(type),
+                size: 84,
+                color: Colors.white.withOpacity(0.14),
+              ),
+            ),
+          ],
         ),
       );
 }

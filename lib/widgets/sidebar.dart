@@ -301,13 +301,16 @@ class Sidebar extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: active ? kPrimaryNavy : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(20),
+          border: active
+              ? Border.all(color: kGoldHighlight.withOpacity(0.4), width: 1)
+              : null,
           boxShadow: active
               ? [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2)),
+                      color: Colors.black.withOpacity(0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3)),
                 ]
               : null,
         ),

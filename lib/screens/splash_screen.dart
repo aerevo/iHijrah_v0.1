@@ -101,6 +101,49 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
+          // ── Suasana — cahaya lembut berlapis di belakang logo ──
+          Center(
+            child: AnimatedBuilder(
+              animation: _ctrl,
+              builder: (_, __) => Opacity(
+                opacity: _opacity.value * 0.9,
+                child: Container(
+                  width: 340, height: 340,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        kPrimaryGold.withOpacity(0.16),
+                        kPrimaryGold.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0, right: 0,
+            child: AnimatedBuilder(
+              animation: _ctrl,
+              builder: (_, __) => Opacity(
+                opacity: _opacity.value * 0.7,
+                child: Container(
+                  width: 260, height: 260,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        kPrimaryNavy.withOpacity(0.06),
+                        kPrimaryNavy.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // ── Konten splash ───────────────────────────────────
           Center(
             child: AnimatedBuilder(
@@ -115,30 +158,43 @@ class _SplashScreenState extends State<SplashScreen>
 
                       // Logo — pokok kanopi emas timbul
                       Container(
-                        width: 80, height: 80,
+                        width: 84, height: 84,
+                        padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.3, -0.3),
-                            radius: 0.9,
-                            colors: [kGoldHighlight, kGoldMid, kGoldDeep],
-                            stops: [0.0, 0.55, 1.0],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                                color: kGoldHighlight.withOpacity(0.5),
-                                blurRadius: 4,
-                                offset: const Offset(-1, -1)),
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.16),
-                                blurRadius: 12,
-                                offset: const Offset(2, 4)),
-                          ],
+                          border: Border.all(
+                              color: kPrimaryGold.withOpacity(0.25), width: 1),
                         ),
-                        child: const Icon(
-                          Icons.forest_rounded,
-                          color: Colors.white,
-                          size: 38,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const RadialGradient(
+                              center: Alignment(-0.35, -0.4),
+                              radius: 1.0,
+                              colors: [
+                                kGoldHighlight,
+                                kGoldMid,
+                                kGoldDeep,
+                                kGoldBronze,
+                              ],
+                              stops: [0.0, 0.38, 0.75, 1.0],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: kGoldHighlight.withOpacity(0.6),
+                                  blurRadius: 4,
+                                  offset: const Offset(-1, -1)),
+                              BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 16,
+                                  offset: const Offset(2, 6)),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.forest_rounded,
+                            color: Colors.white,
+                            size: 36,
+                          ),
                         ),
                       ),
 
