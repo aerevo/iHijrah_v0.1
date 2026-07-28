@@ -203,7 +203,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.forest_rounded,
+            child: const Icon(Icons.park_rounded,
                 color: Colors.white, size: 42),
           ),
 
@@ -278,7 +278,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               'Siapakah anda?',
               style: GoogleFonts.playfairDisplay(
-                fontSize: 22,
+                fontSize: 26,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -404,7 +404,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               'Pilih Jantina',
               style: GoogleFonts.playfairDisplay(
-                fontSize: 22,
+                fontSize: 26,
                 fontWeight: FontWeight.w700,
               ),
             ),

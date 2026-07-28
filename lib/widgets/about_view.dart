@@ -33,7 +33,7 @@ class AboutView extends StatelessWidget {
                       color: kPrimaryGold.withOpacity(0.5), width: 1.5),
                   color: kPrimaryGold.withOpacity(0.08),
                 ),
-                child: const Icon(Icons.forest_rounded,
+                child: const Icon(Icons.park_rounded,
                     color: kPrimaryGold, size: 38),
               ),
               const SizedBox(height: 12),
