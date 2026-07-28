@@ -1,5 +1,6 @@
 // lib/widgets/birthday_view.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -362,17 +363,17 @@ class _BirthdayViewState extends State<BirthdayView>
               size: 60,
               color: kPrimaryGold.withOpacity(0.3)),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Taman Sahabat',
-            style: TextStyle(
+            style: GoogleFonts.playfairDisplay(
                 color: kGoldLight,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Playfair'),
+                ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Ucapan hari jadi Hijrah dari komuniti\nakan hadir tidak lama lagi 🌱',
+            'Ucapan hari jadi Hijrah dari komuniti\nakan hadir tidak lama lagi',
             style: TextStyle(
                 color: kTextSecondary, fontSize: 12, height: 1.6),
             textAlign: TextAlign.center,

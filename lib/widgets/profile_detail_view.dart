@@ -1,6 +1,7 @@
 // lib/widgets/profile_detail_view.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
@@ -62,14 +63,13 @@ class ProfileDetailView extends StatelessWidget {
             const SizedBox(height: 24),
 
             // ── PERJALANAN HIJRAH ──────────────────────────
-            const MetallicGold(
+            MetallicGold(
               child: Text(
                 'PERJALANAN HIJRAH',
-                style: TextStyle(
+                style: GoogleFonts.playfairDisplay(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
-                  fontFamily: 'Playfair',
                 ),
               ),
             ),
@@ -113,14 +113,13 @@ class ProfileDetailView extends StatelessWidget {
             const SizedBox(height: 24),
 
             // ── PENCAPAIAN ─────────────────────────────────
-            const MetallicGold(
+            MetallicGold(
               child: Text(
                 'PENCAPAIAN',
-                style: TextStyle(
+                style: GoogleFonts.playfairDisplay(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
-                  fontFamily: 'Playfair',
                 ),
               ),
             ),
@@ -223,11 +222,10 @@ class ProfileDetailView extends StatelessWidget {
                 child: Text(
                   (user.name.isEmpty ? 'Hamba Allah' : user.name)
                       .toUpperCase(),
-                  style: const TextStyle(
+                  style: GoogleFonts.playfairDisplay(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    fontFamily: 'Playfair',
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

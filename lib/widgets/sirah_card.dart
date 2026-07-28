@@ -1,5 +1,6 @@
 // lib/widgets/sirah_card.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
@@ -112,12 +113,11 @@ class SirahCard extends StatelessWidget {
                 // Tajuk
                 Text(
                   sirah.tajuk,
-                  style: const TextStyle(
+                  style: GoogleFonts.playfairDisplay(
                     color: kTextPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     height: 1.3,
-                    fontFamily: 'Playfair',
                   ),
                 ),
 

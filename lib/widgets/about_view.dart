@@ -1,5 +1,6 @@
 // lib/widgets/about_view.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
@@ -32,17 +33,16 @@ class AboutView extends StatelessWidget {
                       color: kPrimaryGold.withOpacity(0.5), width: 1.5),
                   color: kPrimaryGold.withOpacity(0.08),
                 ),
-                child: const Icon(Icons.cruelty_free_outlined,
+                child: const Icon(Icons.forest_rounded,
                     color: kPrimaryGold, size: 38),
               ),
               const SizedBox(height: 12),
-              const MetallicGold(
+              MetallicGold(
                 child: Text(
                   'iHijrah',
-                  style: TextStyle(
+                  style: GoogleFonts.playfairDisplay(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'Playfair',
                     letterSpacing: 1,
                   ),
                 ),

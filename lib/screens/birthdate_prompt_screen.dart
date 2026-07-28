@@ -2,6 +2,7 @@
 // Screen prompt tarikh lahir — boleh dipanggil dari dalam app
 // (contoh: dari profil bila user nak update tarikh)
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
@@ -96,13 +97,12 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
             children: [
 
               // Header
-              const Text(
+              Text(
                 'Profil Hijrah',
-                style: TextStyle(
+                style: GoogleFonts.playfairDisplay(
                   color: kGoldLight,
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'Playfair',
                 ),
               ),
 

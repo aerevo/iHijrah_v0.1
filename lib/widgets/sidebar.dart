@@ -7,6 +7,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/sidebar_state_model.dart';
@@ -161,11 +162,10 @@ class Sidebar extends StatelessWidget {
                   children: [
                     _logoMark(),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'iHijrah',
-                        style: TextStyle(
-                          fontFamily: 'Playfair',
+                        style: GoogleFonts.playfairDisplay(
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                           color: kPrimaryNavy,

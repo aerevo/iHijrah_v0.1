@@ -1,5 +1,6 @@
 // lib/widgets/zikir_prompt.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../utils/constants.dart';
@@ -131,12 +132,11 @@ class _ZikirPromptState extends State<ZikirPrompt>
 
                 const SizedBox(height: 6),
 
-                const Text(
+                Text(
                   'Dah zikir pagi/petang hari ni?',
-                  style: TextStyle(
+                  style: GoogleFonts.playfairDisplay(
                     color: kTextPrimary,
                     fontSize: 17,
-                    fontFamily: 'Playfair',
                     fontWeight: FontWeight.w700,
                     height: 1.4,
                   ),

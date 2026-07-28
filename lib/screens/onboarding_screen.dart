@@ -1,5 +1,6 @@
 // lib/screens/onboarding_screen.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
@@ -130,10 +131,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   MetallicGold(
                     child: Text(
                       'iHijrah',
-                      style: const TextStyle(
+                      style: GoogleFonts.playfairDisplay(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'Playfair',
                         letterSpacing: 2,
                       ),
                     ),
@@ -210,12 +210,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 28),
 
           MetallicGold(
-            child: const Text(
+            child: Text(
               'Assalamualaikum',
-              style: TextStyle(
+              style: GoogleFonts.playfairDisplay(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Playfair',
               ),
               textAlign: TextAlign.center,
             ),
@@ -276,12 +275,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
 
           MetallicGold(
-            child: const Text(
+            child: Text(
               'Siapakah anda?',
-              style: TextStyle(
+              style: GoogleFonts.playfairDisplay(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Playfair',
               ),
             ),
           ),
@@ -403,12 +401,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
 
           MetallicGold(
-            child: const Text(
+            child: Text(
               'Pilih Jantina',
-              style: TextStyle(
+              style: GoogleFonts.playfairDisplay(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Playfair',
               ),
             ),
           ),
@@ -450,11 +447,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     _nameCtrl.text.trim().isNotEmpty
                         ? _nameCtrl.text.trim()[0].toUpperCase()
                         : 'H',
-                    style: const TextStyle(
+                    style: GoogleFonts.playfairDisplay(
                       color: kGoldDark,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      fontFamily: 'Playfair',
                     ),
                   ),
                 ),
@@ -529,8 +525,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      fontFamily: 'Playfair',
+                    style: GoogleFonts.playfairDisplay(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: sel ? kGoldDark : kTextSecondary,

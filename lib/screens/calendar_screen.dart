@@ -1,5 +1,6 @@
 // lib/screens/calendar_screen.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
@@ -89,10 +90,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: MetallicGold(
                     child: Text(
                       '${HijriService.bulanMelayu(_viewMonth)} $_viewYear H',
-                      style: const TextStyle(
+                      style: GoogleFonts.playfairDisplay(
                         fontSize: AppFontSizes.lg,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'Playfair',
                       ),
                     ),
                   ),

@@ -1,5 +1,6 @@
 // lib/widgets/fardhu_tracker.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
@@ -28,12 +29,11 @@ class FardhuTracker extends StatelessWidget {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Solat Fardu',
-                  style: TextStyle(
+                  style: GoogleFonts.playfairDisplay(
                     color: kTextPrimary,
                     fontSize: AppFontSizes.xl,
-                    fontFamily: 'Playfair',
                     fontWeight: FontWeight.w700,
                   ),
                 ),
