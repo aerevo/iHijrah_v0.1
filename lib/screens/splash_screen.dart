@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Konten splash ───────────────────────────────────
+          // ── Konten splash utama ─────────────────────────────
           Center(
             child: AnimatedBuilder(
               animation: _ctrl,
@@ -139,8 +139,8 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
 
-                      // Logo — Pokok Hayat, animasi penuh
-                      const TreeOfLifeLogo(size: 128, animated: true),
+                      // Logo — Pokok Hayat artistik bersaiz besar sedikit
+                      const TreeOfLifeLogo(size: 148, animated: true),
 
                       const SizedBox(height: 24),
 
@@ -162,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen>
                       Container(
                         height: 1.5,
                         width: _lineW.value,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
@@ -191,6 +191,44 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
+
+          // ── ZyaMina Watermark ────────────────────────────────
+          Positioned(
+            bottom: 32,
+            left: 0,
+            right: 0,
+            child: AnimatedBuilder(
+              animation: _ctrl,
+              builder: (_, __) => Opacity(
+                opacity: _opacity.value,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'POWERED BY',
+                      style: TextStyle(
+                        color: kTextMuted.withOpacity(0.6),
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'ZyaMina',
+                      style: GoogleFonts.montserrat(
+                        color: kTextSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 4.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
         ],
       ),
     );
