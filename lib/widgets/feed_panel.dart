@@ -11,6 +11,7 @@ import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
+import 'anim_helpers.dart';
 
 // ── ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
@@ -115,7 +116,11 @@ class _FeedPanelState extends State<FeedPanel> {
                   separatorBuilder: (_, __) => const SizedBox(width: 10),
                   itemBuilder: (_, i) => SizedBox(
                     width: 152,
-                    child: _dailyCard(_dailyItems[i], daily),
+                    child: FadeSlideIn(
+                      index: i,
+                      slideOffset: 0.15,
+                      child: _dailyCard(_dailyItems[i], daily),
+                    ),
                   ),
                 ),
               ),
@@ -146,7 +151,10 @@ class _FeedPanelState extends State<FeedPanel> {
                 childAspectRatio: 0.79,
               ),
               delegate: SliverChildBuilderDelegate(
-                (_, i) => FeedCard(post: _posts[i]),
+                (_, i) => FadeSlideIn(
+                  index: i,
+                  child: FeedCard(post: _posts[i]),
+                ),
                 childCount: _posts.length,
               ),
             ),
