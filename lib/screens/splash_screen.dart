@@ -10,7 +10,7 @@ import '../screens/onboarding_screen.dart';
 import '../utils/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
-import '../widgets/canopy_mark.dart';
+import '../widgets/tree_of_life_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -137,32 +137,8 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
 
-                      // Logo — pokok kanopi emas, disiplinkan
-                      Container(
-                        width: 84, height: 84,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.35, -0.4),
-                            radius: 1.0,
-                            colors: [
-                              kGoldHighlight,
-                              kGoldMid,
-                              kGoldDeep,
-                            ],
-                            stops: [0.0, 0.5, 1.0],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.16),
-                                blurRadius: 14,
-                                offset: const Offset(0, 5)),
-                          ],
-                        ),
-                        child: const Center(
-                          child: CanopyMark(size: 36),
-                        ),
-                      ),
+                      // Logo — Pokok Hayat, animasi penuh
+                      const TreeOfLifeLogo(size: 100, animated: true),
 
                       const SizedBox(height: 24),
 

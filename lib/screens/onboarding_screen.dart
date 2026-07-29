@@ -8,7 +8,7 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
-import '../widgets/canopy_mark.dart';
+import '../widgets/tree_of_life_logo.dart';
 import '../home.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -180,34 +180,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
 
-          // Lambang pokok kanopi — emas timbul
-          Container(
-            width: 92, height: 92,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const RadialGradient(
-                center: Alignment(-0.3, -0.3),
-                radius: 0.9,
-                colors: [kGoldHighlight, kGoldMid, kGoldDeep],
-                stops: [0.0, 0.55, 1.0],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: kGoldHighlight.withOpacity(0.55),
-                  blurRadius: 4,
-                  offset: const Offset(-1, -1),
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
-                  blurRadius: 14,
-                  offset: const Offset(3, 5),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: CanopyMark(size: 42),
-            ),
-          ),
+          // Lambang Pokok Hayat — emas timbul, animasi masuk
+          const TreeOfLifeLogo(size: 100, animated: true),
 
           const SizedBox(height: 28),
 

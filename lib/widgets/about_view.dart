@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
-import 'canopy_mark.dart';
+import 'tree_of_life_logo.dart';
 
 class AboutView extends StatelessWidget {
   const AboutView({Key? key}) : super(key: key);
@@ -26,18 +26,7 @@ class AboutView extends StatelessWidget {
         Center(
           child: Column(
             children: [
-              Container(
-                width: 72, height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: kPrimaryGold.withOpacity(0.5), width: 1.5),
-                  color: kPrimaryGold.withOpacity(0.08),
-                ),
-                child: const Center(
-                  child: CanopyMark(size: 38, color: kPrimaryGold),
-                ),
-              ),
+              const TreeOfLifeLogo(size: 76, animated: false),
               const SizedBox(height: 12),
               MetallicGold(
                 child: Text(

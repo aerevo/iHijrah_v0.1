@@ -35,6 +35,20 @@ const LinearGradient kRailGoldGradient = LinearGradient(
   stops: [0.0, 0.22, 0.68, 0.9, 1.0],
 );
 
+// ── Hijau Muda — rel kini guna latar ini, emas kekal untuk lambang ──
+const Color kRailGreenLight = Color(0xFFEAF7EE);
+const Color kRailGreenMid   = Color(0xFFCDEBD6);
+const Color kRailGreenDeep  = Color(0xFFA9DDBC);
+const Color kRailGreenText  = Color(0xFF2F6B47); // teks/ikon tak aktif atas hijau
+const Color kRailGreenActive = Color(0xFF0F6B3E); // pil status aktif
+
+const LinearGradient kRailGreenGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [kRailGreenLight, kRailGreenMid, kRailGreenDeep],
+  stops: [0.0, 0.55, 1.0],
+);
+
 // ── Jenama Emas — kini AKSEN sahaja (kandungan) ────
 const Color kPrimaryGold  = Color(0xFFC79A38); // aksen istimewa — badge, hadith, streak
 const Color kGoldLight    = Color(0xFFE8C46B); // emas cerah — highlight/gradient

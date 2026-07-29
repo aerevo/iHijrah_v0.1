@@ -13,30 +13,33 @@ import 'package:provider/provider.dart';
 import '../models/sidebar_state_model.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import 'metallic_icon.dart';
+import 'tree_of_life_logo.dart';
 
 // ── SAIZ REL ──────────────────────────────────────────────────
-const double kRailWidthCollapsed = 72.0;
+const double kRailWidthCollapsed = 60.0;
 const double kRailWidthExpanded  = 226.0;
 
 class _RailTab {
   final String   id;
   final IconData icon;
   final String   label;
-  const _RailTab(this.id, this.icon, this.label);
+  final List<Color> gradient;
+  const _RailTab(this.id, this.icon, this.label, this.gradient);
 }
 
 const List<_RailTab> _mainTabs = [
-  _RailTab('utama',    Icons.home_rounded,             'Utama'),
-  _RailTab('sirah',    Icons.auto_stories_rounded,     'Sirah'),
-  _RailTab('amalan',   Icons.spa_rounded,              'Amalan'),
-  _RailTab('kalendar', Icons.calendar_month_rounded,   'Jadual'),
-  _RailTab('pokok',    Icons.park_rounded,             'Pokok'),
-  _RailTab('profil',   Icons.person_rounded,           'Profil'),
+  _RailTab('utama',    Icons.home_rounded,             'Utama',  MetallicPalettes.gold),
+  _RailTab('sirah',    Icons.auto_stories_rounded,     'Sirah',  MetallicPalettes.navy),
+  _RailTab('amalan',   Icons.spa_rounded,              'Amalan', MetallicPalettes.emerald),
+  _RailTab('kalendar', Icons.calendar_month_rounded,   'Jadual', MetallicPalettes.bronze),
+  _RailTab('pokok',    Icons.park_rounded,             'Pokok',  MetallicPalettes.emerald),
+  _RailTab('profil',   Icons.person_rounded,           'Profil', MetallicPalettes.navy),
 ];
 
 const List<_RailTab> _utilityTabs = [
-  _RailTab('notifikasi', Icons.notifications_none_rounded, 'Notis'),
-  _RailTab('carian',     Icons.search_rounded,             'Cari'),
+  _RailTab('notifikasi', Icons.notifications_none_rounded, 'Notis', MetallicPalettes.gold),
+  _RailTab('carian',     Icons.search_rounded,             'Cari',  MetallicPalettes.bronze),
 ];
 
 class Sidebar extends StatelessWidget {
@@ -72,7 +75,7 @@ class Sidebar extends StatelessWidget {
               width: width,
               height: double.infinity,
               decoration: const BoxDecoration(
-                gradient: kRailGoldGradient,
+                gradient: kRailGreenGradient,
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x40000000),
@@ -160,7 +163,7 @@ class Sidebar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    _logoMark(),
+                    const TreeOfLifeLogo(size: 38, animated: false),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -173,40 +176,14 @@ class Sidebar extends StatelessWidget {
                       ),
                     ),
                     Icon(Icons.chevron_left_rounded,
-                        color: kRailTextDark.withOpacity(0.55), size: 20),
+                        color: kRailGreenText.withOpacity(0.6), size: 20),
                   ],
                 ),
               )
-            : Center(child: _logoMark()),
+            : const Center(child: TreeOfLifeLogo(size: 38, animated: false)),
       ),
     );
   }
-
-  // Bebola emas 3D — cahaya dari atas-kiri, ikon navy sebagai kontras
-  Widget _logoMark() => Container(
-        width: 38, height: 38,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const RadialGradient(
-            center: Alignment(-0.35, -0.35),
-            radius: 0.9,
-            colors: [kGoldHighlight, kGoldMid, kGoldDeep],
-            stops: [0.0, 0.55, 1.0],
-          ),
-          boxShadow: [
-            BoxShadow(
-                color: kGoldHighlight.withOpacity(0.7),
-                blurRadius: 3,
-                offset: const Offset(-1, -1)),
-            BoxShadow(
-                color: Colors.black.withOpacity(0.35),
-                blurRadius: 7,
-                offset: const Offset(2, 3)),
-          ],
-        ),
-        child: const Icon(Icons.nights_stay_rounded,
-            color: kPrimaryNavy, size: 18),
-      );
 
   // ── AVATAR ──────────────────────────────────────────────────
   Widget _avatarRow(SidebarStateModel model, UserModel user) {
@@ -300,15 +277,15 @@ class Sidebar extends StatelessWidget {
           vertical: model.isExpanded ? 11 : 9,
         ),
         decoration: BoxDecoration(
-          color: active ? kPrimaryNavy : Colors.transparent,
+          color: active ? kRailGreenActive : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: active
-              ? Border.all(color: kGoldHighlight.withOpacity(0.4), width: 1)
+              ? Border.all(color: Colors.white.withOpacity(0.4), width: 1)
               : null,
           boxShadow: active
               ? [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.28),
+                      color: Colors.black.withOpacity(0.22),
                       blurRadius: 8,
                       offset: const Offset(0, 3)),
                 ]
@@ -317,9 +294,7 @@ class Sidebar extends StatelessWidget {
         child: model.isExpanded
             ? Row(
                 children: [
-                  Icon(t.icon,
-                      size: 20,
-                      color: active ? Colors.white : kRailTextDark),
+                  MetallicIcon(icon: t.icon, size: 20, gradient: t.gradient),
                   const SizedBox(width: 14),
                   Text(
                     t.label,
@@ -327,7 +302,7 @@ class Sidebar extends StatelessWidget {
                       fontSize: 13,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w600,
-                      color: active ? Colors.white : kRailTextDark,
+                      color: active ? Colors.white : kRailGreenText,
                     ),
                   ),
                 ],
@@ -335,9 +310,7 @@ class Sidebar extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(t.icon,
-                      size: 20,
-                      color: active ? Colors.white : kRailTextDark),
+                  MetallicIcon(icon: t.icon, size: 20, gradient: t.gradient),
                   const SizedBox(height: 3),
                   Text(
                     t.label,
@@ -347,7 +320,7 @@ class Sidebar extends StatelessWidget {
                       fontSize: 8.6,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w600,
-                      color: active ? Colors.white : kRailTextDark,
+                      color: active ? Colors.white : kRailGreenText,
                     ),
                   ),
                 ],
@@ -366,7 +339,7 @@ class Sidebar extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [kGoldMid, kGoldDeep],
+            colors: [kRailGreenMid, kRailGreenActive],
           ),
           borderRadius:
               const BorderRadius.horizontal(right: Radius.circular(18)),
