@@ -34,24 +34,26 @@ class _SplashScreenState extends State<SplashScreen>
 
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
+      duration: const Duration(milliseconds: 4200),
     );
 
+    // Teks & garis muncul lebih awal (0.3–1.0s) supaya tak tunggu logo siap
+    // tumbuh (4s) baru nampak nama app — kekal terasa responsif.
     _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _ctrl,
-          curve: const Interval(0.0, 0.4, curve: Curves.easeIn)));
+          curve: const Interval(0.05, 0.30, curve: Curves.easeIn)));
 
     _scale = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(parent: _ctrl,
-          curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack)));
+          curve: const Interval(0.05, 0.35, curve: Curves.easeOutBack)));
 
     _lineW = Tween<double>(begin: 0.0, end: 120.0).animate(
       CurvedAnimation(parent: _ctrl,
-          curve: const Interval(0.3, 0.75, curve: Curves.easeOut)));
+          curve: const Interval(0.20, 0.55, curve: Curves.easeOut)));
 
     _letterSpacing = Tween<double>(begin: 2.0, end: 8.0).animate(
       CurvedAnimation(parent: _ctrl,
-          curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic)));
+          curve: const Interval(0.05, 0.60, curve: Curves.easeOutCubic)));
 
     _ctrl.forward();
 
@@ -60,8 +62,8 @@ class _SplashScreenState extends State<SplashScreen>
       Provider.of<AudioService>(context, listen: false).playIntroAudio();
     });
 
-    // Navigate selepas 3.5 saat
-    Timer(const Duration(milliseconds: 3500), _navigate);
+    // Navigate lepas pokok siap "tumbuh" penuh (4s) + jeda sekejap utk mata
+    Timer(const Duration(milliseconds: 4600), _navigate);
   }
 
   void _navigate() {
@@ -110,12 +112,12 @@ class _SplashScreenState extends State<SplashScreen>
               builder: (_, __) => Opacity(
                 opacity: _opacity.value * 0.7,
                 child: Container(
-                  width: 300, height: 300,
+                  width: 340, height: 340,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        kPrimaryGold.withOpacity(0.12),
+                        kPrimaryGold.withOpacity(0.16),
                         kPrimaryGold.withOpacity(0.0),
                       ],
                     ),
@@ -138,7 +140,7 @@ class _SplashScreenState extends State<SplashScreen>
                     children: [
 
                       // Logo — Pokok Hayat, animasi penuh
-                      const TreeOfLifeLogo(size: 100, animated: true),
+                      const TreeOfLifeLogo(size: 128, animated: true),
 
                       const SizedBox(height: 24),
 
