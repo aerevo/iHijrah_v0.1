@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import 'anim_helpers.dart';
 
 // ── TYPE ──────────────────────────────────────────────────────
 Color _typeColor(String t) {
@@ -47,9 +48,6 @@ const List<List<Color>> _palettes = [
   [Color(0xFF7A1F42), Color(0xFFC24A72)],  // magenta
 ];
 
-String _fmtCount(int n) =>
-    n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
-
 // ── FEED CARD (kompak, untuk grid) ────────────────────────────
 class FeedCard extends StatelessWidget {
   final PostModel post;
@@ -64,7 +62,7 @@ class FeedCard extends StatelessWidget {
     final bool  hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
 
     return RepaintBoundary(
-      child: GestureDetector(
+      child: PressableScale(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
@@ -94,35 +92,47 @@ class FeedCard extends StatelessWidget {
                             post.assetPath!,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => _gradBg(_palettes[pi], post.type),
+                            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                              if (wasSynchronouslyLoaded) return child;
+                              return AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 280),
+                                child: frame == null
+                                    ? const ShimmerBox(key: ValueKey('shimmer'))
+                                    : KeyedSubtree(key: const ValueKey('img'), child: child),
+                              );
+                            },
                           )
                         : _gradBg(_palettes[pi], post.type),
 
-                    // Badge jenis — kiri atas
+                    // Badge jenis — kiri atas (pop-in lembut selepas kad muncul)
                     Positioned(
                       top: 8, left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.34),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(_typeIcon(post.type),
-                                size: 10, color: accent),
-                            const SizedBox(width: 3),
-                            Text(
-                              _typeLabel(post.type),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 7.8,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.4,
+                      child: PopScaleIn(
+                        delay: const Duration(milliseconds: 180),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.34),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_typeIcon(post.type),
+                                  size: 10, color: accent),
+                              const SizedBox(width: 3),
+                              Text(
+                                _typeLabel(post.type),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 7.8,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.4,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -162,12 +172,12 @@ class FeedCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Icon(Icons.favorite_rounded,
-                            size: 10.5, color: kTextMuted),
-                        const SizedBox(width: 2),
-                        Text(
-                          _fmtCount(post.likes),
-                          style: const TextStyle(
+                        PopLikeButton(
+                          baseCount: post.likes,
+                          iconSize: 10.5,
+                          mutedColor: kTextMuted,
+                          likedColor: const Color(0xFFE0245E),
+                          countStyle: const TextStyle(
                               fontSize: 9.3, color: kTextMuted),
                         ),
                       ],
