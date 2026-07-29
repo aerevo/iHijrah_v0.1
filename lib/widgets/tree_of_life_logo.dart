@@ -1,6 +1,6 @@
 // lib/widgets/tree_of_life_logo.dart
-// Lambang "Pokok Hayat" dioptimumkan untuk gaya artistik (merimbun & akar berselirat).
-// Menggunakan pemalar warna emas teras terus dari constants.dart.
+// Vektor Pokok Hayat Teratur (Clean Vector Silhouette Geometry)
+// Menggunakan pemalar warna teras dari constants.dart
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -9,111 +9,40 @@ import '../utils/constants.dart';
 class TreeOfLifeLogo extends StatefulWidget {
   final double size;
   final bool animated;
-  const TreeOfLifeLogo({Key? key, this.size = 84, this.animated = true}) : super(key: key);
+
+  const TreeOfLifeLogo({
+    Key? key,
+    this.size = 148,
+    this.animated = true,
+  }) : super(key: key);
 
   @override
   State<TreeOfLifeLogo> createState() => _TreeOfLifeLogoState();
 }
 
-class _TreeOfLifeLogoState extends State<TreeOfLifeLogo> with SingleTickerProviderStateMixin {
+class _TreeOfLifeLogoState extends State<TreeOfLifeLogo>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _anim;
-  final List<_Branch> _branches = [];
-  final List<_Leaf> _leaves = [];
-  
+
   @override
   void initState() {
     super.initState();
     _anim = AnimationController(
       vsync: this,
-      duration: widget.animated ? const Duration(seconds: 6) : const Duration(milliseconds: 700),
+      duration: widget.animated ? const Duration(seconds: 5) : const Duration(milliseconds: 1),
     );
-    
+
     if (widget.animated) {
-      _anim.repeat();
+      _anim.repeat(reverse: true);
     } else {
-      _anim.value = 1.0;
+      _anim.value = 0.5;
     }
-    _generateTree();
   }
 
   @override
   void dispose() {
     _anim.dispose();
     super.dispose();
-  }
-
-  void _generateTree() {
-    // Seed tetap supaya bentuk sentiasa konsisten dan kemas
-    final math.Random rnd = math.Random(88);
-    final Offset rootBase = const Offset(50, 75);
-    final Offset trunkTop = const Offset(50, 48);
-    
-    // Batang Utama yang tebal dan sedikit melengkung
-    _branches.add(_Branch(rootBase, const Offset(49, 60), trunkTop, 8.0));
-    
-    // Kipas Dahan Utama (Ke atas dan melebar)
-    // Sudut radian dari kiri ke kanan
-    const List<double> branchAngles = [-2.7, -2.2, -1.57, -0.9, -0.4];
-    for (var angle in branchAngles) {
-      _growBranch(rnd, trunkTop, angle, 16, 1, 4, isRoot: false);
-    }
-    
-    // Kipas Akar (Ke bawah dan merayap)
-    const List<double> rootAngles = [0.4, 1.0, 1.57, 2.1, 2.7];
-    for (var angle in rootAngles) {
-      _growBranch(rnd, rootBase, angle, 14, 1, 3, isRoot: true);
-    }
-  }
-
-  void _growBranch(math.Random rnd, Offset start, double angle, double length, int depth, int maxDepth, {bool isRoot = false}) {
-    // Tambah sedikit lencongan rawak untuk gaya organik
-    final double a = angle + (rnd.nextDouble() - 0.5) * 0.4;
-    final Offset end = Offset(start.dx + math.cos(a) * length, start.dy + math.sin(a) * length);
-    
-    // Titik kawalan Bezier untuk lengkungan dahan/akar
-    final double curveStrength = length * 0.3 * (rnd.nextBool() ? 1 : -1);
-    final Offset ctrl = Offset(
-      (start.dx + end.dx) / 2 + math.cos(a + math.pi / 2) * curveStrength,
-      (start.dy + end.dy) / 2 + math.sin(a + math.pi / 2) * curveStrength,
-    );
-    
-    // Ketebalan dahan mengecil mengikut kedalaman (tapering)
-    final double width = isRoot 
-        ? math.max(1.0, 6.0 - (depth * 1.5)) 
-        : math.max(1.0, 6.5 - (depth * 1.5));
-        
-    _branches.add(_Branch(start, ctrl, end, width));
-
-    // Jika sampai di hujung dahan (bukan akar), hasilkan daun yang rimbun
-    if (depth >= maxDepth) {
-      if (isRoot) return;
-      
-      // Kepadatan daun ditingkatkan untuk efek "merimbun"
-      final int leafCount = 6 + rnd.nextInt(5); 
-      for (int i = 0; i < leafCount; i++) {
-        final double dist = 1.0 + rnd.nextDouble() * 8.0;
-        final double leafAngle = a + (rnd.nextDouble() - 0.5) * 2.5;
-        final Offset center = Offset(end.dx + math.cos(leafAngle) * dist, end.dy + math.sin(leafAngle) * dist);
-        
-        // Saiz daun bujur/teardrop
-        final double rx = 3.5 + rnd.nextDouble() * 2.0;
-        final double ry = 1.8 + rnd.nextDouble() * 1.2;
-        final double swaySpeed = 0.5 + rnd.nextDouble() * 1.5;
-        
-        _leaves.add(_Leaf(center, rx, ry, leafAngle + math.pi / 2, swaySpeed));
-      }
-      return;
-    }
-
-    // Pembiakan cabang (2 hingga 3 cabang baharu per nod)
-    final int branchesToGrow = (depth == 1) ? 3 : 2;
-    for (int i = 0; i < branchesToGrow; i++) {
-      final double spread = 0.4 + rnd.nextDouble() * 0.4;
-      final double newAngle = (i == 0) ? (a - spread) : (i == 1 ? a + spread : a + (rnd.nextDouble() - 0.5) * 0.2);
-      final double newLength = length * (0.7 + rnd.nextDouble() * 0.15);
-      
-      _growBranch(rnd, end, newAngle, newLength, depth + 1, maxDepth, isRoot: isRoot);
-    }
   }
 
   @override
@@ -123,10 +52,8 @@ class _TreeOfLifeLogoState extends State<TreeOfLifeLogo> with SingleTickerProvid
       builder: (context, _) {
         return CustomPaint(
           size: Size(widget.size, widget.size),
-          painter: _TreePainter(
-            branches: _branches,
-            leaves: _leaves,
-            time: _anim.value * 2 * math.pi,
+          painter: _VectorTreePainter(
+            progress: _anim.value,
             animated: widget.animated,
           ),
         );
@@ -135,112 +62,216 @@ class _TreeOfLifeLogoState extends State<TreeOfLifeLogo> with SingleTickerProvid
   }
 }
 
-// ── MODELS ──────────────────────────────────────────────────
+// ── PAINTER VEKTOR BERSIH ─────────────────────────────────────
 
-class _Branch {
-  final Offset start, ctrl, end;
-  final double width;
-  _Branch(this.start, this.ctrl, this.end, this.width);
-}
-
-class _Leaf {
-  final Offset center;
-  final double rx, ry, rotation, swaySpeed;
-  _Leaf(this.center, this.rx, this.ry, this.rotation, this.swaySpeed);
-}
-
-// ── PAINTER ─────────────────────────────────────────────────
-
-class _TreePainter extends CustomPainter {
-  final List<_Branch> branches;
-  final List<_Leaf> leaves;
-  final double time;
+class _VectorTreePainter extends CustomPainter {
+  final double progress;
   final bool animated;
 
-  _TreePainter({required this.branches, required this.leaves, required this.time, required this.animated});
+  _VectorTreePainter({required this.progress, required this.animated});
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Skala kanvas berdasarkan saiz 100x100
     final double scale = size.width / 100.0;
     canvas.save();
     canvas.scale(scale);
 
-    const Offset center = Offset(50, 48);
-    final Rect fullRect = const Rect.fromLTWH(0, 0, 100, 100);
+    final Offset center = const Offset(50, 50);
+    final double radius = 44.0;
 
-    // 1. Bingkai Artistik Luar (Cincin Terbuka)
-    // Cincin ditinggalkan terbuka sedikit di bahagian bawah untuk akar melepasi bingkai
+    // 1. Bingkai Bulatan Luar
     final Paint ringPaint = Paint()
-      ..shader = const SweepGradient(
-        colors: [kGoldMid, kGoldHighlight, kGoldDeep, kGoldHighlight, kGoldMid],
-      ).createShader(Rect.fromCircle(center: center, radius: 46))
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [kGoldHighlight, kGoldMid, kGoldDeep, kGoldHighlight],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 2.0;
-      
-    // Lukis lengkok (arc) bermula dari bawah kanan pusing ke bawah kiri
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: 46), 
-      math.pi * 0.25, 
-      math.pi * 1.5, 
-      false, 
-      ringPaint
-    );
+      ..strokeWidth = 2.2;
 
-    // 2. Batang, Dahan & Akar
+    canvas.drawCircle(center, radius, ringPaint);
+
+    // 2. Cat Utama untuk Siluet Pokok Emas
+    final Paint fillPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [kGoldHighlight, kGoldMid, kGoldDeep],
+      ).createShader(const Rect.fromLTWH(0, 0, 100, 100))
+      ..style = PaintingStyle.fill;
+
     final Paint linePaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [kGoldHighlight, kGoldMid, kGoldDeep],
-      ).createShader(fullRect)
+      ).createShader(const Rect.fromLTWH(0, 0, 100, 100))
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    // Animasi tiupan angin pada dahan
-    final double swayAngle = animated ? math.sin(time) * 0.02 : 0.0;
-    const Offset pivot = Offset(50, 75);
+    // Tiupan angin lembut untuk animasi
+    final double sway = animated ? math.sin(progress * math.pi * 2) * 0.015 : 0.0;
 
     canvas.save();
-    canvas.translate(pivot.dx, pivot.dy);
-    canvas.rotate(swayAngle);
-    canvas.translate(-pivot.dx, -pivot.dy);
+    canvas.translate(50, 68);
+    canvas.rotate(sway);
+    canvas.translate(-50, -68);
 
-    for (final b in branches) {
+    // ── LUKIS BATANG UTAMA (Semulajadi & Mekar di Pangkal) ──────
+    final Path trunkPath = Path();
+    // Pangkal kiri -> Teras -> Pangkal kanan
+    trunkPath.moveTo(43, 68);
+    trunkPath.cubicTo(46, 62, 47, 54, 48, 46);
+    trunkPath.lineTo(52, 46);
+    trunkPath.cubicTo(53, 54, 54, 62, 57, 68);
+    trunkPath.cubicTo(52, 70, 48, 70, 43, 68);
+    trunkPath.close();
+    canvas.drawPath(trunkPath, fillPaint);
+
+    // ── LUKIS DAHAN BERSTRUKTUR (Simetri & Melengkung) ──────────
+    final List<_BranchSpec> branches = [
+      // Dahan Utama Kiri & Kanan
+      _BranchSpec(const Offset(48.5, 48), const Offset(36, 40), const Offset(24, 34), 3.5),
+      _BranchSpec(const Offset(51.5, 48), const Offset(64, 40), const Offset(76, 34), 3.5),
+      
+      // Cabang Atas Kiri & Kanan
+      _BranchSpec(const Offset(49, 46), const Offset(42, 34), const Offset(32, 22), 2.8),
+      _BranchSpec(const Offset(51, 46), const Offset(58, 34), const Offset(68, 22), 2.8),
+      
+      // Dahan Tengah Tinggi
+      _BranchSpec(const Offset(50, 46), const Offset(48, 30), const Offset(44, 16), 2.5),
+      _BranchSpec(const Offset(50, 46), const Offset(52, 30), const Offset(56, 16), 2.5),
+
+      // Ranting Sub-Dahan
+      _BranchSpec(const Offset(36, 40), const Offset(28, 44), const Offset(18, 46), 1.8),
+      _BranchSpec(const Offset(64, 40), const Offset(72, 44), const Offset(82, 46), 1.8),
+      _BranchSpec(const Offset(42, 34), const Offset(34, 28), const Offset(22, 26), 1.8),
+      _BranchSpec(const Offset(58, 34), const Offset(66, 28), const Offset(78, 26), 1.8),
+    ];
+
+    for (var b in branches) {
       linePaint.strokeWidth = b.width;
       final Path p = Path()
         ..moveTo(b.start.dx, b.start.dy)
-        ..quadraticBezierTo(b.ctrl.dx, b.ctrl.dy, b.end.dx, b.end.dy);
+        ..quadraticBezierTo(b.control.dx, b.control.dy, b.end.dx, b.end.dy);
       canvas.drawPath(p, linePaint);
     }
 
-    // 3. Daun Rimbun Organik
-    final Paint leafPaint = Paint()..color = kPrimaryGold;
+    // ── LUKIS AKAR BERSENI (Melengkung menyentuh Bingkai) ───────
+    final List<_BranchSpec> roots = [
+      // Akar Tengah Utama
+      _BranchSpec(const Offset(47, 68), const Offset(44, 78), const Offset(42, 88.5), 2.5),
+      _BranchSpec(const Offset(53, 68), const Offset(56, 78), const Offset(58, 88.5), 2.5),
+      
+      // Akar Sisi Kiri
+      _BranchSpec(const Offset(44, 68), const Offset(34, 76), const Offset(24, 82), 2.2),
+      _BranchSpec(const Offset(43, 68), const Offset(28, 72), const Offset(16, 74), 1.8),
 
-    // Bentuk daun diubahsuai menyerupai daun zaitun/teardrop berseni
-    Path getLeafPath(double rx, double ry) {
-      return Path()
-        ..moveTo(0, -ry)
-        ..quadraticBezierTo(rx, -ry * 0.2, rx, ry * 0.6)
-        ..quadraticBezierTo(rx * 0.5, ry, 0, ry)
-        ..quadraticBezierTo(-rx * 0.5, ry, -rx, ry * 0.6)
-        ..quadraticBezierTo(-rx, -ry * 0.2, 0, -ry)
-        ..close();
+      // Akar Sisi Kanan
+      _BranchSpec(const Offset(56, 68), const Offset(66, 76), const Offset(76, 82), 2.2),
+      _BranchSpec(const Offset(57, 68), const Offset(72, 72), const Offset(84, 74), 1.8),
+    ];
+
+    for (var r in roots) {
+      linePaint.strokeWidth = r.width;
+      final Path p = Path()
+        ..moveTo(r.start.dx, r.start.dy)
+        ..quadraticBezierTo(r.control.dx, r.control.dy, r.end.dx, r.end.dy);
+      canvas.drawPath(p, linePaint);
     }
 
-    for (final leaf in leaves) {
+    // ── LUKIS DAUN TAJAM BERGUSAN (Almond Vector Leaves) ────────
+    final List<_LeafSpec> leafClusters = _generateCleanLeafClusters();
+
+    for (var leaf in leafClusters) {
       canvas.save();
-      final double leafSway = animated ? math.sin(time * leaf.swaySpeed) * 0.12 : 0.0;
-      canvas.translate(leaf.center.dx, leaf.center.dy);
-      canvas.rotate(leaf.rotation + leafSway);
-      canvas.drawPath(getLeafPath(leaf.rx, leaf.ry), leafPaint);
+      canvas.translate(leaf.position.dx, leaf.position.dy);
+      canvas.rotate(leaf.rotation);
+
+      final Path leafPath = _createAlmondLeafPath(leaf.size);
+      canvas.drawPath(leafPath, fillPaint);
       canvas.restore();
     }
 
-    canvas.restore();
-    canvas.restore();
+    canvas.restore(); // Restore Sway
+    canvas.restore(); // Restore Scale
+  }
+
+  // Rekabentuk Helaian Daun Vektor Badam Tepat
+  Path _createAlmondLeafPath(double size) {
+    final Path path = Path();
+    path.moveTo(0, 0);
+    path.quadraticBezierTo(size * 0.5, -size * 0.45, size, 0);
+    path.quadraticBezierTo(size * 0.5, size * 0.45, 0, 0);
+    path.close();
+    return path;
+  }
+
+  // Menjana Kedudukan Daun yang Teratur dan Terpisah Tepat
+  List<_LeafSpec> _generateCleanLeafClusters() {
+    final List<_LeafSpec> leaves = [];
+
+    // Format: Offset(x, y), Saiz, Sudut Radian
+    void addPair(double x, double y, double baseAngle, double size) {
+      leaves.add(_LeafSpec(Offset(x, y), size, baseAngle - 0.5));
+      leaves.add(_LeafSpec(Offset(x, y), size, baseAngle + 0.5));
+      leaves.add(_LeafSpec(Offset(x, y), size * 0.85, baseAngle));
+    }
+
+    // Gugusan Kanopi Atas (Top Crown)
+    addPair(44, 16, -math.pi / 2, 4.5);
+    addPair(56, 16, -math.pi / 2, 4.5);
+    addPair(50, 14, -math.pi / 2, 5.0);
+
+    // Gugusan Atas Kiri & Kanan
+    addPair(32, 22, -2.2, 4.2);
+    addPair(68, 22, -0.9, 4.2);
+    addPair(22, 26, -2.5, 4.0);
+    addPair(78, 26, -0.6, 4.0);
+
+    // Gugusan Tengah Kiri & Kanan
+    addPair(24, 34, -2.6, 4.0);
+    addPair(76, 34, -0.5, 4.0);
+    addPair(18, 46, -2.9, 3.8);
+    addPair(82, 46, -0.2, 3.8);
+
+    // Hiasan Isian Kanopi Luar (Menyelusuri Cincin Bulatan)
+    const int outerCount = 16;
+    for (int i = 0; i < outerCount; i++) {
+      double angle = -math.pi + (i * (math.pi / (outerCount - 1)));
+      // Abaikan bahagian bawah bulatan
+      if (angle > -0.25 || angle < -math.pi + 0.25) continue;
+
+      double lx = 50 + math.cos(angle) * 40.5;
+      double ly = 50 + math.sin(angle) * 40.5;
+      leaves.add(_LeafSpec(Offset(lx, ly), 3.6, angle + math.pi / 2));
+    }
+
+    return leaves;
   }
 
   @override
-  bool shouldRepaint(covariant _TreePainter old) => animated && old.time != time;
+  bool shouldRepaint(covariant _VectorTreePainter oldDelegate) {
+    return animated && oldDelegate.progress != progress;
+  }
+}
+
+// ── MODEL BANTUAN ─────────────────────────────────────────────
+
+class _BranchSpec {
+  final Offset start;
+  final Offset control;
+  final Offset end;
+  final double width;
+
+  _BranchSpec(this.start, this.control, this.end, this.width);
+}
+
+class _LeafSpec {
+  final Offset position;
+  final double size;
+  final double rotation;
+
+  _LeafSpec(this.position, this.size, this.rotation);
 }
