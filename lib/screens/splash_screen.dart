@@ -33,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _lineW;
   late Animation<double> _letterSpacing;
 
-  // Animasi Khas Watermark ZyaMina
+  // Animasi Khas Watermark ZyaMina Tech
   late Animation<double> _watermarkOpacity;
   late Animation<double> _watermarkSlide;
 
@@ -83,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // 3. Fasa Watermark ZyaMina (1.8s - 3.2s) — Kemunculan Eksklusif
+    // 3. Fasa Watermark ZyaMina Tech (1.8s - 3.2s)
     _watermarkOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _ctrl,
@@ -178,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
 
-                  // Pokok Hayat — Ada animasi pergerakan angin + animasi skala kemunculan
+                  // Pokok Hayat — Vektor Teratur + Animasi Tiupan Angin
                   Opacity(
                     opacity: _logoOpacity.value,
                     child: Transform.scale(
@@ -243,9 +243,9 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── 4. Watermark ZyaMina (Animasi Slide Up & Fade In) ──
+          // ── 4. Watermark ZyaMina Tech (Susunan 3 Baris Kemas) ──
           Positioned(
-            bottom: 36,
+            bottom: 28,
             left: 0,
             right: 0,
             child: AnimatedBuilder(
@@ -271,9 +271,19 @@ class _SplashScreenState extends State<SplashScreen>
                         'ZyaMina',
                         style: GoogleFonts.montserrat(
                           color: kPrimaryGold,
-                          fontSize: 12.5,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 4.5,
+                          letterSpacing: 2.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Tech',
+                        style: GoogleFonts.montserrat(
+                          color: kTextSecondary,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 3.5,
                         ),
                       ),
                     ],
