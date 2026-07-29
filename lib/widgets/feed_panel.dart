@@ -1,7 +1,5 @@
 // lib/widgets/feed_panel.dart
-// Susunan grid 2-lajur (ala CapCut) untuk kad komuniti bersih (ala FB).
-// Kandungan harian (hadith/amalan/sirah) kekal berasingan sebagai jalur
-// leret-mendatar "Hari Ini" di atas grid — dua tujuan berbeza, dua UX berbeza.
+// Panel grid komuniti dengan childAspectRatio: 0.74 mengikut ketetapan baharu.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -82,9 +80,9 @@ class _FeedPanelState extends State<FeedPanel> {
     return NotificationListener<UserScrollNotification>(
       onNotification: (n) {
         if (n.direction == ScrollDirection.reverse) {
-          widget.onScrollDirection?.call(true);  // leret bawah -> sorok rel
+          widget.onScrollDirection?.call(true);
         } else if (n.direction == ScrollDirection.forward) {
-          widget.onScrollDirection?.call(false); // leret atas  -> tunjuk rel
+          widget.onScrollDirection?.call(false);
         }
         return false;
       },
@@ -146,9 +144,9 @@ class _FeedPanelState extends State<FeedPanel> {
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 0.79,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.74,
               ),
               delegate: SliverChildBuilderDelegate(
                 (_, i) => FadeSlideIn(
