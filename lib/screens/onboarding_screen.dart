@@ -8,6 +8,7 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
+import '../widgets/canopy_mark.dart';
 import '../home.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -203,8 +204,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.park_rounded,
-                color: Colors.white, size: 42),
+            child: const Center(
+              child: CanopyMark(size: 42),
+            ),
           ),
 
           const SizedBox(height: 28),

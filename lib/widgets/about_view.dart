@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 import 'metallic_gold.dart';
+import 'canopy_mark.dart';
 
 class AboutView extends StatelessWidget {
   const AboutView({Key? key}) : super(key: key);
@@ -33,8 +34,9 @@ class AboutView extends StatelessWidget {
                       color: kPrimaryGold.withOpacity(0.5), width: 1.5),
                   color: kPrimaryGold.withOpacity(0.08),
                 ),
-                child: const Icon(Icons.park_rounded,
-                    color: kPrimaryGold, size: 38),
+                child: const Center(
+                  child: CanopyMark(size: 38, color: kPrimaryGold),
+                ),
               ),
               const SizedBox(height: 12),
               MetallicGold(

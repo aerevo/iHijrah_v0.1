@@ -10,6 +10,7 @@ import '../screens/onboarding_screen.dart';
 import '../utils/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
+import '../widgets/canopy_mark.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -158,10 +159,8 @@ class _SplashScreenState extends State<SplashScreen>
                                 offset: const Offset(0, 5)),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.park_rounded,
-                          color: Colors.white,
-                          size: 36,
+                        child: const Center(
+                          child: CanopyMark(size: 36),
                         ),
                       ),
 
