@@ -1,13 +1,12 @@
 // lib/widgets/feed_card.dart
-// Kad grid bersih — gaya FB (kad putih, bayang lembut), saiz kompak untuk
-// susunan 2-lajur ala CapCut. Ketik kad untuk buka butiran penuh (masa depan).
+// Kad komuniti diselaraskan mengikutconstants.dart baharu.
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'anim_helpers.dart';
 
-// ── TYPE ──────────────────────────────────────────────────────
+// ── TYPE COLOR MAPPING ────────────────────────────────────────
 Color _typeColor(String t) {
   switch (t) {
     case 'video':   return kTypeVideo;
@@ -38,17 +37,17 @@ String _typeLabel(String t) {
   }
 }
 
-// ── GRADIENT PALETTES (fallback bila tiada imej) ──────────────
+// ── GRADIENT PALETTES (Muted & Premium Fallback) ──────────────
 const List<List<Color>> _palettes = [
-  [Color(0xFF1B2A5E), Color(0xFF3D5FC4)],  // biru
-  [Color(0xFF7A3B12), Color(0xFFC97A2E)],  // jingga
-  [Color(0xFF0B5C3E), Color(0xFF229464)],  // hijau
-  [Color(0xFF4A2470), Color(0xFF7D52B8)],  // ungu
-  [Color(0xFF0D5468), Color(0xFF1E8FA8)],  // teal
-  [Color(0xFF7A1F42), Color(0xFFC24A72)],  // magenta
+  [Color(0xFF2C3E50), Color(0xFF1A252F)],
+  [Color(0xFF3E362E), Color(0xFF231E19)],
+  [Color(0xFF1E3932), Color(0xFF0F1D19)],
+  [Color(0xFF2A2833), Color(0xFF151419)],
+  [Color(0xFF1A3641), Color(0xFF0D1E24)],
+  [Color(0xFF382229), Color(0xFF1C1114)],
 ];
 
-// ── FEED CARD (kompak, untuk grid) ────────────────────────────
+// ── FEED CARD ─────────────────────────────────────────────────
 class FeedCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onTap;
@@ -67,13 +66,9 @@ class FeedCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: kSurfaceCard,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
+              kCardShadow(opacity: 0.05), // Menggunakan helper kCardShadow dari constants.dart
             ],
           ),
           clipBehavior: Clip.antiAlias,
@@ -83,7 +78,7 @@ class FeedCard extends StatelessWidget {
 
               // ── THUMBNAIL ──────────────────────────────────
               AspectRatio(
-                aspectRatio: 1.35,
+                aspectRatio: 1.45,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -95,7 +90,7 @@ class FeedCard extends StatelessWidget {
                             frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                               if (wasSynchronouslyLoaded) return child;
                               return AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 280),
+                                duration: AppDurations.fast,
                                 child: frame == null
                                     ? const ShimmerBox(key: ValueKey('shimmer'))
                                     : KeyedSubtree(key: const ValueKey('img'), child: child),
@@ -104,31 +99,30 @@ class FeedCard extends StatelessWidget {
                           )
                         : _gradBg(_palettes[pi], post.type),
 
-                    // Badge jenis — kiri atas (pop-in lembut selepas kad muncul)
+                    // Badge Jenis
                     Positioned(
-                      top: 8, left: 8,
+                      bottom: 8, left: 8,
                       child: PopScaleIn(
                         delay: const Duration(milliseconds: 180),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3.5),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.34),
-                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.black.withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(_typeIcon(post.type),
-                                  size: 10, color: accent),
-                              const SizedBox(width: 3),
+                              Icon(_typeIcon(post.type), size: 9.5, color: accent),
+                              const SizedBox(width: 4),
                               Text(
                                 _typeLabel(post.type),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 7.8,
+                                  fontSize: 8.0,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.4,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ],
@@ -141,48 +135,51 @@ class FeedCard extends StatelessWidget {
               ),
 
               // ── MAKLUMAT ───────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: kTextPrimary,
-                        height: 1.28,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        post.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                          color: kTextPrimary,
+                          height: 1.4, 
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${post.author} · ${post.time}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 9.3,
-                              color: kTextSecondary,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${post.author} · ${post.time}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                color: kTextSecondary,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        PopLikeButton(
-                          baseCount: post.likes,
-                          iconSize: 10.5,
-                          mutedColor: kTextMuted,
-                          likedColor: const Color(0xFFE0245E),
-                          countStyle: const TextStyle(
-                              fontSize: 9.3, color: kTextMuted),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 6),
+                          PopLikeButton(
+                            baseCount: post.likes,
+                            iconSize: 11.5,
+                            mutedColor: kTextMuted,
+                            likedColor: kTypeVideo,
+                            countStyle: const TextStyle(
+                                fontSize: 9.5, color: kTextMuted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -203,11 +200,11 @@ class FeedCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              right: -14, bottom: -14,
+              right: -10, bottom: -10,
               child: Icon(
                 _typeIcon(type),
-                size: 84,
-                color: Colors.white.withOpacity(0.14),
+                size: 78,
+                color: Colors.white.withOpacity(0.04),
               ),
             ),
           ],
