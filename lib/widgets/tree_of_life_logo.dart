@@ -133,6 +133,7 @@ class _LeafDef {
   final double appearStart;
   final double appearEnd;
   final bool shine;
+  final double depthLayer; // 0 = jauh/belakang (kecil, gelap, kabur sikit) .. 1 = dekat/depan (besar, terang)
   const _LeafDef({
     required this.center,
     required this.rx,
@@ -143,6 +144,7 @@ class _LeafDef {
     required this.appearStart,
     required this.appearEnd,
     required this.shine,
+    required this.depthLayer,
   });
 }
 
@@ -170,7 +172,10 @@ class _TreeBlueprint {
     branches.add(_Seg(trunkBase, const Offset(47, 52), trunkTop, 4.4, 0.08, 0.30));
 
     // Dahan utama — kipas dari hujung batang, memenuhi bahagian atas bulatan
-    const List<double> primaryAngles = [-2.35, -1.95, -1.5708, -1.20, -0.80];
+    // (7 dahan, bukan 5 — canopy lagi lebar & padat)
+    const List<double> primaryAngles = [
+      -2.55, -2.20, -1.88, -1.5708, -1.26, -0.94, -0.60
+    ];
     for (final a in primaryAngles) {
       _growBranch(
         rnd,
@@ -209,6 +214,11 @@ class _TreeBlueprint {
       );
     }
 
+    // Susun ikut depthLayer (jauh -> dekat) supaya bila dilukis, daun
+    // "belakang" jatuh dulu dan daun "depan" bertindih atasnya — bagi rasa
+    // kedalaman betul-betul, bukan flat semua sama rata.
+    leaves.sort((x, y) => x.depthLayer.compareTo(y.depthLayer));
+
     return _TreeData(branches, roots, leaves);
   }
 
@@ -240,10 +250,13 @@ class _TreeBlueprint {
     branches.add(_Seg(start, ctrl, end, width, win[0], win[1]));
 
     if (depth >= maxDepth) {
-      final int leafCount = 3 + rnd.nextInt(3); // 3–5 daun tiap hujung ranting
+      // 9–14 daun tiap hujung ranting (dulu cuma 3–5) — canopy jadi rimbun,
+      // bukan skeletal. Disebar dalam 2 "lapisan": belakang (kecil/gelap,
+      // isi kekosongan) dan depan (besar/terang, bagi tumpuan).
+      final int leafCount = 9 + rnd.nextInt(6);
       for (int i = 0; i < leafCount; i++) {
-        final double spread = (rnd.nextDouble() - 0.5) * 1.4;
-        final double dist = 2.5 + rnd.nextDouble() * 3.0;
+        final double spread = (rnd.nextDouble() - 0.5) * 1.7;
+        final double dist = 1.8 + rnd.nextDouble() * 4.2;
         final double leafAngle = a + spread;
         final Offset leafCenter = Offset(
           end.dx + math.cos(leafAngle) * dist,
@@ -251,16 +264,24 @@ class _TreeBlueprint {
         );
         final double appearStart =
             leafWindowStart + rnd.nextDouble() * leafWindowSpan;
+
+        // Lapisan depth: ~40% jadi "belakang" (isi lompang, kecil & gelap),
+        // selebihnya "depan" (besar & terang) — bukan semua sama rata flat.
+        final double depthLayer =
+            rnd.nextDouble() < 0.4 ? rnd.nextDouble() * 0.45 : 0.55 + rnd.nextDouble() * 0.45;
+        final double sizeMul = 0.68 + depthLayer * 0.55;
+
         leaves.add(_LeafDef(
           center: leafCenter,
-          rx: 2.6 + rnd.nextDouble() * 1.6,
-          ry: 1.5 + rnd.nextDouble() * 1.0,
+          rx: (2.3 + rnd.nextDouble() * 1.7) * sizeMul,
+          ry: (1.35 + rnd.nextDouble() * 1.05) * sizeMul,
           rotation: leafAngle + math.pi / 2,
           swaySpeed: 0.85 + rnd.nextDouble() * 0.4,
-          swayAmt: 0.05 + rnd.nextDouble() * 0.05,
+          swayAmt: (0.05 + rnd.nextDouble() * 0.05) * (0.6 + depthLayer * 0.4),
           appearStart: appearStart,
           appearEnd: math.min(0.94, appearStart + 0.10),
-          shine: rnd.nextDouble() < 0.3,
+          shine: depthLayer > 0.55 && rnd.nextDouble() < 0.35,
+          depthLayer: depthLayer,
         ));
       }
       return;
@@ -405,17 +426,18 @@ class _TreeOfLifePainter extends CustomPainter {
     }
 
     // ── Daun elips organik — muncul satu-satu, bergoyang lembut ──
-    final Paint leafPaint = Paint()
-      ..shader = const RadialGradient(
-        center: Alignment(-0.35, -0.35),
-        colors: [kGoldHighlight, kGoldMid, kGoldDeep],
-      ).createShader(fullRect);
+    // Setiap daun dapat warna/opacity sendiri ikut depthLayer supaya
+    // canopy nampak berlapis (belakang gelap+pudar, depan terang+pekat)
+    // dan bukan flat rata.
     final Paint shinePaint = Paint()
       ..color = kGoldHighlight.withOpacity(0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.6;
 
     for (final leaf in _TreeBlueprint.data.leaves) {
+      final Color leafColor = Color.lerp(kGoldDeep, kGoldHighlight, leaf.depthLayer * 0.85 + 0.1)!;
+      final double leafOpacity = 0.55 + leaf.depthLayer * 0.45;
+      final Paint leafPaint = Paint()..color = leafColor.withOpacity(leafOpacity);
       _drawLeaf(canvas, leafPaint, shinePaint, leaf, introT, swayGate);
     }
 
