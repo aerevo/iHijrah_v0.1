@@ -14,7 +14,7 @@ import '../models/sidebar_state_model.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'metallic_icon.dart';
-import 'tree_of_life_logo.dart';
+import 'living_tree.dart';
 
 // ── SAIZ REL ──────────────────────────────────────────────────
 const double kRailWidthCollapsed = 60.0;
@@ -109,18 +109,27 @@ class Sidebar extends StatelessWidget {
         children: [
           const SizedBox(height: 10),
 
-          // Logo — tekan untuk kembang/kuncup
-          _logoRow(model),
+          // Wordmark ringkas — tekan untuk kembang/kuncup (tiada lagi
+          // ikon pokok di sini; pokok "hidup" kini di bawah avatar)
+          _wordmarkRow(model),
 
-          _divider(),
-          const SizedBox(height: 4),
-
-          // Avatar + identiti — tekan buka Profil
-          _avatarRow(model, user),
-
-          const SizedBox(height: 6),
           _divider(),
           const SizedBox(height: 8),
+
+          // Avatar + nama + umur Hijrah — tekan buka Profil
+          _avatarRow(model, user),
+
+          const SizedBox(height: 10),
+
+          // Pokok Embun Jiwa — video sebenar (sama macam tab Pokok),
+          // tekan -> tab Pokok. Cuma dirender bila rel memang visible
+          // (bila tersorok scroll-bawah, video di-dispose terus, jimat
+          // prestasi — bukan main senyap belakang tabir).
+          _miniTreeSlot(model, user),
+
+          const SizedBox(height: 10),
+          _divider(),
+          const SizedBox(height: 6),
 
           // Tab utama
           Expanded(
@@ -151,8 +160,39 @@ class Sidebar extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16),
       );
 
-  // ── LOGO ────────────────────────────────────────────────────
-  Widget _logoRow(SidebarStateModel model) {
+  // ── POKOK MINI (video sebenar, saiz sidebar) ─────────────────
+  // FittedBox skalakan video ke kotak kecil ni tanpa kira aspect ratio
+  // sebenar fail video — selamat dari overflow rel yang sempit (60px).
+  Widget _miniTreeSlot(SidebarStateModel model, UserModel user) {
+    final double boxSize = model.isExpanded ? 92 : 58;
+    return SizedBox(
+      width: boxSize,
+      height: boxSize,
+      child: model.isVisible
+          ? FittedBox(
+              fit: BoxFit.contain,
+              child: SizedBox(
+                height: 260,
+                child: LivingTree(
+                  assetPath: _treeAssetForLevel(user.treeLevel),
+                  height: 260,
+                  onTap: () => model.setActiveMenu('pokok'),
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+
+  String _treeAssetForLevel(int level) {
+    if (level <= 1) return AppAssets.treeV1;
+    if (level <= 3) return AppAssets.treeV2;
+    if (level <= 6) return AppAssets.treeV3;
+    return AppAssets.treeV4;
+  }
+
+  // ── WORDMARK (ganti logo pokok — cuma teks/monogram) ─────────
+  Widget _wordmarkRow(SidebarStateModel model) {
     return GestureDetector(
       onTap: model.toggleExpanded,
       behavior: HitTestBehavior.opaque,
@@ -163,14 +203,12 @@ class Sidebar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    const TreeOfLifeLogo(size: 38, animated: false),
-                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'iHijrah',
                         style: GoogleFonts.playfairDisplay(
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
+                          fontSize: 17,
                           color: kPrimaryNavy,
                         ),
                       ),
@@ -180,7 +218,27 @@ class Sidebar extends StatelessWidget {
                   ],
                 ),
               )
-            : const Center(child: TreeOfLifeLogo(size: 38, animated: false)),
+            : Center(
+                child: Container(
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.5),
+                    border: Border.all(
+                        color: kPrimaryGold.withOpacity(0.6), width: 1.2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'iH',
+                      style: GoogleFonts.playfairDisplay(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        color: kGoldDark,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
       ),
     );
   }
