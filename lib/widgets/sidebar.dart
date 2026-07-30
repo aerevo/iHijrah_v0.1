@@ -107,14 +107,17 @@ class Sidebar extends StatelessWidget {
     return SafeArea(
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          SizedBox(height: model.isExpanded ? 8 : 14),
 
-          // Wordmark ringkas — tekan untuk kembang/kuncup (tiada lagi
-          // ikon pokok di sini; pokok "hidup" kini di bawah avatar)
+          // Wordmark "iH" cuma perlu bila rel KEMBANG (jadi label + butang
+          // kuncup). Bila KUNCUP ia tak render langsung (SizedBox.shrink)
+          // supaya avatar terus jadi elemen paling atas — tiada ruang
+          // terbiar macam versi lama.
           _wordmarkRow(model),
-
-          _divider(),
-          const SizedBox(height: 8),
+          if (model.isExpanded) ...[
+            _divider(),
+            const SizedBox(height: 8),
+          ],
 
           // Avatar + nama + umur Hijrah — tekan buka Profil
           _avatarRow(model, user),
@@ -131,15 +134,26 @@ class Sidebar extends StatelessWidget {
           _divider(),
           const SizedBox(height: 6),
 
-          // Tab utama
+          // Tab utama — diagihkan sama rata ikut ruang menegak yg ada
+          // (LayoutBuilder + minHeight supaya spaceEvenly berfungsi, tapi
+          // tetap boleh scroll selamat kalau skrin terlalu pendek).
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: _mainTabs
-                    .map((t) => _railItem(model, t))
-                    .toList(),
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: _mainTabs
+                          .map((t) => _railItem(model, t))
+                          .toList(),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -191,54 +205,34 @@ class Sidebar extends StatelessWidget {
     return AppAssets.treeV4;
   }
 
-  // ── WORDMARK (ganti logo pokok — cuma teks/monogram) ─────────
+  // ── WORDMARK ──────────────────────────────────────────────────
+  // Nota: bila rel KUNCUP, wordmark tak render langsung — avatar naik
+  // jadi elemen paling atas, tiada ruang kosong ditinggalkan. Bila
+  // KEMBANG, wordmark muncul semula sebagai label + butang kuncup.
   Widget _wordmarkRow(SidebarStateModel model) {
+    if (!model.isExpanded) return const SizedBox.shrink();
+
     return GestureDetector(
       onTap: model.toggleExpanded,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: model.isExpanded
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'iHijrah',
-                        style: GoogleFonts.playfairDisplay(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 17,
-                          color: kPrimaryNavy,
-                        ),
-                      ),
-                    ),
-                    Icon(Icons.chevron_left_rounded,
-                        color: kRailGreenText.withOpacity(0.6), size: 20),
-                  ],
-                ),
-              )
-            : Center(
-                child: Container(
-                  width: 30, height: 30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.5),
-                    border: Border.all(
-                        color: kPrimaryGold.withOpacity(0.6), width: 1.2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'iH',
-                      style: GoogleFonts.playfairDisplay(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                        color: kGoldDark,
-                      ),
-                    ),
-                  ),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'iHijrah',
+                style: GoogleFonts.playfairDisplay(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  color: kPrimaryNavy,
                 ),
               ),
+            ),
+            Icon(Icons.chevron_left_rounded,
+                color: kRailGreenText.withOpacity(0.6), size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -247,19 +241,21 @@ class Sidebar extends StatelessWidget {
   Widget _avatarRow(SidebarStateModel model, UserModel user) {
     final bool hasAvatar =
         user.avatarPath != null && user.avatarPath!.isNotEmpty;
+    final String displayName =
+        user.name.trim().isEmpty ? 'Hamba Allah' : user.name.trim();
 
     return GestureDetector(
       onTap: () => model.setActiveMenu('profil'),
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: model.isExpanded ? 16 : 0,
+          horizontal: model.isExpanded ? 16 : 10,
           vertical: 6,
         ),
         child: model.isExpanded
             ? Row(
                 children: [
-                  _avatarCircle(user, hasAvatar, 34),
+                  _avatarCircle(user, hasAvatar, 36),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -288,7 +284,39 @@ class Sidebar extends StatelessWidget {
                   ),
                 ],
               )
-            : Center(child: _avatarCircle(user, hasAvatar, 34)),
+            // Rel kuncup: avatar naik jadi elemen paling atas (bekas ruang
+            // "iH"), nama (2 baris, center) + umur Hijrah terus di bawahnya
+            // dalam satu kolum bertengah — identiti kekal kelihatan walau
+            // rel sempit.
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _avatarCircle(user, hasAvatar, 40),
+                  const SizedBox(height: 6),
+                  Text(
+                    displayName,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: kPrimaryNavy,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    user.hijriAge,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kPrimaryNavy.withOpacity(0.7),
+                      fontSize: 8.6,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -299,23 +327,35 @@ class Sidebar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: kPrimaryNavy.withOpacity(0.75), width: 1.4),
-        color: Colors.white.withOpacity(0.55),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ClipOval(
         child: hasAvatar
             ? Image.file(File(user.avatarPath!),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _avatarFallback(user))
-            : _avatarFallback(user),
+                errorBuilder: (_, __, ___) => _avatarFallback())
+            : _avatarFallback(),
       ),
     );
   }
 
-  Widget _avatarFallback(UserModel user) => Center(
-        child: Text(
-          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'H',
-          style: const TextStyle(
-              color: kPrimaryNavy, fontSize: 13, fontWeight: FontWeight.w800),
+  // Placeholder profil lalai — dipapar bila user belum letak gambar sendiri
+  // (atau fail avatar rosak/hilang, via errorBuilder di atas).
+  Widget _avatarFallback() => Image.asset(
+        AppAssets.profileDefault,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: kRailGreenLight,
+          alignment: Alignment.center,
+          child: Icon(Icons.person_rounded,
+              color: kPrimaryNavy.withOpacity(0.55), size: 18),
         ),
       );
 
@@ -323,23 +363,28 @@ class Sidebar extends StatelessWidget {
   Widget _railItem(SidebarStateModel model, _RailTab t) {
     final bool isUtama = t.id == 'utama';
     final bool active  = isUtama ? model.isClosed : model.isMenuActive(t.id);
+    // Guna warna teras gradient tab sendiri sbg tint badge — beri rel
+    // rasa "ceria"/pelbagai warna tanpa jejaskan kekemasan (professional),
+    // sebab setiap tab dah pun ada warna metalliknya sendiri.
+    final Color tint = t.gradient[1];
 
     return GestureDetector(
       onTap: () => isUtama ? model.closeMenu() : model.setActiveMenu(t.id),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: AppDurations.fast,
-        margin: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        curve: AppCurves.smooth,
+        margin: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         padding: EdgeInsets.symmetric(
-          horizontal: model.isExpanded ? 12 : 0,
-          vertical: model.isExpanded ? 11 : 9,
+          horizontal: model.isExpanded ? 12 : 6,
+          vertical: model.isExpanded ? 11 : 10,
         ),
         decoration: BoxDecoration(
-          color: active ? kRailGreenActive : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          color: active ? kRailGreenActive : tint.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(18),
           border: active
               ? Border.all(color: Colors.white.withOpacity(0.4), width: 1)
-              : null,
+              : Border.all(color: tint.withOpacity(0.16), width: 1),
           boxShadow: active
               ? [
                   BoxShadow(
