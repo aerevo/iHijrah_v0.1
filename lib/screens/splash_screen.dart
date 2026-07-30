@@ -11,6 +11,7 @@ import '../utils/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
+import '../widgets/iridescent_background.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -140,12 +141,8 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         children: [
 
-          // ── 1. Latar Belakang Gradien ────────────────────────
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: kBgGradient),
-            ),
-          ),
+          // ── 1. Latar Belakang — "oil on water" pastel lembut ──
+          const Positioned.fill(child: IridescentBackground()),
 
           // ── 2. Cahaya Aura Emas Belakang Logo ─────────────────
           Center(
