@@ -47,6 +47,16 @@ class SidebarStateModel extends ChangeNotifier {
     }
   }
 
+  // Kembang rel secara eksplisit (bukan toggle) — selamat dipanggil
+  // berulang kali (cth. dari beberapa onTap serentak / tiap scroll event)
+  // sebab tak buat apa-apa kalau dah pun kembang.
+  void expandRail() {
+    if (!_isExpanded) {
+      _isExpanded = true;
+      notifyListeners();
+    }
+  }
+
   bool isMenuActive(String id) => _activeMenuId == id;
 
   void reset() {
