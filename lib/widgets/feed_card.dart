@@ -1,12 +1,12 @@
 // lib/widgets/feed_card.dart
-// Kad grid bersih — gaya FB (kad putih, bayang lembut), saiz kompak untuk
-// susunan 2-lajur ala CapCut. Ketik kad untuk buka butiran penuh (masa depan).
+// Kad komuniti diselaraskan mengikutconstants.dart baharu.
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import 'anim_helpers.dart';
 
-// ── TYPE ──────────────────────────────────────────────────────
+// ── TYPE COLOR MAPPING ────────────────────────────────────────
 Color _typeColor(String t) {
   switch (t) {
     case 'video':   return kTypeVideo;
@@ -37,148 +37,242 @@ String _typeLabel(String t) {
   }
 }
 
-// ── GRADIENT PALETTES (fallback bila tiada imej) ──────────────
+// ── GRADIENT PALETTES (Muted & Premium Fallback) ──────────────
 const List<List<Color>> _palettes = [
-  [Color(0xFF1B2A5E), Color(0xFF3D5FC4)],  // biru
-  [Color(0xFF7A3B12), Color(0xFFC97A2E)],  // jingga
-  [Color(0xFF0B5C3E), Color(0xFF229464)],  // hijau
-  [Color(0xFF4A2470), Color(0xFF7D52B8)],  // ungu
-  [Color(0xFF0D5468), Color(0xFF1E8FA8)],  // teal
-  [Color(0xFF7A1F42), Color(0xFFC24A72)],  // magenta
+  [Color(0xFF2C3E50), Color(0xFF1A252F)],
+  [Color(0xFF3E362E), Color(0xFF231E19)],
+  [Color(0xFF1E3932), Color(0xFF0F1D19)],
+  [Color(0xFF2A2833), Color(0xFF151419)],
+  [Color(0xFF1A3641), Color(0xFF0D1E24)],
+  [Color(0xFF382229), Color(0xFF1C1114)],
 ];
 
-String _fmtCount(int n) =>
-    n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
-
-// ── FEED CARD (kompak, untuk grid) ────────────────────────────
+// ── FEED CARD ─────────────────────────────────────────────────
+// Nota reka bentuk: kad ini kini SAIZ SENDIRI ikut kandungan (tiada lagi
+// `Expanded` yang perlukan tinggi tetap dari ibu bapa). Ini sengaja —
+// supaya boleh diletak dalam grid masonry (TwoColumnMasonry) yang bagi
+// setiap kad tinggi berbeza ikut kandungan sebenar, bukan kotak seragam.
 class FeedCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onTap;
 
-  const FeedCard({Key? key, required this.post, this.onTap}) : super(key: key);
+  /// Nisbah aspek gambar thumbnail. Berbeza ikut kad (ditetapkan oleh
+  /// FeedPanel) supaya grid nampak organik, bukan gred seragam sebaris.
+  final double imageAspectRatio;
+
+  const FeedCard({
+    Key? key,
+    required this.post,
+    this.onTap,
+    this.imageAspectRatio = 1.45,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final Color accent = _typeColor(post.type);
-    final int   pi     = post.id.hashCode.abs() % _palettes.length;
-    final bool  hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
-
     return RepaintBoundary(
-      child: GestureDetector(
+      child: PressableScale(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             color: kSurfaceCard,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
+              kCardShadow(opacity: 0.05), // Menggunakan helper kCardShadow dari constants.dart
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: post.type == 'quote' ? _buildQuoteLayout() : _buildMediaLayout(),
+        ),
+      ),
+    );
+  }
+
+  // ── LAYOUT: PETIKAN ─────────────────────────────────────────
+  // Tiada blok gambar langsung — kad teks tulen, tinggi ikut panjang
+  // petikan sebenar. Ini yang paling banyak sumbang kepada rupa
+  // masonry organik (berbanding kad bergambar yang lebih seragam).
+  Widget _buildQuoteLayout() {
+    final int pi = post.id.hashCode.abs() % _palettes.length;
+    final Color accent = _typeColor(post.type);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _palettes[pi],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopScaleIn(
+            delay: const Duration(milliseconds: 140),
+            child: Icon(Icons.format_quote_rounded, size: 26, color: accent),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            post.content,
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
+              height: 1.42,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
             children: [
-
-              // ── THUMBNAIL ──────────────────────────────────
-              AspectRatio(
-                aspectRatio: 1.35,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    hasImg
-                        ? Image.asset(
-                            post.assetPath!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _gradBg(_palettes[pi], post.type),
-                          )
-                        : _gradBg(_palettes[pi], post.type),
-
-                    // Badge jenis — kiri atas
-                    Positioned(
-                      top: 8, left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.34),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(_typeIcon(post.type),
-                                size: 10, color: accent),
-                            const SizedBox(width: 3),
-                            Text(
-                              _typeLabel(post.type),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 7.8,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: Text(
+                  '— ${post.author}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
                 ),
               ),
+              const SizedBox(width: 6),
+              PopLikeButton(
+                baseCount: post.likes,
+                iconSize: 11.5,
+                mutedColor: Colors.white.withOpacity(0.55),
+                likedColor: kTypeVideo,
+                countStyle: TextStyle(fontSize: 9.5, color: Colors.white.withOpacity(0.7)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-              // ── MAKLUMAT ───────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: kTextPrimary,
-                        height: 1.28,
-                      ),
+  // ── LAYOUT: VIDEO / ARTIKEL / ACARA ─────────────────────────
+  Widget _buildMediaLayout() {
+    final Color accent = _typeColor(post.type);
+    final int   pi     = post.id.hashCode.abs() % _palettes.length;
+    final bool  hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        // ── THUMBNAIL ──────────────────────────────────
+        AspectRatio(
+          aspectRatio: imageAspectRatio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              hasImg
+                  ? Image.asset(
+                      post.assetPath!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _gradBg(_palettes[pi], post.type),
+                      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                        if (wasSynchronouslyLoaded) return child;
+                        return AnimatedSwitcher(
+                          duration: AppDurations.fast,
+                          child: frame == null
+                              ? const ShimmerBox(key: ValueKey('shimmer'))
+                              : KeyedSubtree(key: const ValueKey('img'), child: child),
+                        );
+                      },
+                    )
+                  : _gradBg(_palettes[pi], post.type),
+
+              // Badge Jenis
+              Positioned(
+                bottom: 8, left: 8,
+                child: PopScaleIn(
+                  delay: const Duration(milliseconds: 180),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Text(
-                            '${post.author} · ${post.time}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 9.3,
-                              color: kTextSecondary,
-                            ),
-                          ),
-                        ),
+                        Icon(_typeIcon(post.type), size: 9.5, color: accent),
                         const SizedBox(width: 4),
-                        Icon(Icons.favorite_rounded,
-                            size: 10.5, color: kTextMuted),
-                        const SizedBox(width: 2),
                         Text(
-                          _fmtCount(post.likes),
+                          _typeLabel(post.type),
                           style: const TextStyle(
-                              fontSize: 9.3, color: kTextMuted),
+                            color: Colors.white,
+                            fontSize: 8.0,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      ),
+
+        // ── MAKLUMAT ───────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                post.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                  color: kTextPrimary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${post.author} · ${post.time}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: kTextSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  PopLikeButton(
+                    baseCount: post.likes,
+                    iconSize: 11.5,
+                    mutedColor: kTextMuted,
+                    likedColor: kTypeVideo,
+                    countStyle: const TextStyle(
+                        fontSize: 9.5, color: kTextMuted),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -193,11 +287,11 @@ class FeedCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              right: -14, bottom: -14,
+              right: -10, bottom: -10,
               child: Icon(
                 _typeIcon(type),
-                size: 84,
-                color: Colors.white.withOpacity(0.14),
+                size: 78,
+                color: Colors.white.withOpacity(0.04),
               ),
             ),
           ],

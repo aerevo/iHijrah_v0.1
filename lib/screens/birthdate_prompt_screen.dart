@@ -12,7 +12,13 @@ import '../utils/hijri_service.dart';
 import '../home.dart';
 
 class BirthdatePromptScreen extends StatefulWidget {
-  const BirthdatePromptScreen({Key? key}) : super(key: key);
+  /// True bila screen ni dibuka dari Profil untuk KEMASKINI tarikh lahir
+  /// sedia ada (bukan onboarding pertama kali). Ubah label, navigasi
+  /// balik (pop) dan elak overwrite flow "MULAKAN PERJALANAN".
+  final bool isEditMode;
+
+  const BirthdatePromptScreen({Key? key, this.isEditMode = false})
+      : super(key: key);
 
   @override
   State<BirthdatePromptScreen> createState() =>
@@ -71,6 +77,21 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
       await user.save();
 
       if (!mounted) return;
+
+      if (widget.isEditMode) {
+        // Dibuka dari Profil — pop balik, jangan pushReplacement ke HomePage
+        // (tu akan wipe nav stack & user hilang tempat dia dalam app).
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profil dikemas kini.'),
+            backgroundColor: kAccentGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const HomePage(),
@@ -96,9 +117,22 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
+              if (widget.isEditMode)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: kTextSecondary, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+
               // Header
               Text(
-                'Profil Hijrah',
+                widget.isEditMode ? 'Kemas Kini Profil' : 'Profil Hijrah',
                 style: GoogleFonts.playfairDisplay(
                   color: kGoldLight,
                   fontSize: 26,
@@ -108,9 +142,11 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
 
               const SizedBox(height: 6),
 
-              const Text(
-                'Masukkan nama dan tarikh lahir untuk mengira identiti Hijrah anda.',
-                style: TextStyle(color: kTextSecondary, fontSize: 12, height: 1.5),
+              Text(
+                widget.isEditMode
+                    ? 'Kemaskini nama dan tarikh lahir anda.'
+                    : 'Masukkan nama dan tarikh lahir untuk mengira identiti Hijrah anda.',
+                style: const TextStyle(color: kTextSecondary, fontSize: 12, height: 1.5),
               ),
 
               const SizedBox(height: 28),
@@ -232,9 +268,11 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
                           width: 20, height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.black))
-                      : const Text(
-                          'MULAKAN PERJALANAN',
-                          style: TextStyle(
+                      : Text(
+                          widget.isEditMode
+                              ? 'SIMPAN PERUBAHAN'
+                              : 'MULAKAN PERJALANAN',
+                          style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1),
                         ),

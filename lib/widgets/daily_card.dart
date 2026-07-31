@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
+import 'anim_helpers.dart';
 
 // ── JENIS ─────────────────────────────────────────────────────
 enum DailyCardType { hadith, amalan, sirah }
@@ -50,6 +51,7 @@ class _DailyShell extends StatelessWidget {
   final String meta;
   final String author;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   const _DailyShell({
     required this.type,
@@ -60,6 +62,7 @@ class _DailyShell extends StatelessWidget {
     required this.meta,
     required this.author,
     this.trailing,
+    this.onTap,
   });
 
   @override
@@ -67,7 +70,9 @@ class _DailyShell extends StatelessWidget {
     final Color accent = type.accent;
 
     return RepaintBoundary(
-      child: Container(
+      child: PressableScale(
+        onTap: onTap,
+        child: Container(
         decoration: BoxDecoration(
           color: kCardDark,
           boxShadow: [
@@ -134,37 +139,40 @@ class _DailyShell extends StatelessWidget {
                     ),
                   ),
 
-                  // Label type — kiri atas
+                  // Label type — kiri atas (pop-in lembut)
                   Positioned(
                     top: 14, left: 14,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: accent.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: accent.withOpacity(0.4), width: 0.8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            type.label,
-                            style: TextStyle(
-                              color: accent,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.6,
+                    child: PopScaleIn(
+                      delay: const Duration(milliseconds: 160),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: accent.withOpacity(0.4), width: 0.8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              type.label,
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.6,
+                              ),
                             ),
-                          ),
-                          if (isSpecial) ...[
-                            const SizedBox(width: 4),
-                            Text('✦',
-                                style: TextStyle(
-                                    color: accent, fontSize: 8)),
+                            if (isSpecial) ...[
+                              const SizedBox(width: 4),
+                              Text('✦',
+                                  style: TextStyle(
+                                      color: accent, fontSize: 8)),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -291,6 +299,7 @@ class _DailyShell extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
+import '../screens/birthdate_prompt_screen.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import 'metallic_gold.dart';
@@ -95,6 +96,11 @@ class ProfileDetailView extends StatelessWidget {
               title:   'Hari Jadi Hijrah',
               value:   user.hijriBirthdayDisplay,
               accent:  kAccentTeal,
+              onTap:   () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const BirthdatePromptScreen(isEditMode: true),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             _buildInfoCard(
@@ -419,8 +425,9 @@ class ProfileDetailView extends StatelessWidget {
     required String   title,
     required String   value,
     required Color    accent,
+    VoidCallback?      onTap,
   }) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: kSurfaceCard,
@@ -459,8 +466,18 @@ class ProfileDetailView extends StatelessWidget {
               ],
             ),
           ),
+          if (onTap != null)
+            Icon(Icons.edit_rounded, color: kTextMuted, size: 15),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: card,
     );
   }
 

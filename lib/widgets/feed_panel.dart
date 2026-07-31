@@ -1,7 +1,6 @@
 // lib/widgets/feed_panel.dart
-// Susunan grid 2-lajur (ala CapCut) untuk kad komuniti bersih (ala FB).
-// Kandungan harian (hadith/amalan/sirah) kekal berasingan sebagai jalur
-// leret-mendatar "Hari Ini" di atas grid — dua tujuan berbeza, dua UX berbeza.
+// Panel KOMUNITI kini guna grid masonry 2-lajur (TwoColumnMasonry) —
+// setiap kad tinggi ikut kandungan sebenar, bukan childAspectRatio tetap.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,6 +10,8 @@ import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
+import 'anim_helpers.dart';
+import 'masonry_grid.dart';
 
 // ── ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
@@ -81,9 +82,9 @@ class _FeedPanelState extends State<FeedPanel> {
     return NotificationListener<UserScrollNotification>(
       onNotification: (n) {
         if (n.direction == ScrollDirection.reverse) {
-          widget.onScrollDirection?.call(true);  // leret bawah -> sorok rel
+          widget.onScrollDirection?.call(true);
         } else if (n.direction == ScrollDirection.forward) {
-          widget.onScrollDirection?.call(false); // leret atas  -> tunjuk rel
+          widget.onScrollDirection?.call(false);
         }
         return false;
       },
@@ -115,7 +116,11 @@ class _FeedPanelState extends State<FeedPanel> {
                   separatorBuilder: (_, __) => const SizedBox(width: 10),
                   itemBuilder: (_, i) => SizedBox(
                     width: 152,
-                    child: _dailyCard(_dailyItems[i], daily),
+                    child: FadeSlideIn(
+                      index: i,
+                      slideOffset: 0.15,
+                      child: _dailyCard(_dailyItems[i], daily),
+                    ),
                   ),
                 ),
               ),
@@ -123,7 +128,11 @@ class _FeedPanelState extends State<FeedPanel> {
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
           ],
 
-          // ── KOMUNITI — grid 2-lajur ─────────────────────────
+          // ── KOMUNITI — grid masonry organik ─────────────────
+          // Ganti SliverGrid+childAspectRatio tetap (punca rupa "kaku")
+          // dengan TwoColumnMasonry: setiap kad tinggi ikut kandungan
+          // sebenar (kad petikan pendek/panjang, gambar pelbagai nisbah
+          // aspek), lajur kekal seimbang ikut anggaran tinggi.
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
@@ -136,24 +145,52 @@ class _FeedPanelState extends State<FeedPanel> {
                   )),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 0.79,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (_, i) => FeedCard(post: _posts[i]),
-                childCount: _posts.length,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+              child: TwoColumnMasonry(
+                tiles: List.generate(_posts.length, (i) {
+                  final post  = _posts[i];
+                  final ratio = _imageAspectFor(post);
+                  return MasonryTile(
+                    heightWeight: _heightWeightFor(post, ratio),
+                    child: FadeSlideIn(
+                      index: i,
+                      child: FeedCard(post: post, imageAspectRatio: ratio),
+                    ),
+                  );
+                }),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Kumpulan nisbah aspek gambar berbeza — dipilih ikut hash id post
+  // (deterministic, bukan Random(), supaya kekal sama tiap rebuild/
+  // scroll balik) supaya thumbnail dalam grid nampak pelbagai saiz
+  // secara organik, bukan seragam macam sebelum ini.
+  static const List<double> _aspectPool = [0.85, 1.15, 1.45, 1.7];
+
+  double _imageAspectFor(PostModel post) {
+    return _aspectPool[post.id.hashCode.abs() % _aspectPool.length];
+  }
+
+  // Anggaran tinggi RELATIF setiap kad (unit tidak semestinya px sebenar)
+  // — asas untuk TwoColumnMasonry agihkan kad ke lajur paling pendek.
+  double _heightWeightFor(PostModel post, double imageAspect) {
+    const double colWidthUnit = 165; // ~lebar 1 lajur pada skrin telefon biasa
+
+    if (post.type == 'quote') {
+      const double charsPerLine = 30;
+      final int lines = (post.content.length / charsPerLine).ceil().clamp(2, 6);
+      return (70 + (lines * 20) + 40).toDouble(); // ikon + baris petikan + baris pengarang
+    }
+
+    final double imageHeight = colWidthUnit / imageAspect;
+    return imageHeight + 90; // + tajuk (2 baris) + baris meta + padding
   }
 
   Widget _dailyCard(_FeedItem item, DailyContentProvider daily) {

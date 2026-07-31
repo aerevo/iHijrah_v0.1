@@ -9,6 +9,7 @@ import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
+import '../widgets/iridescent_background.dart';
 import '../home.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _next() {
+    FocusScope.of(context).unfocus();
     if (_step == 1 && _nameCtrl.text.trim().isEmpty) {
       _snack('Sila masukkan nama anda');
       return;
@@ -53,6 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _back() {
+    FocusScope.of(context).unfocus();
     if (_step > 0) {
       _pages.previousPage(
         duration: const Duration(milliseconds: 400),
@@ -115,12 +118,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Stack(
           children: [
 
-            // Latar — gradient ivory lembut, bukan lagi tekstur langit gelap
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: kBgGradient),
-              ),
-            ),
+            // Latar — "oil on water" pastel lembut, kontra lebih baik dgn
+            // teks/logo emas berbanding gradient putih-kelabu lama
+            const Positioned.fill(child: IridescentBackground()),
 
             SafeArea(
               child: Column(

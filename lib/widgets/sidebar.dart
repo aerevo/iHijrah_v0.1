@@ -13,8 +13,9 @@ import 'package:provider/provider.dart';
 import '../models/sidebar_state_model.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import '../utils/prayer_service.dart';
 import 'metallic_icon.dart';
-import 'tree_of_life_logo.dart';
+import 'living_tree.dart';
 
 // ── SAIZ REL ──────────────────────────────────────────────────
 const double kRailWidthCollapsed = 60.0;
@@ -24,22 +25,21 @@ class _RailTab {
   final String   id;
   final IconData icon;
   final String   label;
-  final List<Color> gradient;
-  const _RailTab(this.id, this.icon, this.label, this.gradient);
+  const _RailTab(this.id, this.icon, this.label);
 }
 
 const List<_RailTab> _mainTabs = [
-  _RailTab('utama',    Icons.home_rounded,             'Utama',  MetallicPalettes.gold),
-  _RailTab('sirah',    Icons.auto_stories_rounded,     'Sirah',  MetallicPalettes.navy),
-  _RailTab('amalan',   Icons.spa_rounded,              'Amalan', MetallicPalettes.emerald),
-  _RailTab('kalendar', Icons.calendar_month_rounded,   'Jadual', MetallicPalettes.bronze),
-  _RailTab('pokok',    Icons.park_rounded,             'Pokok',  MetallicPalettes.emerald),
-  _RailTab('profil',   Icons.person_rounded,           'Profil', MetallicPalettes.navy),
+  _RailTab('utama',    Icons.home_rounded,             'Utama'),
+  _RailTab('sirah',    Icons.auto_stories_rounded,     'Sirah'),
+  _RailTab('amalan',   Icons.spa_rounded,              'Amalan'),
+  _RailTab('kalendar', Icons.calendar_month_rounded,   'Jadual'),
+  _RailTab('pokok',    Icons.park_rounded,             'Pokok'),
+  _RailTab('profil',   Icons.person_rounded,           'Profil'),
 ];
 
 const List<_RailTab> _utilityTabs = [
-  _RailTab('notifikasi', Icons.notifications_none_rounded, 'Notis', MetallicPalettes.gold),
-  _RailTab('carian',     Icons.search_rounded,             'Cari',  MetallicPalettes.bronze),
+  _RailTab('notifikasi', Icons.notifications_none_rounded, 'Notis'),
+  _RailTab('carian',     Icons.search_rounded,             'Cari'),
 ];
 
 class Sidebar extends StatelessWidget {
@@ -107,20 +107,27 @@ class Sidebar extends StatelessWidget {
     return SafeArea(
       child: Column(
         children: [
+          const SizedBox(height: 14),
+
+          // Avatar + nama (2 baris, center) + umur Hijrah — tekan buka Profil
+          _avatarBlock(model, user),
+
+          const SizedBox(height: 8),
+
+          // Waktu solat seterusnya — halus sahaja, sekadar tanda app Islamik
+          _prayerBlock(model),
+
           const SizedBox(height: 10),
 
-          // Logo — tekan untuk kembang/kuncup
-          _logoRow(model),
+          // Pokok Embun Jiwa — video sebenar (sama macam tab Pokok),
+          // tekan -> tab Pokok. Cuma dirender bila rel memang visible
+          // (bila tersorok scroll-bawah, video di-dispose terus, jimat
+          // prestasi — bukan main senyap belakang tabir).
+          _miniTreeSlot(model, user),
 
+          const SizedBox(height: 10),
           _divider(),
-          const SizedBox(height: 4),
-
-          // Avatar + identiti — tekan buka Profil
-          _avatarRow(model, user),
-
           const SizedBox(height: 6),
-          _divider(),
-          const SizedBox(height: 8),
 
           // Tab utama
           Expanded(
@@ -151,86 +158,79 @@ class Sidebar extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16),
       );
 
-  // ── LOGO ────────────────────────────────────────────────────
-  Widget _logoRow(SidebarStateModel model) {
-    return GestureDetector(
-      onTap: model.toggleExpanded,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: model.isExpanded
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    const TreeOfLifeLogo(size: 38, animated: false),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'iHijrah',
-                        style: GoogleFonts.playfairDisplay(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: kPrimaryNavy,
-                        ),
-                      ),
-                    ),
-                    Icon(Icons.chevron_left_rounded,
-                        color: kRailGreenText.withOpacity(0.6), size: 20),
-                  ],
+  // ── POKOK MINI (video sebenar, saiz sidebar) ─────────────────
+  // FittedBox skalakan video ke kotak kecil ni tanpa kira aspect ratio
+  // sebenar fail video — selamat dari overflow rel yang sempit (60px).
+  Widget _miniTreeSlot(SidebarStateModel model, UserModel user) {
+    final double boxSize = model.isExpanded ? 92 : 58;
+    return SizedBox(
+      width: boxSize,
+      height: boxSize,
+      child: model.isVisible
+          ? FittedBox(
+              fit: BoxFit.contain,
+              child: SizedBox(
+                height: 260,
+                child: LivingTree(
+                  assetPath: _treeAssetForLevel(user.treeLevel),
+                  height: 260,
+                  onTap: () => model.setActiveMenu('pokok'),
                 ),
-              )
-            : const Center(child: TreeOfLifeLogo(size: 38, animated: false)),
-      ),
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 
+  String _treeAssetForLevel(int level) {
+    if (level <= 1) return AppAssets.treeV1;
+    if (level <= 3) return AppAssets.treeV2;
+    if (level <= 6) return AppAssets.treeV3;
+    return AppAssets.treeV4;
+  }
+
   // ── AVATAR ──────────────────────────────────────────────────
-  Widget _avatarRow(SidebarStateModel model, UserModel user) {
+  Widget _avatarBlock(SidebarStateModel model, UserModel user) {
     final bool hasAvatar =
         user.avatarPath != null && user.avatarPath!.isNotEmpty;
+    final double avatarSize = model.isExpanded ? 58 : 44;
 
     return GestureDetector(
       onTap: () => model.setActiveMenu('profil'),
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: model.isExpanded ? 16 : 0,
-          vertical: 6,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _avatarCircle(user, hasAvatar, avatarSize),
+            const SizedBox(height: 6),
+            Text(
+              user.name.isEmpty ? 'Hamba Allah' : user.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: kPrimaryNavy,
+                fontSize: model.isExpanded ? 12.5 : 10,
+                fontWeight: FontWeight.w700,
+                height: 1.15,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              user.hijriAge,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: kPrimaryNavy.withOpacity(0.68),
+                fontSize: model.isExpanded ? 10.5 : 8.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-        child: model.isExpanded
-            ? Row(
-                children: [
-                  _avatarCircle(user, hasAvatar, 34),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          user.name.isEmpty
-                              ? 'Hamba Allah'
-                              : user.name.split(' ').first,
-                          style: const TextStyle(
-                            color: kPrimaryNavy,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          user.hijriAge,
-                          style: TextStyle(
-                              color: kPrimaryNavy.withOpacity(0.7), fontSize: 10.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            : Center(child: _avatarCircle(user, hasAvatar, 34)),
       ),
     );
   }
@@ -253,13 +253,69 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _avatarFallback(UserModel user) => Center(
-        child: Text(
-          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'H',
-          style: const TextStyle(
-              color: kPrimaryNavy, fontSize: 13, fontWeight: FontWeight.w800),
+  Widget _avatarFallback(UserModel user) => Image.asset(
+        AppAssets.profileDefault,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(
+            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'H',
+            style: const TextStyle(
+                color: kPrimaryNavy, fontSize: 13, fontWeight: FontWeight.w800),
+          ),
         ),
       );
+
+  // ── WAKTU SOLAT (halus) ───────────────────────────────────────
+  // Sekadar penanda "app Islamik" — tak interaktif, tak menonjol.
+  // Consumer discreetly scoped di sini je (bukan watch kat top build())
+  // supaya rebuild setiap minit (tick PrayerService) tak paksa seluruh
+  // rel + tab + avatar sekali render balik.
+  Widget _prayerBlock(SidebarStateModel model) {
+    return Consumer<PrayerService>(
+      builder: (_, prayer, __) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: model.isExpanded
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.mosque_rounded, size: 12, color: kGoldDark),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        '${prayer.nextPrayerName} · ${prayer.countdown}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: kPrimaryNavy.withOpacity(0.7),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.mosque_rounded, size: 12, color: kGoldDark),
+                    const SizedBox(height: 2),
+                    Text(
+                      prayer.countdown,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: kPrimaryNavy.withOpacity(0.7),
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
+    );
+  }
 
   // ── ITEM REL (tab / notis / carian) ────────────────────────
   Widget _railItem(SidebarStateModel model, _RailTab t) {
@@ -277,32 +333,21 @@ class Sidebar extends StatelessWidget {
           vertical: model.isExpanded ? 11 : 9,
         ),
         decoration: BoxDecoration(
-          color: active ? kRailGreenActive : Colors.transparent,
+          color: active ? kPrimaryNavy.withOpacity(0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: active
-              ? Border.all(color: Colors.white.withOpacity(0.4), width: 1)
-              : null,
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.22),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3)),
-                ]
-              : null,
         ),
         child: model.isExpanded
             ? Row(
                 children: [
-                  MetallicIcon(icon: t.icon, size: 20, gradient: t.gradient),
-                  const SizedBox(width: 14),
+                  _iconBadge(t, active, 40),
+                  const SizedBox(width: 12),
                   Text(
                     t.label,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w600,
-                      color: active ? Colors.white : kRailGreenText,
+                      color: active ? kPrimaryNavy : kGoldDark,
                     ),
                   ),
                 ],
@@ -310,7 +355,7 @@ class Sidebar extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  MetallicIcon(icon: t.icon, size: 20, gradient: t.gradient),
+                  _iconBadge(t, active, 38),
                   const SizedBox(height: 3),
                   Text(
                     t.label,
@@ -320,12 +365,24 @@ class Sidebar extends StatelessWidget {
                       fontSize: 8.6,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w600,
-                      color: active ? Colors.white : kRailGreenText,
+                      color: active ? kPrimaryNavy : kGoldDark,
                     ),
                   ),
                 ],
               ),
       ),
+    );
+  }
+
+  // Cakera logam bercalar (brushed metal) — emas utk tak aktif, navy utk
+  // aktif. Satu bahasa visual konsisten (Arah A: emas+navy sahaja),
+  // bukan lagi pelbagai warna ikut tab (gold/navy/emerald/bronze campur).
+  Widget _iconBadge(_RailTab t, bool active, double size) {
+    return BrushedMetalIcon(
+      icon: t.icon,
+      size: size,
+      tones: active ? BrushedMetalTones.navy : BrushedMetalTones.gold,
+      glyphColor: active ? const Color(0xFFEFF3FA) : const Color(0xFF3A2A0C),
     );
   }
 

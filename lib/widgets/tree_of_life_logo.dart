@@ -1,10 +1,17 @@
 // lib/widgets/tree_of_life_logo.dart
-// Lambang "Pokok Hayat" — cincin + akar + batang + dahan + kluster daun,
-// dilukis terus guna CustomPainter (bukan ikon tekaan). Koordinat asas
-// 100x100, sama seperti pratonton HTML yang telah disahkan Tuan.
+// Lambang "Pokok Hayat" v3 — guna artwork sebenar (assets/images/pokok_intro.png)
+// dijana oleh AI image generator, bukan lagi dilukis procedural guna math.
+// Kod di sini HANYA uruskan animasi/gerakan di atas gambar statik tu:
 //
-// animated:true  -> lambaian angin + kilauan menyapu + denyut cincin (splash/intro)
-// animated:false -> statik, sesuai untuk rel/tempat kekal supaya tak ganggu mata
+//   0.00–0.15  glow lembut muncul di belakang
+//   0.05–0.85  gambar "tumbuh" — reveal dari bawah (akar) ke atas (kanopi),
+//              tepi lembut (soft-edge wipe), bukan garis potong tajam
+//   0.75–0.95  satu kilauan emas menyapu (shimmer) melintasi pokok
+// Selepas siap (animated:true) — goyangan angin lembut berterusan +
+// kilauan berulang setiap ~6 saat, macam idle premium.
+//
+// animated:false -> versi pantas (600ms fade, tiada wipe/loop), sesuai utk
+// rel/tempat kekal (sidebar) supaya tak ganggu & tak berat.
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -25,19 +32,29 @@ class _TreeOfLifeLogoState extends State<TreeOfLifeLogo>
   late final AnimationController _entrance;
   AnimationController? _loop;
 
+  static const String _asset = 'assets/images/pokok_intro.png';
+
   @override
   void initState() {
     super.initState();
+
     _entrance = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: widget.animated
+          ? const Duration(milliseconds: 2600)
+          : const Duration(milliseconds: 600),
     )..forward();
 
     if (widget.animated) {
       _loop = AnimationController(
         vsync: this,
         duration: const Duration(seconds: 6),
-      )..repeat();
+      );
+      _entrance.addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _loop?.repeat();
+        }
+      });
     }
   }
 
@@ -48,35 +65,76 @@ class _TreeOfLifeLogoState extends State<TreeOfLifeLogo>
     super.dispose();
   }
 
+  static double _win(double t, double a, double b) {
+    if (b <= a) return t >= a ? 1.0 : 0.0;
+    return ((t - a) / (b - a)).clamp(0.0, 1.0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Listenable merged = _loop != null
-        ? Listenable.merge([_entrance, _loop])
-        : _entrance;
+    final Listenable merged =
+        _loop != null ? Listenable.merge([_entrance, _loop]) : _entrance;
 
     return AnimatedBuilder(
       animation: merged,
       builder: (context, _) {
-        final double swayPhase =
-            _loop != null ? _loop!.value * 2 * math.pi : 0.0;
-        final double shimmerProgress =
-            _loop != null ? (_loop!.value * 2) % 1.0 : -1.0;
-        final double ringProgress = _loop != null ? _loop!.value % 1.0 : -1.0;
+        final double introT = _entrance.value;
+        final double loopT = _loop?.value ?? 0.0;
+        final double swayPhase = loopT * 2 * math.pi;
 
-        final double ease = Curves.easeOutBack.transform(_entrance.value);
+        final double glowT = _win(introT, 0.0, 0.20);
+        final double revealT = _win(introT, 0.05, 0.85);
+        final double fadeT = _win(introT, 0.0, 0.10);
+
+        // Kilauan: sekali semasa intro, kemudian berulang tiap kitaran loop
+        double shimmerT = -1;
+        if (introT < 1.0) {
+          if (introT >= 0.78) shimmerT = ((introT - 0.78) / 0.20).clamp(0.0, 1.0);
+        } else if (_loop != null) {
+          final double lp = loopT % 1.0;
+          if (lp < 0.15) shimmerT = lp / 0.15;
+        }
+
+        // Goyangan angin lembut selepas intro siap
+        final double swayGate = _win(introT, 0.85, 1.0);
+        final double swayAngle =
+            (_loop != null ? math.sin(swayPhase) : 0.0) * 0.028 * swayGate;
 
         return Opacity(
-          opacity: Curves.easeOut.transform(_entrance.value).clamp(0.0, 1.0),
-          child: Transform.scale(
-            scale: (0.55 + 0.45 * ease).clamp(0.0, 1.15),
-            child: CustomPaint(
-              size: Size(widget.size, widget.size),
-              painter: _TreeOfLifePainter(
-                swayPhase: swayPhase,
-                shimmerProgress: shimmerProgress,
-                ringProgress: ringProgress,
-                showRings: widget.animated,
-              ),
+          opacity: fadeT,
+          child: SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                // ── Glow lembut di belakang ──
+                Container(
+                  width: widget.size * 1.25,
+                  height: widget.size * 1.25,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        kPrimaryGold.withOpacity(0.20 * glowT),
+                        kPrimaryGold.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Pokok (goyang dari pangkal) ──
+                Transform.rotate(
+                  angle: swayAngle,
+                  alignment: const Alignment(0, 0.92),
+                  child: _RevealingTree(
+                    asset: _asset,
+                    revealT: revealT,
+                    shimmerT: shimmerT,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -85,166 +143,82 @@ class _TreeOfLifeLogoState extends State<TreeOfLifeLogo>
   }
 }
 
-class _TreeOfLifePainter extends CustomPainter {
-  final double swayPhase;
-  final double shimmerProgress; // -1 = jangan lukis
-  final double ringProgress; // -1 = jangan lukis
-  final bool showRings;
+/// Melukis gambar pokok dgn 2 lapisan:
+///  1. gambar asal, di-"reveal" dari bawah ke atas (tepi lembut)
+///  2. kilauan putih yang mengikut bentuk siluet pokok sahaja (bukan segi
+///     empat penuh) — guna gambar sama sbg mask supaya kilauan tak terkeluar
+///     dari bentuk pokok.
+class _RevealingTree extends StatelessWidget {
+  final String asset;
+  final double revealT; // 0..1
+  final double shimmerT; // -1..1, -1 = jangan lukis
 
-  _TreeOfLifePainter({
-    required this.swayPhase,
-    required this.shimmerProgress,
-    required this.ringProgress,
-    required this.showRings,
+  const _RevealingTree({
+    required this.asset,
+    required this.revealT,
+    required this.shimmerT,
   });
 
-  static const List<Color> _lineColors = [kGoldHighlight, kGoldMid, kGoldDeep];
-  static const List<Color> _fillColors = [
-    kGoldHighlight,
-    kGoldMid,
-    kGoldDeep,
-  ];
-
   @override
-  void paint(Canvas canvas, Size size) {
-    final double s = size.width / 100.0;
-    canvas.save();
-    canvas.scale(s);
+  Widget build(BuildContext context) {
+    final Widget base = Image.asset(asset, fit: BoxFit.contain);
 
-    const Offset center = Offset(50, 50);
-    final Rect fullRect = const Rect.fromLTWH(0, 0, 100, 100);
+    // Reveal bawah->atas dgn tepi lembut (bukan garis potong tajam)
+    final double edge = 1.0 - revealT;
+    final Widget revealed = ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: const [
+          Colors.transparent,
+          Colors.transparent,
+          Colors.white,
+          Colors.white,
+        ],
+        stops: [
+          0.0,
+          edge.clamp(0.0, 1.0),
+          (edge + 0.14).clamp(0.0, 1.0),
+          1.0,
+        ],
+      ).createShader(bounds),
+      blendMode: BlendMode.dstIn,
+      child: base,
+    );
 
-    // ── Cincin berdenyut (splash sahaja) ──
-    if (showRings && ringProgress >= 0) {
-      for (int i = 0; i < 3; i++) {
-        final double phase = (ringProgress + i * 0.33) % 1.0;
-        final double radius = 30 + phase * 16;
-        final double opacity = (1 - phase).clamp(0.0, 1.0) * 0.5;
-        final Paint ringPaint = Paint()
-          ..color = kPrimaryGold.withOpacity(opacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2;
-        canvas.drawCircle(center, radius, ringPaint);
-      }
-    }
+    if (shimmerT < 0) return revealed;
 
-    final Paint linePaint = Paint()
-      ..shader = LinearGradient(colors: _lineColors).createShader(fullRect)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+    // Jalur kilauan diagonal, dibentuk ikut siluet pokok (guna gambar yg
+    // sama sbg silhouette putih, kemudian ditapis ikut jalur sweep)
+    final double sweep = -0.3 + shimmerT * 1.6; // -0.3..1.3 merentasi bounds
+    final double fade = (1 - (shimmerT - 0.5).abs() * 2).clamp(0.0, 1.0);
 
-    // Cincin luar tetap
-    linePaint.strokeWidth = 2.2;
-    canvas.drawCircle(center, 42, linePaint);
-
-    // ── Akar ──
-    linePaint.strokeWidth = 2;
-    _curve(canvas, linePaint, const Offset(50, 58), const Offset(40, 68), const Offset(30, 76));
-    _curve(canvas, linePaint, const Offset(50, 58), const Offset(60, 68), const Offset(70, 76));
-    _curve(canvas, linePaint, const Offset(50, 60), const Offset(50, 72), const Offset(50, 82));
-    linePaint.strokeWidth = 1.3;
-    _curve(canvas, linePaint, const Offset(50, 63), const Offset(35, 68), const Offset(23, 73));
-    _curve(canvas, linePaint, const Offset(50, 63), const Offset(65, 68), const Offset(77, 73));
-    linePaint.strokeWidth = 1;
-    _curve(canvas, linePaint, const Offset(43, 60), const Offset(33, 65), const Offset(25, 64));
-    _curve(canvas, linePaint, const Offset(57, 60), const Offset(67, 65), const Offset(75, 64));
-    _curve(canvas, linePaint, const Offset(50, 66), const Offset(44, 74), const Offset(38, 80));
-    _curve(canvas, linePaint, const Offset(50, 66), const Offset(56, 74), const Offset(62, 80));
-
-    // ── Batang ──
-    linePaint.strokeWidth = 3.6;
-    canvas.drawLine(const Offset(50, 63), const Offset(50, 42), linePaint);
-
-    // ── Dahan ──
-    linePaint.strokeWidth = 2;
-    _curve(canvas, linePaint, const Offset(50, 45), const Offset(40, 32), const Offset(28, 24));
-    _curve(canvas, linePaint, const Offset(50, 45), const Offset(60, 32), const Offset(72, 24));
-    _curve(canvas, linePaint, const Offset(50, 42), const Offset(50, 28), const Offset(50, 14));
-    linePaint.strokeWidth = 1.3;
-    _curve(canvas, linePaint, const Offset(50, 40), const Offset(35, 32), const Offset(20, 28));
-    _curve(canvas, linePaint, const Offset(50, 40), const Offset(65, 32), const Offset(80, 28));
-    linePaint.strokeWidth = 1;
-    _curve(canvas, linePaint, const Offset(43, 42), const Offset(33, 36), const Offset(24, 36));
-    _curve(canvas, linePaint, const Offset(57, 42), const Offset(67, 36), const Offset(76, 36));
-
-    // ── Kluster daun — bergoyang berasingan ──
-    final Paint fillPaint = Paint()
-      ..shader = const RadialGradient(
-        center: Alignment(-0.3, -0.3),
-        colors: _fillColors,
-      ).createShader(fullRect);
-
-    _swayCluster(canvas, fillPaint, pivot: const Offset(28, 24), speedMul: 1.0, dots: const [
-      _Dot(Offset(28, 24), 7.0),
-      _Dot(Offset(20, 28), 5.0),
-      _Dot(Offset(24, 36), 4.0),
-      _Dot(Offset(16, 33), 3.5),
-    ]);
-    _swayCluster(canvas, fillPaint, pivot: const Offset(72, 24), speedMul: 1.08, dots: const [
-      _Dot(Offset(72, 24), 7.0),
-      _Dot(Offset(80, 28), 5.0),
-      _Dot(Offset(76, 36), 4.0),
-      _Dot(Offset(84, 33), 3.5),
-    ]);
-    _swayCluster(canvas, fillPaint, pivot: const Offset(50, 15), speedMul: 0.95, dots: const [
-      _Dot(Offset(50, 14), 8.0),
-      _Dot(Offset(38, 18), 5.5),
-      _Dot(Offset(62, 18), 5.5),
-      _Dot(Offset(50, 26), 6.5),
-    ]);
-
-    // ── Kilauan menyapu ──
-    if (shimmerProgress >= 0 && shimmerProgress < 0.45) {
-      canvas.save();
-      canvas.clipPath(Path()..addOval(Rect.fromCircle(center: center, radius: 43)));
-      final double travel = shimmerProgress / 0.45;
-      final double dx = -70 + travel * 140;
-      final double dy = -70 + travel * 140;
-      final double fade = (1 - (travel - 0.5).abs() * 2).clamp(0.0, 1.0);
-      canvas.translate(50 + dx, 50 + dy);
-      canvas.rotate(25 * math.pi / 180);
-      final Paint shimmerPaint = Paint()..color = Colors.white.withOpacity(0.85 * fade);
-      canvas.drawRect(const Rect.fromLTWH(-6, -60, 12, 120), shimmerPaint);
-      canvas.restore();
-    }
-
-    canvas.restore();
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        revealed,
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withOpacity(0.0),
+              Colors.white.withOpacity(0.85 * fade),
+              Colors.white.withOpacity(0.0),
+            ],
+            stops: [
+              (sweep - 0.16).clamp(0.0, 1.0),
+              sweep.clamp(0.0, 1.0),
+              (sweep + 0.16).clamp(0.0, 1.0),
+            ],
+          ).createShader(bounds),
+          blendMode: BlendMode.dstIn,
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            child: base,
+          ),
+        ),
+      ],
+    );
   }
-
-  void _curve(Canvas canvas, Paint paint, Offset start, Offset control, Offset end) {
-    final Path path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
-    canvas.drawPath(path, paint);
-  }
-
-  void _swayCluster(
-    Canvas canvas,
-    Paint paint, {
-    required Offset pivot,
-    required double speedMul,
-    required List<_Dot> dots,
-  }) {
-    canvas.save();
-    canvas.translate(pivot.dx, pivot.dy);
-    final double angle = math.sin(swayPhase * speedMul) * 0.045; // ~2.5 darjah
-    canvas.rotate(angle);
-    canvas.translate(-pivot.dx, -pivot.dy);
-    for (final _Dot d in dots) {
-      canvas.drawCircle(d.offset, d.radius, paint);
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _TreeOfLifePainter old) =>
-      old.swayPhase != swayPhase ||
-      old.shimmerProgress != shimmerProgress ||
-      old.ringProgress != ringProgress;
-}
-
-class _Dot {
-  final Offset offset;
-  final double radius;
-  const _Dot(this.offset, this.radius);
 }
