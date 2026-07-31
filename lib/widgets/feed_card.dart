@@ -48,18 +48,27 @@ const List<List<Color>> _palettes = [
 ];
 
 // ── FEED CARD ─────────────────────────────────────────────────
+// Nota reka bentuk: kad ini kini SAIZ SENDIRI ikut kandungan (tiada lagi
+// `Expanded` yang perlukan tinggi tetap dari ibu bapa). Ini sengaja —
+// supaya boleh diletak dalam grid masonry (TwoColumnMasonry) yang bagi
+// setiap kad tinggi berbeza ikut kandungan sebenar, bukan kotak seragam.
 class FeedCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onTap;
 
-  const FeedCard({Key? key, required this.post, this.onTap}) : super(key: key);
+  /// Nisbah aspek gambar thumbnail. Berbeza ikut kad (ditetapkan oleh
+  /// FeedPanel) supaya grid nampak organik, bukan gred seragam sebaris.
+  final double imageAspectRatio;
+
+  const FeedCard({
+    Key? key,
+    required this.post,
+    this.onTap,
+    this.imageAspectRatio = 1.45,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final Color accent = _typeColor(post.type);
-    final int   pi     = post.id.hashCode.abs() % _palettes.length;
-    final bool  hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
-
     return RepaintBoundary(
       child: PressableScale(
         onTap: onTap,
@@ -72,120 +81,198 @@ class FeedCard extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: post.type == 'quote' ? _buildQuoteLayout() : _buildMediaLayout(),
+        ),
+      ),
+    );
+  }
+
+  // ── LAYOUT: PETIKAN ─────────────────────────────────────────
+  // Tiada blok gambar langsung — kad teks tulen, tinggi ikut panjang
+  // petikan sebenar. Ini yang paling banyak sumbang kepada rupa
+  // masonry organik (berbanding kad bergambar yang lebih seragam).
+  Widget _buildQuoteLayout() {
+    final int pi = post.id.hashCode.abs() % _palettes.length;
+    final Color accent = _typeColor(post.type);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _palettes[pi],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopScaleIn(
+            delay: const Duration(milliseconds: 140),
+            child: Icon(Icons.format_quote_rounded, size: 26, color: accent),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            post.content,
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
+              height: 1.42,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
             children: [
-
-              // ── THUMBNAIL ──────────────────────────────────
-              AspectRatio(
-                aspectRatio: 1.45,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    hasImg
-                        ? Image.asset(
-                            post.assetPath!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _gradBg(_palettes[pi], post.type),
-                            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                              if (wasSynchronouslyLoaded) return child;
-                              return AnimatedSwitcher(
-                                duration: AppDurations.fast,
-                                child: frame == null
-                                    ? const ShimmerBox(key: ValueKey('shimmer'))
-                                    : KeyedSubtree(key: const ValueKey('img'), child: child),
-                              );
-                            },
-                          )
-                        : _gradBg(_palettes[pi], post.type),
-
-                    // Badge Jenis
-                    Positioned(
-                      bottom: 8, left: 8,
-                      child: PopScaleIn(
-                        delay: const Duration(milliseconds: 180),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.55),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_typeIcon(post.type), size: 9.5, color: accent),
-                              const SizedBox(width: 4),
-                              Text(
-                                _typeLabel(post.type),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8.0,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: Text(
+                  '— ${post.author}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
                 ),
               ),
+              const SizedBox(width: 6),
+              PopLikeButton(
+                baseCount: post.likes,
+                iconSize: 11.5,
+                mutedColor: Colors.white.withOpacity(0.55),
+                likedColor: kTypeVideo,
+                countStyle: TextStyle(fontSize: 9.5, color: Colors.white.withOpacity(0.7)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-              // ── MAKLUMAT ───────────────────────────────────
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        post.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13.0,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
-                          color: kTextPrimary,
-                          height: 1.4, 
+  // ── LAYOUT: VIDEO / ARTIKEL / ACARA ─────────────────────────
+  Widget _buildMediaLayout() {
+    final Color accent = _typeColor(post.type);
+    final int   pi     = post.id.hashCode.abs() % _palettes.length;
+    final bool  hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        // ── THUMBNAIL ──────────────────────────────────
+        AspectRatio(
+          aspectRatio: imageAspectRatio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              hasImg
+                  ? Image.asset(
+                      post.assetPath!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _gradBg(_palettes[pi], post.type),
+                      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                        if (wasSynchronouslyLoaded) return child;
+                        return AnimatedSwitcher(
+                          duration: AppDurations.fast,
+                          child: frame == null
+                              ? const ShimmerBox(key: ValueKey('shimmer'))
+                              : KeyedSubtree(key: const ValueKey('img'), child: child),
+                        );
+                      },
+                    )
+                  : _gradBg(_palettes[pi], post.type),
+
+              // Badge Jenis
+              Positioned(
+                bottom: 8, left: 8,
+                child: PopScaleIn(
+                  delay: const Duration(milliseconds: 180),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_typeIcon(post.type), size: 9.5, color: accent),
+                        const SizedBox(width: 4),
+                        Text(
+                          _typeLabel(post.type),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8.0,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${post.author} · ${post.time}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 9.5,
-                                color: kTextSecondary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          PopLikeButton(
-                            baseCount: post.likes,
-                            iconSize: 11.5,
-                            mutedColor: kTextMuted,
-                            likedColor: kTypeVideo,
-                            countStyle: const TextStyle(
-                                fontSize: 9.5, color: kTextMuted),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
-      ),
+
+        // ── MAKLUMAT ───────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                post.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                  color: kTextPrimary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${post.author} · ${post.time}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: kTextSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  PopLikeButton(
+                    baseCount: post.likes,
+                    iconSize: 11.5,
+                    mutedColor: kTextMuted,
+                    likedColor: kTypeVideo,
+                    countStyle: const TextStyle(
+                        fontSize: 9.5, color: kTextMuted),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
