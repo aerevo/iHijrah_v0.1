@@ -49,6 +49,35 @@ const LinearGradient kRailGreenGradient = LinearGradient(
   stops: [0.0, 0.55, 1.0],
 );
 
+// ═══════════════════════════════════════════
+// REL KIRI — TEMA KACA GELAP (glassmorphism)
+// Rel kekal gelap & lutsinar walau app keseluruhan cerah — kontras
+// premium yg disengajakan. Guna navy+emas jenama sedia ada sbg dasar
+// (bukan hitam/neon generik) supaya kekal terasa "iHijrah", bukan
+// dashboard app lain.
+// ═══════════════════════════════════════════
+const Color kGlassRailBase   = Color(0xFF13233F); // navy-gelap — dasar kaca
+const Color kGlassRailDeep   = Color(0xFF070D1A); // hujung paling gelap gradient
+const Color kGlassRailBorder = Color(0x26FFFFFF); // hairline putih lutsinar (bucu kaca)
+const Color kGlassTextDim    = Color(0xFFA9B8CE); // teks/ikon tak aktif atas kaca gelap
+const Color kGlassTextBright = Color(0xFFF5ECD8); // teks terang — putih gading hangat
+
+const LinearGradient kGlassRailGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0xE01A2C4C), Color(0xE013233F), Color(0xF2070D1A)],
+  stops: [0.0, 0.55, 1.0],
+);
+
+// Pil status aktif atas kaca gelap — emas jenama (selari makna sedia ada:
+// emas = istimewa/badge/streak di seluruh app), teks jadi navy gelap utk
+// kontras selamat di atas emas terang.
+const LinearGradient kGlassActiveGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [kGoldLight, kPrimaryGold, kGoldDark],
+);
+
 // ── Jenama Emas — kini AKSEN sahaja (kandungan) ────
 const Color kPrimaryGold  = Color(0xFFC79A38); // aksen istimewa — badge, hadith, streak
 const Color kGoldLight    = Color(0xFFE8C46B); // emas cerah — highlight/gradient
