@@ -24,22 +24,21 @@ class _RailTab {
   final String   id;
   final IconData icon;
   final String   label;
-  final List<Color> gradient;
-  const _RailTab(this.id, this.icon, this.label, this.gradient);
+  const _RailTab(this.id, this.icon, this.label);
 }
 
 const List<_RailTab> _mainTabs = [
-  _RailTab('utama',    Icons.home_rounded,             'Utama',  MetallicPalettes.gold),
-  _RailTab('sirah',    Icons.auto_stories_rounded,     'Sirah',  MetallicPalettes.navy),
-  _RailTab('amalan',   Icons.spa_rounded,              'Amalan', MetallicPalettes.emerald),
-  _RailTab('kalendar', Icons.calendar_month_rounded,   'Jadual', MetallicPalettes.bronze),
-  _RailTab('pokok',    Icons.park_rounded,             'Pokok',  MetallicPalettes.emerald),
-  _RailTab('profil',   Icons.person_rounded,           'Profil', MetallicPalettes.navy),
+  _RailTab('utama',    Icons.home_rounded,             'Utama'),
+  _RailTab('sirah',    Icons.auto_stories_rounded,     'Sirah'),
+  _RailTab('amalan',   Icons.spa_rounded,              'Amalan'),
+  _RailTab('kalendar', Icons.calendar_month_rounded,   'Jadual'),
+  _RailTab('pokok',    Icons.park_rounded,             'Pokok'),
+  _RailTab('profil',   Icons.person_rounded,           'Profil'),
 ];
 
 const List<_RailTab> _utilityTabs = [
-  _RailTab('notifikasi', Icons.notifications_none_rounded, 'Notis', MetallicPalettes.gold),
-  _RailTab('carian',     Icons.search_rounded,             'Cari',  MetallicPalettes.bronze),
+  _RailTab('notifikasi', Icons.notifications_none_rounded, 'Notis'),
+  _RailTab('carian',     Icons.search_rounded,             'Cari'),
 ];
 
 class Sidebar extends StatelessWidget {
@@ -276,24 +275,13 @@ class Sidebar extends StatelessWidget {
           vertical: model.isExpanded ? 11 : 9,
         ),
         decoration: BoxDecoration(
-          color: active ? kRailGreenActive : Colors.transparent,
+          color: active ? kPrimaryNavy.withOpacity(0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: active
-              ? Border.all(color: Colors.white.withOpacity(0.4), width: 1)
-              : null,
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.22),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3)),
-                ]
-              : null,
         ),
         child: model.isExpanded
             ? Row(
                 children: [
-                  _iconBadge(t, active, 36),
+                  _iconBadge(t, active, 40),
                   const SizedBox(width: 12),
                   Text(
                     t.label,
@@ -301,7 +289,7 @@ class Sidebar extends StatelessWidget {
                       fontSize: 13,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w600,
-                      color: active ? Colors.white : kRailGreenText,
+                      color: active ? kPrimaryNavy : kGoldDark,
                     ),
                   ),
                 ],
@@ -309,7 +297,7 @@ class Sidebar extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _iconBadge(t, active, 34),
+                  _iconBadge(t, active, 38),
                   const SizedBox(height: 3),
                   Text(
                     t.label,
@@ -319,7 +307,7 @@ class Sidebar extends StatelessWidget {
                       fontSize: 8.6,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w600,
-                      color: active ? Colors.white : kRailGreenText,
+                      color: active ? kPrimaryNavy : kGoldDark,
                     ),
                   ),
                 ],
@@ -328,25 +316,15 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Badge bulat bertona lembut di belakang tiap ikon — semua tab kekal
-  // "berwarna" (ceria) walau tak aktif, bukan cuma outline hijau flat.
-  // Bila aktif, latar jadi lebih terang supaya tetap jelas menonjol.
+  // Cakera logam bercalar (brushed metal) — emas utk tak aktif, navy utk
+  // aktif. Satu bahasa visual konsisten (Arah A: emas+navy sahaja),
+  // bukan lagi pelbagai warna ikut tab (gold/navy/emerald/bronze campur).
   Widget _iconBadge(_RailTab t, bool active, double size) {
-    final Color tint = t.gradient[1];
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.34),
-        color: active ? Colors.white.withOpacity(0.24) : tint.withOpacity(0.16),
-      ),
-      child: Center(
-        child: MetallicIcon(
-          icon: t.icon,
-          size: size * 0.56,
-          gradient: t.gradient,
-        ),
-      ),
+    return BrushedMetalIcon(
+      icon: t.icon,
+      size: size,
+      tones: active ? BrushedMetalTones.navy : BrushedMetalTones.gold,
+      glyphColor: active ? const Color(0xFFEFF3FA) : const Color(0xFF3A2A0C),
     );
   }
 
