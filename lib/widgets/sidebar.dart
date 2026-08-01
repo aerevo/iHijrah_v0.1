@@ -339,7 +339,7 @@ class Sidebar extends StatelessWidget {
         child: model.isExpanded
             ? Row(
                 children: [
-                  _iconBadge(t, active, 40),
+                  _iconBadge(t, 22),
                   const SizedBox(width: 12),
                   Text(
                     t.label,
@@ -355,7 +355,7 @@ class Sidebar extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _iconBadge(t, active, 38),
+                  _iconBadge(t, 21),
                   const SizedBox(height: 3),
                   Text(
                     t.label,
@@ -374,16 +374,12 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Cakera logam bercalar (brushed metal) — emas utk tak aktif, navy utk
-  // aktif. Satu bahasa visual konsisten (Arah A: emas+navy sahaja),
-  // bukan lagi pelbagai warna ikut tab (gold/navy/emerald/bronze campur).
-  Widget _iconBadge(_RailTab t, bool active, double size) {
-    return BrushedMetalIcon(
-      icon: t.icon,
-      size: size,
-      tones: active ? BrushedMetalTones.navy : BrushedMetalTones.gold,
-      glyphColor: active ? const Color(0xFFEFF3FA) : const Color(0xFF3A2A0C),
-    );
+  // Glyph telus (LuxuryGoldIcon) — bukan lagi cakera 3D. Warna emas SAMA
+  // untuk aktif & tak aktif (macam fasa asal); status "aktif" dibawa oleh
+  // washer navy pada Container (_railItem) + warna label, bukan ikon itu
+  // sendiri. Kurang lapisan = kurang bising secara visual.
+  Widget _iconBadge(_RailTab t, double size) {
+    return LuxuryGoldIcon(icon: t.icon, size: size);
   }
 
   // ── HANDLE TERAPUNG ─────────────────────────────────────────
