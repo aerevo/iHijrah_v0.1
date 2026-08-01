@@ -36,15 +36,24 @@ import 'package:flutter/material.dart';
 //    kesan "gold foil bersinar" tanpa perlu bina kedalaman 3D secara manual.
 //
 // Nota: fasa asal duduk atas latar gelap+blur, jadi kontras automatik
-// tinggi. Rel sekarang latar hijau cerah (kRailGreenGradient), jadi
-// ditambah SATU lapisan bayang nipis di belakang glyph (bukan bezel/disc)
-// khas untuk kekalkan legap — bukan penambahan hiasan, semata legibiliti.
+// tinggi. Rel sekarang pun dah balik gelap (kGlassRailGradient, lihat
+// sidebar.dart), jadi lapisan bayang di bawah ni sebenarnya dah jadi
+// hampir tak diperlukan lagi — tapi dikekalkan (opacity rendah je) sbg
+// jaring keselamatan kalau widget ni dipakai di latar cerah lain nanti.
 class LuxuryGoldIcon extends StatelessWidget {
   final IconData icon;
   final double size;
+  // Bila diisi: lukis ikon warna PEJAL ni terus (skip gradient/bayang).
+  // Perlu utk kes ikon duduk atas PIL EMAS terang (status aktif) — emas
+  // atas emas akan hilang kontras, jadi kena solid (biasanya navy).
+  final Color? solidColor;
 
-  const LuxuryGoldIcon({Key? key, required this.icon, this.size = 22})
-      : super(key: key);
+  const LuxuryGoldIcon({
+    Key? key,
+    required this.icon,
+    this.size = 22,
+    this.solidColor,
+  }) : super(key: key);
 
   static const List<Color> goldStops = [
     Color(0xFFBF953F), // Classic Gold (base)
@@ -56,6 +65,10 @@ class LuxuryGoldIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (solidColor != null) {
+      return Icon(icon, size: size, color: solidColor);
+    }
+
     return Stack(
       alignment: Alignment.center,
       children: [
