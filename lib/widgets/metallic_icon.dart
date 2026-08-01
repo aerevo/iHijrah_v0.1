@@ -18,6 +18,67 @@
 
 import 'package:flutter/material.dart';
 
+// ═══════════════════════════════════════════════════════════════
+// LUXURY GOLD ICON — teknik dari fasa asal ("VERSI ORIGINAL - APPROVED")
+// ═══════════════════════════════════════════════════════════════
+// ShaderMask + LinearGradient terus pada bentuk ikon. TIADA cakera/badge
+// bulat, TIADA bezel, TIADA vignette, TIADA specular blob berasingan.
+//
+// Kenapa lebih "premium" drpd BrushedMetalIcon di bawah:
+//  - Restraint. Mata baca "mewah" drpd peralihan WARNA yang licin, bukan
+//    drpd lapisan bentuk/bayang yang banyak. Lebih banyak lapisan 3D palsu
+//    pada saiz kecil (38-40px) jatuh nampak keruh/bising, bukan mewah.
+//  - Bentuk cakera bulat berulang 8x menegak bersaing dgn bulatan lain
+//    dlm rel (avatar, slot pokok) — hierarchy visual hilang. Glyph telus
+//    tanpa badge biar bentuk ikon sendiri yg tenang, ada ruang negatif.
+//  - Palet 5-stop (BF953F/FCF6BA/B38728/FBF5B7/AA771C) ni "classic luxury
+//    gold" yang memang teruji — 2 highlight + 1 shadow band cukup bagi
+//    kesan "gold foil bersinar" tanpa perlu bina kedalaman 3D secara manual.
+//
+// Nota: fasa asal duduk atas latar gelap+blur, jadi kontras automatik
+// tinggi. Rel sekarang latar hijau cerah (kRailGreenGradient), jadi
+// ditambah SATU lapisan bayang nipis di belakang glyph (bukan bezel/disc)
+// khas untuk kekalkan legap — bukan penambahan hiasan, semata legibiliti.
+class LuxuryGoldIcon extends StatelessWidget {
+  final IconData icon;
+  final double size;
+
+  const LuxuryGoldIcon({Key? key, required this.icon, this.size = 22})
+      : super(key: key);
+
+  static const List<Color> goldStops = [
+    Color(0xFFBF953F), // Classic Gold (base)
+    Color(0xFFFCF6BA), // Ultra Light Gold (silau)
+    Color(0xFFB38728), // Dark Metallic Gold (shadow/depth)
+    Color(0xFFFBF5B7), // Light Sand Gold (pantulan kedua)
+    Color(0xFFAA771C), // Rich Gold (finishing)
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Bayang nipis — legibiliti atas latar cerah sahaja, bukan hiasan
+        Transform.translate(
+          offset: const Offset(0.6, 1.0),
+          child: Icon(icon, size: size, color: Colors.black.withOpacity(0.16)),
+        ),
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: goldStops,
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+          ).createShader(bounds),
+          blendMode: BlendMode.srcIn,
+          child: Icon(icon, size: size, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
+
 class MetallicIcon extends StatelessWidget {
   final IconData icon;
   final double size;
