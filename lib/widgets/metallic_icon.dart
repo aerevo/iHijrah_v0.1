@@ -144,78 +144,143 @@ class BrushedMetalIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double glyphSize = size * 0.46;
+    final double glyphSize = size * 0.44;
+    final Color dark  = tones.first;
+    final Color mid   = tones.length > 1 ? tones[1] : tones.first;
+    final Color light = tones.last;
+    final double rim  = size * 0.05; // ketebalan bezel luar
 
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          // Bayang jatuh — cakera "timbul" drpd latar
+          // 1. Bayang jatuh — cakera "timbul" drpd latar (2 lapis: bayang
+          //    hitam lembut + bayang tona logam sendiri utk kesan lebih pekat)
           Container(
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.26),
-                  blurRadius: size * 0.16,
-                  offset: Offset(0, size * 0.05),
+                  color: Colors.black.withOpacity(0.30),
+                  blurRadius: size * 0.20,
+                  offset: Offset(0, size * 0.07),
+                ),
+                BoxShadow(
+                  color: dark.withOpacity(0.25),
+                  blurRadius: size * 0.06,
+                  offset: Offset(0, size * 0.02),
                 ),
               ],
             ),
           ),
 
-          // Badan logam bercalar — banyak jalur berselang-seli mensimulasi
-          // tekstur "brushed metal" diagonal
-          ClipOval(
-            child: Container(
-              decoration: BoxDecoration(gradient: _brushedGradient()),
+          // 2. Bezel luar — cincin logam terarah cahaya (terang atas-kiri →
+          //    gelap bawah-kanan), jadi rim tepi bila cakera dalam di-inset
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [light, mid, dark],
+                stops: const [0.0, 0.5, 1.0],
+              ),
             ),
           ),
 
-          // Kilauan diagonal terang (specular sweep) — ciri utama gaya "chrome"
-          ClipOval(
-            child: Transform.rotate(
-              angle: -0.6,
-              child: Container(
-                width: size * 1.7,
-                height: size * 0.5,
-                margin: EdgeInsets.only(top: -size * 0.08),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withOpacity(0.0),
-                      Colors.white.withOpacity(0.55),
-                      Colors.white.withOpacity(0.0),
-                    ],
+          // 3. Cakera dalam — badan logam calar BULAT (SweepGradient, bukan
+          //    jalur diagonal keras) + pencahayaan terarah + specular
+          Padding(
+            padding: EdgeInsets.all(rim),
+            child: ClipOval(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 3a. Tekstur brush halus — calar bulat kontras rendah,
+                  //     macam logam dikilang guna lathe (bukan corak jalur)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: _brushedSweep(dark, mid, light),
+                    ),
                   ),
+
+                  // 3b. Cahaya terarah (bulatan lembut atas-kiri, bukan
+                  //     jalur diagonal keras) — simulasi sumber cahaya tunggal
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.45, -0.55),
+                        radius: 1.05,
+                        colors: [light.withOpacity(0.55), light.withOpacity(0.0)],
+                        stops: const [0.0, 0.75],
+                      ),
+                    ),
+                  ),
+
+                  // 3c. Vignette tepi — gelapkan bucu utk kesan cakera cembung
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        radius: 0.75,
+                        colors: [Colors.transparent, dark.withOpacity(0.35)],
+                        stops: const [0.65, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // 3d. Titik specular terang — "hot spot" pantulan cahaya
+                  Align(
+                    alignment: const Alignment(-0.4, -0.6),
+                    child: FractionallySizedBox(
+                      widthFactor: 0.42,
+                      heightFactor: 0.42,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.65),
+                              Colors.white.withOpacity(0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 4. Bibir highlight halus di tepi cakera dalam
+          Padding(
+            padding: EdgeInsets.all(rim),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.20),
+                  width: size * 0.012,
                 ),
               ),
             ),
           ),
 
-          // Rim gelap (bevel tepi) — beri kesan cakera padat
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: tones.first.withOpacity(0.6),
-                width: size * 0.035,
-              ),
-            ),
-          ),
-
-          // Glyph — "terukir" (emboss halus: bayang bawah + cahaya atas)
+          // 5. Glyph — "terukir" (emboss halus: bayang bawah + cahaya atas)
           Transform.translate(
-            offset: Offset(size * 0.018, size * 0.02),
-            child: Icon(icon, size: glyphSize, color: Colors.black.withOpacity(0.45)),
+            offset: Offset(size * 0.02, size * 0.024),
+            child: Icon(icon, size: glyphSize, color: Colors.black.withOpacity(0.50)),
           ),
           Transform.translate(
-            offset: Offset(-size * 0.014, -size * 0.014),
-            child: Icon(icon, size: glyphSize, color: Colors.white.withOpacity(0.30)),
+            offset: Offset(-size * 0.016, -size * 0.016),
+            child: Icon(icon, size: glyphSize, color: Colors.white.withOpacity(0.35)),
           ),
           Icon(icon, size: glyphSize, color: glyphColor),
         ],
@@ -223,29 +288,24 @@ class BrushedMetalIcon extends StatelessWidget {
     );
   }
 
-  Gradient _brushedGradient() {
-    final Color dark = tones.first;
-    final Color mid = tones.length > 1 ? tones[1] : tones.first;
-    final Color light = tones.last;
-
-    const int bands = 14;
+  // SweepGradient (360°) mensimulasikan calar halus BULAT/radial — macam
+  // logam dikilang guna lathe — bukan jalur diagonal lurus yg nampak macam
+  // corak "candy stripe". Kontras rendah antara jalur bersebelahan supaya
+  // ia terbaca sbg TEKSTUR permukaan, bukan corak grafik yg jelas.
+  Gradient _brushedSweep(Color dark, Color mid, Color light) {
+    const int bands = 48;
+    final Color base = Color.lerp(mid, light, 0.5)!;
     final List<Color> colors = [];
     final List<double> stops = [];
     for (int i = 0; i <= bands; i++) {
-      final double t = i / bands;
       colors.add(
         i.isEven
-            ? Color.lerp(mid, light, 0.45)!
-            : Color.lerp(mid, dark, 0.4)!,
+            ? Color.lerp(base, light, 0.35)!
+            : Color.lerp(base, dark, 0.30)!,
       );
-      stops.add(t);
+      stops.add(i / bands);
     }
-    return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: colors,
-      stops: stops,
-    );
+    return SweepGradient(colors: colors, stops: stops);
   }
 }
 
