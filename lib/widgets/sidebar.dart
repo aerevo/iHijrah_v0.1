@@ -491,16 +491,14 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Sistem tonal — bukan lagi gradient ShaderMask dlm konteks rel (terlalu
-  // banyak lapisan pada saiz 20px, jadi keruh). Flat solid je: terang bila
-  // aktif (duduk atas kapsul kaca GELAP, jadi kontras kuat), matte/pudar
-  // bila tak aktif (duduk terus atas kaca rel gelap).
+  // Gradient EMAS sentiasa aktif (bukan flat solid lagi) — flat buang
+  // kilauan sepenuhnya, jadi nampak "mati"/suram walau warna terang.
+  // Beza status: goldStops (terang, penuh silau) bila aktif, matteGoldStops
+  // (redup tapi tetap ada gradient/silau) bila tak aktif. Selamat dari segi
+  // kontras sebab kapsul aktif tu kaca GELAP lutsinar (bukan emas pekat),
+  // jadi gradient terang di atasnya tetap timbul, bukan hilang.
   Widget _iconBadge(_RailTab t, bool active, double size) {
-    return LuxuryGoldIcon(
-      icon: t.icon,
-      size: size,
-      solidColor: active ? kRailGoldActive : kRailGoldInactive,
-    );
+    return LuxuryGoldIcon(icon: t.icon, size: size, matte: !active);
   }
 
   // ── HANDLE TERAPUNG ─────────────────────────────────────────
