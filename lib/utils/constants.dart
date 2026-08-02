@@ -83,6 +83,12 @@ const Color kPrimaryGold  = Color(0xFFC79A38); // aksen istimewa — badge, hadi
 const Color kGoldLight    = Color(0xFFE8C46B); // emas cerah — highlight/gradient
 const Color kGoldDark     = Color(0xFF96721F); // emas pekat — selamat untuk teks kecil
 
+// ── Emas Rel — sistem 2-tona (aktif vs tak aktif) ──
+// Bukan lagi navy-vs-emas; kedua status kekal dlm keluarga emas, dibeza
+// oleh KECERAHAN sahaja (tonal, macam dail jam mewah) — lebih koheren.
+const Color kRailGoldActive   = Color(0xFFF5D97A); // terang — status aktif
+const Color kRailGoldInactive = Color(0xFF9B7B34); // matte/pudar — tak aktif
+
 // ── Aksen Fungsian ──────────────────────────
 const Color kAccentBlue    = Color(0xFF4A90D9); // biru cerah — beza drpd navy utama
 const Color kAccentCoral   = Color(0xFFFF6F5E); // tenaga — streak, CTA meriah
