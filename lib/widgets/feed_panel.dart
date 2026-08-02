@@ -79,7 +79,11 @@ class _FeedPanelState extends State<FeedPanel> {
       _cached     = true;
     }
 
-    return NotificationListener<UserScrollNotification>(
+    return Container(
+      // Latar hangat khas feed (bukan kBgGradient kelabu-sejuk yg dipakai
+      // skrin lain) — "putih" asal punca rasa app ni murah/generik.
+      decoration: const BoxDecoration(gradient: kFeedBgGradient),
+      child: NotificationListener<UserScrollNotification>(
       onNotification: (n) {
         if (n.direction == ScrollDirection.reverse) {
           widget.onScrollDirection?.call(true);
@@ -125,7 +129,7 @@ class _FeedPanelState extends State<FeedPanel> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
 
           // ── KOMUNITI — grid masonry organik ─────────────────
@@ -149,6 +153,8 @@ class _FeedPanelState extends State<FeedPanel> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
               child: TwoColumnMasonry(
+                columnSpacing: 16,
+                runSpacing: 16,
                 tiles: List.generate(_posts.length, (i) {
                   final post  = _posts[i];
                   final ratio = _imageAspectFor(post);
@@ -164,6 +170,7 @@ class _FeedPanelState extends State<FeedPanel> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
