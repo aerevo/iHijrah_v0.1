@@ -74,19 +74,28 @@ class Sidebar extends StatelessWidget {
               curve: AppCurves.smooth,
               width: width,
               height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: kGlassRailGradientGreen,
-                border: Border(
-                  right: BorderSide(color: kGlassRailBorder, width: 1),
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x59000000),
-                    blurRadius: 28,
-                    offset: Offset(6, 0),
-                  ),
-                ],
-              ),
+              // ── PERCUBAAN: bila EXPANDED, backdrop rel jadi lutsinar
+              // terus (tiada gradient/border/shadow) — feed panel di
+              // belakang nampak through, ikon-ikon "terapung" berasingan
+              // (chip individu, lihat _railItem/_avatarBlock/_prayerBlock).
+              // Bila COLLAPSED, kekal macam asal (backdrop hijau kaca) —
+              // tak disentuh, supaya kalau percubaan ni tak kena, senang
+              // reverse: cuma padam blok isExpanded ni & kekalkan `else`.
+              decoration: model.isExpanded
+                  ? const BoxDecoration(color: Colors.transparent)
+                  : BoxDecoration(
+                      gradient: kGlassRailGradientGreen,
+                      border: Border(
+                        right: BorderSide(color: kGlassRailBorder, width: 1),
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x59000000),
+                          blurRadius: 28,
+                          offset: Offset(6, 0),
+                        ),
+                      ],
+                    ),
               child: _railContent(context, model, user),
             ),
           ),
@@ -146,14 +155,14 @@ class Sidebar extends StatelessWidget {
               _avatarBlock(model, user),
 
               const SizedBox(height: 10),
-              _divider(),
+              _divider(hideWhenFloating: true, isExpanded: model.isExpanded),
               const SizedBox(height: 10),
 
               // Waktu solat seterusnya — halus sahaja, sekadar tanda app Islamik
               _prayerBlock(model),
 
               const SizedBox(height: 10),
-              _divider(),
+              _divider(hideWhenFloating: true, isExpanded: model.isExpanded),
               const SizedBox(height: 12),
 
               // Pokok Embun Jiwa — video sebenar (sama macam tab Pokok),
@@ -163,7 +172,7 @@ class Sidebar extends StatelessWidget {
               _miniTreeSlot(model, user),
 
               const SizedBox(height: 14),
-              _divider(),
+              _divider(hideWhenFloating: true, isExpanded: model.isExpanded),
               const SizedBox(height: 6),
 
               // Tab utama
@@ -178,7 +187,7 @@ class Sidebar extends StatelessWidget {
                 ),
               ),
 
-              _divider(),
+              _divider(hideWhenFloating: true, isExpanded: model.isExpanded),
               const SizedBox(height: 6),
 
               ..._utilityTabs.map((t) => _railItem(model, t)),
@@ -191,7 +200,12 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _divider() => Container(
+  Widget _divider({bool hideWhenFloating = false, required bool isExpanded}) {
+    // PERCUBAAN: garis panjang akan nampak macam kesan pelik bila
+    // terapung atas feed content (backdrop dah lutsinar) — sembunyikan
+    // waktu expanded. Collapsed kekal macam asal, tak disentuh.
+    if (hideWhenFloating && isExpanded) return const SizedBox(height: 0);
+    return Container(
         height: 1,
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
@@ -205,6 +219,7 @@ class Sidebar extends StatelessWidget {
           ),
         ),
       );
+  }
 
   // ── POKOK MINI (video sebenar, saiz sidebar) ─────────────────
   // FittedBox skalakan video ke kotak kecil ni tanpa kira aspect ratio
@@ -254,8 +269,28 @@ class Sidebar extends StatelessWidget {
     return GestureDetector(
       onTap: () => model.setActiveMenu('profil'),
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: model.isExpanded ? 10 : 0),
+        padding: EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: model.isExpanded ? 12 : 0,
+        ),
+        // PERCUBAAN: chip terapung sendiri bila expanded (backdrop rel
+        // dah lutsinar, jadi avatar+nama kena ada latar sendiri supaya
+        // tetap terbaca atas feed content di belakang).
+        decoration: model.isExpanded
+            ? BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.10),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              )
+            : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -353,8 +388,25 @@ class Sidebar extends StatelessWidget {
   Widget _prayerBlock(SidebarStateModel model) {
     return Consumer<PrayerService>(
       builder: (_, prayer, __) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: model.isExpanded ? 10 : 0),
+          padding: EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: model.isExpanded ? 8 : 0,
+          ),
+          decoration: model.isExpanded
+              ? BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                )
+              : null,
           child: model.isExpanded
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -452,7 +504,23 @@ class Sidebar extends StatelessWidget {
                   ),
                 ],
               )
-            : const BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20))),
+            : model.isExpanded
+                // PERCUBAAN: backdrop rel dah lutsinar bila expanded, jadi
+                // tab TAK AKTIF pun kena chip sendiri (dulu telus penuh,
+                // sebab bergantung pada backdrop rel yg pekat)
+                ? BoxDecoration(
+                    color: Colors.white.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  )
+                : const BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(20))),
         child: model.isExpanded
             ? Row(
                 children: [
