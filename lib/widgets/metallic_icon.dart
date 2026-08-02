@@ -44,15 +44,20 @@ class LuxuryGoldIcon extends StatelessWidget {
   final IconData icon;
   final double size;
   // Bila diisi: lukis ikon warna PEJAL ni terus (skip gradient/bayang).
-  // Perlu utk kes ikon duduk atas PIL EMAS terang (status aktif) — emas
-  // atas emas akan hilang kontras, jadi kena solid (biasanya navy).
+  // Guna utk kes kontras extreme (cth. navy atas pil emas pekat).
   final Color? solidColor;
+  // Bila true: guna gradient EMAS MATTE (lebih gelap/pudar) drpd gold
+  // terang biasa. Utk beza status aktif/tak-aktif TANPA hilang kilauan
+  // sepenuhnya — flat solidColor buang gradient terus, jadi nampak
+  // "mati"/suram; matte kekal ada gradient+silau, cuma lebih redup.
+  final bool matte;
 
   const LuxuryGoldIcon({
     Key? key,
     required this.icon,
     this.size = 22,
     this.solidColor,
+    this.matte = false,
   }) : super(key: key);
 
   static const List<Color> goldStops = [
@@ -63,11 +68,24 @@ class LuxuryGoldIcon extends StatelessWidget {
     Color(0xFFAA771C), // Rich Gold (finishing)
   ];
 
+  // Palet sama STRUKTUR (base→silau→bayang→pantulan→finishing), cuma
+  // semua tona diturunkan — kekal ada gradient/silau (bukan flat), tapi
+  // jelas lebih redup drpd goldStops. Ni yg beza aktif vs tak aktif.
+  static const List<Color> matteGoldStops = [
+    Color(0xFF6E5220),
+    Color(0xFF9B7B34), // silau matte — jauh lebih redup drpd FCF6BA
+    Color(0xFF5A4319),
+    Color(0xFF8A6B2C),
+    Color(0xFF4A3714),
+  ];
+
   @override
   Widget build(BuildContext context) {
     if (solidColor != null) {
       return Icon(icon, size: size, color: solidColor);
     }
+
+    final List<Color> stops = matte ? matteGoldStops : goldStops;
 
     return Stack(
       alignment: Alignment.center,
@@ -78,11 +96,11 @@ class LuxuryGoldIcon extends StatelessWidget {
           child: Icon(icon, size: size, color: Colors.black.withOpacity(0.16)),
         ),
         ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
+          shaderCallback: (bounds) => LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: goldStops,
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+            colors: stops,
+            stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
           ).createShader(bounds),
           blendMode: BlendMode.srcIn,
           child: Icon(icon, size: size, color: Colors.white),
