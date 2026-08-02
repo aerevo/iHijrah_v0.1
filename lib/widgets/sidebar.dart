@@ -75,7 +75,7 @@ class Sidebar extends StatelessWidget {
               width: width,
               height: double.infinity,
               decoration: BoxDecoration(
-                gradient: kGlassRailGradient,
+                gradient: kGlassRailGradientGreen,
                 border: Border(
                   right: BorderSide(color: kGlassRailBorder, width: 1),
                 ),
@@ -491,14 +491,12 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Gradient EMAS sentiasa aktif (bukan flat solid lagi) — flat buang
-  // kilauan sepenuhnya, jadi nampak "mati"/suram walau warna terang.
-  // Beza status: goldStops (terang, penuh silau) bila aktif, matteGoldStops
-  // (redup tapi tetap ada gradient/silau) bila tak aktif. Selamat dari segi
-  // kontras sebab kapsul aktif tu kaca GELAP lutsinar (bukan emas pekat),
-  // jadi gradient terang di atasnya tetap timbul, bukan hilang.
+  // Semua ikon guna gradient TERANG PENUH — status aktif tak lagi dibawa
+  // oleh kecerahan ikon (mata kata semua rasa sama-sama silau, betul —
+  // matte redupkan terlalu banyak). Status aktif kekal jelas drpd kapsul
+  // kaca emas di belakang dia sahaja.
   Widget _iconBadge(_RailTab t, bool active, double size) {
-    return LuxuryGoldIcon(icon: t.icon, size: size, matte: !active);
+    return LuxuryGoldIcon(icon: t.icon, size: size);
   }
 
   // ── HANDLE TERAPUNG ─────────────────────────────────────────
@@ -587,10 +585,11 @@ class _PulsingGoldFrameState extends State<_PulsingGoldFrame>
                 width: 1.4, // nipis — cincin sahaja, bukan tumpuan utama
               ),
               boxShadow: [
-                // Ambient hijau (bukan kuning) — pokok kekal terasa
-                // "hidup/organik", beza drpd tema emas navigasi sekeliling
+                // Emas balik (bukan hijau lagi) — latar rel sekarang HIJAU
+                // sendiri, jadi glow hijau atas hijau akan blend/hilang.
+                // Emas ni yg jadi aksen menonjol atas latar hijau baru.
                 BoxShadow(
-                  color: kAccentEmerald.withOpacity(glow * 0.55),
+                  color: kGoldLight.withOpacity(glow * 0.55),
                   blurRadius: 10 + (t * 10),
                   spreadRadius: 1 + (t * 1.8),
                 ),
