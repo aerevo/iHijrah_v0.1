@@ -116,7 +116,7 @@ class Sidebar extends StatelessWidget {
           // gelap kosong" drpd "biru gelap ADA pencahayaan" macam rujukan.
           // IgnorePointer supaya tak ganggu tap avatar/pokok di atasnya.
           Positioned(
-            top: model.isExpanded ? 96 : 70,
+            top: model.isExpanded ? 104 : 76,
             left: 0,
             right: 0,
             child: IgnorePointer(
@@ -145,12 +145,16 @@ class Sidebar extends StatelessWidget {
               // Avatar + nama (2 baris, center) + umur Hijrah — tekan buka Profil
               _avatarBlock(model, user),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
+              _divider(),
+              const SizedBox(height: 10),
 
               // Waktu solat seterusnya — halus sahaja, sekadar tanda app Islamik
               _prayerBlock(model),
 
               const SizedBox(height: 10),
+              _divider(),
+              const SizedBox(height: 12),
 
               // Pokok Embun Jiwa — video sebenar (sama macam tab Pokok),
               // tekan -> tab Pokok. Cuma dirender bila rel memang visible
@@ -158,7 +162,7 @@ class Sidebar extends StatelessWidget {
               // prestasi — bukan main senyap belakang tabir).
               _miniTreeSlot(model, user),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               _divider(),
               const SizedBox(height: 6),
 
@@ -188,9 +192,18 @@ class Sidebar extends StatelessWidget {
   }
 
   Widget _divider() => Container(
-        height: 0.6,
-        color: kGlassRailBorder,
+        height: 1,
         margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              kGlassRailBorder.withOpacity(0.0),
+              kGoldLight.withOpacity(0.45),
+              kGlassRailBorder.withOpacity(0.0),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
       );
 
   // ── POKOK MINI (video sebenar, saiz sidebar) ─────────────────
@@ -261,12 +274,12 @@ class Sidebar extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: GoogleFonts.cormorantGaramond(
                   color: Colors.white, // asas ShaderMask — warna sebenar dari gradient
-                  fontSize: model.isExpanded ? 13 : 10.5,
-                  fontWeight: FontWeight.w800,
-                  height: 1.08, // rapat drpd sebelum ni — kekal padat bila 2 baris
-                  letterSpacing: 0.1,
+                  fontSize: model.isExpanded ? 16 : 13,
+                  fontWeight: FontWeight.w700,
+                  height: 1.05, // rapat drpd sebelum ni — kekal padat bila 2 baris
+                  letterSpacing: 0.2,
                 ),
               ),
             ),
@@ -276,7 +289,7 @@ class Sidebar extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: GoogleFonts.manrope(
                 color: kGlassTextDim, // caption sekunder — sengaja tenang, bukan emas
                 fontSize: model.isExpanded ? 10 : 8,
                 fontWeight: FontWeight.w500,
@@ -291,24 +304,31 @@ class Sidebar extends StatelessWidget {
   Widget _avatarCircle(UserModel user, bool hasAvatar, double size) {
     return Container(
       width: size, height: size,
+      padding: const EdgeInsets.all(2.5), // jarak antara ring luar & dalam
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: kGoldLight, width: 1.8),
-        color: kGlassRailBase.withOpacity(0.4),
+        border: Border.all(color: kGoldLight.withOpacity(0.25), width: 1.4),
         boxShadow: [
           BoxShadow(
-            color: kGoldLight.withOpacity(0.35),
-            blurRadius: 10,
+            color: kGoldLight.withOpacity(0.22),
+            blurRadius: 8,
             spreadRadius: 0.5,
           ),
         ],
       ),
-      child: ClipOval(
-        child: hasAvatar
-            ? Image.file(File(user.avatarPath!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _avatarFallback(user))
-            : _avatarFallback(user),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+          color: kGlassRailBase.withOpacity(0.4),
+        ),
+        child: ClipOval(
+          child: hasAvatar
+              ? Image.file(File(user.avatarPath!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _avatarFallback(user))
+              : _avatarFallback(user),
+        ),
       ),
     );
   }
@@ -341,7 +361,7 @@ class Sidebar extends StatelessWidget {
                   children: [
                     Text(
                       prayer.nextPrayerName,
-                      style: const TextStyle(
+                      style: GoogleFonts.manrope(
                         color: kGoldLight,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
@@ -353,7 +373,7 @@ class Sidebar extends StatelessWidget {
                         '· ${prayer.countdown}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: GoogleFonts.manrope(
                           color: kGlassTextDim,
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
@@ -369,7 +389,7 @@ class Sidebar extends StatelessWidget {
                       prayer.nextPrayerName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: GoogleFonts.manrope(
                         color: kGoldLight,
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
@@ -380,7 +400,7 @@ class Sidebar extends StatelessWidget {
                       prayer.countdown,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: GoogleFonts.manrope(
                         color: kGlassTextDim,
                         fontSize: 7.5,
                         fontWeight: FontWeight.w500,
@@ -397,7 +417,9 @@ class Sidebar extends StatelessWidget {
   Widget _railItem(SidebarStateModel model, _RailTab t) {
     final bool isUtama = t.id == 'utama';
     final bool active  = isUtama ? model.isClosed : model.isMenuActive(t.id);
-    final Color labelColor = active ? kPrimaryNavy : kGlassTextDim;
+    final Color labelColor = active
+        ? kRailGoldActive
+        : kGlassTextDim.withOpacity(0.62); // pudar sengaja — biar active menonjol
 
     return GestureDetector(
       onTap: () => isUtama ? model.closeMenu() : model.setActiveMenu(t.id),
@@ -406,13 +428,31 @@ class Sidebar extends StatelessWidget {
         duration: AppDurations.fast,
         margin: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
         padding: EdgeInsets.symmetric(
-          horizontal: model.isExpanded ? 12 : 0,
-          vertical: model.isExpanded ? 11 : 9,
+          horizontal: model.isExpanded ? 13 : 0,
+          vertical: model.isExpanded ? 13 : 12, // lebih ruang bernafas (dulu 9-11)
         ),
-        decoration: BoxDecoration(
-          gradient: active ? kGlassActiveGradient : null,
-          borderRadius: BorderRadius.circular(20),
-        ),
+        decoration: active
+            ? BoxDecoration(
+                // Kapsul kaca emas — GELAP & lutsinar (bukan emas terang
+                // pekat), supaya ikon/label emas TERANG di atas dia masih
+                // ada kontras kuat (terang-atas-gelap, bukan emas-atas-emas)
+                color: kGoldDeep.withOpacity(0.30),
+                borderRadius: BorderRadius.circular(20),
+                border: Border(
+                  top:    BorderSide(color: kGoldLight.withOpacity(0.55), width: 1),
+                  left:   BorderSide(color: kGoldLight.withOpacity(0.30), width: 1),
+                  bottom: BorderSide(color: Colors.black.withOpacity(0.35), width: 1),
+                  right:  BorderSide(color: Colors.black.withOpacity(0.22), width: 1),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: kGoldLight.withOpacity(0.16),
+                    blurRadius: 10,
+                    spreadRadius: -1,
+                  ),
+                ],
+              )
+            : const BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20))),
         child: model.isExpanded
             ? Row(
                 children: [
@@ -420,10 +460,10 @@ class Sidebar extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     t.label,
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w600,
+                          active ? FontWeight.w800 : FontWeight.w600,
                       color: labelColor,
                     ),
                   ),
@@ -438,10 +478,10 @@ class Sidebar extends StatelessWidget {
                     t.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 8.6,
                       fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w600,
+                          active ? FontWeight.w800 : FontWeight.w600,
                       color: labelColor,
                     ),
                   ),
@@ -451,14 +491,15 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Ikon emas telus (LuxuryGoldIcon) utk tak aktif. Bila AKTIF, latar jadi
-  // pil emas terang (kGlassActiveGradient) — emas-atas-emas akan hilang
-  // kontras, jadi ikon aktif kena SOLID navy, bukan gradient.
+  // Sistem tonal — bukan lagi gradient ShaderMask dlm konteks rel (terlalu
+  // banyak lapisan pada saiz 20px, jadi keruh). Flat solid je: terang bila
+  // aktif (duduk atas kapsul kaca GELAP, jadi kontras kuat), matte/pudar
+  // bila tak aktif (duduk terus atas kaca rel gelap).
   Widget _iconBadge(_RailTab t, bool active, double size) {
     return LuxuryGoldIcon(
       icon: t.icon,
       size: size,
-      solidColor: active ? kPrimaryNavy : null,
+      solidColor: active ? kRailGoldActive : kRailGoldInactive,
     );
   }
 
@@ -540,19 +581,20 @@ class _PulsingGoldFrameState extends State<_PulsingGoldFrame>
         builder: (_, child) {
           final double t = Curves.easeInOut.transform(_ctrl.value); // 0→1→0
           final double glow  = 0.35 + (t * 0.45); // 0.35 → 0.80
-          final double ringW = 1.6 + (t * 1.0);   // 1.6  → 2.6
           return Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: kGoldLight.withOpacity(glow),
-                width: ringW,
+                color: kGoldLight.withOpacity(0.7),
+                width: 1.4, // nipis — cincin sahaja, bukan tumpuan utama
               ),
               boxShadow: [
+                // Ambient hijau (bukan kuning) — pokok kekal terasa
+                // "hidup/organik", beza drpd tema emas navigasi sekeliling
                 BoxShadow(
-                  color: kGoldLight.withOpacity(glow * 0.5),
-                  blurRadius: 10 + (t * 8),
-                  spreadRadius: 1 + (t * 1.5),
+                  color: kAccentEmerald.withOpacity(glow * 0.55),
+                  blurRadius: 10 + (t * 10),
+                  spreadRadius: 1 + (t * 1.8),
                 ),
               ],
             ),
