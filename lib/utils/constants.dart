@@ -69,6 +69,19 @@ const LinearGradient kGlassRailGradient = LinearGradient(
   stops: [0.0, 0.55, 1.0],
 );
 
+// Varian HIJAU — struktur sama (atas lebih terang → bawah nyaris hitam)
+// cuma hue ditukar navy→hijau hutan gelap. Mood sama macam rujukan foto
+// pakis (Unsplash "Green Wallpapers") — gelap & kaya, bukan hijau cerah
+// versi asal app (kRailGreenGradient, dah tak dipakai).
+const Color kGlassRailBaseGreen = Color(0xFF13301D);
+const Color kGlassRailDeepGreen = Color(0xFF060F09);
+const LinearGradient kGlassRailGradientGreen = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0xE01F4A2C), Color(0xE013301D), Color(0xF2060F09)],
+  stops: [0.0, 0.55, 1.0],
+);
+
 // Pil status aktif atas kaca gelap — emas jenama (selari makna sedia ada:
 // emas = istimewa/badge/streak di seluruh app), teks jadi navy gelap utk
 // kontras selamat di atas emas terang.
@@ -118,11 +131,25 @@ const Color kAccentGreen    = kAccentEmerald; // "hijau amalan" — dipetakan ke
 // ═══════════════════════════════════════════
 // WARNA KOMUNITI & FEED (jenis kandungan)
 // ═══════════════════════════════════════════
-const Color kTypeVideo   = Color(0xFFF2415A);
-const Color kTypeArticle = Color(0xFFF0932B);
-const Color kTypeEvent   = Color(0xFF159E71);
-const Color kTypeQuote   = Color(0xFF8266E0);
+// Dipetakan semula ikut jenama (bukan warna random lagi): video=emerald,
+// artikel=emas (border nipis), acara=navy, petikan=emas gelap (mcm hadith).
+// "Jangan semua hijau" — kini setiap jenis kandungan terus kenal pasti
+// sendiri pada pandangan pertama, guna warna jenama sedia ada.
+const Color kTypeVideo   = kAccentEmerald;
+const Color kTypeArticle = kPrimaryGold;
+const Color kTypeEvent   = kPrimaryNavy;
+const Color kTypeQuote   = kGoldDark;
 const Color kTypeHadith  = Color(0xFFC79A38);
+
+// ── FEED — latar & permukaan HANGAT (bukan kBgGradient/kSurfaceCard —
+// dua tu dipakai jugak oleh Profil, sengaja tak disentuh supaya skop
+// perubahan ni kekal pada feed sahaja) ──
+const LinearGradient kFeedBgGradient = LinearGradient(
+  colors: [Color(0xFFFAF8F4), Color(0xFFF5F2EB)],
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+);
+const Color kFeedCardSurface = Color(0xFFFCFCFA); // bukan putih pencetak
 const Color kTypeAmalan  = Color(0xFF33B673);
 const Color kTypeSirah   = Color(0xFF2AA7C4);
 
@@ -175,6 +202,23 @@ BoxShadow kCardShadow({double opacity = 0.05}) => BoxShadow(
   blurRadius: 18,
   offset: const Offset(0, 6),
 );
+
+// Set bayang kad FEED — ambient lembut (8%) + garis highlight nipis di
+// bucu atas (macam permukaan kad menangkap cahaya) — bukan sekadar
+// "blur hitam" tunggal. Guna utk feed_card.dart.
+List<BoxShadow> kFeedCardShadows() => [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.08),
+    blurRadius: 20,
+    offset: const Offset(0, 8),
+  ),
+  BoxShadow(
+    color: Colors.white.withOpacity(0.7),
+    blurRadius: 0,
+    spreadRadius: 0,
+    offset: const Offset(0, -1),
+  ),
+];
 
 // ═══════════════════════════════════════════
 // LOKASI DEFAULT (Kuala Lumpur)
