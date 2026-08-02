@@ -36,7 +36,7 @@ import 'package:flutter/material.dart';
 //    kesan "gold foil bersinar" tanpa perlu bina kedalaman 3D secara manual.
 //
 // Nota: fasa asal duduk atas latar gelap+blur, jadi kontras automatik
-// tinggi. Rel sekarang pun dah balik gelap (kGlassRailGradient, lihat
+// tinggi. Rel sekarang pun dah balik gelap (kGlassRailGradientGreen, lihat
 // sidebar.dart), jadi lapisan bayang di bawah ni sebenarnya dah jadi
 // hampir tak diperlukan lagi — tapi dikekalkan (opacity rendah je) sbg
 // jaring keselamatan kalau widget ni dipakai di latar cerah lain nanti.
