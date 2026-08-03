@@ -283,3 +283,75 @@ class _PopLikeButtonState extends State<PopLikeButton>
     );
   }
 }
+
+/// Ikon bookmark yang "pop" (skala lantun) bila ditekan — simpanan
+/// PERIBADI (bukan kiraan awam macam like), jadi tiada Text count di
+/// sisi, ikon sahaja. Pattern animasi sama macam PopLikeButton supaya
+/// bahasa gerak (motion language) kekal konsisten seluruh app.
+class PopBookmarkButton extends StatefulWidget {
+  final bool initiallySaved;
+  final double iconSize;
+  final Color mutedColor;
+  final Color savedColor;
+  final VoidCallback? onToggle;
+  const PopBookmarkButton({
+    Key? key,
+    this.initiallySaved = false,
+    required this.iconSize,
+    required this.mutedColor,
+    required this.savedColor,
+    this.onToggle,
+  }) : super(key: key);
+
+  @override
+  State<PopBookmarkButton> createState() => _PopBookmarkButtonState();
+}
+
+class _PopBookmarkButtonState extends State<PopBookmarkButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+  late final Animation<double> _scale;
+  late bool _saved;
+
+  @override
+  void initState() {
+    super.initState();
+    _saved = widget.initiallySaved;
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.35), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.35, end: 1.0), weight: 60),
+    ]).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() => _saved = !_saved);
+    _c.forward(from: 0);
+    widget.onToggle?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggle,
+      behavior: HitTestBehavior.opaque,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Icon(
+          _saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          size: widget.iconSize,
+          color: _saved ? widget.savedColor : widget.mutedColor,
+        ),
+      ),
+    );
+  }
+}
