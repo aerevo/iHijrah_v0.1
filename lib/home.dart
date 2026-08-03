@@ -68,14 +68,23 @@ class _HomePageState extends State<HomePage>
       body: Stack(
         children: [
 
-          // ── 1. BACKGROUND ─────────────────────────────────
+          // ── 1. BACKGROUND — wallpaper.png (bukan gradient kosong lagi) ──
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: kBgGradient,
+                image: DecorationImage(
+                  image: AssetImage('assets/images/wallpaper.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
               child: Stack(
                 children: [
+                  // Wash putih sangat halus di atas wallpaper — supaya
+                  // label "HARI INI"/"KOMUNITI" (yg duduk terus atas
+                  // latar ni, bukan atas kad) kekal senang dibaca
+                  Positioned.fill(
+                    child: Container(color: Colors.white.withOpacity(0.30)),
+                  ),
                   // Cahaya emas atas
                   Positioned(
                     top: -100, left: -100,

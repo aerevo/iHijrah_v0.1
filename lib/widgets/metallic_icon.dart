@@ -18,6 +18,98 @@
 
 import 'package:flutter/material.dart';
 
+// ═══════════════════════════════════════════════════════════════
+// LUXURY GOLD ICON — teknik dari fasa asal ("VERSI ORIGINAL - APPROVED")
+// ═══════════════════════════════════════════════════════════════
+// ShaderMask + LinearGradient terus pada bentuk ikon. TIADA cakera/badge
+// bulat, TIADA bezel, TIADA vignette, TIADA specular blob berasingan.
+//
+// Kenapa lebih "premium" drpd BrushedMetalIcon di bawah:
+//  - Restraint. Mata baca "mewah" drpd peralihan WARNA yang licin, bukan
+//    drpd lapisan bentuk/bayang yang banyak. Lebih banyak lapisan 3D palsu
+//    pada saiz kecil (38-40px) jatuh nampak keruh/bising, bukan mewah.
+//  - Bentuk cakera bulat berulang 8x menegak bersaing dgn bulatan lain
+//    dlm rel (avatar, slot pokok) — hierarchy visual hilang. Glyph telus
+//    tanpa badge biar bentuk ikon sendiri yg tenang, ada ruang negatif.
+//  - Palet 5-stop (BF953F/FCF6BA/B38728/FBF5B7/AA771C) ni "classic luxury
+//    gold" yang memang teruji — 2 highlight + 1 shadow band cukup bagi
+//    kesan "gold foil bersinar" tanpa perlu bina kedalaman 3D secara manual.
+//
+// Nota: fasa asal duduk atas latar gelap+blur, jadi kontras automatik
+// tinggi. Rel sekarang pun dah balik gelap (kGlassRailGradientGreen, lihat
+// sidebar.dart), jadi lapisan bayang di bawah ni sebenarnya dah jadi
+// hampir tak diperlukan lagi — tapi dikekalkan (opacity rendah je) sbg
+// jaring keselamatan kalau widget ni dipakai di latar cerah lain nanti.
+class LuxuryGoldIcon extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  // Bila diisi: lukis ikon warna PEJAL ni terus (skip gradient/bayang).
+  // Guna utk kes kontras extreme (cth. navy atas pil emas pekat).
+  final Color? solidColor;
+  // Bila true: guna gradient EMAS MATTE (lebih gelap/pudar) drpd gold
+  // terang biasa. Utk beza status aktif/tak-aktif TANPA hilang kilauan
+  // sepenuhnya — flat solidColor buang gradient terus, jadi nampak
+  // "mati"/suram; matte kekal ada gradient+silau, cuma lebih redup.
+  final bool matte;
+
+  const LuxuryGoldIcon({
+    Key? key,
+    required this.icon,
+    this.size = 22,
+    this.solidColor,
+    this.matte = false,
+  }) : super(key: key);
+
+  static const List<Color> goldStops = [
+    Color(0xFFBF953F), // Classic Gold (base)
+    Color(0xFFFCF6BA), // Ultra Light Gold (silau)
+    Color(0xFFB38728), // Dark Metallic Gold (shadow/depth)
+    Color(0xFFFBF5B7), // Light Sand Gold (pantulan kedua)
+    Color(0xFFAA771C), // Rich Gold (finishing)
+  ];
+
+  // Palet sama STRUKTUR (base→silau→bayang→pantulan→finishing), cuma
+  // semua tona diturunkan — kekal ada gradient/silau (bukan flat), tapi
+  // jelas lebih redup drpd goldStops. Ni yg beza aktif vs tak aktif.
+  static const List<Color> matteGoldStops = [
+    Color(0xFF6E5220),
+    Color(0xFF9B7B34), // silau matte — jauh lebih redup drpd FCF6BA
+    Color(0xFF5A4319),
+    Color(0xFF8A6B2C),
+    Color(0xFF4A3714),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (solidColor != null) {
+      return Icon(icon, size: size, color: solidColor);
+    }
+
+    final List<Color> stops = matte ? matteGoldStops : goldStops;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Bayang nipis — legibiliti atas latar cerah sahaja, bukan hiasan
+        Transform.translate(
+          offset: const Offset(0.6, 1.0),
+          child: Icon(icon, size: size, color: Colors.black.withOpacity(0.16)),
+        ),
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: stops,
+            stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+          ).createShader(bounds),
+          blendMode: BlendMode.srcIn,
+          child: Icon(icon, size: size, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
+
 class MetallicIcon extends StatelessWidget {
   final IconData icon;
   final double size;
@@ -144,78 +236,143 @@ class BrushedMetalIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double glyphSize = size * 0.46;
+    final double glyphSize = size * 0.44;
+    final Color dark  = tones.first;
+    final Color mid   = tones.length > 1 ? tones[1] : tones.first;
+    final Color light = tones.last;
+    final double rim  = size * 0.05; // ketebalan bezel luar
 
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          // Bayang jatuh — cakera "timbul" drpd latar
+          // 1. Bayang jatuh — cakera "timbul" drpd latar (2 lapis: bayang
+          //    hitam lembut + bayang tona logam sendiri utk kesan lebih pekat)
           Container(
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.26),
-                  blurRadius: size * 0.16,
-                  offset: Offset(0, size * 0.05),
+                  color: Colors.black.withOpacity(0.30),
+                  blurRadius: size * 0.20,
+                  offset: Offset(0, size * 0.07),
+                ),
+                BoxShadow(
+                  color: dark.withOpacity(0.25),
+                  blurRadius: size * 0.06,
+                  offset: Offset(0, size * 0.02),
                 ),
               ],
             ),
           ),
 
-          // Badan logam bercalar — banyak jalur berselang-seli mensimulasi
-          // tekstur "brushed metal" diagonal
-          ClipOval(
-            child: Container(
-              decoration: BoxDecoration(gradient: _brushedGradient()),
+          // 2. Bezel luar — cincin logam terarah cahaya (terang atas-kiri →
+          //    gelap bawah-kanan), jadi rim tepi bila cakera dalam di-inset
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [light, mid, dark],
+                stops: const [0.0, 0.5, 1.0],
+              ),
             ),
           ),
 
-          // Kilauan diagonal terang (specular sweep) — ciri utama gaya "chrome"
-          ClipOval(
-            child: Transform.rotate(
-              angle: -0.6,
-              child: Container(
-                width: size * 1.7,
-                height: size * 0.5,
-                margin: EdgeInsets.only(top: -size * 0.08),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withOpacity(0.0),
-                      Colors.white.withOpacity(0.55),
-                      Colors.white.withOpacity(0.0),
-                    ],
+          // 3. Cakera dalam — badan logam calar BULAT (SweepGradient, bukan
+          //    jalur diagonal keras) + pencahayaan terarah + specular
+          Padding(
+            padding: EdgeInsets.all(rim),
+            child: ClipOval(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 3a. Tekstur brush halus — calar bulat kontras rendah,
+                  //     macam logam dikilang guna lathe (bukan corak jalur)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: _brushedSweep(dark, mid, light),
+                    ),
                   ),
+
+                  // 3b. Cahaya terarah (bulatan lembut atas-kiri, bukan
+                  //     jalur diagonal keras) — simulasi sumber cahaya tunggal
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.45, -0.55),
+                        radius: 1.05,
+                        colors: [light.withOpacity(0.55), light.withOpacity(0.0)],
+                        stops: const [0.0, 0.75],
+                      ),
+                    ),
+                  ),
+
+                  // 3c. Vignette tepi — gelapkan bucu utk kesan cakera cembung
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        radius: 0.75,
+                        colors: [Colors.transparent, dark.withOpacity(0.35)],
+                        stops: const [0.65, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // 3d. Titik specular terang — "hot spot" pantulan cahaya
+                  Align(
+                    alignment: const Alignment(-0.4, -0.6),
+                    child: FractionallySizedBox(
+                      widthFactor: 0.42,
+                      heightFactor: 0.42,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.65),
+                              Colors.white.withOpacity(0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 4. Bibir highlight halus di tepi cakera dalam
+          Padding(
+            padding: EdgeInsets.all(rim),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.20),
+                  width: size * 0.012,
                 ),
               ),
             ),
           ),
 
-          // Rim gelap (bevel tepi) — beri kesan cakera padat
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: tones.first.withOpacity(0.6),
-                width: size * 0.035,
-              ),
-            ),
-          ),
-
-          // Glyph — "terukir" (emboss halus: bayang bawah + cahaya atas)
+          // 5. Glyph — "terukir" (emboss halus: bayang bawah + cahaya atas)
           Transform.translate(
-            offset: Offset(size * 0.018, size * 0.02),
-            child: Icon(icon, size: glyphSize, color: Colors.black.withOpacity(0.45)),
+            offset: Offset(size * 0.02, size * 0.024),
+            child: Icon(icon, size: glyphSize, color: Colors.black.withOpacity(0.50)),
           ),
           Transform.translate(
-            offset: Offset(-size * 0.014, -size * 0.014),
-            child: Icon(icon, size: glyphSize, color: Colors.white.withOpacity(0.30)),
+            offset: Offset(-size * 0.016, -size * 0.016),
+            child: Icon(icon, size: glyphSize, color: Colors.white.withOpacity(0.35)),
           ),
           Icon(icon, size: glyphSize, color: glyphColor),
         ],
@@ -223,29 +380,24 @@ class BrushedMetalIcon extends StatelessWidget {
     );
   }
 
-  Gradient _brushedGradient() {
-    final Color dark = tones.first;
-    final Color mid = tones.length > 1 ? tones[1] : tones.first;
-    final Color light = tones.last;
-
-    const int bands = 14;
+  // SweepGradient (360°) mensimulasikan calar halus BULAT/radial — macam
+  // logam dikilang guna lathe — bukan jalur diagonal lurus yg nampak macam
+  // corak "candy stripe". Kontras rendah antara jalur bersebelahan supaya
+  // ia terbaca sbg TEKSTUR permukaan, bukan corak grafik yg jelas.
+  Gradient _brushedSweep(Color dark, Color mid, Color light) {
+    const int bands = 48;
+    final Color base = Color.lerp(mid, light, 0.5)!;
     final List<Color> colors = [];
     final List<double> stops = [];
     for (int i = 0; i <= bands; i++) {
-      final double t = i / bands;
       colors.add(
         i.isEven
-            ? Color.lerp(mid, light, 0.45)!
-            : Color.lerp(mid, dark, 0.4)!,
+            ? Color.lerp(base, light, 0.35)!
+            : Color.lerp(base, dark, 0.30)!,
       );
-      stops.add(t);
+      stops.add(i / bands);
     }
-    return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: colors,
-      stops: stops,
-    );
+    return SweepGradient(colors: colors, stops: stops);
   }
 }
 

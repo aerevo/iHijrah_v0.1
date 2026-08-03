@@ -36,18 +36,29 @@ class _FeedPanelState extends State<FeedPanel> {
 
   static const List<PostModel> _allPosts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',        author:'Ustaz Don',       authorAge:'40',likes:1240,time:'2j',  assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'102',type:'quote',  title:'Kata Hikmah',                      content:'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',          author:"Imam Syafi'i",    authorAge:'',  likes:850, time:'5j'),
-    PostModel(id:'103',type:'article',title:'Kelebihan Selawat',                content:'Barangsiapa berselawat sekali, Allah balas sepuluh kali ganda.',             author:'Habib Ali',       authorAge:'52',likes:2100,time:'1h',  assetPath:'assets/images/dummy_post2.jpg'),
-    PostModel(id:'104',type:'event',  title:'Majlis Ilmu Perdana',              content:'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah.',      author:'Admin iHijrah',   authorAge:'',  likes:500, time:'10j'),
-    PostModel(id:'105',type:'quote',  title:'Pesan Imam Malik',                 content:'Ilmu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat.',    author:'Imam Malik',      authorAge:'',  likes:3200,time:'12j'),
-    PostModel(id:'106',type:'video',  title:'Tajwid Asas: Al-Fatihah',          content:'Mari perbaiki bacaan Al-Fatihah. Setiap huruf ada makhrajnya.',              author:'Ustaz Azhar',     authorAge:'60',likes:890, time:'1h'),
+    PostModel(id:'102',type:'quote',  title:'Kata Hikmah',                     content:'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',          author:"Imam Syafi'i",    authorAge:'',  likes:850, time:'5j'),
+    PostModel(id:'103',type:'article',title:'Kelebihan Selawat',                content:'Barangsiapa berselawat sekali, Allah balas sepuluh kali ganda.',              author:'Habib Ali',       authorAge:'52',likes:2100,time:'1h',  assetPath:'assets/images/dummy_post2.jpg'),
+    PostModel(id:'104',type:'event',  title:'Majlis Ilmu Perdana',              content:'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah.',       author:'Admin iHijrah',   authorAge:'',  likes:500, time:'10j'),
+    PostModel(id:'105',type:'quote',  title:'Pesan Imam Malik',                 content:'Ilmu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat.',     author:'Imam Malik',      authorAge:'',  likes:3200,time:'12j'),
+    PostModel(id:'106',type:'video',  title:'Tajwid Asas: Al-Fatihah',          content:'Mari perbaiki bacaan Al-Fatihah. Setiap huruf ada makhrajnya.',               author:'Ustaz Azhar',     authorAge:'60',likes:890, time:'1h'),
     PostModel(id:'107',type:'article',title:'Rahsia Dhuha & Pintu Rezeki',      content:'Konsistensi solat Dhuha membuka pintu rezeki yang tidak disangka-sangka.',  author:'Ustaz Wadi',      authorAge:'45',likes:4500,time:'30m', assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'108',type:'quote',  title:'Nasihat Imam Ghazali',             content:'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia.',                     author:'Imam Ghazali',    authorAge:'',  likes:5100,time:'2h'),
-    PostModel(id:'109',type:'article',title:'Keutamaan Surah Al-Mulk',          content:'Sesiapa membaca Al-Mulk setiap malam dilindungi dari azab kubur.',           author:'Ustazah Noor',    authorAge:'38',likes:1870,time:'3h',  assetPath:'assets/images/dummy_post2.jpg'),
-    PostModel(id:'110',type:'event',  title:'Kem Tahfiz Ramadan 1446H',         content:'Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',          author:'Markaz Quran KL', authorAge:'',  likes:720, time:'4h'),
+    PostModel(id:'108',type:'quote',  title:'Nasihat Imam Ghazali',             content:'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia.',                      author:'Imam Ghazali',    authorAge:'',  likes:5100,time:'2h'),
+    PostModel(id:'109',type:'article',title:'Keutamaan Surah Al-Mulk',          content:'Sesiapa membaca Al-Mulk setiap malam dilindungi dari azab kubur.',            author:'Ustazah Noor',    authorAge:'38',likes:1870,time:'3h',  assetPath:'assets/images/dummy_post2.jpg'),
+    PostModel(id:'110',type:'event',  title:'Kem Tahfiz Ramadan 1446H',         content:'Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',           author:'Markaz Quran KL', authorAge:'',  likes:720, time:'4h'),
     PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi ﷺ mengajarkan kepada para sahabat.',    author:'Dr Rozaimi',      authorAge:'47',likes:3300,time:'5h',  assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun bernyawa.',       author:'Ibn Qayyim',      authorAge:'',  likes:6200,time:'6h'),
+    PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun bernyawa.',        author:'Ibn Qayyim',      authorAge:'',  likes:6200,time:'6h'),
     PostModel(id:'115',type:'video',  title:'Tafsir Surah Al-Kahfi Ayat 1-10', content:'Perlindungan dari fitnah Dajjal bermula dengan 10 ayat pertama surah ini.',  author:'Ust Fathul Bari', authorAge:'50',likes:7800,time:'9h',  assetPath:'assets/images/dummy_post1.jpg'),
+
+    // ── Post tambahan — guna baki asset dlm assets/images/ ──
+    PostModel(id:'116',type:'article',title:'Merenung Ciptaan Langit',          content:'Tidakkah kamu perhatikan langit yang terbentang tanpa tiang? (Ar-Ra\'d: 2)', author:'Ustaz Firdaus',   authorAge:'44',likes:2650,time:'7h',  assetPath:'assets/images/langit.png'),
+    PostModel(id:'117',type:'event',  title:'Selamat Datang ke iHijrah',        content:'Versi terkini iHijrah kini rasmi — Embun Jiwa untuk peneman ibadah harian anda.', author:'Admin iHijrah',   authorAge:'',  likes:980, time:'1h',  assetPath:'assets/images/logo.png'),
+    PostModel(id:'118',type:'article',title:'Kenali Pokok Hijrah Anda',         content:'Setiap amalan yang kau catat menumbuhkan Pokok Embun Jiwa kau sendiri.',      author:'Admin iHijrah',   authorAge:'',  likes:1540,time:'3h',  assetPath:'assets/images/pokok_intro.png'),
+    PostModel(id:'119',type:'event',  title:'Naik Level 2: Pucuk Menghijau',    content:'Tahniah! Konsistensi amalan kau dah cukup untuk pokok naik ke Level 2.',      author:'Admin iHijrah',   authorAge:'',  likes:610, time:'2h',  assetPath:'assets/images/pokok_level2.png'),
+    PostModel(id:'120',type:'event',  title:'Naik Level 3: Dahan Mula Rendang', content:'Pokok kau semakin rendang — teruskan istiqamah, jangan putus rentak.',        author:'Admin iHijrah',   authorAge:'',  likes:730, time:'4h',  assetPath:'assets/images/pokok_level3.png'),
+    PostModel(id:'121',type:'event',  title:'Naik Level 4: Berbuah Amalan',      content:'Masya-Allah, pokok kau dah mula berbuah — hasil disiplin ibadah harian.',      author:'Admin iHijrah',   authorAge:'',  likes:890, time:'6h',  assetPath:'assets/images/pokok_level4.png'),
+    PostModel(id:'122',type:'event',  title:'Naik Level 5: Pokok Matang Emas',  content:'Tahap tertinggi dicapai — pokok kau kini matang & berkilauan keemasan.',      author:'Admin iHijrah',   authorAge:'',  likes:1120,time:'8h',  assetPath:'assets/images/pokok_level5.png'),
+    PostModel(id:'123',type:'article',title:'Sertai Komuniti iHijrah',          content:'Kongsi perjalanan hijrah kau bersama ribuan pengguna lain di seluruh negara.', author:'Admin iHijrah',   authorAge:'',  likes:1780,time:'11h', assetPath:'assets/images/profile_default.png'),
+    PostModel(id:'124',type:'article',title:'Tema Wallpaper Baharu Tersedia',   content:'Latar belakang baharu "Embun Jiwa" kini boleh dipilih dalam tetapan aplikasi.', author:'Admin iHijrah',   authorAge:'',  likes:640, time:'13h', assetPath:'assets/images/wallpaper.png'),
   ];
 
   List<_FeedItem> _buildDaily(DailyContentProvider d) {
@@ -79,7 +90,9 @@ class _FeedPanelState extends State<FeedPanel> {
       _cached     = true;
     }
 
-    return NotificationListener<UserScrollNotification>(
+    return Container(
+      color: Colors.transparent, // Mengubah latar kepada lutsinar agar wallpaper.png di latar belakang dapat kelihatan
+      child: NotificationListener<UserScrollNotification>(
       onNotification: (n) {
         if (n.direction == ScrollDirection.reverse) {
           widget.onScrollDirection?.call(true);
@@ -125,7 +138,7 @@ class _FeedPanelState extends State<FeedPanel> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
 
           // ── KOMUNITI — grid masonry organik ─────────────────
@@ -149,6 +162,8 @@ class _FeedPanelState extends State<FeedPanel> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
               child: TwoColumnMasonry(
+                columnSpacing: 16,
+                runSpacing: 16,
                 tiles: List.generate(_posts.length, (i) {
                   final post  = _posts[i];
                   final ratio = _imageAspectFor(post);
@@ -164,6 +179,7 @@ class _FeedPanelState extends State<FeedPanel> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
