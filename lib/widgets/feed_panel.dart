@@ -48,6 +48,17 @@ class _FeedPanelState extends State<FeedPanel> {
     PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi ﷺ mengajarkan kepada para sahabat.',    author:'Dr Rozaimi',      authorAge:'47',likes:3300,time:'5h',  assetPath:'assets/images/dummy_post1.jpg'),
     PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun bernyawa.',       author:'Ibn Qayyim',      authorAge:'',  likes:6200,time:'6h'),
     PostModel(id:'115',type:'video',  title:'Tafsir Surah Al-Kahfi Ayat 1-10', content:'Perlindungan dari fitnah Dajjal bermula dengan 10 ayat pertama surah ini.',  author:'Ust Fathul Bari', authorAge:'50',likes:7800,time:'9h',  assetPath:'assets/images/dummy_post1.jpg'),
+
+    // ── Post tambahan — guna baki asset dlm assets/images/ ──
+    PostModel(id:'116',type:'article',title:'Merenung Ciptaan Langit',          content:'Tidakkah kamu perhatikan langit yang terbentang tanpa tiang? (Ar-Ra\'d: 2)', author:'Ustaz Firdaus',   authorAge:'44',likes:2650,time:'7h',  assetPath:'assets/images/langit.png'),
+    PostModel(id:'117',type:'event',  title:'Selamat Datang ke iHijrah',        content:'Versi terkini iHijrah kini rasmi — Embun Jiwa untuk peneman ibadah harian anda.', author:'Admin iHijrah',   authorAge:'',  likes:980, time:'1h',  assetPath:'assets/images/logo.png'),
+    PostModel(id:'118',type:'article',title:'Kenali Pokok Hijrah Anda',         content:'Setiap amalan yang kau catat menumbuhkan Pokok Embun Jiwa kau sendiri.',      author:'Admin iHijrah',   authorAge:'',  likes:1540,time:'3h',  assetPath:'assets/images/pokok_intro.png'),
+    PostModel(id:'119',type:'event',  title:'Naik Level 2: Pucuk Menghijau',    content:'Tahniah! Konsistensi amalan kau dah cukup untuk pokok naik ke Level 2.',      author:'Admin iHijrah',   authorAge:'',  likes:610, time:'2h',  assetPath:'assets/images/pokok_level2.png'),
+    PostModel(id:'120',type:'event',  title:'Naik Level 3: Dahan Mula Rendang', content:'Pokok kau semakin rendang — teruskan istiqamah, jangan putus rentak.',        author:'Admin iHijrah',   authorAge:'',  likes:730, time:'4h',  assetPath:'assets/images/pokok_level3.png'),
+    PostModel(id:'121',type:'event',  title:'Naik Level 4: Berbuah Amalan',     content:'Masya-Allah, pokok kau dah mula berbuah — hasil disiplin ibadah harian.',      author:'Admin iHijrah',   authorAge:'',  likes:890, time:'6h',  assetPath:'assets/images/pokok_level4.png'),
+    PostModel(id:'122',type:'event',  title:'Naik Level 5: Pokok Matang Emas',  content:'Tahap tertinggi dicapai — pokok kau kini matang & berkilauan keemasan.',      author:'Admin iHijrah',   authorAge:'',  likes:1120,time:'8h',  assetPath:'assets/images/pokok_level5.png'),
+    PostModel(id:'123',type:'article',title:'Sertai Komuniti iHijrah',          content:'Kongsi perjalanan hijrah kau bersama ribuan pengguna lain di seluruh negara.', author:'Admin iHijrah',   authorAge:'',  likes:1780,time:'11h', assetPath:'assets/images/profile_default.png'),
+    PostModel(id:'124',type:'article',title:'Tema Wallpaper Baharu Tersedia',   content:'Latar belakang baharu "Embun Jiwa" kini boleh dipilih dalam tetapan aplikasi.', author:'Admin iHijrah',   authorAge:'',  likes:640, time:'13h', assetPath:'assets/images/wallpaper.png'),
   ];
 
   List<_FeedItem> _buildDaily(DailyContentProvider d) {
