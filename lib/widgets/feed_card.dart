@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'anim_helpers.dart';
+import 'premium_glass.dart';
 
 // ── TYPE MAPPING ─────────────────────────────────────────────
 Color _typeColor(String t) {
@@ -76,13 +77,10 @@ Widget _authorAvatar(String author, Color accent, {double size = 18}) {
 Widget _glassTag(String type) {
   return PopScaleIn(
     delay: const Duration(milliseconds: 180),
-    child: Container(
+    child: PremiumGlass(
+      level: GlassLevel.badge,
+      borderRadius: BorderRadius.circular(8), // segi sedikit — kurangkan 'semua bulat'
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(8), // segi sedikit — kurangkan 'semua bulat'
-        border: Border.all(color: Colors.white.withOpacity(0.25), width: 0.6),
-      ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(_typeIcon(type), size: 10, color: _typeColor(type)),
         const SizedBox(width: 4),
@@ -98,15 +96,12 @@ Widget _glassTag(String type) {
 Widget _floatingBookmark({bool onLight = false}) {
   return PopScaleIn(
     delay: const Duration(milliseconds: 220),
-    child: Container(
+    child: PremiumGlass(
+      level: GlassLevel.badge, // saiz kecil bulat — guna blur ringan (level1)
+      tint: onLight ? Colors.white : Colors.black,
+      opacity: onLight ? 0.85 : 0.45, // chip kecil perlu lebih pekat drpd badge biasa supaya kekal legible
+      borderRadius: BorderRadius.circular(999), // bulat penuh
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: onLight ? Colors.white.withOpacity(0.85) : Colors.black.withOpacity(0.45),
-        shape: BoxShape.circle,
-        border: Border.all(
-            color: onLight ? Colors.black.withOpacity(0.08) : Colors.white.withOpacity(0.25),
-            width: 0.6),
-      ),
       child: PopBookmarkButton(
         iconSize: 13,
         mutedColor: onLight ? const Color(0xFF5B5647) : Colors.white.withOpacity(0.9),
