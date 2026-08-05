@@ -1,17 +1,17 @@
-// lib/widgets/feed_card.dart  (V4 — Islamic Luxury Editorial)
+// lib/widgets/feed_card.dart  (V5 — Islamic Luxury Editorial)
 //
-// Rombak drpd V3: kurangkan badge/chrome, besarkan typography, ARTIKEL
-// ditukar drpd overlay penuh kepada "imej + panel bawah" gaya Medium.
-// Semua warna sekarang datang dari FeedPalette (theme/feed_theme.dart)
-// yg beranimasi ikut Subuh/Maghrib sebenar — bukan const tetap lagi.
-//
-// `palette.t` (0=malam,1=siang) digunakan utk fade badge jenis
-// (VIDEO/ARTIKEL chip) terus dlm build() — masa DayNightTheme animate,
-// setiap frame bagi `t` baharu, so badge fade sekali dgn warna lain,
-// bukan snap on/off.
+// Perubahan utama drpd V4:
+// VIDEO/ARTIKEL: Tajuk kini guna GoogleFonts.playfairDisplay (italic,
+//   besar), progress bar dibuang, whitespace ditambah — rasa editorial
+//   majalah, bukan social feed.
+// KUOTA: Tanda petik besar dekoratif atasnya, teks petikan Playfair
+//   Display italic besar & gelap, latar krim/sage bersih tanpa lattice
+//   — rasa halaman buku/majalah premium.
+// ACARA: Tiket kekal (struktur fungsian, bukan hiasan).
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../theme/feed_theme.dart';
@@ -38,7 +38,7 @@ IconData _typeIcon(String t) {
   }
 }
 
-// Fallback imej kosong (gradient jenama, bukan foto random)
+// Fallback gradient bila post takde assetPath
 const List<List<Color>> _palettes = [
   [Color(0xFF2C3E50), Color(0xFF1A252F)],
   [Color(0xFF3E362E), Color(0xFF231E19)],
@@ -48,17 +48,15 @@ const List<List<Color>> _palettes = [
   [Color(0xFF382229), Color(0xFF1C1114)],
 ];
 
-// ── PETIKAN: 2 tona tenang sahaja (krim & sage) — bukan 6 warna vivid
-// lagi. Setiap tona ada versi siang & malam sendiri, di-lerp ikut
-// palette.t supaya turut crossfade lembut.
+// ── Tona latar kad PETIKAN — krim & sage sahaja, lerp siang/malam ──
 class _QuoteTone {
   final Color dayBg, dayText, nightBg, nightText;
   const _QuoteTone(this.dayBg, this.dayText, this.nightBg, this.nightText);
 }
 
 const List<_QuoteTone> _quoteTones = [
-  _QuoteTone(Color(0xFFF7F3EA), Color(0xFF201C14), Color(0xFF1B170F), Color(0xFFF3EEE2)), // krim/gading
-  _QuoteTone(Color(0xFFE8EDE1), Color(0xFF23301F), Color(0xFF161C14), Color(0xFFE3ECD9)), // sage
+  _QuoteTone(Color(0xFFF7F3EA), Color(0xFF1C1710), Color(0xFF1B170F), Color(0xFFF3EEE2)),
+  _QuoteTone(Color(0xFFE8EDE1), Color(0xFF1F2E1B), Color(0xFF161C14), Color(0xFFE3ECD9)),
 ];
 
 const List<String> _months = ['JAN','FEB','MAC','APR','MEI','JUN',
@@ -81,10 +79,7 @@ Widget _authorAvatar(String author, Color accent, {double size = 18}) {
   );
 }
 
-// ── Tag jenis (VIDEO/ARTIKEL) — duduk atas FOTO (bukan atas latar
-// app), jadi warnanya sendiri kekal tetap tak kira siang/malam (foto
-// ada tona sendiri). Yang berubah cuma OPACITY dia — caller bungkus
-// dgn Opacity(opacity: chromeOpacity) ikut palette.t. ──────────────
+// ── Badge jenis — fade keluar waktu siang (editorial clean) ──
 Widget _glassTag(String type) {
   return PopScaleIn(
     delay: const Duration(milliseconds: 180),
@@ -103,9 +98,7 @@ Widget _glassTag(String type) {
   );
 }
 
-// ── Bookmark — FUNGSIAN, jadi tak pernah hilang macam badge jenis.
-// onImage=true: chip kaca gelap universal (selamat atas apa jua foto).
-// onImage=false: chip ikut token FeedPalette (utk kad rata cth tiket).
+// ── Bookmark terapung ─────────────────────────────────────────
 Widget _floatingBookmark(FeedPalette palette, {bool onImage = true}) {
   return PopScaleIn(
     delay: const Duration(milliseconds: 220),
@@ -124,33 +117,7 @@ Widget _floatingBookmark(FeedPalette palette, {bool onImage = true}) {
   );
 }
 
-// ── Painters ─────────────────────────────────────────────────
-class _GeoLatticePainter extends CustomPainter {
-  final Color color;
-  const _GeoLatticePainter({required this.color});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint p = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    const double s = 25;
-    for (double y = -s; y < size.height + s; y += s) {
-      for (double x = -s; x < size.width + s; x += s) {
-        final Path path = Path()
-          ..moveTo(x, y - s / 2)
-          ..lineTo(x + s / 2, y)
-          ..lineTo(x, y + s / 2)
-          ..lineTo(x - s / 2, y)
-          ..close();
-        canvas.drawPath(path, p);
-      }
-    }
-  }
-  @override
-  bool shouldRepaint(covariant _GeoLatticePainter o) => o.color != color;
-}
-
+// ── Dash line (untuk tiket acara) ────────────────────────────
 class _DashLinePainter extends CustomPainter {
   final Color color;
   const _DashLinePainter(this.color);
@@ -210,11 +177,12 @@ class FeedCard extends StatelessWidget {
     }
   }
 
-  // ── VIDEO: imej + panel bawah, badge chip fade ikut siang/malam ──
+  // ── VIDEO (gaya bulatan HIJAU) ────────────────────────────
+  // Foto hero penuh atas, tiada progress bar, tiada scrim teks,
+  // tajuk Playfair besar bawah atas latar palette.surface.
   Widget _buildVideo() {
     final Color accent = kTypeVideo;
     final int h = post.id.hashCode.abs();
-    final double progress = 0.25 + (h % 50) / 100;
     final int fakeMinutes = 1 + h % 12;
     final bool hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
     final double chromeOpacity = (1 - palette.t).clamp(0.0, 1.0);
@@ -222,6 +190,7 @@ class FeedCard extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // ── Foto hero ─────────────────────────────────────
         AspectRatio(
           aspectRatio: imageAspectRatio,
           child: Stack(
@@ -232,16 +201,19 @@ class FeedCard extends StatelessWidget {
                       errorBuilder: (_, __, ___) => _gradBg(_palettes[h % _palettes.length], 'video'))
                   : _gradBg(_palettes[h % _palettes.length], 'video'),
 
+              // Scrim lembut — bukan teks overlay, cuma enhance kontra
+              // play button supaya nampak pada foto terang.
               const Positioned.fill(
                 child: DecoratedBox(decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Color(0x1F000000), Color(0x4D000000)],
+                    colors: [Color(0x00000000), Color(0x33000000)],
+                    stops: [0.6, 1.0],
                   ),
                 )),
               ),
 
-              // Play — kekal (fungsian, bukan chrome hiasan), diperkecil
+              // Play button — fungsian, kekal walaupun chrome lain kurang
               Center(
                 child: PopScaleIn(
                   delay: const Duration(milliseconds: 160),
@@ -249,56 +221,53 @@ class FeedCard extends StatelessWidget {
                     child: BackdropFilter(
                       filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                       child: Container(
-                        width: 44, height: 44,
+                        width: 48, height: 48,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.32),
-                          border: Border.all(color: Colors.white.withOpacity(0.7), width: 1.1),
+                          color: Colors.black.withOpacity(0.28),
+                          border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.2),
                         ),
-                        child: const Icon(Icons.play_arrow_rounded, size: 24, color: Colors.white),
+                        child: const Icon(Icons.play_arrow_rounded, size: 26, color: Colors.white),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // Badge jenis — fade keluar waktu siang (editorial), balik
-              // nampak waktu malam. Bukan swap terus, ikut palette.t.
+              // Badge fade waktu siang, bookmark kekal
               Positioned(top: 10, left: 10,
                 child: Opacity(opacity: chromeOpacity, child: _glassTag('video'))),
               Positioned(top: 10, right: 10, child: _floatingBookmark(palette)),
-
-              // Garis progress — kekal, ni maklumat fungsian (brp byk
-              // dah ditonton), bukan hiasan.
-              Positioned(left: 0, right: 0, bottom: 0,
-                child: SizedBox(height: 3,
-                  child: Stack(alignment: Alignment.centerLeft, children: [
-                    Container(color: Colors.white.withOpacity(0.22)),
-                    FractionallySizedBox(widthFactor: progress,
-                        child: Container(color: accent)),
-                  ]),
-                ),
-              ),
+              // TIADA progress bar — dibuang (chrome noise)
             ],
           ),
         ),
 
-        // Panel — warna ikut palette (dulu hardcode 0xFF12161C)
+        // ── Panel teks editorial ───────────────────────────
         Container(
           color: palette.surface,
-          padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Tajuk: Playfair Display besar, gelap, editorial
               Text(post.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800,
-                      color: palette.textPrimary, height: 1.28, letterSpacing: -0.2)),
-              const SizedBox(height: 9),
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 19, fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700, color: palette.textPrimary,
+                    height: 1.28, letterSpacing: -0.2,
+                  )),
+              const SizedBox(height: 6),
+              // Deskripsi ringkas — 2 baris, muted
+              Text(post.content, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11.5, color: palette.textSecondary,
+                      height: 1.5)),
+              const SizedBox(height: 14),
               Row(children: [
                 _authorAvatar(post.author, accent, size: 16),
                 const SizedBox(width: 6),
-                Expanded(child: Text('${post.author} · $fakeMinutes minit · ${post.time}',
+                Expanded(child: Text('${post.author}  ·  $fakeMinutes min  ·  ${post.time}',
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 9.5, color: palette.textMuted))),
                 const SizedBox(width: 4),
@@ -313,9 +282,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
-  // ── ARTIKEL: DITUKAR drpd overlay penuh kepada imej + panel bawah
-  // (gaya Medium) — ikut cadangan "Islamic Luxury Editorial". Ada
-  // petikan 2 baris + "oleh {author}" sekarang, dulu takde.
+  // ── ARTIKEL (gaya bulatan HIJAU — sama seperti VIDEO) ─────
   Widget _buildArticle() {
     final int h = post.id.hashCode.abs();
     final bool hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
@@ -334,6 +301,16 @@ class FeedCard extends StatelessWidget {
                   ? Image.asset(post.assetPath!, fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _gradBg(_palettes[h % _palettes.length], 'article'))
                   : _gradBg(_palettes[h % _palettes.length], 'article'),
+              // Scrim bawah lembut sahaja
+              const Positioned.fill(
+                child: DecoratedBox(decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                    colors: [Color(0x00000000), Color(0x22000000)],
+                    stops: [0.65, 1.0],
+                  ),
+                )),
+              ),
               Positioned(top: 10, left: 10,
                   child: Opacity(opacity: chromeOpacity, child: _glassTag('article'))),
               Positioned(top: 10, right: 10, child: _floatingBookmark(palette)),
@@ -344,24 +321,28 @@ class FeedCard extends StatelessWidget {
         Container(
           color: palette.surface,
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(13, 12, 13, 13),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(post.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
-                      color: palette.textPrimary, height: 1.26, letterSpacing: -0.3)),
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 19, fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700, color: palette.textPrimary,
+                    height: 1.28, letterSpacing: -0.2,
+                  )),
               const SizedBox(height: 6),
               Text(post.content, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11.5, color: palette.textSecondary, height: 1.42)),
-              const SizedBox(height: 11),
+                  style: TextStyle(fontSize: 11.5, color: palette.textSecondary, height: 1.5)),
+              const SizedBox(height: 14),
               Row(children: [
                 _authorAvatar(post.author, palette.accent, size: 16),
                 const SizedBox(width: 6),
-                Expanded(child: Text('oleh ${post.author} · ${post.time}',
+                Expanded(child: Text('oleh ${post.author}  ·  ${post.time}',
                     maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 9.5, color: palette.textMuted, fontWeight: FontWeight.w600))),
+                    style: TextStyle(fontSize: 9.5, color: palette.textMuted,
+                        fontWeight: FontWeight.w600))),
                 const SizedBox(width: 4),
                 PopLikeButton(baseCount: post.likes, iconSize: 11.5,
                     mutedColor: palette.textMuted, likedColor: palette.accent,
@@ -374,8 +355,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
-  // ── ACARA: tiket — struktur kekal (dah distinctive & fungsian),
-  // cuma warna ikut palette sekarang.
+  // ── ACARA: tiket kekal ─────────────────────────────────────
   Widget _buildTicket() {
     final int h = post.id.hashCode.abs();
     final String day = (1 + h % 28).toString().padLeft(2, '0');
@@ -466,50 +446,65 @@ class FeedCard extends StatelessWidget {
     );
   }
 
-  // ── PETIKAN: krim/sage sahaja, TIADA ikon watermark lagi (arahan
-  // "tiada icon langsung"). Corak geometri halus (~5%) dikekalkan —
-  // itu identiti jenama, bukan hiasan chrome yg dikomplen.
+  // ── KUOTA (gaya bulatan MERAH) ─────────────────────────────
+  // Latar krim/sage bersih TANPA lattice. Tanda petik besar di atas
+  // sebagai elemen dekoratif (bukan ikon fungsian), teks petikan
+  // Playfair Display italic besar & gelap — rasa pull-quote majalah
+  // premium atau halaman buku.
   Widget _buildQuote() {
     final _QuoteTone tone = _quoteTones[post.id.hashCode.abs() % _quoteTones.length];
-    final Color bg = Color.lerp(tone.nightBg, tone.dayBg, palette.t)!;
-    final Color text = Color.lerp(tone.nightText, tone.dayText, palette.t)!;
+    final Color bg   = Color.lerp(tone.nightBg,   tone.dayBg,   palette.t)!;
+    final Color text = Color.lerp(tone.nightText,  tone.dayText, palette.t)!;
+    // Warna tanda petik: emas jenama (waktu siang) atau amber gelap
+    // (waktu malam) — kontras cukup tapi tak dominan.
+    final Color quoteMarkColor = Color.lerp(
+      kPrimaryGold.withOpacity(0.22),
+      kGoldLight.withOpacity(0.14),
+      palette.t,
+    )!;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       color: bg,
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned.fill(
-            child: CustomPaint(painter: _GeoLatticePainter(color: text.withOpacity(0.05))),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(post.content, maxLines: 7, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: text, fontSize: 17,
-                      fontWeight: FontWeight.w700, height: 1.46, letterSpacing: -0.2)),
-              const SizedBox(height: 18),
-              Row(children: [
-                Container(width: 20, height: 2, color: text.withOpacity(0.55)),
-                const SizedBox(width: 8),
-                Expanded(child: Text(post.author, maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700,
-                        color: text.withOpacity(0.75), letterSpacing: 0.3))),
-                PopLikeButton(baseCount: post.likes, iconSize: 11,
-                    mutedColor: text.withOpacity(0.45), likedColor: text,
-                    countStyle: TextStyle(fontSize: 9.5, color: text.withOpacity(0.6))),
-              ]),
-            ],
-          ),
+          // Tanda petik buka — dekoratif, saiz besar, warna muted
+          Text('\u201C',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 64, color: quoteMarkColor,
+                fontWeight: FontWeight.w900, height: 0.7,
+              )),
+          const SizedBox(height: 10),
+          // Teks petikan — HERO tiada tandingan, besar, italic, gelap
+          Text(post.content, maxLines: 8, overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 17.5, fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600, color: text,
+                height: 1.52, letterSpacing: -0.1,
+              )),
+          const SizedBox(height: 20),
+          // Metadata — minimal, kecil, diletakkan jauh di bawah
+          Row(children: [
+            Container(width: 22, height: 1.5, color: text.withOpacity(0.40)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(post.author, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700,
+                      color: text.withOpacity(0.70), letterSpacing: 0.2)),
+            ),
+            const SizedBox(width: 4),
+            PopLikeButton(baseCount: post.likes, iconSize: 11,
+                mutedColor: text.withOpacity(0.40), likedColor: text,
+                countStyle: TextStyle(fontSize: 9.5, color: text.withOpacity(0.55))),
+          ]),
         ],
       ),
     );
   }
 
-  // Fallback gradient jenama (bila post takde imej) — kekal, 5% opacity
-  // ikon jenis kandungan = identiti halus, bukan clutter.
+  // Fallback gradient — bila post takde assetPath
   Widget _gradBg(List<Color> colors, String type) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: colors,
