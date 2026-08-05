@@ -1,6 +1,10 @@
-// lib/widgets/feed_panel.dart
-// Panel KOMUNITI kini guna grid masonry 2-lajur (TwoColumnMasonry) —
-// setiap kad tinggi ikut kandungan sebenar, bukan childAspectRatio tetap.
+// lib/widgets/feed_panel.dart  (V2 — satu lajur penuh, bukan grid lagi)
+//
+// KOMUNITI ditukar drpd TwoColumnMasonry kepada SliverList satu-lajur
+// sepenuh lebar — setiap kad full-bleed foto besar, gaya Facebook/
+// editorial luxury (Radiant/Villa Hermitage), bukan grid kompak lagi.
+// _heightWeightFor (khas utk imbang tinggi masonry) dah tak relevan,
+// dibuang terus drpd fail ni.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,7 +16,6 @@ import '../theme/feed_theme.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
 import 'anim_helpers.dart';
-import 'masonry_grid.dart';
 
 // ── ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
@@ -107,7 +110,7 @@ class _FeedPanelState extends State<FeedPanel> {
         physics: const BouncingScrollPhysics(),
         slivers: [
 
-          // ── HARI INI — jalur mendatar ──────────────────────
+          // ── HARI INI — jalur mendatar, kad diperbesar utk full-bleed ──
           if (_dailyItems.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: Padding(
@@ -123,14 +126,14 @@ class _FeedPanelState extends State<FeedPanel> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 208,
+                height: 236,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _dailyItems.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (_, i) => SizedBox(
-                    width: 152,
+                    width: 178,
                     child: FadeSlideIn(
                       index: i,
                       slideOffset: 0.15,
@@ -143,7 +146,7 @@ class _FeedPanelState extends State<FeedPanel> {
             const SliverToBoxAdapter(child: SizedBox(height: 28)),
           ],
 
-          // ── KOMUNITI — grid masonry organik ─────────────────
+          // ── KOMUNITI — satu lajur penuh, gaya Facebook/editorial ────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -156,17 +159,15 @@ class _FeedPanelState extends State<FeedPanel> {
                   )),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-              child: TwoColumnMasonry(
-                columnSpacing: 18,
-                runSpacing: 18,
-                tiles: List.generate(_posts.length, (i) {
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) {
                   final post  = _posts[i];
                   final ratio = _imageAspectFor(post);
-                  return MasonryTile(
-                    heightWeight: _heightWeightFor(post, ratio),
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: i == _posts.length - 1 ? 0 : 20),
                     child: FadeSlideIn(
                       index: i,
                       child: FeedCard(
@@ -176,7 +177,8 @@ class _FeedPanelState extends State<FeedPanel> {
                       ),
                     ),
                   );
-                }),
+                },
+                childCount: _posts.length,
               ),
             ),
           ),
@@ -188,50 +190,25 @@ class _FeedPanelState extends State<FeedPanel> {
 
   // Kumpulan nisbah aspek gambar berbeza — dipilih ikut hash id post
   // (deterministic, bukan Random(), supaya kekal sama tiap rebuild/
-  // scroll balik) supaya thumbnail dalam grid nampak pelbagai saiz
-  // secara organik, bukan seragam macam sebelum ini.
-  static const List<double> _aspectPool = [0.85, 1.15, 1.45, 1.7];
+  // scroll balik). Direkalibrasi utk kad SEPENUH LEBAR (dulu utk
+  // separuh lajur masonry ~165dp, kini ~343dp) — julat lebih landskap
+  // (1.05–1.7) supaya kad tak jadi keterlaluan tinggi & susah ditatal.
+  static const List<double> _aspectPool = [1.05, 1.25, 1.45, 1.7];
 
   double _imageAspectFor(PostModel post) {
     return _aspectPool[post.id.hashCode.abs() % _aspectPool.length];
   }
 
-  // Anggaran tinggi RELATIF setiap kad (unit tidak semestinya px sebenar)
-  // — asas untuk TwoColumnMasonry agihkan kad ke lajur paling pendek.
-  double _heightWeightFor(PostModel post, double imageAspect) {
-    const double colWidthUnit = 165; // ~lebar 1 lajur pada skrin telefon biasa
-
-    if (post.type == 'quote') {
-      const double charsPerLine = 30;
-      final int lines = (post.content.length / charsPerLine).ceil().clamp(2, 6);
-      return (70 + (lines * 20) + 40).toDouble(); // ikon + baris petikan + baris pengarang
-    }
-
-    // Tiket TAKDE imej langsung (date block + perforasi + stub) —
-    // anggaran tinggi tetap, bukan ikut imageAspectRatio (dulu silap
-    // guna formula imej utk tiket jugak, buat masonry tak seimbang).
-    if (post.type == 'event') {
-      return 150;
-    }
-
-    final double imageHeight = colWidthUnit / imageAspect;
-    // Artikel kini ada panel bawah dgn tajuk 2 baris + petikan 2 baris +
-    // meta row (struktur baharu, dulu overlay atas imej je) — lebih
-    // tinggi drpd video punya panel (tajuk + meta sahaja).
-    final double panelHeight = post.type == 'article' ? 128 : 88;
-    return imageHeight + panelHeight;
-  }
-
   Widget _dailyCard(_FeedItem item, DailyContentProvider daily) {
     if (item is _HadithItem) {
-      return DailyHadithCard(hadith: item.hadith, isCenter: false);
+      return DailyHadithCard(hadith: item.hadith, palette: widget.palette);
     }
     if (item is _AmalanItem) {
       return DailyAmalanCard(
-        amalan: item.amalan, isCenter: false,
+        amalan: item.amalan, palette: widget.palette,
         onToggle: () => daily.toggleAmalan(item.amalan.id),
       );
     }
-    return DailySirahCard(sirah: (item as _SirahItem).sirah, isCenter: false);
+    return DailySirahCard(sirah: (item as _SirahItem).sirah, palette: widget.palette);
   }
 }

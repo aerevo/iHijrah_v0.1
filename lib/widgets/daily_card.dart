@@ -1,11 +1,25 @@
-// lib/widgets/daily_card.dart
-// Gaya sama dengan FeedCard — gambar atas (gradient), info bawah
-
+// lib/widgets/daily_card.dart  (V2 — Islamic Luxury Editorial)
+//
+// Rombak drpd shell gradient-rata + panel split (55/45) kepada foto
+// FULL-BLEED + teks overlay bawah — bahasa visual SAMA macam FeedCard
+// punya layout HERO (video), supaya jalur "HARI INI" & feed "KOMUNITI"
+// rasa SATU sistem reka bentuk, bukan dua app berlainan.
+//
+// Takde foto unik ikut topik (hadith/amalan/sirah tiada assetPath),
+// jadi guna SATU foto jenama (langit.png) merentasi ketiga-tiga jenis,
+// dibezakan ikut TONA warna (gold/emerald/teal — sama makna semantik
+// dgn kTypeVideo/kTypeArticle/dll di feed_card.dart), bukan tona rawak.
+//
+// Palette-aware PENUH (FeedPalette day/night) — versi lama guna const
+// kCardDark/kTextPrimary yg tak reti tukar ikut Subuh/Maghrib, punca
+// kad ni nampak tak sepadan dgn tema semasa di screenshot terdahulu.
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/daily_content_provider.dart';
+import '../theme/feed_theme.dart';
 import '../utils/constants.dart';
 import 'anim_helpers.dart';
+import 'premium_glass.dart';
 
 // ── JENIS ─────────────────────────────────────────────────────
 enum DailyCardType { hadith, amalan, sirah }
@@ -16,13 +30,6 @@ extension _Style on DailyCardType {
       case DailyCardType.hadith: return kPrimaryGold;
       case DailyCardType.amalan: return kAccentGreen;
       case DailyCardType.sirah:  return kAccentTeal;
-    }
-  }
-  List<Color> get gradColors {
-    switch (this) {
-      case DailyCardType.hadith: return [const Color(0xFF8A6215), const Color(0xFFD9A62A)];
-      case DailyCardType.amalan: return [const Color(0xFF0B5C3E), const Color(0xFF159E71)];
-      case DailyCardType.sirah:  return [const Color(0xFF0F5A73), const Color(0xFF2AA7C4)];
     }
   }
   String get label {
@@ -44,23 +51,19 @@ extension _Style on DailyCardType {
 // ── SHELL ─────────────────────────────────────────────────────
 class _DailyShell extends StatelessWidget {
   final DailyCardType type;
-  final bool   isCenter;
-  final bool   isSpecial;
+  final FeedPalette palette;
+  final bool isSpecial;
   final String title;
   final String subtitle;
-  final String meta;
-  final String author;
   final Widget? trailing;
   final VoidCallback? onTap;
 
   const _DailyShell({
     required this.type,
-    required this.isCenter,
+    required this.palette,
     required this.isSpecial,
     required this.title,
     required this.subtitle,
-    required this.meta,
-    required this.author,
     this.trailing,
     this.onTap,
   });
@@ -73,233 +76,85 @@ class _DailyShell extends StatelessWidget {
       child: PressableScale(
         onTap: onTap,
         child: Container(
-        decoration: BoxDecoration(
-          color: kCardDark,
-          boxShadow: [
-            BoxShadow(
-              color: accent.withOpacity(0.14),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-
-            // ── BAHAGIAN ATAS — Gradient + konten (55%) ────
-            Expanded(
-              flex: 55,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-
-                  // Gradient background
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: type.gradColors,
-                      ),
-                    ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+            boxShadow: palette.cardShadow,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Foto jenama universal, duotone ikut jenis (gaya Villa
+              // Hermitage) — bukan foto lurus tanpa grading warna.
+              Image.asset('assets/images/langit.png', fit: BoxFit.cover),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      accent.withOpacity(0.50),
+                      accent.withOpacity(0.12),
+                      Colors.black.withOpacity(0.78),
+                    ],
+                    stops: const [0.0, 0.42, 1.0],
                   ),
-
-                  // Halus glow accent di sudut
-                  Positioned(
-                    top: -40, right: -40,
-                    child: Container(
-                      width: 150, height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            accent.withOpacity(0.15),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Fade bawah
-                  Positioned(
-                    bottom: 0, left: 0, right: 0,
-                    height: 70,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            kCardDark.withOpacity(0.95),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Label type — kiri atas (pop-in lembut)
-                  Positioned(
-                    top: 14, left: 14,
-                    child: PopScaleIn(
-                      delay: const Duration(milliseconds: 160),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: accent.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: accent.withOpacity(0.4), width: 0.8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              type.label,
-                              style: TextStyle(
-                                color: accent,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                            if (isSpecial) ...[
-                              const SizedBox(width: 4),
-                              Text('✦',
-                                  style: TextStyle(
-                                      color: accent, fontSize: 8)),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Meta — kanan atas (sorok bila kad kecil, tiada ruang cukup)
-                  if (isCenter)
-                    Positioned(
-                      top: 16, right: 14,
-                      child: Text(
-                        meta,
-                        style: TextStyle(
-                          color: accent.withOpacity(0.65),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-
-                  // Ikon besar tengah
-                  Center(
-                    child: Icon(
-                      type.iconData,
-                      size: isCenter ? 56 : 44,
-                      color: Colors.white.withOpacity(0.85),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
 
-            // Garis
-            Container(height: 0.5, color: kBorderSubtle),
-
-            // ── BAHAGIAN BAWAH — Teks (45%) ────────────────
-            Expanded(
-              flex: 45,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                color: kCardDark,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-
-                    // Tajuk/teks utama
-                    Text(
-                      title,
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: isCenter ? 16 : 13,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w700,
-                        color: kTextPrimary,
-                        height: 1.35,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Sumber
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: accent.withOpacity(0.75),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Footer
-                    Row(
+              // Label jenis — atas kiri, kaca sebenar (PremiumGlass)
+              Positioned(
+                top: 12, left: 12,
+                child: PopScaleIn(
+                  delay: const Duration(milliseconds: 160),
+                  child: PremiumGlass(
+                    level: GlassLevel.badge,
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accent.withOpacity(0.12),
-                            border: Border.all(
-                                color: accent.withOpacity(0.35), width: 1),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              type.iconData,
-                              size: 13,
-                              color: accent,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                author,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: kTextPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const Text(
-                                'Hari ini',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: kTextSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (trailing != null) trailing!,
+                        Icon(type.iconData, size: 10, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(type.label,
+                            style: const TextStyle(color: Colors.white, fontSize: 8,
+                                fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                        if (isSpecial) ...[
+                          const SizedBox(width: 3),
+                          const Text('✦', style: TextStyle(color: Colors.white, fontSize: 8)),
+                        ],
                       ],
                     ),
+                  ),
+                ),
+              ),
+
+              if (trailing != null)
+                Positioned(top: 10, right: 10, child: trailing!),
+
+              // Teks — overlay terus atas foto, gaya sama dgn HERO
+              // FeedCard (bukan panel putih terpisah lagi).
+              Positioned(
+                left: 14, right: 14, bottom: 13,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title,
+                        maxLines: 3, overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 15.5, fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w700, color: Colors.white, height: 1.3,
+                        )),
+                    const SizedBox(height: 4),
+                    Text(subtitle,
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic,
+                            color: Colors.white.withOpacity(0.82))),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -309,48 +164,43 @@ class _DailyShell extends StatelessWidget {
 // ── PUBLIC CARDS ──────────────────────────────────────────────
 class DailyHadithCard extends StatelessWidget {
   final HadithToday hadith;
-  final bool isCenter;
-  const DailyHadithCard({Key? key, required this.hadith, required this.isCenter}) : super(key: key);
+  final FeedPalette palette;
+  const DailyHadithCard({Key? key, required this.hadith, required this.palette}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => _DailyShell(
-    type: DailyCardType.hadith, isCenter: isCenter,
+    type: DailyCardType.hadith, palette: palette,
     isSpecial: hadith.isSpecial,
     title: hadith.text, subtitle: '— ${hadith.riwayat}',
-    meta: hadith.topik, author: hadith.kategori,
   );
 }
 
 class DailyAmalanCard extends StatelessWidget {
   final AmalanToday amalan;
-  final bool isCenter;
+  final FeedPalette palette;
   final VoidCallback? onToggle;
-  const DailyAmalanCard({Key? key, required this.amalan, required this.isCenter, this.onToggle}) : super(key: key);
+  const DailyAmalanCard({Key? key, required this.amalan, required this.palette, this.onToggle}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => _DailyShell(
-    type: DailyCardType.amalan, isCenter: isCenter,
+    type: DailyCardType.amalan, palette: palette,
     isSpecial: amalan.type == 'khas',
     title: amalan.title, subtitle: amalan.source,
-    meta: amalan.type == 'khas' ? 'Tarikh Khas ✦' : 'Mingguan',
-    author: amalan.source,
     trailing: GestureDetector(
       onTap: onToggle,
-      child: AnimatedContainer(
-        duration: AppDurations.fast,
-        width: 30, height: 30,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: amalan.isCompleted
-              ? kAccentGreen : kAccentGreen.withOpacity(0.1),
-          border: Border.all(
-            color: kAccentGreen.withOpacity(amalan.isCompleted ? 1 : 0.4),
-            width: 1.5,
+      child: PopScaleIn(
+        delay: const Duration(milliseconds: 220),
+        child: PremiumGlass(
+          level: GlassLevel.badge,
+          tint: amalan.isCompleted ? kAccentGreen : Colors.black,
+          opacity: amalan.isCompleted ? 0.85 : 0.35,
+          borderRadius: BorderRadius.circular(999),
+          padding: const EdgeInsets.all(5),
+          child: Icon(
+            amalan.isCompleted ? Icons.check_rounded : Icons.circle_outlined,
+            color: Colors.white, size: 14,
           ),
         ),
-        child: amalan.isCompleted
-            ? const Icon(Icons.check_rounded, color: Colors.black, size: 15)
-            : null,
       ),
     ),
   );
@@ -358,13 +208,12 @@ class DailyAmalanCard extends StatelessWidget {
 
 class DailySirahCard extends StatelessWidget {
   final SirahToday sirah;
-  final bool isCenter;
-  const DailySirahCard({Key? key, required this.sirah, required this.isCenter}) : super(key: key);
+  final FeedPalette palette;
+  const DailySirahCard({Key? key, required this.sirah, required this.palette}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => _DailyShell(
-    type: DailyCardType.sirah, isCenter: isCenter, isSpecial: false,
+    type: DailyCardType.sirah, palette: palette, isSpecial: false,
     title: sirah.tajuk, subtitle: sirah.pengajaran,
-    meta: sirah.tahun, author: sirah.lokasi,
   );
 }
