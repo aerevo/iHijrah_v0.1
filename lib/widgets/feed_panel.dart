@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
+import '../theme/feed_theme.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
 import 'anim_helpers.dart';
@@ -22,7 +23,8 @@ class _SirahItem  extends _FeedItem { final SirahToday sirah;   _SirahItem(this.
 
 class FeedPanel extends StatefulWidget {
   final void Function(bool scrollingDown)? onScrollDirection;
-  const FeedPanel({Key? key, this.onScrollDirection}) : super(key: key);
+  final FeedPalette palette;
+  const FeedPanel({Key? key, this.onScrollDirection, required this.palette}) : super(key: key);
 
   @override
   State<FeedPanel> createState() => _FeedPanelState();
@@ -76,9 +78,9 @@ class _FeedPanelState extends State<FeedPanel> {
     final daily = context.watch<DailyContentProvider>();
 
     if (daily.isLoading) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(kPrimaryGold),
+          valueColor: AlwaysStoppedAnimation<Color>(widget.palette.accent),
           strokeWidth: 1.5,
         ),
       );
@@ -91,7 +93,7 @@ class _FeedPanelState extends State<FeedPanel> {
     }
 
     return Container(
-      color: Colors.transparent, // Mengubah latar kepada lutsinar agar wallpaper.png di latar belakang dapat kelihatan
+      color: Colors.transparent, // Latar sebenar dilukis oleh home.dart (palette.background)
       child: NotificationListener<UserScrollNotification>(
       onNotification: (n) {
         if (n.direction == ScrollDirection.reverse) {
@@ -109,13 +111,13 @@ class _FeedPanelState extends State<FeedPanel> {
           if (_dailyItems.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 16, 14, 10),
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
                 child: Text('HARI INI',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
-                      color: kTextMuted,
+                      color: widget.palette.textMuted,
                     )),
               ),
             ),
@@ -124,7 +126,7 @@ class _FeedPanelState extends State<FeedPanel> {
                 height: 208,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _dailyItems.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 10),
                   itemBuilder: (_, i) => SizedBox(
@@ -138,32 +140,28 @@ class _FeedPanelState extends State<FeedPanel> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 28)),
           ],
 
           // ── KOMUNITI — grid masonry organik ─────────────────
-          // Ganti SliverGrid+childAspectRatio tetap (punca rupa "kaku")
-          // dengan TwoColumnMasonry: setiap kad tinggi ikut kandungan
-          // sebenar (kad petikan pendek/panjang, gambar pelbagai nisbah
-          // aspek), lajur kekal seimbang ikut anggaran tinggi.
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text('KOMUNITI',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: kTextMuted,
+                    color: widget.palette.textMuted,
                   )),
             ),
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
               child: TwoColumnMasonry(
-                columnSpacing: 16,
-                runSpacing: 16,
+                columnSpacing: 18,
+                runSpacing: 18,
                 tiles: List.generate(_posts.length, (i) {
                   final post  = _posts[i];
                   final ratio = _imageAspectFor(post);
@@ -171,7 +169,11 @@ class _FeedPanelState extends State<FeedPanel> {
                     heightWeight: _heightWeightFor(post, ratio),
                     child: FadeSlideIn(
                       index: i,
-                      child: FeedCard(post: post, imageAspectRatio: ratio),
+                      child: FeedCard(
+                        post: post,
+                        imageAspectRatio: ratio,
+                        palette: widget.palette,
+                      ),
                     ),
                   );
                 }),
@@ -205,8 +207,19 @@ class _FeedPanelState extends State<FeedPanel> {
       return (70 + (lines * 20) + 40).toDouble(); // ikon + baris petikan + baris pengarang
     }
 
+    // Tiket TAKDE imej langsung (date block + perforasi + stub) —
+    // anggaran tinggi tetap, bukan ikut imageAspectRatio (dulu silap
+    // guna formula imej utk tiket jugak, buat masonry tak seimbang).
+    if (post.type == 'event') {
+      return 150;
+    }
+
     final double imageHeight = colWidthUnit / imageAspect;
-    return imageHeight + 90; // + tajuk (2 baris) + baris meta + padding
+    // Artikel kini ada panel bawah dgn tajuk 2 baris + petikan 2 baris +
+    // meta row (struktur baharu, dulu overlay atas imej je) — lebih
+    // tinggi drpd video punya panel (tajuk + meta sahaja).
+    final double panelHeight = post.type == 'article' ? 128 : 88;
+    return imageHeight + panelHeight;
   }
 
   Widget _dailyCard(_FeedItem item, DailyContentProvider daily) {

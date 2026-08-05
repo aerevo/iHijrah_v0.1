@@ -262,6 +262,24 @@ class AppSpacing {
   static const double screenV = 20.0;
 }
 
+// ═══════════════════════════════════════════
+// GLASS SYSTEM — blur & stroke
+// Radius untuk glass guna AppSizes.cardRadius / cardRadiusLg /
+// cardRadiusXl sedia ada (badge/panel/sheet) — tak perlu token baru.
+// ═══════════════════════════════════════════
+class AppBlur {
+  static const double level1 = 9.0;  // badge — VIDEO/ARTIKEL tag
+  static const double level2 = 18.0; // panel — bookmark/menu/fab
+  static const double level3 = 32.0; // sheet — dialog/drawer/bottom sheet
+}
+
+class AppStroke {
+  static const double hairline = 0.6;
+  static const double thin     = 0.8;
+  static const double regular  = 1.0;
+  static const double bold     = 1.4;
+}
+
 class AppFontSizes {
   static const double xs  = 10.0;
   static const double sm  = 12.0;

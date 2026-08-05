@@ -123,6 +123,21 @@ class PrayerService with ChangeNotifier {
     'Asar':'--:--','Maghrib':'--:--','Isyak':'--:--',
   };
 
+  /// True = waktu siang (Subuh–Maghrib), false = waktu malam.
+  /// Guna utk auto tema Siang/Malam feed (lihat theme/feed_theme.dart).
+  /// notifyListeners() dari _tick() (setiap minit) sudah cukup kerap utk
+  /// dikesan bila nilai ni bertukar sekitar waktu Subuh/Maghrib sebenar.
+  bool get isDayTime {
+    if (_times == null) {
+      // Fallback sblm waktu solat berjaya dikira (cth. app baru buka,
+      // GPS belum settle) — anggar ikut jam sistem 6 pagi – 7 malam.
+      final int h = DateTime.now().hour;
+      return h >= 6 && h < 19;
+    }
+    final DateTime now = DateTime.now();
+    return now.isAfter(_times!.fajr) && now.isBefore(_times!.maghrib);
+  }
+
   /// "2j 15m" lagi ke waktu solat seterusnya
   String get countdown {
     if (timeUntilNextPrayer <= Duration.zero) return '--:--';

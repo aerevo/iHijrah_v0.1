@@ -7,6 +7,7 @@ import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'utils/constants.dart';
 import 'utils/audio_service.dart';
+import 'theme/feed_theme.dart';
 
 import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
@@ -63,29 +64,30 @@ class _HomePageState extends State<HomePage>
     // supaya kandungan kembang penuh bila rel tersembunyi (bukan lompang kekal)
     final double leftPad = sidebar.isVisible ? kRailWidthCollapsed : 10.0;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
+    // DayNightTheme bekalkan FeedPalette yg SUDAH beranimasi lembut,
+    // diikat pada Subuh/Maghrib sebenar (PrayerService). Letak di sini
+    // (punca pokok) — feed panel & feed card terima palette siap lerp,
+    // tak perlu masing2 dengar PrayerService sendiri.
+    return DayNightTheme(
+      builder: (context, palette) => Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          children: [
 
-          // ── 1. BACKGROUND — wallpaper.png (bukan gradient kosong lagi) ──
+          // ── 1. BACKGROUND — latar palet siang/malam ───────────────
+          // wallpaper.png TAK LAGI jadi latar global (dulu di sini) —
+          // ia kekal dlm assets/images/ semata2 sbg imej post dummy
+          // KOMUNITI (id '124', tema wallpaper baharu), lihat
+          // feed_panel.dart. Guna Container biasa (BUKAN AnimatedContainer)
+          // sebab `palette` di sini dah beranimasi setiap frame drpd
+          // DayNightTheme sendiri — bungkus animasi kali kedua di sini
+          // cuma buat lag mengekor, bukan lebih lembut.
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/wallpaper.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
+              color: palette.background,
               child: Stack(
                 children: [
-                  // Wash putih sangat halus di atas wallpaper — supaya
-                  // label "HARI INI"/"KOMUNITI" (yg duduk terus atas
-                  // latar ni, bukan atas kad) kekal senang dibaca
-                  Positioned.fill(
-                    child: Container(color: Colors.white.withOpacity(0.30)),
-                  ),
-                  // Cahaya emas atas
+                  // Cahaya emas atas — pudar sikit siang, lebih nampak malam
                   Positioned(
                     top: -100, left: -100,
                     child: Container(
@@ -93,7 +95,7 @@ class _HomePageState extends State<HomePage>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(colors: [
-                          kPrimaryGold.withOpacity(0.07),
+                          palette.accent.withOpacity(0.03 + 0.05 * (1 - palette.t)),
                           Colors.transparent,
                         ]),
                       ),
@@ -107,7 +109,7 @@ class _HomePageState extends State<HomePage>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(colors: [
-                          kAccentBlue.withOpacity(0.05),
+                          kAccentBlue.withOpacity(0.035),
                           Colors.transparent,
                         ]),
                       ),
@@ -125,7 +127,7 @@ class _HomePageState extends State<HomePage>
             top: 0,
             left: leftPad, right: 0, bottom: 0,
             child: sidebar.isClosed
-                ? FeedPanel(onScrollDirection: _onFeedScroll)
+                ? FeedPanel(onScrollDirection: _onFeedScroll, palette: palette)
                 : const SizedBox.shrink(),
           ),
 
@@ -168,7 +170,8 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
