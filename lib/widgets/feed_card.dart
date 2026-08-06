@@ -1,13 +1,13 @@
-// lib/widgets/feed_card.dart  (V5 — Islamic Luxury Editorial)
+// lib/widgets/feed_card.dart  (V6 — Editorial HTML Layout)
 //
-// Perubahan utama drpd V4:
-// VIDEO/ARTIKEL: Tajuk kini guna GoogleFonts.playfairDisplay (italic,
-//   besar), progress bar dibuang, whitespace ditambah — rasa editorial
-//   majalah, bukan social feed.
-// KUOTA: Tanda petik besar dekoratif atasnya, teks petikan Playfair
-//   Display italic besar & gelap, latar krim/sage bersih tanpa lattice
-//   — rasa halaman buku/majalah premium.
-// ACARA: Tiket kekal (struktur fungsian, bukan hiasan).
+// Perubahan utama drpd V5:
+// VIDEO/ARTIKEL  → _buildEditorial(): hero image 76% kanan (portrait),
+//   author badge terapung kanan bawah, headline Playfair split besar,
+//   badan teks dengan fade mask, "Baca lagi →", engage row ghost.
+// KUOTA/HADITH   → _buildQuote(): bar hitam atas (ikon petikan +
+//   label + author badge) + panel teks krim + bar hitam bawah
+//   (like animated + comment + share, teks putih).
+// ACARA          → _buildTicket(): tiada perubahan.
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -18,7 +18,7 @@ import '../theme/feed_theme.dart';
 import 'anim_helpers.dart';
 import 'premium_glass.dart';
 
-// ── TYPE MAPPING ─────────────────────────────────────────────
+// ── TYPE MAPPING ──────────────────────────────────────────────
 Color _typeColor(String t) {
   switch (t) {
     case 'video':   return kTypeVideo;
@@ -38,6 +38,18 @@ IconData _typeIcon(String t) {
   }
 }
 
+String _typeLabel(String t) {
+  switch (t) {
+    case 'video':   return 'Video';
+    case 'article': return 'Tazkirah';
+    case 'quote':   return 'Petikan';
+    case 'hadith':  return 'Hadith';
+    case 'amalan':  return 'Amalan';
+    case 'sirah':   return 'Sirah';
+    default:        return t;
+  }
+}
+
 // Fallback gradient bila post takde assetPath
 const List<List<Color>> _palettes = [
   [Color(0xFF2C3E50), Color(0xFF1A252F)],
@@ -48,21 +60,25 @@ const List<List<Color>> _palettes = [
   [Color(0xFF382229), Color(0xFF1C1114)],
 ];
 
-// ── Tona latar kad PETIKAN — krim & sage sahaja, lerp siang/malam ──
+// ── Tona latar kad PETIKAN — krim & sage ─────────────────────
 class _QuoteTone {
   final Color dayBg, dayText, nightBg, nightText;
   const _QuoteTone(this.dayBg, this.dayText, this.nightBg, this.nightText);
 }
 
 const List<_QuoteTone> _quoteTones = [
-  _QuoteTone(Color(0xFFF7F3EA), Color(0xFF1C1710), Color(0xFF1B170F), Color(0xFFF3EEE2)),
-  _QuoteTone(Color(0xFFE8EDE1), Color(0xFF1F2E1B), Color(0xFF161C14), Color(0xFFE3ECD9)),
+  _QuoteTone(Color(0xFFF7F3EA), Color(0xFF1C1710),
+             Color(0xFF1B170F), Color(0xFFF3EEE2)),
+  _QuoteTone(Color(0xFFE8EDE1), Color(0xFF1F2E1B),
+             Color(0xFF161C14), Color(0xFFE3ECD9)),
 ];
 
-const List<String> _months = ['JAN','FEB','MAC','APR','MEI','JUN',
-                              'JUL','OGO','SEP','OKT','NOV','DIS'];
+const List<String> _months = [
+  'JAN', 'FEB', 'MAC', 'APR', 'MEI', 'JUN',
+  'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS',
+];
 
-// ── Avatar ───────────────────────────────────────────────────
+// ── Avatar (digunakan di ticket) ──────────────────────────────
 Widget _authorAvatar(String author, Color accent, {double size = 18}) {
   final String initial =
       author.trim().isNotEmpty ? author.trim()[0].toUpperCase() : '?';
@@ -79,7 +95,7 @@ Widget _authorAvatar(String author, Color accent, {double size = 18}) {
   );
 }
 
-// ── Badge jenis — fade keluar waktu siang (editorial clean) ──
+// ── Badge jenis (video/artikel) ───────────────────────────────
 Widget _glassTag(String type) {
   return PopScaleIn(
     delay: const Duration(milliseconds: 180),
@@ -110,7 +126,8 @@ Widget _floatingBookmark(FeedPalette palette, {bool onImage = true}) {
       padding: const EdgeInsets.all(6),
       child: PopBookmarkButton(
         iconSize: 13,
-        mutedColor: onImage ? Colors.white.withOpacity(0.9) : palette.textSecondary,
+        mutedColor:
+            onImage ? Colors.white.withOpacity(0.9) : palette.textSecondary,
         savedColor: onImage ? kGoldLight : palette.accent,
       ),
     ),
@@ -134,11 +151,13 @@ class _DashLinePainter extends CustomPainter {
   bool shouldRepaint(covariant _DashLinePainter o) => o.color != color;
 }
 
-// ── FEED CARD ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// FEED CARD
+// ══════════════════════════════════════════════════════════════
 class FeedCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onTap;
-  final double imageAspectRatio;
+  final double imageAspectRatio; // digunakan oleh tiket; editorial fixed 0.82
   final FeedPalette palette;
 
   const FeedCard({
@@ -157,7 +176,8 @@ class FeedCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
-            border: Border.all(color: palette.divider, width: AppStroke.hairline),
+            border: Border.all(
+                color: palette.divider, width: AppStroke.hairline),
             boxShadow: palette.cardShadow,
           ),
           clipBehavior: Clip.antiAlias,
@@ -169,200 +189,541 @@ class FeedCard extends StatelessWidget {
 
   Widget _layoutFor(String t) {
     switch (t) {
-      case 'video':   return _buildVideo();
-      case 'article': return _buildArticle();
-      case 'event':   return _buildTicket();
-      case 'quote':   return _buildQuote();
-      default:        return _buildArticle();
+      case 'video':            return _buildEditorial(isVideo: true);
+      case 'article':          return _buildEditorial();
+      case 'event':            return _buildTicket();
+      case 'quote':
+      case 'hadith':           return _buildQuote();
+      default:                 return _buildEditorial();
     }
   }
 
-  // ── VIDEO (gaya bulatan HIJAU) ────────────────────────────
-  // Foto hero penuh atas, tiada progress bar, tiada scrim teks,
-  // tajuk Playfair besar bawah atas latar palette.surface.
-  Widget _buildVideo() {
-    final Color accent = kTypeVideo;
-    final int h = post.id.hashCode.abs();
-    final int fakeMinutes = 1 + h % 12;
-    final bool hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
-    final double chromeOpacity = (1 - palette.t).clamp(0.0, 1.0);
+  // ════════════════════════════════════════════════════════
+  // INSTANCE HELPERS — akses post & palette
+  // ════════════════════════════════════════════════════════
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ── Foto hero ─────────────────────────────────────
-        AspectRatio(
-          aspectRatio: imageAspectRatio,
+  // Gold tick + label kategori
+  Widget _metaRow() {
+    final String cat = (post.category?.isNotEmpty == true
+            ? post.category!
+            : _typeLabel(post.type))
+        .toUpperCase();
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 14, height: 1.5, color: kGoldMid),
+      const SizedBox(width: 9),
+      Text(cat,
+          style: const TextStyle(
+            fontSize: 10,
+            letterSpacing: 2,
+            fontWeight: FontWeight.w700,
+            color: kGoldDeep,
+          )),
+    ]);
+  }
+
+  // Author badge terapung dalam hero image (kanan bawah)
+  Widget _heroAuthorBadge() {
+    final String age =
+        post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
+    final String label = '${post.author}$age';
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          color: Colors.black.withOpacity(0.55),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 14,
+              height: 14,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                  shape: BoxShape.circle, color: kGoldMid),
+              child: const Icon(Icons.person_rounded,
+                  size: 9, color: Color(0xFF15130F)),
+            ),
+            const SizedBox(width: 5),
+            Text(label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                  color: Color(0xEAFFFFFF),
+                )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // Author badge inline dalam bar hitam quote
+  Widget _quoteAuthorBadge() {
+    final String age =
+        post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
+    final String label = '${post.author}$age';
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        width: 14,
+        height: 14,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+            shape: BoxShape.circle, color: kGoldMid),
+        child: const Icon(Icons.person_rounded,
+            size: 9, color: Color(0xFF15130F)),
+      ),
+      const SizedBox(width: 5),
+      Text(label.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+            color: Color(0xD9F5F1E6),
+          )),
+    ]);
+  }
+
+  // Hero image — 76% lebar, align kanan, nisbah portrait 0.82
+  Widget _heroImage({bool isVideo = false}) {
+    final int h = post.id.hashCode.abs();
+    final bool hasImg =
+        post.assetPath != null && post.assetPath!.isNotEmpty;
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: FractionallySizedBox(
+        widthFactor: 0.76,
+        child: AspectRatio(
+          aspectRatio: 0.82,
           child: Stack(
             fit: StackFit.expand,
             children: [
+              // Gambar atau gradient fallback
               hasImg
                   ? Image.asset(post.assetPath!, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _gradBg(_palettes[h % _palettes.length], 'video'))
-                  : _gradBg(_palettes[h % _palettes.length], 'video'),
+                      errorBuilder: (_, __, ___) => _gradBg(
+                          _palettes[h % _palettes.length], post.type))
+                  : _gradBg(_palettes[h % _palettes.length], post.type),
 
-              // Scrim lembut — bukan teks overlay, cuma enhance kontra
-              // play button supaya nampak pada foto terang.
+              // Scrim bawah lembut
               const Positioned.fill(
-                child: DecoratedBox(decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Color(0x00000000), Color(0x33000000)],
-                    stops: [0.6, 1.0],
-                  ),
-                )),
-              ),
-
-              // Play button — fungsian, kekal walaupun chrome lain kurang
-              Center(
-                child: PopScaleIn(
-                  delay: const Duration(milliseconds: 160),
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                      child: Container(
-                        width: 48, height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.28),
-                          border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.2),
-                        ),
-                        child: const Icon(Icons.play_arrow_rounded, size: 26, color: Colors.white),
-                      ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x00000000), Color(0x44000000)],
+                      stops: [0.55, 1.0],
                     ),
                   ),
                 ),
               ),
 
-              // Badge fade waktu siang, bookmark kekal
-              Positioned(top: 10, left: 10,
-                child: Opacity(opacity: chromeOpacity, child: _glassTag('video'))),
-              Positioned(top: 10, right: 10, child: _floatingBookmark(palette)),
-              // TIADA progress bar — dibuang (chrome noise)
-            ],
-          ),
-        ),
+              // Play button — video sahaja
+              if (isVideo)
+                Center(
+                  child: PopScaleIn(
+                    delay: const Duration(milliseconds: 160),
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter:
+                            ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withOpacity(0.28),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.8),
+                                width: 1.2),
+                          ),
+                          child: const Icon(Icons.play_arrow_rounded,
+                              size: 24, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
-        // ── Panel teks editorial ───────────────────────────
-        Container(
-          color: palette.surface,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Tajuk: Playfair Display besar, gelap, editorial
-              Text(post.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 19, fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w700, color: palette.textPrimary,
-                    height: 1.28, letterSpacing: -0.2,
-                  )),
-              const SizedBox(height: 6),
-              // Deskripsi ringkas — 2 baris, muted
-              Text(post.content, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11.5, color: palette.textSecondary,
-                      height: 1.5)),
-              const SizedBox(height: 14),
-              Row(children: [
-                _authorAvatar(post.author, accent, size: 16),
-                const SizedBox(width: 6),
-                Expanded(child: Text('${post.author}  ·  $fakeMinutes min  ·  ${post.time}',
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 9.5, color: palette.textMuted))),
-                const SizedBox(width: 4),
-                PopLikeButton(baseCount: post.likes, iconSize: 11.5,
-                    mutedColor: palette.textMuted, likedColor: accent,
-                    countStyle: TextStyle(fontSize: 9.5, color: palette.textMuted)),
-              ]),
+              // Author badge — kanan bawah
+              Positioned(
+                right: 10,
+                bottom: 10,
+                child: _heroAuthorBadge(),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Headline editorial — Playfair, split word pertama besar
+  // Contoh: "Adab Sebelum Ilmu"
+  //   Line 1: ADAB (besar) + "Sebelum" (kecil italic muted, baseline align)
+  //   Line 2: ILMU (besar)
+  Widget _editorialHeadline() {
+    final List<String> words =
+        post.title.trim().split(RegExp(r'\s+'));
+
+    final TextStyle bigStyle = GoogleFonts.playfairDisplay(
+      fontSize: 46,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w700,
+      color: palette.textPrimary,
+      height: 0.95,
+      letterSpacing: -1.0,
+    );
+    final TextStyle bridgeStyle = GoogleFonts.playfairDisplay(
+      fontSize: 20,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w600,
+      color: palette.textSecondary,
+      height: 0.95,
+      letterSpacing: -0.2,
+    );
+
+    // 1 perkataan sahaja
+    if (words.length == 1) {
+      return Text(words[0].toUpperCase(), style: bigStyle);
+    }
+
+    // 2 perkataan: line 1 + line 2 (kedua-duanya besar)
+    if (words.length == 2) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(words[0].toUpperCase(), style: bigStyle),
+          const SizedBox(height: 4),
+          Text(words[1].toUpperCase(), style: bigStyle),
+        ],
+      );
+    }
+
+    // 3+ perkataan:
+    // Line 1: word[0] besar + word[1..n-2] kecil bridge (baseline)
+    // Line 2: word[n-1] besar
+    final String bridgeText =
+        words.sublist(1, words.length - 1).join(' ');
+    final String lastWord = words.last.toUpperCase();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(words[0].toUpperCase(), style: bigStyle),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(bridgeText,
+                  style: bridgeStyle, overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
+        Text(lastWord, style: bigStyle),
       ],
     );
   }
 
-  // ── ARTIKEL (gaya bulatan HIJAU — sama seperti VIDEO) ─────
-  Widget _buildArticle() {
-    final int h = post.id.hashCode.abs();
-    final bool hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
-    final double chromeOpacity = (1 - palette.t).clamp(0.0, 1.0);
+  // Badan teks dengan fade mask bawah (CSS: mask-image)
+  Widget _fadingBody() {
+    return ShaderMask(
+      shaderCallback: (rect) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.black,
+          Colors.black,
+          Color(0xA6000000),
+          Color(0x1A000000),
+        ],
+        stops: [0.0, 0.50, 0.80, 1.0],
+      ).createShader(rect),
+      blendMode: BlendMode.dstIn,
+      child: Text(
+        post.content,
+        maxLines: 5,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          height: 1.90,
+          color: palette.textPrimary,
+          letterSpacing: -0.15,
+        ),
+      ),
+    );
+  }
+
+  // "Baca lagi →"
+  Widget _bacaLagi() {
+    return GestureDetector(
+      onTap: onTap,
+      child: const Text(
+        'Baca lagi →',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: kGoldDeep,
+        ),
+      ),
+    );
+  }
+
+  // Engagement row ghost — opacity 0.20, plain icons
+  Widget _ghostEngageRow() {
+    return Opacity(
+      opacity: 0.20,
+      child: Row(children: [
+        Icon(Icons.favorite_rounded, size: 12, color: palette.textPrimary),
+        const SizedBox(width: 5),
+        Text(post.likes.toString(),
+            style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: palette.textPrimary)),
+        const SizedBox(width: 16),
+        Icon(Icons.chat_bubble_outline_rounded,
+            size: 12, color: palette.textPrimary),
+        const SizedBox(width: 5),
+        Text(post.commentsCount.toString(),
+            style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: palette.textPrimary)),
+        const SizedBox(width: 16),
+        Icon(Icons.share_outlined, size: 12, color: palette.textPrimary),
+      ]),
+    );
+  }
+
+  // Bar hitam ATAS quote — ikon petikan + label + author badge
+  Widget _quoteTopBar() {
+    final String cat = (post.category?.isNotEmpty == true
+            ? post.category!
+            : _typeLabel(post.type))
+        .toUpperCase();
+    return Container(
+      color: const Color(0xFF15130F),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Kiri: ikon quote + label kategori
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.format_quote_rounded,
+                size: 16, color: kGoldMid),
+            const SizedBox(width: 7),
+            Text(cat,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.6,
+                  color: Color(0xCCF5F1E6),
+                )),
+          ]),
+          // Kanan: author badge
+          _quoteAuthorBadge(),
+        ],
+      ),
+    );
+  }
+
+  // Bar hitam BAWAH quote — like animated + comment + share (putih)
+  Widget _quoteBottomBar() {
+    return Container(
+      color: const Color(0xFF15130F),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      child: Row(children: [
+        // Like — animated PopLikeButton
+        PopLikeButton(
+          baseCount: post.likes,
+          iconSize: 13,
+          mutedColor: const Color(0xFFF5F1E6),
+          likedColor: const Color(0xFFE8433F),
+          countStyle: const TextStyle(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFF5F1E6),
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Comment
+        const Icon(Icons.chat_bubble_outline_rounded,
+            size: 13, color: Color(0xFFF5F1E6)),
+        const SizedBox(width: 5),
+        Text(post.commentsCount.toString(),
+            style: const TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFFF5F1E6),
+            )),
+        const SizedBox(width: 16),
+        // Share
+        const Icon(Icons.share_outlined,
+            size: 13, color: Color(0xFFF5F1E6)),
+      ]),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  // BUILDERS
+  // ════════════════════════════════════════════════════════
+
+  // ── EDITORIAL — VIDEO & ARTIKEL ─────────────────────────
+  // Layout mengikut HTML Post 1:
+  //   divider atas → kategori → hero 76% kanan → headline →
+  //   badan fade → baca lagi → engage ghost
+  Widget _buildEditorial({bool isVideo = false}) {
+    return Container(
+      color: palette.surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Divider editorial atas (seperti border-top HTML)
+          Container(
+            height: 1.5,
+            color: palette.textPrimary.withOpacity(0.85),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Kategori — gold tick + label
+                _metaRow(),
+                const SizedBox(height: 20),
+
+                // Hero image — 76% kanan, portrait 0.82
+                _heroImage(isVideo: isVideo),
+                const SizedBox(height: 18),
+
+                // Headline editorial Playfair split
+                _editorialHeadline(),
+                const SizedBox(height: 20),
+
+                // Badan teks dengan fade bawah
+                _fadingBody(),
+                const SizedBox(height: 14),
+
+                // "Baca lagi →"
+                _bacaLagi(),
+                const SizedBox(height: 28),
+
+                // Engagement row ghost
+                _ghostEngageRow(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── KUOTA / HADITH ──────────────────────────────────────
+  // Layout mengikut HTML Post 2:
+  //   bar hitam atas → panel krim (tanda petik + teks + sumber +
+  //   baca lagi) → bar hitam bawah (engage putih)
+  Widget _buildQuote() {
+    final _QuoteTone tone =
+        _quoteTones[post.id.hashCode.abs() % _quoteTones.length];
+    final Color bg   = Color.lerp(tone.nightBg,   tone.dayBg,   palette.t)!;
+    final Color text = Color.lerp(tone.nightText,  tone.dayText, palette.t)!;
+    final Color quoteMarkColor = Color.lerp(
+      kPrimaryGold.withOpacity(0.22),
+      kGoldLight.withOpacity(0.14),
+      palette.t,
+    )!;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: imageAspectRatio,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              hasImg
-                  ? Image.asset(post.assetPath!, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _gradBg(_palettes[h % _palettes.length], 'article'))
-                  : _gradBg(_palettes[h % _palettes.length], 'article'),
-              // Scrim bawah lembut sahaja
-              const Positioned.fill(
-                child: DecoratedBox(decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Color(0x00000000), Color(0x22000000)],
-                    stops: [0.65, 1.0],
-                  ),
-                )),
-              ),
-              Positioned(top: 10, left: 10,
-                  child: Opacity(opacity: chromeOpacity, child: _glassTag('article'))),
-              Positioned(top: 10, right: 10, child: _floatingBookmark(palette)),
-            ],
-          ),
-        ),
+        // ── Bar hitam ATAS ─────────────────────────────
+        _quoteTopBar(),
 
+        // ── Panel petikan ──────────────────────────────
         Container(
-          color: palette.surface,
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+          color: bg,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(post.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+              // Tanda petik buka — dekoratif
+              Text('\u201C',
                   style: GoogleFonts.playfairDisplay(
-                    fontSize: 19, fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w700, color: palette.textPrimary,
-                    height: 1.28, letterSpacing: -0.2,
+                    fontSize: 60,
+                    color: quoteMarkColor,
+                    fontWeight: FontWeight.w900,
+                    height: 0.7,
                   )),
-              const SizedBox(height: 6),
-              Text(post.content, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11.5, color: palette.textSecondary, height: 1.5)),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
+
+              // Teks petikan — hero, italic, besar
+              Text(post.content,
+                  maxLines: 8,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 17,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w600,
+                    color: text,
+                    height: 1.52,
+                    letterSpacing: -0.1,
+                  )),
+              const SizedBox(height: 20),
+
+              // Sumber / nama
               Row(children: [
-                _authorAvatar(post.author, palette.accent, size: 16),
-                const SizedBox(width: 6),
-                Expanded(child: Text('oleh ${post.author}  ·  ${post.time}',
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 9.5, color: palette.textMuted,
-                        fontWeight: FontWeight.w600))),
-                const SizedBox(width: 4),
-                PopLikeButton(baseCount: post.likes, iconSize: 11.5,
-                    mutedColor: palette.textMuted, likedColor: palette.accent,
-                    countStyle: TextStyle(fontSize: 9.5, color: palette.textMuted)),
+                Container(
+                    width: 22, height: 1.5,
+                    color: text.withOpacity(0.35)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(post.author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: text.withOpacity(0.65),
+                        letterSpacing: 0.2,
+                      )),
+                ),
               ]),
+              const SizedBox(height: 18),
+
+              // "Baca lagi →"
+              _bacaLagi(),
+              const SizedBox(height: 24),
             ],
           ),
         ),
+
+        // ── Bar hitam BAWAH ────────────────────────────
+        _quoteBottomBar(),
       ],
     );
   }
 
-  // ── ACARA: tiket kekal ─────────────────────────────────────
+  // ── ACARA: tiket (tiada perubahan) ─────────────────────
   Widget _buildTicket() {
     final int h = post.id.hashCode.abs();
     final String day = (1 + h % 28).toString().padLeft(2, '0');
     final String month = _months[h % 12];
     const LinearGradient dateGradient = LinearGradient(
         colors: [Color(0xFF3E8EF0), Color(0xFF2563C9)],
-        begin: Alignment.topLeft, end: Alignment.bottomRight);
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight);
     const Color dateAccent = Color(0xFF2563C9);
 
     return Container(
@@ -383,10 +744,18 @@ class FeedCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(children: [
-                    Text(day, style: const TextStyle(fontSize: 20,
-                        fontWeight: FontWeight.w900, color: Colors.white, height: 1.1)),
-                    Text(month, style: const TextStyle(fontSize: 8.5,
-                        fontWeight: FontWeight.w700, color: Colors.white70, letterSpacing: 1.2)),
+                    Text(day,
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            height: 1.1)),
+                    Text(month,
+                        style: const TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white70,
+                            letterSpacing: 1.2)),
                   ]),
                 ),
                 const SizedBox(width: 10),
@@ -394,15 +763,26 @@ class FeedCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(post.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800,
-                              color: palette.textPrimary, height: 1.3)),
+                      Text(post.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: palette.textPrimary,
+                              height: 1.3)),
                       const SizedBox(height: 5),
                       Row(children: [
-                        Icon(Icons.access_time_rounded, size: 10, color: palette.textMuted),
+                        Icon(Icons.access_time_rounded,
+                            size: 10, color: palette.textMuted),
                         const SizedBox(width: 4),
-                        Expanded(child: Text('8:00 pagi', style: TextStyle(fontSize: 9.5,
-                            color: palette.textMuted, fontWeight: FontWeight.w600))),
+                        Expanded(
+                          child: Text('8:00 pagi',
+                              style: TextStyle(
+                                  fontSize: 9.5,
+                                  color: palette.textMuted,
+                                  fontWeight: FontWeight.w600)),
+                        ),
                       ]),
                     ],
                   ),
@@ -412,93 +792,52 @@ class FeedCard extends StatelessWidget {
             ),
           ),
 
-          LayoutBuilder(builder: (c, cons) => CustomPaint(
-                size: Size(cons.maxWidth, 2),
-                painter: _DashLinePainter(palette.divider),
-              )),
+          LayoutBuilder(
+            builder: (c, cons) => CustomPaint(
+              size: Size(cons.maxWidth, 2),
+              painter: _DashLinePainter(palette.divider),
+            ),
+          ),
 
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             child: Row(children: [
               _authorAvatar(post.author, dateAccent, size: 16),
               const SizedBox(width: 6),
-              Expanded(child: Text(post.author, maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 9.5, color: palette.textMuted,
-                      fontWeight: FontWeight.w600))),
+              Expanded(
+                child: Text(post.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 9.5,
+                        color: palette.textMuted,
+                        fontWeight: FontWeight.w600)),
+              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: dateAccent.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('DAFTAR', style: TextStyle(fontSize: 8,
-                    fontWeight: FontWeight.w800, color: dateAccent, letterSpacing: 0.8)),
+                child: const Text('DAFTAR',
+                    style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                        color: dateAccent,
+                        letterSpacing: 0.8)),
               ),
               const SizedBox(width: 6),
-              PopLikeButton(baseCount: post.likes, iconSize: 11.5,
-                  mutedColor: palette.textMuted, likedColor: const Color(0xFFE8433F),
-                  countStyle: TextStyle(fontSize: 9.5, color: palette.textMuted)),
+              PopLikeButton(
+                baseCount: post.likes,
+                iconSize: 11.5,
+                mutedColor: palette.textMuted,
+                likedColor: const Color(0xFFE8433F),
+                countStyle: TextStyle(
+                    fontSize: 9.5, color: palette.textMuted),
+              ),
             ]),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ── KUOTA (gaya bulatan MERAH) ─────────────────────────────
-  // Latar krim/sage bersih TANPA lattice. Tanda petik besar di atas
-  // sebagai elemen dekoratif (bukan ikon fungsian), teks petikan
-  // Playfair Display italic besar & gelap — rasa pull-quote majalah
-  // premium atau halaman buku.
-  Widget _buildQuote() {
-    final _QuoteTone tone = _quoteTones[post.id.hashCode.abs() % _quoteTones.length];
-    final Color bg   = Color.lerp(tone.nightBg,   tone.dayBg,   palette.t)!;
-    final Color text = Color.lerp(tone.nightText,  tone.dayText, palette.t)!;
-    // Warna tanda petik: emas jenama (waktu siang) atau amber gelap
-    // (waktu malam) — kontras cukup tapi tak dominan.
-    final Color quoteMarkColor = Color.lerp(
-      kPrimaryGold.withOpacity(0.22),
-      kGoldLight.withOpacity(0.14),
-      palette.t,
-    )!;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-      color: bg,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Tanda petik buka — dekoratif, saiz besar, warna muted
-          Text('\u201C',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 64, color: quoteMarkColor,
-                fontWeight: FontWeight.w900, height: 0.7,
-              )),
-          const SizedBox(height: 10),
-          // Teks petikan — HERO tiada tandingan, besar, italic, gelap
-          Text(post.content, maxLines: 8, overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 17.5, fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w600, color: text,
-                height: 1.52, letterSpacing: -0.1,
-              )),
-          const SizedBox(height: 20),
-          // Metadata — minimal, kecil, diletakkan jauh di bawah
-          Row(children: [
-            Container(width: 22, height: 1.5, color: text.withOpacity(0.40)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(post.author, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700,
-                      color: text.withOpacity(0.70), letterSpacing: 0.2)),
-            ),
-            const SizedBox(width: 4),
-            PopLikeButton(baseCount: post.likes, iconSize: 11,
-                mutedColor: text.withOpacity(0.40), likedColor: text,
-                countStyle: TextStyle(fontSize: 9.5, color: text.withOpacity(0.55))),
-          ]),
         ],
       ),
     );
@@ -507,13 +846,22 @@ class FeedCard extends StatelessWidget {
   // Fallback gradient — bila post takde assetPath
   Widget _gradBg(List<Color> colors, String type) => Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors,
-              begin: Alignment.topLeft, end: Alignment.bottomRight),
+          gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight),
         ),
         child: Stack(children: [
-          Positioned(right: -12, bottom: -12,
-            child: Icon(type == 'video' ? Icons.videocam_rounded : _typeIcon(type),
-                size: 78, color: Colors.white.withOpacity(0.05))),
+          Positioned(
+            right: -12,
+            bottom: -12,
+            child: Icon(
+                type == 'video'
+                    ? Icons.videocam_rounded
+                    : _typeIcon(type),
+                size: 78,
+                color: Colors.white.withOpacity(0.05)),
+          ),
         ]),
       );
 }
