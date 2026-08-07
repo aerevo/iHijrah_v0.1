@@ -1,10 +1,14 @@
-// lib/widgets/feed_panel.dart  (V2 — satu lajur penuh, bukan grid lagi)
+// lib/widgets/feed_panel.dart  (V3 — Unboxed Editorial)
 //
-// KOMUNITI ditukar drpd TwoColumnMasonry kepada SliverList satu-lajur
-// sepenuh lebar — setiap kad full-bleed foto besar, gaya Facebook/
-// editorial luxury (Radiant/Villa Hermitage), bukan grid kompak lagi.
-// _heightWeightFor (khas utk imbang tinggi masonry) dah tak relevan,
-// dibuang terus drpd fail ni.
+// Perubahan utama drpd V2:
+// → SliverPadding sisi kiri-kanan ditukar 16→0. Post FeedCard V7
+//   kini full-width tanpa kotak — padding diurus dalam post itu sendiri.
+// → Padding(bottom:20) per-item dibuang. Setiap post sudah ada
+//   whitespace sendiri (editorial: 32px bawah, bar hitam quote: visual
+//   cukup, tiket: 16px bawah). Pemisah antara post = hairline dalam
+//   FeedCard + whitespace dari konten post itu.
+// → Tiada perubahan lain — DailyCard baris mendatar, logik data,
+//   provider, scroll direction — semua kekal sama.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -53,8 +57,6 @@ class _FeedPanelState extends State<FeedPanel> {
     PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi ﷺ mengajarkan kepada para sahabat.',    author:'Dr Rozaimi',      authorAge:'47',likes:3300,time:'5h',  assetPath:'assets/images/dummy_post1.jpg'),
     PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun bernyawa.',        author:'Ibn Qayyim',      authorAge:'',  likes:6200,time:'6h'),
     PostModel(id:'115',type:'video',  title:'Tafsir Surah Al-Kahfi Ayat 1-10', content:'Perlindungan dari fitnah Dajjal bermula dengan 10 ayat pertama surah ini.',  author:'Ust Fathul Bari', authorAge:'50',likes:7800,time:'9h',  assetPath:'assets/images/dummy_post1.jpg'),
-
-    // ── Post tambahan — guna baki asset dlm assets/images/ ──
     PostModel(id:'116',type:'article',title:'Merenung Ciptaan Langit',          content:'Tidakkah kamu perhatikan langit yang terbentang tanpa tiang? (Ar-Ra\'d: 2)', author:'Ustaz Firdaus',   authorAge:'44',likes:2650,time:'7h',  assetPath:'assets/images/langit.png'),
     PostModel(id:'117',type:'event',  title:'Selamat Datang ke iHijrah',        content:'Versi terkini iHijrah kini rasmi — Embun Jiwa untuk peneman ibadah harian anda.', author:'Admin iHijrah',   authorAge:'',  likes:980, time:'1h',  assetPath:'assets/images/logo.png'),
     PostModel(id:'118',type:'article',title:'Kenali Pokok Hijrah Anda',         content:'Setiap amalan yang kau catat menumbuhkan Pokok Embun Jiwa kau sendiri.',      author:'Admin iHijrah',   authorAge:'',  likes:1540,time:'3h',  assetPath:'assets/images/pokok_intro.png'),
@@ -63,7 +65,7 @@ class _FeedPanelState extends State<FeedPanel> {
     PostModel(id:'121',type:'event',  title:'Naik Level 4: Berbuah Amalan',      content:'Masya-Allah, pokok kau dah mula berbuah — hasil disiplin ibadah harian.',      author:'Admin iHijrah',   authorAge:'',  likes:890, time:'6h',  assetPath:'assets/images/pokok_level4.png'),
     PostModel(id:'122',type:'event',  title:'Naik Level 5: Pokok Matang Emas',  content:'Tahap tertinggi dicapai — pokok kau kini matang & berkilauan keemasan.',      author:'Admin iHijrah',   authorAge:'',  likes:1120,time:'8h',  assetPath:'assets/images/pokok_level5.png'),
     PostModel(id:'123',type:'article',title:'Sertai Komuniti iHijrah',          content:'Kongsi perjalanan hijrah kau bersama ribuan pengguna lain di seluruh negara.', author:'Admin iHijrah',   authorAge:'',  likes:1780,time:'11h', assetPath:'assets/images/profile_default.png'),
-    PostModel(id:'124',type:'article',title:'Tema Wallpaper Baharu Tersedia',   content:'Latar belakang baharu "Embun Jiwa" kini boleh dipilih dalam tetapan aplikasi.', author:'Admin iHijrah',   authorAge:'',  likes:640, time:'13h', assetPath:'assets/images/wallpaper.png'),
+    PostModel(id:'124',type:'article',title:'Tema Wallpaper Baharu Tersedia',   content:'Latar belakang baharu \"Embun Jiwa\" kini boleh dipilih dalam tetapan aplikasi.', author:'Admin iHijrah',   authorAge:'',  likes:640, time:'13h', assetPath:'assets/images/wallpaper.png'),
   ];
 
   List<_FeedItem> _buildDaily(DailyContentProvider d) {
@@ -96,26 +98,66 @@ class _FeedPanelState extends State<FeedPanel> {
     }
 
     return Container(
-      color: Colors.transparent, // Latar sebenar dilukis oleh home.dart (palette.background)
+      color: Colors.transparent,
       child: NotificationListener<UserScrollNotification>(
-      onNotification: (n) {
-        if (n.direction == ScrollDirection.reverse) {
-          widget.onScrollDirection?.call(true);
-        } else if (n.direction == ScrollDirection.forward) {
-          widget.onScrollDirection?.call(false);
-        }
-        return false;
-      },
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+        onNotification: (n) {
+          if (n.direction == ScrollDirection.reverse) {
+            widget.onScrollDirection?.call(true);
+          } else if (n.direction == ScrollDirection.forward) {
+            widget.onScrollDirection?.call(false);
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
 
-          // ── HARI INI — jalur mendatar, kad diperbesar utk full-bleed ──
-          if (_dailyItems.isNotEmpty) ...[
+            // ── HARI INI — jalur mendatar ───────────────────────────
+            if (_dailyItems.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+                  child: Text('HARI INI',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: widget.palette.textMuted,
+                      )),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 236,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _dailyItems.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) => SizedBox(
+                      width: 178,
+                      child: FadeSlideIn(
+                        index: i,
+                        slideOffset: 0.15,
+                        child: _dailyCard(_dailyItems[i], daily),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
+            ],
+
+            // ── KOMUNITI — satu lajur penuh, unboxed editorial ──────
+            // V3: SliverPadding sisi = 0. Post full-width, terapung
+            // terus atas latar krim skrin. Padding 16px kiri-kanan
+            // diurus dalam FeedCard itu sendiri (_buildEditorial &
+            // _buildTicket). Post dipisah oleh hairline + whitespace
+            // konten sendiri — tiada margin per-item lagi.
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
-                child: Text('HARI INI',
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Text('KOMUNITI',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -124,75 +166,37 @@ class _FeedPanelState extends State<FeedPanel> {
                     )),
               ),
             ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 236,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _dailyItems.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) => SizedBox(
-                    width: 178,
-                    child: FadeSlideIn(
-                      index: i,
-                      slideOffset: 0.15,
-                      child: _dailyCard(_dailyItems[i], daily),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 28)),
-          ],
-
-          // ── KOMUNITI — satu lajur penuh, gaya Facebook/editorial ────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Text('KOMUNITI',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: widget.palette.textMuted,
-                  )),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) {
-                  final post  = _posts[i];
-                  final ratio = _imageAspectFor(post);
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: i == _posts.length - 1 ? 0 : 20),
-                    child: FadeSlideIn(
+            SliverPadding(
+              // ← sisi 0: post full-width
+              // ↓ bawah 40: ruang nafas selepas post terakhir
+              padding: const EdgeInsets.only(bottom: 40),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) {
+                    final post  = _posts[i];
+                    final ratio = _imageAspectFor(post);
+                    // Tiada Padding wrapper per-item — FeedCard V7
+                    // uruskan whitespace & hairline sendiri.
+                    return FadeSlideIn(
                       index: i,
                       child: FeedCard(
                         post: post,
                         imageAspectRatio: ratio,
                         palette: widget.palette,
                       ),
-                    ),
-                  );
-                },
-                childCount: _posts.length,
+                    );
+                  },
+                  childCount: _posts.length,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+
+          ],
+        ),
       ),
     );
   }
 
-  // Kumpulan nisbah aspek gambar berbeza — dipilih ikut hash id post
-  // (deterministic, bukan Random(), supaya kekal sama tiap rebuild/
-  // scroll balik). Direkalibrasi utk kad SEPENUH LEBAR (dulu utk
-  // separuh lajur masonry ~165dp, kini ~343dp) — julat lebih landskap
-  // (1.05–1.7) supaya kad tak jadi keterlaluan tinggi & susah ditatal.
   static const List<double> _aspectPool = [1.05, 1.25, 1.45, 1.7];
 
   double _imageAspectFor(PostModel post) {
