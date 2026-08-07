@@ -1,14 +1,12 @@
-// lib/widgets/feed_card.dart  (V7 — Unboxed Editorial / "Terapung")
+// lib/widgets/feed_card.dart  (V8 — Premium Editorial)
 //
-// Perubahan utama drpd V6:
-// → Buang Container luar (borderRadius, border, boxShadow) dari build().
-//   Post kini terapung terus atas latar skrin — tiada kotak kad.
-// → _buildEditorial(): buang Container(color:surface) paling luar.
-//   Diasingkan dari post lain hanya oleh hairline 1.5px + whitespace.
-// → _buildQuote(): buang Container luar; quote panel & bar hitam kekal
-//   (ia sebahagian reka bentuk, bukan pembungkus kad).
-// → _buildTicket(): buang Container luar; tambah hairline divider atas.
-// → Column menegak HTML dikekalkan sepenuhnya (tiada Stack/overlap).
+// 6 perubahan serentak drpd V7:
+// 1. Hero image → full-width, aspectRatio 0.75 (portrait tinggi)
+// 2. CTA → button hitam penuh lebar "BACA LAGI ——→"
+// 3. Whitespace → +30-50% pada semua spacing
+// 4. Typography → headline 54px, height 0.88, letterSpacing -1.5
+// 5. Grid → meta atas, hero full-bleed, konten padded, CTA full-bleed
+// 6. Footer → opacity 0.12, icon 10px — sangat senyap
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -73,8 +71,8 @@ const List<_QuoteTone> _quoteTones = [
 ];
 
 const List<String> _months = [
-  'JAN', 'FEB', 'MAC', 'APR', 'MEI', 'JUN',
-  'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS',
+  'JAN','FEB','MAC','APR','MEI','JUN',
+  'JUL','OGO','SEP','OKT','NOV','DIS',
 ];
 
 Widget _authorAvatar(String author, Color accent, {double size = 18}) {
@@ -129,7 +127,7 @@ class _DashLinePainter extends CustomPainter {
 }
 
 // ══════════════════════════════════════════════════════════════
-// FEED CARD  (V7 — Unboxed)
+// FEED CARD  (V8 — Premium Editorial)
 // ══════════════════════════════════════════════════════════════
 class FeedCard extends StatelessWidget {
   final PostModel post;
@@ -147,8 +145,6 @@ class FeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // V7: Tiada Container luar. Tiada borderRadius, border, boxShadow.
-    // Post terapung terus atas latar skrin.
     return RepaintBoundary(
       child: PressableScale(
         onTap: onTap,
@@ -172,22 +168,22 @@ class FeedCard extends StatelessWidget {
   // INSTANCE HELPERS
   // ════════════════════════════════════════════════════════
 
+  // ── Gold tick + kategori ─────────────────────────────────
   Widget _metaRow() {
     final String cat = (post.category?.isNotEmpty == true
-            ? post.category!
-            : _typeLabel(post.type))
-        .toUpperCase();
+            ? post.category! : _typeLabel(post.type)).toUpperCase();
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 14, height: 1.5, color: kGoldMid),
-      const SizedBox(width: 9),
+      Container(width: 16, height: 1.5, color: kGoldMid),
+      const SizedBox(width: 10),
       Text(cat,
           style: const TextStyle(
-            fontSize: 10, letterSpacing: 2,
-            fontWeight: FontWeight.w700, color: kGoldDeep,
+            fontSize: 10, letterSpacing: 2.4,
+            fontWeight: FontWeight.w800, color: kGoldDeep,
           )),
     ]);
   }
 
+  // ── Author badge dalam hero ───────────────────────────────
   Widget _heroAuthorBadge() {
     final String age =
         post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
@@ -196,21 +192,21 @@ class FeedCard extends StatelessWidget {
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           color: Colors.black.withOpacity(0.55),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Container(
-              width: 14, height: 14, alignment: Alignment.center,
+              width: 15, height: 15, alignment: Alignment.center,
               decoration: const BoxDecoration(
                   shape: BoxShape.circle, color: kGoldMid),
               child: const Icon(Icons.person_rounded,
                   size: 9, color: Color(0xFF15130F)),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text('${post.author}$age'.toUpperCase(),
                 style: const TextStyle(
                   fontSize: 9, fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4, color: Color(0xEAFFFFFF),
+                  letterSpacing: 0.5, color: Color(0xEAFFFFFF),
                 )),
           ]),
         ),
@@ -218,18 +214,19 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Author badge dalam bar hitam quote ───────────────────
   Widget _quoteAuthorBadge() {
     final String age =
         post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Container(
-        width: 14, height: 14, alignment: Alignment.center,
+        width: 15, height: 15, alignment: Alignment.center,
         decoration: const BoxDecoration(
             shape: BoxShape.circle, color: kGoldMid),
         child: const Icon(Icons.person_rounded,
             size: 9, color: Color(0xFF15130F)),
       ),
-      const SizedBox(width: 5),
+      const SizedBox(width: 6),
       Text('${post.author}$age'.toUpperCase(),
           style: const TextStyle(
             fontSize: 9, fontWeight: FontWeight.w600,
@@ -238,86 +235,95 @@ class FeedCard extends StatelessWidget {
     ]);
   }
 
+  // ── Hero image — FULL WIDTH, portrait tinggi ─────────────
+  // Perubahan V8: FractionallySizedBox 76% → full-width
+  // aspectRatio 0.82 → 0.75 (lebih tinggi, lebih dominan)
   Widget _heroImage({bool isVideo = false}) {
     final int h = post.id.hashCode.abs();
     final bool hasImg =
         post.assetPath != null && post.assetPath!.isNotEmpty;
 
-    return Align(
-      alignment: Alignment.centerRight,
-      child: FractionallySizedBox(
-        widthFactor: 0.76,
-        child: AspectRatio(
-          aspectRatio: 0.82,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              hasImg
-                  ? Image.asset(post.assetPath!, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _gradBg(
-                          _palettes[h % _palettes.length], post.type))
-                  : _gradBg(_palettes[h % _palettes.length], post.type),
+    return AspectRatio(
+      aspectRatio: 0.75,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Gambar atau gradient fallback
+          hasImg
+              ? Image.asset(post.assetPath!, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      _gradBg(_palettes[h % _palettes.length], post.type))
+              : _gradBg(_palettes[h % _palettes.length], post.type),
 
-              const Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0x00000000), Color(0x44000000)],
-                      stops: [0.55, 1.0],
-                    ),
-                  ),
+          // Scrim bawah — gradient lebih dalam untuk CTA kontras
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x00000000), Color(0x55000000)],
+                  stops: [0.45, 1.0],
                 ),
               ),
-
-              if (isVideo)
-                Center(
-                  child: PopScaleIn(
-                    delay: const Duration(milliseconds: 160),
-                    child: ClipOval(
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                        child: Container(
-                          width: 44, height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black.withOpacity(0.28),
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.8),
-                                width: 1.2),
-                          ),
-                          child: const Icon(Icons.play_arrow_rounded,
-                              size: 24, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-              Positioned(
-                right: 10, bottom: 10,
-                child: _heroAuthorBadge(),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // Play button — video sahaja
+          if (isVideo)
+            Center(
+              child: PopScaleIn(
+                delay: const Duration(milliseconds: 160),
+                child: ClipOval(
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    child: Container(
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.30),
+                        border: Border.all(
+                            color: Colors.white.withOpacity(0.85),
+                            width: 1.2),
+                      ),
+                      child: const Icon(Icons.play_arrow_rounded,
+                          size: 28, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Author badge — kanan bawah
+          Positioned(
+            right: 14, bottom: 14,
+            child: _heroAuthorBadge(),
+          ),
+        ],
       ),
     );
   }
 
+  // ── Headline editorial — Playfair split, lebih besar ─────
+  // V8: fontSize 46→54, height 0.95→0.88, letterSpacing -1.0→-1.5
   Widget _editorialHeadline() {
     final List<String> words = post.title.trim().split(RegExp(r'\s+'));
 
     final TextStyle bigStyle = GoogleFonts.playfairDisplay(
-      fontSize: 46, fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.w700, color: palette.textPrimary,
-      height: 0.95, letterSpacing: -1.0,
+      fontSize: 54,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w700,
+      color: palette.textPrimary,
+      height: 0.88,
+      letterSpacing: -1.5,
     );
     final TextStyle bridgeStyle = GoogleFonts.playfairDisplay(
-      fontSize: 20, fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.w600, color: palette.textSecondary,
-      height: 0.95, letterSpacing: -0.2,
+      fontSize: 22,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w600,
+      color: palette.textSecondary,
+      height: 0.88,
+      letterSpacing: -0.3,
     );
 
     if (words.length == 1) {
@@ -329,7 +335,7 @@ class FeedCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(words[0].toUpperCase(), style: bigStyle),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(words[1].toUpperCase(), style: bigStyle),
         ],
       );
@@ -344,7 +350,7 @@ class FeedCard extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(words[0].toUpperCase(), style: bigStyle),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Flexible(child: Text(bridgeText,
                 style: bridgeStyle, overflow: TextOverflow.ellipsis)),
           ],
@@ -354,6 +360,8 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Badan teks dengan fade mask ───────────────────────────
+  // V8: height 1.90→1.75, weight w500→w400 (lebih ringan, editorial)
   Widget _fadingBody() {
     return ShaderMask(
       shaderCallback: (rect) => const LinearGradient(
@@ -361,18 +369,50 @@ class FeedCard extends StatelessWidget {
         end: Alignment.bottomCenter,
         colors: [Colors.black, Colors.black,
                  Color(0xA6000000), Color(0x1A000000)],
-        stops: [0.0, 0.50, 0.80, 1.0],
+        stops: [0.0, 0.45, 0.75, 1.0],
       ).createShader(rect),
       blendMode: BlendMode.dstIn,
-      child: Text(post.content, maxLines: 5,
+      child: Text(post.content, maxLines: 4,
           style: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w500,
-            height: 1.90, color: palette.textPrimary, letterSpacing: -0.15,
+            fontSize: 15, fontWeight: FontWeight.w400,
+            height: 1.75, color: palette.textPrimary, letterSpacing: -0.1,
           )),
     );
   }
 
-  Widget _bacaLagi() {
+  // ── CTA button penuh lebar — editorial ───────────────────
+  // V8: ganti text link → black full-width button (macam Image 4)
+  Widget _bacaLagiButton() {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        color: const Color(0xFF15130F),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('BACA LAGI',
+                style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w800,
+                  letterSpacing: 1.6, color: Color(0xFFF5F1E6),
+                )),
+            // Dash + arrow, seperti Image 4
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 28, height: 1,
+                  color: const Color(0xFFF5F1E6)),
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_forward_rounded,
+                  size: 14, color: Color(0xFFF5F1E6)),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── CTA text link — untuk dalam panel quote ───────────────
+  Widget _bacaLagiLink() {
     return GestureDetector(
       onTap: onTap,
       child: const Text('Baca lagi →',
@@ -383,28 +423,31 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Ghost engagement row — sangat senyap ─────────────────
+  // V8: opacity 0.20→0.12, icon 12→10, font 9.5→8.5
   Widget _ghostEngageRow() {
     return Opacity(
-      opacity: 0.20,
+      opacity: 0.12,
       child: Row(children: [
-        Icon(Icons.favorite_rounded, size: 12, color: palette.textPrimary),
+        Icon(Icons.favorite_rounded, size: 10, color: palette.textPrimary),
         const SizedBox(width: 5),
         Text(post.likes.toString(),
-            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600,
+            style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w600,
                 color: palette.textPrimary)),
         const SizedBox(width: 16),
         Icon(Icons.chat_bubble_outline_rounded,
-            size: 12, color: palette.textPrimary),
+            size: 10, color: palette.textPrimary),
         const SizedBox(width: 5),
         Text(post.commentsCount.toString(),
-            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600,
+            style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w600,
                 color: palette.textPrimary)),
         const SizedBox(width: 16),
-        Icon(Icons.share_outlined, size: 12, color: palette.textPrimary),
+        Icon(Icons.share_outlined, size: 10, color: palette.textPrimary),
       ]),
     );
   }
 
+  // ── Bar hitam ATAS quote ──────────────────────────────────
   Widget _quoteTopBar() {
     final String cat = (post.category?.isNotEmpty == true
             ? post.category! : _typeLabel(post.type)).toUpperCase();
@@ -415,7 +458,8 @@ class FeedCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.format_quote_rounded, size: 16, color: kGoldMid),
+            const Icon(Icons.format_quote_rounded,
+                size: 16, color: kGoldMid),
             const SizedBox(width: 7),
             Text(cat,
                 style: const TextStyle(
@@ -429,30 +473,26 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Bar hitam BAWAH quote — engage putih ─────────────────
   Widget _quoteBottomBar() {
     return Container(
       color: const Color(0xFF15130F),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       child: Row(children: [
         PopLikeButton(
-          baseCount: post.likes,
-          iconSize: 13,
+          baseCount: post.likes, iconSize: 13,
           mutedColor: const Color(0xFFF5F1E6),
           likedColor: const Color(0xFFE8433F),
-          countStyle: const TextStyle(
-            fontSize: 9.5, fontWeight: FontWeight.w600,
-            color: Color(0xFFF5F1E6),
-          ),
+          countStyle: const TextStyle(fontSize: 9.5,
+              fontWeight: FontWeight.w600, color: Color(0xFFF5F1E6)),
         ),
         const SizedBox(width: 16),
         const Icon(Icons.chat_bubble_outline_rounded,
             size: 13, color: Color(0xFFF5F1E6)),
         const SizedBox(width: 5),
         Text(post.commentsCount.toString(),
-            style: const TextStyle(
-              fontSize: 9.5, fontWeight: FontWeight.w600,
-              color: Color(0xFFF5F1E6),
-            )),
+            style: const TextStyle(fontSize: 9.5,
+                fontWeight: FontWeight.w600, color: Color(0xFFF5F1E6))),
         const SizedBox(width: 16),
         const Icon(Icons.share_outlined,
             size: 13, color: Color(0xFFF5F1E6)),
@@ -465,45 +505,55 @@ class FeedCard extends StatelessWidget {
   // ════════════════════════════════════════════════════════
 
   // ── EDITORIAL — VIDEO & ARTIKEL ─────────────────────────
-  // V7: Tiada Container(color:surface) paling luar.
-  // Diasingkan dari post lain hanya oleh hairline 1.5px + whitespace.
+  // V8 layout (mengikut Image 4):
+  //  hairline → [pad] meta → hero FULL BLEED →
+  //  [pad] headline → body → engage ghost →
+  //  CTA button FULL BLEED → whitespace
   Widget _buildEditorial({bool isVideo = false}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Hairline pemisah atas — ganti fungsi border kad
+
+        // ① Hairline pemisah
         Container(height: 1.5,
             color: palette.textPrimary.withOpacity(0.85)),
 
+        // ② Meta row — padded
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
+          child: _metaRow(),
+        ),
+
+        // ③ Hero image — FULL BLEED, tiada horizontal padding
+        _heroImage(isVideo: isVideo),
+
+        // ④ Konten teks — padded, whitespace lebih lega
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _metaRow(),
-              const SizedBox(height: 20),
-              _heroImage(isVideo: isVideo),
-              const SizedBox(height: 18),
               _editorialHeadline(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
               _fadingBody(),
-              const SizedBox(height: 14),
-              _bacaLagi(),
               const SizedBox(height: 28),
               _ghostEngageRow(),
             ],
           ),
         ),
+
+        // ⑤ CTA button — FULL BLEED hitam
+        _bacaLagiButton(),
+
+        // ⑥ Whitespace bawah — ruang nafas sebelum post seterusnya
+        const SizedBox(height: 44),
       ],
     );
   }
 
   // ── KUOTA / HADITH ──────────────────────────────────────
-  // V7: Tiada Container luar. Bar hitam & panel krim kekal —
-  // ia sebahagian reka bentuk petikan, bukan pembungkus kad.
-  // Hairline nipis di atas sebagai pemisah dari post sebelum.
   Widget _buildQuote() {
     final _QuoteTone tone =
         _quoteTones[post.id.hashCode.abs() % _quoteTones.length];
@@ -519,14 +569,11 @@ class FeedCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Hairline pemisah atas
         Container(height: 1, color: palette.divider),
-
         _quoteTopBar(),
-
         Container(
           color: bg,
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+          padding: const EdgeInsets.fromLTRB(20, 26, 20, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -536,17 +583,15 @@ class FeedCard extends StatelessWidget {
                     fontSize: 60, color: quoteMarkColor,
                     fontWeight: FontWeight.w900, height: 0.7,
                   )),
-              const SizedBox(height: 10),
-
+              const SizedBox(height: 12),
               Text(post.content,
                   maxLines: 8, overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 17, fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.w600, color: text,
-                    height: 1.52, letterSpacing: -0.1,
+                    height: 1.55, letterSpacing: -0.1,
                   )),
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 22),
               Row(children: [
                 Container(width: 22, height: 1.5,
                     color: text.withOpacity(0.35)),
@@ -560,22 +605,19 @@ class FeedCard extends StatelessWidget {
                       )),
                 ),
               ]),
-              const SizedBox(height: 18),
-
-              _bacaLagi(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              _bacaLagiLink(),
+              const SizedBox(height: 26),
             ],
           ),
         ),
-
         _quoteBottomBar(),
+        const SizedBox(height: 4),
       ],
     );
   }
 
   // ── ACARA: TIKET ────────────────────────────────────────
-  // V7: Tiada Container(color:surface) luar.
-  // Hairline di atas + padding dalam sebagai pemisah.
   Widget _buildTicket() {
     final int h = post.id.hashCode.abs();
     final String day = (1 + h % 28).toString().padLeft(2, '0');
@@ -588,63 +630,53 @@ class FeedCard extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Hairline pemisah atas
         Container(height: 1, color: palette.divider),
-
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 54,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: dateGradient,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(children: [
-                  Text(day, style: const TextStyle(fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white, height: 1.1)),
-                  Text(month, style: const TextStyle(fontSize: 8.5,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white70, letterSpacing: 1.2)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 54,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                gradient: dateGradient,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(children: [
+                Text(day, style: const TextStyle(fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white, height: 1.1)),
+                Text(month, style: const TextStyle(fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white70, letterSpacing: 1.2)),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(post.title, maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: palette.textPrimary, height: 1.3)),
+                const SizedBox(height: 5),
+                Row(children: [
+                  Icon(Icons.access_time_rounded,
+                      size: 10, color: palette.textMuted),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text('8:00 pagi',
+                      style: TextStyle(fontSize: 9.5,
+                          color: palette.textMuted,
+                          fontWeight: FontWeight.w600))),
                 ]),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(post.title, maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
-                            color: palette.textPrimary, height: 1.3)),
-                    const SizedBox(height: 5),
-                    Row(children: [
-                      Icon(Icons.access_time_rounded,
-                          size: 10, color: palette.textMuted),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text('8:00 pagi',
-                          style: TextStyle(fontSize: 9.5,
-                              color: palette.textMuted,
-                              fontWeight: FontWeight.w600))),
-                    ]),
-                  ],
-                ),
-              ),
-              _floatingBookmark(palette, onImage: false),
-            ],
-          ),
+              ],
+            )),
+            _floatingBookmark(palette, onImage: false),
+          ]),
         ),
-
         LayoutBuilder(builder: (c, cons) => CustomPaint(
               size: Size(cons.maxWidth, 2),
-              painter: _DashLinePainter(palette.divider),
-            )),
-
+              painter: _DashLinePainter(palette.divider))),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
           child: Row(children: [
@@ -656,15 +688,13 @@ class FeedCard extends StatelessWidget {
                     color: palette.textMuted,
                     fontWeight: FontWeight.w600))),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
                 color: dateAccent.withOpacity(0.14),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text('DAFTAR',
-                  style: TextStyle(fontSize: 8,
-                      fontWeight: FontWeight.w800,
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800,
                       color: dateAccent, letterSpacing: 0.8)),
             ),
             const SizedBox(width: 6),
@@ -672,11 +702,11 @@ class FeedCard extends StatelessWidget {
               baseCount: post.likes, iconSize: 11.5,
               mutedColor: palette.textMuted,
               likedColor: const Color(0xFFE8433F),
-              countStyle: TextStyle(
-                  fontSize: 9.5, color: palette.textMuted),
+              countStyle: TextStyle(fontSize: 9.5, color: palette.textMuted),
             ),
           ]),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -689,9 +719,8 @@ class FeedCard extends StatelessWidget {
         child: Stack(children: [
           Positioned(right: -12, bottom: -12,
             child: Icon(
-                type == 'video'
-                    ? Icons.videocam_rounded : _typeIcon(type),
-                size: 78, color: Colors.white.withOpacity(0.05))),
+                type == 'video' ? Icons.videocam_rounded : _typeIcon(type),
+                size: 90, color: Colors.white.withOpacity(0.05))),
         ]),
       );
 }
