@@ -3,30 +3,33 @@ import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════
 // WARNA TERAS — Tema Cerah
-// Gabungan: struktur bersih (professional) + tenaga warna (ceria)
-// Jenama emas iHijrah dikekalkan sebagai teras identiti.
 // ═══════════════════════════════════════════
 
 // ── Latar & Permukaan ──────────────────────
-const Color kBgBase       = Color(0xFFF7F8FA); // putih-kelabu sejuk — sepadan navy
-const Color kBgSoft       = Color(0xFFEDF0F4); // kelabu sejuk pekat — panel sekunder
-const Color kSurfaceCard  = Color(0xFFFFFFFF); // kad — putih bersih
+const Color kBgBase       = Color(0xFFF7F8FA);
+const Color kBgSoft       = Color(0xFFEDF0F4);
+const Color kSurfaceCard  = Color(0xFFFFFFFF);
 
-// ── Navy/Teal — WARNA UTAMA baharu ─────────
-// (Gemini + keputusan Tuan: navy/teal jadi utama, emas turun jadi aksen)
-const Color kPrimaryNavy     = Color(0xFF1B3A63); // utama — butang, CTA, aksen aktif atas rel emas
-const Color kPrimaryNavyDeep = Color(0xFF12294A); // navy lebih gelap
-const Color kPrimaryTeal     = Color(0xFF1AA3B0); // segar — status aktif alternatif
-const Color kRailIconMuted   = Color(0xFFB8C4D6); // (warisan — tak lagi dipakai pada rel emas)
+// ── LATAR EDITORIAL EPUB ─────────────────────────────────────
+// Dipakai oleh Scaffold feed (home.dart → palette.background siang).
+// V7 FeedCard dah unboxed — post terapung terus atas warna ini.
+// Pilih mana-mana satu, set sebagai FeedPalette.day.background.
+const Color kScreenCream  = Color(0xFFF7F3EA); // ← aktif (Dribbble Radiant)
+const Color kEpubLight    = Color(0xFFFAF6EE); // lebih cerah, macam Kindle
+const Color kEpubSepia    = Color(0xFFEDE8DC); // lebih pekat, vintage
 
-// ── Emas 3D — rawatan khas REL KIRI sahaja ─
-// Rel kekal di kiri, tapi kini emas timbul/bertona, bukan navy rata.
-// Navy jadi AKSEN kontras di atas emas (pill status aktif), bukan sebaliknya.
-const Color kGoldHighlight = Color(0xFFFBEBC0); // titik cahaya paling terang
-const Color kGoldMid       = Color(0xFFE0AC2E); // teras emas — lebih tepu
-const Color kGoldDeep      = Color(0xFF8A6215); // bayang emas
-const Color kGoldBronze    = Color(0xFF4A3410); // gangsa — dasar paling gelap, beri kedalaman
-const Color kRailTextDark  = Color(0xFF3D2E0F); // teks/ikon tak aktif atas emas — kontras selamat
+// ── Navy/Teal — WARNA UTAMA ──────────────────
+const Color kPrimaryNavy     = Color(0xFF1B3A63);
+const Color kPrimaryNavyDeep = Color(0xFF12294A);
+const Color kPrimaryTeal     = Color(0xFF1AA3B0);
+const Color kRailIconMuted   = Color(0xFFB8C4D6);
+
+// ── Emas 3D — rel kiri ───────────────────────
+const Color kGoldHighlight = Color(0xFFFBEBC0);
+const Color kGoldMid       = Color(0xFFE0AC2E);
+const Color kGoldDeep      = Color(0xFF8A6215);
+const Color kGoldBronze    = Color(0xFF4A3410);
+const Color kRailTextDark  = Color(0xFF3D2E0F);
 
 const LinearGradient kRailGoldGradient = LinearGradient(
   begin: Alignment.centerLeft,
@@ -35,12 +38,12 @@ const LinearGradient kRailGoldGradient = LinearGradient(
   stops: [0.0, 0.22, 0.68, 0.9, 1.0],
 );
 
-// ── Hijau Muda — rel kini guna latar ini, emas kekal untuk lambang ──
-const Color kRailGreenLight = Color(0xFFEAF7EE);
-const Color kRailGreenMid   = Color(0xFFCDEBD6);
-const Color kRailGreenDeep  = Color(0xFFA9DDBC);
-const Color kRailGreenText  = Color(0xFF2F6B47); // teks/ikon tak aktif atas hijau
-const Color kRailGreenActive = Color(0xFF0F6B3E); // pil status aktif
+// ── Hijau Muda — rel ────────────────────────
+const Color kRailGreenLight  = Color(0xFFEAF7EE);
+const Color kRailGreenMid    = Color(0xFFCDEBD6);
+const Color kRailGreenDeep   = Color(0xFFA9DDBC);
+const Color kRailGreenText   = Color(0xFF2F6B47);
+const Color kRailGreenActive = Color(0xFF0F6B3E);
 
 const LinearGradient kRailGreenGradient = LinearGradient(
   begin: Alignment.topCenter,
@@ -50,17 +53,13 @@ const LinearGradient kRailGreenGradient = LinearGradient(
 );
 
 // ═══════════════════════════════════════════
-// REL KIRI — TEMA KACA GELAP (glassmorphism)
-// Rel kekal gelap & lutsinar walau app keseluruhan cerah — kontras
-// premium yg disengajakan. Guna navy+emas jenama sedia ada sbg dasar
-// (bukan hitam/neon generik) supaya kekal terasa "iHijrah", bukan
-// dashboard app lain.
+// REL KIRI — TEMA KACA GELAP
 // ═══════════════════════════════════════════
-const Color kGlassRailBase   = Color(0xFF13233F); // navy-gelap — dasar kaca
-const Color kGlassRailDeep   = Color(0xFF070D1A); // hujung paling gelap gradient
-const Color kGlassRailBorder = Color(0x26FFFFFF); // hairline putih lutsinar (bucu kaca)
-const Color kGlassTextDim    = Color(0xFFA9B8CE); // teks/ikon tak aktif atas kaca gelap
-const Color kGlassTextBright = Color(0xFFF5ECD8); // teks terang — putih gading hangat
+const Color kGlassRailBase   = Color(0xFF13233F);
+const Color kGlassRailDeep   = Color(0xFF070D1A);
+const Color kGlassRailBorder = Color(0x26FFFFFF);
+const Color kGlassTextDim    = Color(0xFFA9B8CE);
+const Color kGlassTextBright = Color(0xFFF5ECD8);
 
 const LinearGradient kGlassRailGradient = LinearGradient(
   begin: Alignment.topCenter,
@@ -69,10 +68,6 @@ const LinearGradient kGlassRailGradient = LinearGradient(
   stops: [0.0, 0.55, 1.0],
 );
 
-// Varian HIJAU — struktur sama (atas lebih terang → bawah nyaris hitam)
-// cuma hue ditukar navy→hijau hutan gelap. Mood sama macam rujukan foto
-// pakis (Unsplash "Green Wallpapers") — gelap & kaya, bukan hijau cerah
-// versi asal app (kRailGreenGradient, dah tak dipakai).
 const Color kGlassRailBaseGreen = Color(0xFF13301D);
 const Color kGlassRailDeepGreen = Color(0xFF060F09);
 const LinearGradient kGlassRailGradientGreen = LinearGradient(
@@ -82,76 +77,64 @@ const LinearGradient kGlassRailGradientGreen = LinearGradient(
   stops: [0.0, 0.55, 1.0],
 );
 
-// Pil status aktif atas kaca gelap — emas jenama (selari makna sedia ada:
-// emas = istimewa/badge/streak di seluruh app), teks jadi navy gelap utk
-// kontras selamat di atas emas terang.
 const LinearGradient kGlassActiveGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
   colors: [kGoldLight, kPrimaryGold, kGoldDark],
 );
 
-// ── Jenama Emas — kini AKSEN sahaja (kandungan) ────
-const Color kPrimaryGold  = Color(0xFFC79A38); // aksen istimewa — badge, hadith, streak
-const Color kGoldLight    = Color(0xFFE8C46B); // emas cerah — highlight/gradient
-const Color kGoldDark     = Color(0xFF96721F); // emas pekat — selamat untuk teks kecil
+// ── Jenama Emas — aksen ──────────────────────
+const Color kPrimaryGold = Color(0xFFC79A38);
+const Color kGoldLight   = Color(0xFFE8C46B);
+const Color kGoldDark    = Color(0xFF96721F);
 
-// ── Emas Rel — sistem 2-tona (aktif vs tak aktif) ──
-// Bukan lagi navy-vs-emas; kedua status kekal dlm keluarga emas, dibeza
-// oleh KECERAHAN sahaja (tonal, macam dail jam mewah) — lebih koheren.
-const Color kRailGoldActive   = Color(0xFFF5D97A); // terang — status aktif
-const Color kRailGoldInactive = Color(0xFF9B7B34); // matte/pudar — tak aktif
+const Color kRailGoldActive   = Color(0xFFF5D97A);
+const Color kRailGoldInactive = Color(0xFF9B7B34);
 
-// ── Aksen Fungsian ──────────────────────────
-const Color kAccentBlue    = Color(0xFF4A90D9); // biru cerah — beza drpd navy utama
-const Color kAccentCoral   = Color(0xFFFF6F5E); // tenaga — streak, CTA meriah
-const Color kAccentEmerald = Color(0xFF159E71); // hijau Islamik — amalan/kejayaan
-const Color kAccentTeal    = Color(0xFF2AA7C4); // sirah/ilmu
+// ── Aksen Fungsian ────────────────────────────
+const Color kAccentBlue    = Color(0xFF4A90D9);
+const Color kAccentCoral   = Color(0xFFFF6F5E);
+const Color kAccentEmerald = Color(0xFF159E71);
+const Color kAccentTeal    = Color(0xFF2AA7C4);
 
-// ── Teks ────────────────────────────────────
-const Color kTextPrimary   = Color(0xFF1A1D24); // hampir-hitam sejuk
-const Color kTextSecondary = Color(0xFF5F6672); // kelabu sejuk — AA-safe atas putih
-const Color kTextMuted     = Color(0xFF9AA1AC); // kelabu cerah — tertiari sahaja
+// ── Teks ──────────────────────────────────────
+const Color kTextPrimary   = Color(0xFF1A1D24);
+const Color kTextSecondary = Color(0xFF5F6672);
+const Color kTextMuted     = Color(0xFF9AA1AC);
 
-// ── Garis & Status ──────────────────────────
+// ── Garis & Status ───────────────────────────
 const Color kBorderSubtle = Color(0xFFE6E9EE);
 const Color kWarningRed   = Color(0xFFEF4444);
 const Color kSuccessGreen = Color(0xFF22C55E);
 
-// ── ALIAS WARISAN ────────────────────────────
-// Nama lama dikekalkan (nilai baharu) supaya semua widget sedia ada
-// terus berfungsi tanpa perlu disunting satu-satu. Guna nama baharu
-// di atas untuk kod baharu; alias ini boleh dimigrasi perlahan-lahan.
+// ── ALIAS WARISAN ─────────────────────────────
 const Color kBackgroundDark = kBgBase;
 const Color kSurfaceDark    = kBgSoft;
 const Color kCardDark       = kSurfaceCard;
 const Color kAccentOlive    = kAccentEmerald;
-const Color kAccentGreen    = kAccentEmerald; // "hijau amalan" — dipetakan ke emerald baharu
+const Color kAccentGreen    = kAccentEmerald;
 
 // ═══════════════════════════════════════════
 // WARNA KOMUNITI & FEED (jenis kandungan)
 // ═══════════════════════════════════════════
-// Dipetakan semula ikut jenama (bukan warna random lagi): video=emerald,
-// artikel=emas (border nipis), acara=navy, petikan=emas gelap (mcm hadith).
-// "Jangan semua hijau" — kini setiap jenis kandungan terus kenal pasti
-// sendiri pada pandangan pertama, guna warna jenama sedia ada.
 const Color kTypeVideo   = kAccentEmerald;
 const Color kTypeArticle = kPrimaryGold;
 const Color kTypeEvent   = kPrimaryNavy;
 const Color kTypeQuote   = kGoldDark;
 const Color kTypeHadith  = Color(0xFFC79A38);
+const Color kTypeAmalan  = Color(0xFF33B673);
+const Color kTypeSirah   = Color(0xFF2AA7C4);
 
-// ── FEED — latar & permukaan HANGAT (bukan kBgGradient/kSurfaceCard —
-// dua tu dipakai jugak oleh Profil, sengaja tak disentuh supaya skop
-// perubahan ni kekal pada feed sahaja) ──
+// ── FEED — latar & permukaan hangat ──────────
+// kFeedBgGradient & kFeedCardSurface kekal untuk skrin lain
+// yang mungkin masih pakai. Feed utama kini guna kScreenCream
+// melalui FeedPalette.day.background (feed_theme.dart).
 const LinearGradient kFeedBgGradient = LinearGradient(
   colors: [Color(0xFFFAF8F4), Color(0xFFF5F2EB)],
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
 );
-const Color kFeedCardSurface = Color(0xFFFCFCFA); // bukan putih pencetak
-const Color kTypeAmalan  = Color(0xFF33B673);
-const Color kTypeSirah   = Color(0xFF2AA7C4);
+const Color kFeedCardSurface = Color(0xFFFCFCFA);
 
 // ═══════════════════════════════════════════
 // GRADIENTS
@@ -184,7 +167,6 @@ const LinearGradient kCardGradient = LinearGradient(
 // ═══════════════════════════════════════════
 // SHADOWS
 // ═══════════════════════════════════════════
-// Guna untuk teks yang duduk atas gambar/gradient (bukan atas latar app)
 const List<Shadow> kTextShadow = [
   Shadow(color: Color(0x66000000), blurRadius: 6,  offset: Offset(0, 1)),
   Shadow(color: Color(0x33000000), blurRadius: 14, offset: Offset(0, 2)),
@@ -196,16 +178,14 @@ BoxShadow kGoldGlow({double opacity = 0.18}) => BoxShadow(
   spreadRadius: 2,
 );
 
-// Bayang kad lembut — guna sebagai ganti border tebal bila boleh
 BoxShadow kCardShadow({double opacity = 0.05}) => BoxShadow(
   color: Colors.black.withOpacity(opacity),
   blurRadius: 18,
   offset: const Offset(0, 6),
 );
 
-// Set bayang kad FEED — ambient lembut (8%) + garis highlight nipis di
-// bucu atas (macam permukaan kad menangkap cahaya) — bukan sekadar
-// "blur hitam" tunggal. Guna utk feed_card.dart.
+// kFeedCardShadows — dikekalkan untuk kegunaan lain.
+// FeedCard V7 (unboxed) tak guna shadows ini lagi.
 List<BoxShadow> kFeedCardShadows() => [
   BoxShadow(
     color: Colors.black.withOpacity(0.08),
@@ -263,14 +243,12 @@ class AppSpacing {
 }
 
 // ═══════════════════════════════════════════
-// GLASS SYSTEM — blur & stroke
-// Radius untuk glass guna AppSizes.cardRadius / cardRadiusLg /
-// cardRadiusXl sedia ada (badge/panel/sheet) — tak perlu token baru.
+// GLASS SYSTEM
 // ═══════════════════════════════════════════
 class AppBlur {
-  static const double level1 = 9.0;  // badge — VIDEO/ARTIKEL tag
-  static const double level2 = 18.0; // panel — bookmark/menu/fab
-  static const double level3 = 32.0; // sheet — dialog/drawer/bottom sheet
+  static const double level1 = 9.0;
+  static const double level2 = 18.0;
+  static const double level3 = 32.0;
 }
 
 class AppStroke {
@@ -304,22 +282,22 @@ class AppDurations {
 }
 
 class AppCurves {
-  static const Curve smooth  = Curves.easeOutCubic;
-  static const Curve bounce  = Curves.elasticOut;
-  static const Curve spring  = Curves.easeOutBack;
-  static const Curve snap    = Curves.easeInOutCubic;
+  static const Curve smooth = Curves.easeOutCubic;
+  static const Curve bounce = Curves.elasticOut;
+  static const Curve spring = Curves.easeOutBack;
+  static const Curve snap   = Curves.easeInOutCubic;
 }
 
 // ═══════════════════════════════════════════
 // ASSETS
 // ═══════════════════════════════════════════
 class AppAssets {
-  static const String imagesPath    = 'assets/images/';
-  static const String videosPath    = 'assets/videos/';
-  static const String audioPath     = 'assets/sounds/';
-  static const String animPath      = 'assets/animations/';
-  static const String dataPath      = 'assets/data/';
-  static const String fontsPath     = 'assets/fonts/';
+  static const String imagesPath = 'assets/images/';
+  static const String videosPath = 'assets/videos/';
+  static const String audioPath  = 'assets/sounds/';
+  static const String animPath   = 'assets/animations/';
+  static const String dataPath   = 'assets/data/';
+  static const String fontsPath  = 'assets/fonts/';
 
   // IMEJ
   static const String logo           = '${imagesPath}logo.png';
@@ -334,16 +312,16 @@ class AppAssets {
   static const String treeV5 = '${videosPath}tree_v5.mp4';
 
   // AUDIO
-  static const String intro               = '${audioPath}intro.mp3';
-  static const String adhan               = '${audioPath}adhan.mp3';
-  static const String splash              = '${audioPath}siraman.mp3';
-  static const String suaraAlhamdulillah  = '${audioPath}suara_alhamdulillah.mp3';
-  static const String suaraInsyaAllah     = '${audioPath}suara_insyaaallah.mp3';
-  static const String suaraHi             = '${audioPath}suara_hi.mp3';
+  static const String intro              = '${audioPath}intro.mp3';
+  static const String adhan              = '${audioPath}adhan.mp3';
+  static const String splash             = '${audioPath}siraman.mp3';
+  static const String suaraAlhamdulillah = '${audioPath}suara_alhamdulillah.mp3';
+  static const String suaraInsyaAllah    = '${audioPath}suara_insyaaallah.mp3';
+  static const String suaraHi            = '${audioPath}suara_hi.mp3';
 
   // DATA
-  static const String sirahData      = '${dataPath}sirah_data.json';
-  static const String eventData      = '${dataPath}event_data.json';
-  static const String amalanSunnah   = '${dataPath}amalan_sunnah.json';
-  static const String hadithData     = '${dataPath}hadith_data.json';
+  static const String sirahData    = '${dataPath}sirah_data.json';
+  static const String eventData    = '${dataPath}event_data.json';
+  static const String amalanSunnah = '${dataPath}amalan_sunnah.json';
+  static const String hadithData   = '${dataPath}hadith_data.json';
 }
