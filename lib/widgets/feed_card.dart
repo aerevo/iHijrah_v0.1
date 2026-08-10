@@ -1,12 +1,6 @@
-// lib/widgets/feed_card.dart  (V8 — Premium Editorial)
-//
-// 6 perubahan serentak drpd V7:
-// 1. Hero image → full-width, aspectRatio 0.75 (portrait tinggi)
-// 2. CTA → button hitam penuh lebar "BACA LAGI ——→"
-// 3. Whitespace → +30-50% pada semua spacing
-// 4. Typography → headline 54px, height 0.88, letterSpacing -1.5
-// 5. Grid → meta atas, hero full-bleed, konten padded, CTA full-bleed
-// 6. Footer → opacity 0.12, icon 10px — sangat senyap
+// lib/widgets/feed_card.dart  (V9 — Manual Precision)
+// Salin fail ni → gantikan lib/widgets/feed_card.dart dalam project
+
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -15,59 +9,20 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 import '../theme/feed_theme.dart';
 import 'anim_helpers.dart';
-import 'premium_glass.dart';
 
-// ── TYPE MAPPING ──────────────────────────────────────────────
-Color _typeColor(String t) {
-  switch (t) {
-    case 'video':   return kTypeVideo;
-    case 'article': return kTypeArticle;
-    case 'event':   return kTypeEvent;
-    case 'quote':   return kTypeQuote;
-    default:        return kPrimaryGold;
-  }
-}
+const Color _kBar   = Color(0xFF1A1410);
+const Color _kCream = Color(0xFFF5F1E6);
+const Color _kPage  = Color(0xFFEDE9D8);
+const Color _kGold  = Color(0xFFC9A84C);
+const Color _kGoldD = Color(0xFF7A5C0F);
 
-IconData _typeIcon(String t) {
-  switch (t) {
-    case 'video':   return Icons.play_arrow_rounded;
-    case 'article': return Icons.article_rounded;
-    case 'event':   return Icons.event_rounded;
-    default:        return Icons.circle;
-  }
-}
-
-String _typeLabel(String t) {
-  switch (t) {
-    case 'video':   return 'Video';
-    case 'article': return 'Tazkirah';
-    case 'quote':   return 'Petikan';
-    case 'hadith':  return 'Hadith';
-    case 'amalan':  return 'Amalan';
-    case 'sirah':   return 'Sirah';
-    default:        return t;
-  }
-}
-
-const List<List<Color>> _palettes = [
-  [Color(0xFF2C3E50), Color(0xFF1A252F)],
-  [Color(0xFF3E362E), Color(0xFF231E19)],
-  [Color(0xFF1E3932), Color(0xFF0F1D19)],
-  [Color(0xFF2A2833), Color(0xFF151419)],
-  [Color(0xFF1A3641), Color(0xFF0D1E24)],
-  [Color(0xFF382229), Color(0xFF1C1114)],
-];
-
-class _QuoteTone {
-  final Color dayBg, dayText, nightBg, nightText;
-  const _QuoteTone(this.dayBg, this.dayText, this.nightBg, this.nightText);
-}
-
-const List<_QuoteTone> _quoteTones = [
-  _QuoteTone(Color(0xFFF7F3EA), Color(0xFF1C1710),
-             Color(0xFF1B170F), Color(0xFFF3EEE2)),
-  _QuoteTone(Color(0xFFE8EDE1), Color(0xFF1F2E1B),
-             Color(0xFF161C14), Color(0xFFE3ECD9)),
+const List<List<Color>> _grads = [
+  [Color(0xFF46301E), Color(0xFF1C0E06)],
+  [Color(0xFF182530), Color(0xFF081218)],
+  [Color(0xFF1E3228), Color(0xFF0D1A15)],
+  [Color(0xFF2A1F2E), Color(0xFF120D18)],
+  [Color(0xFF38200E), Color(0xFF180C06)],
+  [Color(0xFF1A2838), Color(0xFF0C1420)],
 ];
 
 const List<String> _months = [
@@ -75,64 +30,25 @@ const List<String> _months = [
   'JUL','OGO','SEP','OKT','NOV','DIS',
 ];
 
-Widget _authorAvatar(String author, Color accent, {double size = 18}) {
-  final String initial =
-      author.trim().isNotEmpty ? author.trim()[0].toUpperCase() : '?';
-  return Container(
-    width: size, height: size, alignment: Alignment.center,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: accent.withOpacity(0.18),
-      border: Border.all(color: accent.withOpacity(0.4), width: 0.8),
-    ),
-    child: Text(initial,
-        style: TextStyle(fontSize: size * 0.42, fontWeight: FontWeight.w800,
-            color: accent, height: 1)),
-  );
-}
-
-Widget _floatingBookmark(FeedPalette palette, {bool onImage = true}) {
-  return PopScaleIn(
-    delay: const Duration(milliseconds: 220),
-    child: PremiumGlass(
-      level: GlassLevel.badge,
-      tint: onImage ? Colors.black : palette.surfaceAlt,
-      opacity: onImage ? 0.45 : 0.92,
-      borderRadius: BorderRadius.circular(999),
-      padding: const EdgeInsets.all(6),
-      child: PopBookmarkButton(
-        iconSize: 13,
-        mutedColor:
-            onImage ? Colors.white.withOpacity(0.9) : palette.textSecondary,
-        savedColor: onImage ? kGoldLight : palette.accent,
-      ),
-    ),
-  );
-}
-
-class _DashLinePainter extends CustomPainter {
+class _DashPainter extends CustomPainter {
   final Color color;
-  const _DashLinePainter(this.color);
+  const _DashPainter(this.color);
   @override
-  void paint(Canvas canvas, Size size) {
-    final Paint p = Paint()..color = color..strokeWidth = 1.2;
-    const dash = 4.0, gap = 4.0;
-    for (double x = 0; x < size.width; x += dash + gap) {
-      canvas.drawLine(Offset(x, size.height / 2),
-          Offset(math.min(x + dash, size.width), size.height / 2), p);
+  void paint(Canvas c, Size s) {
+    final p = Paint()..color = color..strokeWidth = 1.0;
+    const d = 4.0, g = 4.0;
+    for (double x = 0; x < s.width; x += d + g) {
+      c.drawLine(Offset(x, s.height / 2),
+          Offset(math.min(x + d, s.width), s.height / 2), p);
     }
   }
   @override
-  bool shouldRepaint(covariant _DashLinePainter o) => o.color != color;
+  bool shouldRepaint(_DashPainter o) => o.color != color;
 }
 
-// ══════════════════════════════════════════════════════════════
-// FEED CARD  (V8 — Premium Editorial)
-// ══════════════════════════════════════════════════════════════
 class FeedCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onTap;
-  final double imageAspectRatio;
   final FeedPalette palette;
 
   const FeedCard({
@@ -140,587 +56,866 @@ class FeedCard extends StatelessWidget {
     required this.post,
     required this.palette,
     this.onTap,
-    this.imageAspectRatio = 1.45,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: PressableScale(
-        onTap: onTap,
-        child: _layoutFor(post.type),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: PressableScale(onTap: onTap, child: _layoutFor(post.type)),
+  );
 
   Widget _layoutFor(String t) {
     switch (t) {
-      case 'video':   return _buildEditorial(isVideo: true);
-      case 'article': return _buildEditorial();
-      case 'event':   return _buildTicket();
-      case 'quote':
-      case 'hadith':  return _buildQuote();
-      default:        return _buildEditorial();
+      case 'video':     return _buildVideo();
+      case 'article':
+      case 'sirah':
+      case 'amalan':
+      case 'tazkirah':  return _buildArticle();
+      case 'quote':     return _buildQuote();
+      case 'hadith':    return _buildHadith();
+      case 'event':     return _buildTicket();
+      default:          return _buildArticle();
     }
   }
 
-  // ════════════════════════════════════════════════════════
-  // INSTANCE HELPERS
-  // ════════════════════════════════════════════════════════
+  Color get _ink   => palette.textPrimary;
+  Color get _muted => palette.textMuted;
+  Color get _surf  => palette.surface;
 
-  // ── Gold tick + kategori ─────────────────────────────────
-  Widget _metaRow() {
-    final String cat = (post.category?.isNotEmpty == true
-            ? post.category! : _typeLabel(post.type)).toUpperCase();
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 16, height: 1.5, color: kGoldMid),
-      const SizedBox(width: 10),
-      Text(cat,
-          style: const TextStyle(
-            fontSize: 10, letterSpacing: 2.4,
-            fontWeight: FontWeight.w800, color: kGoldDeep,
-          )),
-    ]);
-  }
-
-  // ── Author badge dalam hero ───────────────────────────────
-  Widget _heroAuthorBadge() {
-    final String age =
-        post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          color: Colors.black.withOpacity(0.55),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 15, height: 15, alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                  shape: BoxShape.circle, color: kGoldMid),
-              child: const Icon(Icons.person_rounded,
-                  size: 9, color: Color(0xFF15130F)),
+  Widget _gradBg(int seed) {
+    final g = _grads[seed % _grads.length];
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: g,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(width: 6),
-            Text('${post.author}$age'.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 9, fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5, color: Color(0xEAFFFFFF),
-                )),
-          ]),
+          ),
         ),
-      ),
+        Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0.4, -0.45),
+              radius: 0.65,
+              colors: [
+                Colors.amber.withOpacity(0.18),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  // ── Author badge dalam bar hitam quote ───────────────────
-  Widget _quoteAuthorBadge() {
-    final String age =
-        post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        width: 15, height: 15, alignment: Alignment.center,
-        decoration: const BoxDecoration(
-            shape: BoxShape.circle, color: kGoldMid),
-        child: const Icon(Icons.person_rounded,
-            size: 9, color: Color(0xFF15130F)),
-      ),
-      const SizedBox(width: 6),
-      Text('${post.author}$age'.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 9, fontWeight: FontWeight.w600,
-            letterSpacing: 0.4, color: Color(0xD9F5F1E6),
-          )),
-    ]);
-  }
-
-  // ── Hero image — FULL WIDTH, portrait tinggi ─────────────
-  // Perubahan V8: FractionallySizedBox 76% → full-width
-  // aspectRatio 0.82 → 0.75 (lebih tinggi, lebih dominan)
-  Widget _heroImage({bool isVideo = false}) {
-    final int h = post.id.hashCode.abs();
-    final bool hasImg =
-        post.assetPath != null && post.assetPath!.isNotEmpty;
-
-    return AspectRatio(
-      aspectRatio: 0.75,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Gambar atau gradient fallback
-          hasImg
-              ? Image.asset(post.assetPath!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      _gradBg(_palettes[h % _palettes.length], post.type))
-              : _gradBg(_palettes[h % _palettes.length], post.type),
-
-          // Scrim bawah — gradient lebih dalam untuk CTA kontras
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00000000), Color(0x55000000)],
-                  stops: [0.45, 1.0],
-                ),
+  Widget _heroWidget({bool hasPlay = false}) {
+    final seed   = post.id.hashCode.abs();
+    final hasImg = post.assetPath?.isNotEmpty == true;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        hasImg
+            ? Image.asset(
+                post.assetPath!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _gradBg(seed),
+              )
+            : _gradBg(seed),
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x00000000), Color(0x66000000)],
+                stops: [0.48, 1.0],
               ),
             ),
           ),
-
-          // Play button — video sahaja
-          if (isVideo)
-            Center(
-              child: PopScaleIn(
-                delay: const Duration(milliseconds: 160),
-                child: ClipOval(
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                    child: Container(
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.30),
-                        border: Border.all(
-                            color: Colors.white.withOpacity(0.85),
-                            width: 1.2),
-                      ),
-                      child: const Icon(Icons.play_arrow_rounded,
-                          size: 28, color: Colors.white),
+        ),
+        if (hasPlay)
+          Center(
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.22),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.60),
+                      width: 1.2,
                     ),
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 28,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ),
-
-          // Author badge — kanan bawah
-          Positioned(
-            right: 14, bottom: 14,
-            child: _heroAuthorBadge(),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ── Headline editorial — Playfair split, lebih besar ─────
-  // V8: fontSize 46→54, height 0.95→0.88, letterSpacing -1.0→-1.5
-  Widget _editorialHeadline() {
-    final List<String> words = post.title.trim().split(RegExp(r'\s+'));
-
-    final TextStyle bigStyle = GoogleFonts.playfairDisplay(
-      fontSize: 54,
-      fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.w700,
-      color: palette.textPrimary,
-      height: 0.88,
-      letterSpacing: -1.5,
-    );
-    final TextStyle bridgeStyle = GoogleFonts.playfairDisplay(
-      fontSize: 22,
-      fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.w600,
-      color: palette.textSecondary,
-      height: 0.88,
-      letterSpacing: -0.3,
-    );
-
-    if (words.length == 1) {
-      return Text(words[0].toUpperCase(), style: bigStyle);
-    }
-    if (words.length == 2) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(words[0].toUpperCase(), style: bigStyle),
-          const SizedBox(height: 6),
-          Text(words[1].toUpperCase(), style: bigStyle),
-        ],
-      );
-    }
-    final String bridgeText = words.sublist(1, words.length - 1).join(' ');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(words[0].toUpperCase(), style: bigStyle),
-            const SizedBox(width: 12),
-            Flexible(child: Text(bridgeText,
-                style: bridgeStyle, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-        Text(words.last.toUpperCase(), style: bigStyle),
       ],
     );
   }
 
-  // ── Badan teks dengan fade mask ───────────────────────────
-  // V8: height 1.90→1.75, weight w500→w400 (lebih ringan, editorial)
-  Widget _fadingBody() {
-    return ShaderMask(
-      shaderCallback: (rect) => const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Colors.black, Colors.black,
-                 Color(0xA6000000), Color(0x1A000000)],
-        stops: [0.0, 0.45, 0.75, 1.0],
-      ).createShader(rect),
-      blendMode: BlendMode.dstIn,
-      child: Text(post.content, maxLines: 4,
-          style: TextStyle(
-            fontSize: 15, fontWeight: FontWeight.w400,
-            height: 1.75, color: palette.textPrimary, letterSpacing: -0.1,
-          )),
-    );
-  }
-
-  // ── CTA button penuh lebar — editorial ───────────────────
-  // V8: ganti text link → black full-width button (macam Image 4)
-  Widget _bacaLagiButton() {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        color: const Color(0xFF15130F),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('BACA LAGI',
-                style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w800,
-                  letterSpacing: 1.6, color: Color(0xFFF5F1E6),
-                )),
-            // Dash + arrow, seperti Image 4
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 28, height: 1,
-                  color: const Color(0xFFF5F1E6)),
-              const SizedBox(width: 6),
-              const Icon(Icons.arrow_forward_rounded,
-                  size: 14, color: Color(0xFFF5F1E6)),
-            ]),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── CTA text link — untuk dalam panel quote ───────────────
-  Widget _bacaLagiLink() {
-    return GestureDetector(
-      onTap: onTap,
-      child: const Text('Baca lagi →',
-          style: TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w700,
-            letterSpacing: 0.8, color: kGoldDeep,
-          )),
-    );
-  }
-
-  // ── Ghost engagement row — sangat senyap ─────────────────
-  // V8: opacity 0.20→0.12, icon 12→10, font 9.5→8.5
-  Widget _ghostEngageRow() {
-    return Opacity(
-      opacity: 0.12,
-      child: Row(children: [
-        Icon(Icons.favorite_rounded, size: 10, color: palette.textPrimary),
-        const SizedBox(width: 5),
-        Text(post.likes.toString(),
-            style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w600,
-                color: palette.textPrimary)),
-        const SizedBox(width: 16),
-        Icon(Icons.chat_bubble_outline_rounded,
-            size: 10, color: palette.textPrimary),
-        const SizedBox(width: 5),
-        Text(post.commentsCount.toString(),
-            style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w600,
-                color: palette.textPrimary)),
-        const SizedBox(width: 16),
-        Icon(Icons.share_outlined, size: 10, color: palette.textPrimary),
-      ]),
-    );
-  }
-
-  // ── Bar hitam ATAS quote ──────────────────────────────────
-  Widget _quoteTopBar() {
-    final String cat = (post.category?.isNotEmpty == true
-            ? post.category! : _typeLabel(post.type)).toUpperCase();
-    return Container(
-      color: const Color(0xFF15130F),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.format_quote_rounded,
-                size: 16, color: kGoldMid),
-            const SizedBox(width: 7),
-            Text(cat,
-                style: const TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w700,
-                  letterSpacing: 1.6, color: Color(0xCCF5F1E6),
-                )),
-          ]),
-          _quoteAuthorBadge(),
-        ],
-      ),
-    );
-  }
-
-  // ── Bar hitam BAWAH quote — engage putih ─────────────────
-  Widget _quoteBottomBar() {
-    return Container(
-      color: const Color(0xFF15130F),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-      child: Row(children: [
-        PopLikeButton(
-          baseCount: post.likes, iconSize: 13,
-          mutedColor: const Color(0xFFF5F1E6),
-          likedColor: const Color(0xFFE8433F),
-          countStyle: const TextStyle(fontSize: 9.5,
-              fontWeight: FontWeight.w600, color: Color(0xFFF5F1E6)),
-        ),
-        const SizedBox(width: 16),
-        const Icon(Icons.chat_bubble_outline_rounded,
-            size: 13, color: Color(0xFFF5F1E6)),
-        const SizedBox(width: 5),
-        Text(post.commentsCount.toString(),
-            style: const TextStyle(fontSize: 9.5,
-                fontWeight: FontWeight.w600, color: Color(0xFFF5F1E6))),
-        const SizedBox(width: 16),
-        const Icon(Icons.share_outlined,
-            size: 13, color: Color(0xFFF5F1E6)),
-      ]),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════
-  // BUILDERS
-  // ════════════════════════════════════════════════════════
-
-  // ── EDITORIAL — VIDEO & ARTIKEL ─────────────────────────
-  // V8 layout (mengikut Image 4):
-  //  hairline → [pad] meta → hero FULL BLEED →
-  //  [pad] headline → body → engage ghost →
-  //  CTA button FULL BLEED → whitespace
-  Widget _buildEditorial({bool isVideo = false}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-
-        // ① Hairline pemisah
-        Container(height: 1.5,
-            color: palette.textPrimary.withOpacity(0.85)),
-
-        // ② Meta row — padded
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
-          child: _metaRow(),
-        ),
-
-        // ③ Hero image — FULL BLEED, tiada horizontal padding
-        _heroImage(isVideo: isVideo),
-
-        // ④ Konten teks — padded, whitespace lebih lega
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _heroBadge() {
+    final age  = post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
+    final time = post.time.isNotEmpty      ? ' · ${post.time}'      : '';
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          color: Colors.black.withOpacity(0.50),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _editorialHeadline(),
-              const SizedBox(height: 28),
-              _fadingBody(),
-              const SizedBox(height: 28),
-              _ghostEngageRow(),
+              Container(
+                width: 16,
+                height: 16,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _kGold,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.person_rounded, size: 9, color: _kBar),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '${post.author}$age$time'.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 7.5,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
+                  color: Color(0xEAFFFFFF),
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
 
-        // ⑤ CTA button — FULL BLEED hitam
-        _bacaLagiButton(),
-
-        // ⑥ Whitespace bawah — ruang nafas sebelum post seterusnya
-        const SizedBox(height: 44),
+  Widget _headline({double lx = 22, double bx = 44}) {
+    final w = post.title.trim().split(RegExp(r'\s+'));
+    if (w.isEmpty) return const SizedBox.shrink();
+    final light = w.first;
+    final bold  = w.length > 1 ? w.skip(1).join('\n') : '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          light,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: lx,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w300,
+            color: _ink,
+            height: 1.10,
+            letterSpacing: -0.3,
+            shadows: const [
+              Shadow(
+                color: Color(0x121C1611),
+                blurRadius: 10,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
+        if (bold.isNotEmpty)
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: bold,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: bx,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700,
+                    color: _ink,
+                    height: 0.94,
+                    letterSpacing: -0.8,
+                    shadows: const [
+                      Shadow(
+                        color: Color(0x1E1C1611),
+                        blurRadius: 14,
+                        offset: Offset(1, 2),
+                      ),
+                    ],
+                  ),
+                ),
+                TextSpan(
+                  text: '_',
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: bx,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w300,
+                    color: _kGold,
+                    height: 0.94,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
 
-  // ── KUOTA / HADITH ──────────────────────────────────────
+  Widget _cat(String s) => Text(
+    s.toUpperCase(),
+    style: const TextStyle(
+      fontSize: 9,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 1.2,
+      color: _kGoldD,
+    ),
+  );
+
+  Widget _bacaLagi({String label = 'Baca lagi →'}) => GestureDetector(
+    onTap: onTap,
+    child: Align(
+      alignment: Alignment.centerRight,
+      child: Text(
+        label,
+        style: GoogleFonts.ebGaramond(
+          fontSize: 15,
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w400,
+          color: _kGoldD,
+          letterSpacing: 0.1,
+        ),
+      ),
+    ),
+  );
+
+  Widget _fadeBody({int maxLines = 4}) => ShaderMask(
+    shaderCallback: (r) => const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Colors.black,
+        Colors.black,
+        Color(0x88000000),
+        Color(0x00000000),
+      ],
+      stops: [0.0, 0.42, 0.76, 1.0],
+    ).createShader(r),
+    blendMode: BlendMode.dstIn,
+    child: Text(
+      post.content,
+      maxLines: maxLines,
+      style: GoogleFonts.ebGaramond(
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+        height: 1.72,
+        color: _ink,
+        letterSpacing: 0.05,
+      ),
+    ),
+  );
+
+  String _fmt(int n) =>
+      n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
+
+  String _catStr(String fb) =>
+      post.category?.isNotEmpty == true ? post.category! : fb;
+
+  // ── ARTIKEL ───────────────────────────────────────────────
+  Widget _buildArticle() {
+    return Container(
+      color: _surf,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 1.5, color: _ink.withOpacity(0.72)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+            child: _cat(_catStr('Tazkirah')),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 14, right: 20),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FractionallySizedBox(
+                widthFactor: 0.68,
+                child: AspectRatio(
+                  aspectRatio: 0.82,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _heroWidget(),
+                      Positioned(
+                        right: 10,
+                        bottom: 10,
+                        child: _heroBadge(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+            child: _headline(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+            child: _fadeBody(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            child: _bacaLagi(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── VIDEO ─────────────────────────────────────────────────
+  Widget _buildVideo() {
+    final dur = post.time.isNotEmpty ? post.time : '12:34';
+    return Container(
+      color: _surf,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 1.5, color: _ink.withOpacity(0.72)),
+          Padding(
+            padding: const EdgeInsets.only(top: 14, left: 32, right: 32),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _heroWidget(hasPlay: true),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Text(
+                      _catStr('Video').toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.0,
+                        color: _kGold.withOpacity(0.90),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      color: Colors.black.withOpacity(0.65),
+                      child: Text(
+                        dur,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    child: _heroBadge(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: _headline(lx: 22, bx: 42),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: _fadeBody(maxLines: 3),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+            child: _bacaLagi(label: 'Tonton →'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── PETIKAN ───────────────────────────────────────────────
   Widget _buildQuote() {
-    final _QuoteTone tone =
-        _quoteTones[post.id.hashCode.abs() % _quoteTones.length];
-    final Color bg   = Color.lerp(tone.nightBg, tone.dayBg, palette.t)!;
-    final Color text = Color.lerp(tone.nightText, tone.dayText, palette.t)!;
-    final Color quoteMarkColor = Color.lerp(
-      kPrimaryGold.withOpacity(0.22),
-      kGoldLight.withOpacity(0.14),
+    final time    = post.time.isNotEmpty ? post.time : '1 hari lalu';
+    final pageCol = Color.lerp(
+      const Color(0xFF0E0C09),
+      _kPage,
       palette.t,
     )!;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(height: 1, color: palette.divider),
-        _quoteTopBar(),
-        Container(
-          color: bg,
-          padding: const EdgeInsets.fromLTRB(20, 26, 20, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('\u201C',
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 60, color: quoteMarkColor,
-                    fontWeight: FontWeight.w900, height: 0.7,
-                  )),
-              const SizedBox(height: 12),
-              Text(post.content,
-                  maxLines: 8, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 17, fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w600, color: text,
-                    height: 1.55, letterSpacing: -0.1,
-                  )),
-              const SizedBox(height: 22),
-              Row(children: [
-                Container(width: 22, height: 1.5,
-                    color: text.withOpacity(0.35)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(post.author,
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10.5, fontWeight: FontWeight.w700,
-                        color: text.withOpacity(0.65), letterSpacing: 0.2,
-                      )),
+    return Container(
+      color: pageCol,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            color: _kBar,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 22,
+              vertical: 18,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: _kCream,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-              ]),
-              const SizedBox(height: 20),
-              _bacaLagiLink(),
-              const SizedBox(height: 26),
-            ],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.favorite_border_rounded,
+                      size: 11,
+                      color: _kCream.withOpacity(0.80),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _fmt(post.likes),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        color: _kCream,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 11,
+                      color: _kCream.withOpacity(0.80),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${post.commentsCount}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        color: _kCream,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        _quoteBottomBar(),
-        const SizedBox(height: 4),
-      ],
+          Container(
+            color: pageCol,
+            padding: const EdgeInsets.fromLTRB(22, 28, 22, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '\u201C',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic,
+                      color: _kGold.withOpacity(0.14),
+                      height: 0.75,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  post.content,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 21,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w400,
+                    color: _ink,
+                    height: 1.52,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '— ${post.author}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: _muted,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _bacaLagi(),
+              ],
+            ),
+          ),
+          Container(
+            color: _kBar,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 22,
+              vertical: 16,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _kCream.withOpacity(0.35),
+                      width: 1.2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    post.author.isNotEmpty
+                        ? post.author[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: _kCream,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      post.authorAge.isNotEmpty
+                          ? '${post.author} · ${post.authorAge}'
+                          : post.author,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: _kCream,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    Text(
+                      'Dikongsikan',
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w400,
+                        color: _kCream.withOpacity(0.42),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
     );
   }
 
-  // ── ACARA: TIKET ────────────────────────────────────────
-  Widget _buildTicket() {
-    final int h = post.id.hashCode.abs();
-    final String day = (1 + h % 28).toString().padLeft(2, '0');
-    final String month = _months[h % 12];
-    const LinearGradient dateGradient = LinearGradient(
-        colors: [Color(0xFF3E8EF0), Color(0xFF2563C9)],
-        begin: Alignment.topLeft, end: Alignment.bottomRight);
-    const Color dateAccent = Color(0xFF2563C9);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(height: 1, color: palette.divider),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: 54,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                gradient: dateGradient,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(children: [
-                Text(day, style: const TextStyle(fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white, height: 1.1)),
-                Text(month, style: const TextStyle(fontSize: 8.5,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white70, letterSpacing: 1.2)),
-              ]),
+  // ── HADITH ────────────────────────────────────────────────
+  Widget _buildHadith() {
+    final time = post.time.isNotEmpty ? post.time : '3 hari lalu';
+    return Container(
+      color: _kBar,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _catStr('Hadith').toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: _kGold,
+                  ),
+                ),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0x66F5F1E6),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Expanded(child: Column(
+          ),
+          Container(
+            height: 1,
+            margin: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+            color: Colors.white.withOpacity(0.08),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
+            child: Text(
+              post.content,
+              style: GoogleFonts.ebGaramond(
+                fontSize: 20,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFFEDE9DC),
+                height: 1.60,
+                letterSpacing: -0.1,
+              ),
+            ),
+          ),
+          Container(
+            height: 1,
+            margin: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            color: Colors.white.withOpacity(0.08),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+            child: Text(
+              post.author,
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w400,
+                color: Color(0x5DF5F1E6),
+                height: 1.55,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: onTap,
+                  child: Text(
+                    'Baca lagi →',
+                    style: GoogleFonts.ebGaramond(
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                      color: _kGold,
+                    ),
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.favorite_border_rounded,
+                      size: 12,
+                      color: _kCream.withOpacity(0.32),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _fmt(post.likes),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w400,
+                        color: _kCream.withOpacity(0.32),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── TIKET ─────────────────────────────────────────────────
+  Widget _buildTicket() {
+    final seed  = post.id.hashCode.abs();
+    final day   = (1 + seed % 28).toString().padLeft(2, '0');
+    final month = _months[seed % 12];
+    const accent = Color(0xFF2563C9);
+
+    return Container(
+      color: _surf,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(height: 1, color: palette.divider),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(post.title, maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: palette.textPrimary, height: 1.3)),
-                const SizedBox(height: 5),
-                Row(children: [
-                  Icon(Icons.access_time_rounded,
-                      size: 10, color: palette.textMuted),
-                  const SizedBox(width: 4),
-                  Expanded(child: Text('8:00 pagi',
-                      style: TextStyle(fontSize: 9.5,
-                          color: palette.textMuted,
-                          fontWeight: FontWeight.w600))),
-                ]),
+                Container(
+                  width: 52,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3E8EF0), accent],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        day,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.1,
+                        ),
+                      ),
+                      Text(
+                        month,
+                        style: const TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xB3FFFFFF),
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _ink,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '⏰  ${post.time.isNotEmpty ? post.time : "8:00 pagi"}',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: _muted,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
-            )),
-            _floatingBookmark(palette, onImage: false),
-          ]),
-        ),
-        LayoutBuilder(builder: (c, cons) => CustomPaint(
-              size: Size(cons.maxWidth, 2),
-              painter: _DashLinePainter(palette.divider))),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
-          child: Row(children: [
-            _authorAvatar(post.author, dateAccent, size: 16),
-            const SizedBox(width: 6),
-            Expanded(child: Text(post.author, maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 9.5,
+            ),
+          ),
+          LayoutBuilder(
+            builder: (c, con) => CustomPaint(
+              size: Size(con.maxWidth, 2),
+              painter: _DashPainter(palette.divider),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+            child: Row(
+              children: [
+                Container(
+                  width: 17,
+                  height: 17,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accent.withOpacity(0.14),
+                    border: Border.all(color: accent.withOpacity(0.28)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    post.author.isNotEmpty
+                        ? post.author[0].toUpperCase()
+                        : 'A',
+                    style: const TextStyle(
+                      fontSize: 7,
+                      fontWeight: FontWeight.w800,
+                      color: accent,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    post.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: _muted,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: const Text(
+                    'DAFTAR',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                PopLikeButton(
+                  baseCount: post.likes,
+                  iconSize: 11,
+                  mutedColor: palette.textMuted,
+                  likedColor: const Color(0xFFE8433F),
+                  countStyle: TextStyle(
+                    fontSize: 9.5,
                     color: palette.textMuted,
-                    fontWeight: FontWeight.w600))),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-              decoration: BoxDecoration(
-                color: dateAccent.withOpacity(0.14),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text('DAFTAR',
-                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800,
-                      color: dateAccent, letterSpacing: 0.8)),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            PopLikeButton(
-              baseCount: post.likes, iconSize: 11.5,
-              mutedColor: palette.textMuted,
-              likedColor: const Color(0xFFE8433F),
-              countStyle: TextStyle(fontSize: 9.5, color: palette.textMuted),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 16),
-      ],
+          ),
+        ],
+      ),
     );
   }
-
-  Widget _gradBg(List<Color> colors, String type) => Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors,
-              begin: Alignment.topLeft, end: Alignment.bottomRight),
-        ),
-        child: Stack(: [
-          Positioned(right: -12, bottom: -12,
-            : Icon(
-                type == 'video' ? Icons.videocam_rounded : _typeIcon(type),
-                size: 90, color: Colors.white.withOpacity(0.05))),
-        ]),
-      );
 }
