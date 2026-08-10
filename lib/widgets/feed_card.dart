@@ -50,12 +50,15 @@ class FeedCard extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onTap;
   final FeedPalette palette;
+  // Kekal untuk compatibility dengan feed_panel.dart — tidak digunakan dalam V9
+  final double imageAspectRatio;
 
   const FeedCard({
     Key? key,
     required this.post,
     required this.palette,
     this.onTap,
+    this.imageAspectRatio = 1.45,
   }) : super(key: key);
 
   @override
