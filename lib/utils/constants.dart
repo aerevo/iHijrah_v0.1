@@ -2,6 +2,16 @@
 import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════
+// ⚠️ TEMP OVERRIDE — MOD SIANG/MALAM
+// ═══════════════════════════════════════════
+// Paksa seluruh app kekal mod SIANG (cream) tanpa kira waktu solat
+// sebenar — supaya dev/testing UI siang tak terganggu oleh isDayTime
+// yg tersilap kira jadi malam. BUANG/tukar `false` balik bila dah
+// siap mod siang & nak sambung uji mod malam semula.
+// Dipakai dalam utils/prayer_service.dart → isDayTime getter.
+const bool kForceDayModeTemp = true;
+
+// ═══════════════════════════════════════════
 // WARNA TERAS — Tema Cerah
 // ═══════════════════════════════════════════
 
