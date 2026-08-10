@@ -168,6 +168,7 @@ class FeedCard extends StatelessWidget {
   // INSTANCE HELPERS
   // ════════════════════════════════════════════════════════
 
+  // ── Gold tick + kategori ─────────────────────────────────
   Widget _metaRow() {
     final String cat = (post.category?.isNotEmpty == true
             ? post.category! : _typeLabel(post.type)).toUpperCase();
@@ -182,6 +183,7 @@ class FeedCard extends StatelessWidget {
     ]);
   }
 
+  // ── Author badge dalam hero ───────────────────────────────
   Widget _heroAuthorBadge() {
     final String age =
         post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
@@ -212,6 +214,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Author badge dalam bar hitam quote ───────────────────
   Widget _quoteAuthorBadge() {
     final String age =
         post.authorAge.isNotEmpty ? ' · ${post.authorAge}' : '';
@@ -232,6 +235,9 @@ class FeedCard extends StatelessWidget {
     ]);
   }
 
+  // ── Hero image — FULL WIDTH, portrait tinggi ─────────────
+  // Perubahan V8: FractionallySizedBox 76% → full-width
+  // aspectRatio 0.82 → 0.75 (lebih tinggi, lebih dominan)
   Widget _heroImage({bool isVideo = false}) {
     final int h = post.id.hashCode.abs();
     final bool hasImg =
@@ -242,12 +248,14 @@ class FeedCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // Gambar atau gradient fallback
           hasImg
               ? Image.asset(post.assetPath!, fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) =>
                       _gradBg(_palettes[h % _palettes.length], post.type))
               : _gradBg(_palettes[h % _palettes.length], post.type),
 
+          // Scrim bawah — gradient lebih dalam untuk CTA kontras
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -261,6 +269,7 @@ class FeedCard extends StatelessWidget {
             ),
           ),
 
+          // Play button — video sahaja
           if (isVideo)
             Center(
               child: PopScaleIn(
@@ -285,6 +294,7 @@ class FeedCard extends StatelessWidget {
               ),
             ),
 
+          // Author badge — kanan bawah
           Positioned(
             right: 14, bottom: 14,
             child: _heroAuthorBadge(),
@@ -294,6 +304,8 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Headline editorial — Playfair split, lebih besar ─────
+  // V8: fontSize 46→54, height 0.95→0.88, letterSpacing -1.0→-1.5
   Widget _editorialHeadline() {
     final List<String> words = post.title.trim().split(RegExp(r'\s+'));
 
@@ -348,6 +360,8 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Badan teks dengan fade mask ───────────────────────────
+  // V8: height 1.90→1.75, weight w500→w400 (lebih ringan, editorial)
   Widget _fadingBody() {
     return ShaderMask(
       shaderCallback: (rect) => const LinearGradient(
@@ -366,6 +380,8 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── CTA button penuh lebar — editorial ───────────────────
+  // V8: ganti text link → black full-width button (macam Image 4)
   Widget _bacaLagiButton() {
     return GestureDetector(
       onTap: onTap,
@@ -381,6 +397,7 @@ class FeedCard extends StatelessWidget {
                   fontSize: 11, fontWeight: FontWeight.w800,
                   letterSpacing: 1.6, color: Color(0xFFF5F1E6),
                 )),
+            // Dash + arrow, seperti Image 4
             Row(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 28, height: 1,
                   color: const Color(0xFFF5F1E6)),
@@ -394,6 +411,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── CTA text link — untuk dalam panel quote ───────────────
   Widget _bacaLagiLink() {
     return GestureDetector(
       onTap: onTap,
@@ -405,6 +423,8 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Ghost engagement row — sangat senyap ─────────────────
+  // V8: opacity 0.20→0.12, icon 12→10, font 9.5→8.5
   Widget _ghostEngageRow() {
     return Opacity(
       opacity: 0.12,
@@ -427,6 +447,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Bar hitam ATAS quote ──────────────────────────────────
   Widget _quoteTopBar() {
     final String cat = (post.category?.isNotEmpty == true
             ? post.category! : _typeLabel(post.type)).toUpperCase();
@@ -452,6 +473,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── Bar hitam BAWAH quote — engage putih ─────────────────
   Widget _quoteBottomBar() {
     return Container(
       color: const Color(0xFF15130F),
@@ -482,18 +504,31 @@ class FeedCard extends StatelessWidget {
   // BUILDERS
   // ════════════════════════════════════════════════════════
 
+  // ── EDITORIAL — VIDEO & ARTIKEL ─────────────────────────
+  // V8 layout (mengikut Image 4):
+  //  hairline → [pad] meta → hero FULL BLEED →
+  //  [pad] headline → body → engage ghost →
+  //  CTA button FULL BLEED → whitespace
   Widget _buildEditorial({bool isVideo = false}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+
+        // ① Hairline pemisah
         Container(height: 1.5,
             color: palette.textPrimary.withOpacity(0.85)),
+
+        // ② Meta row — padded
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
           child: _metaRow(),
         ),
+
+        // ③ Hero image — FULL BLEED, tiada horizontal padding
         _heroImage(isVideo: isVideo),
+
+        // ④ Konten teks — padded, whitespace lebih lega
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
           child: Column(
@@ -508,12 +543,17 @@ class FeedCard extends StatelessWidget {
             ],
           ),
         ),
+
+        // ⑤ CTA button — FULL BLEED hitam
         _bacaLagiButton(),
+
+        // ⑥ Whitespace bawah — ruang nafas sebelum post seterusnya
         const SizedBox(height: 44),
       ],
     );
   }
 
+  // ── KUOTA / HADITH ──────────────────────────────────────
   Widget _buildQuote() {
     final _QuoteTone tone =
         _quoteTones[post.id.hashCode.abs() % _quoteTones.length];
@@ -577,6 +617,7 @@ class FeedCard extends StatelessWidget {
     );
   }
 
+  // ── ACARA: TIKET ────────────────────────────────────────
   Widget _buildTicket() {
     final int h = post.id.hashCode.abs();
     final String day = (1 + h % 28).toString().padLeft(2, '0');
@@ -670,27 +711,16 @@ class FeedCard extends StatelessWidget {
     );
   }
 
-  // ✅ FIXED: Stack(children: [...]) dan child: Icon(...)
   Widget _gradBg(List<Color> colors, String type) => Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: colors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: LinearGradient(colors: colors,
+              begin: Alignment.topLeft, end: Alignment.bottomRight),
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -12,
-              bottom: -12,
-              child: Icon(
+        child: Stack(: [
+          Positioned(right: -12, bottom: -12,
+            : Icon(
                 type == 'video' ? Icons.videocam_rounded : _typeIcon(type),
-                size: 90,
-                color: Colors.white.withOpacity(0.05),
-              ),
-            ),
-          ],
-        ),
+                size: 90, color: Colors.white.withOpacity(0.05))),
+        ]),
       );
 }
