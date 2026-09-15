@@ -58,8 +58,8 @@ class FeedPalette {
   });
 
   static const FeedPalette day = FeedPalette(
-    background:    Color(0xFFF7F3EA),
-    surface:       Color(0xFFFFFFFF),
+    background:    Color(0xFFEDE9D8), // padan --page prototype (kanvas)
+    surface:       Color(0xFFF5F1E6), // padan --cream prototype (kad)
     surfaceAlt:    Color(0xFFF1ECDF),
     textPrimary:   Color(0xFF201C14),
     textSecondary: Color(0xFF5C5646),
@@ -150,7 +150,7 @@ class _DayNightThemeState extends State<DayNightTheme>
       statusBarIconBrightness: isDay ? Brightness.dark : Brightness.light,
       statusBarBrightness: isDay ? Brightness.light : Brightness.dark,
       systemNavigationBarColor:
-          isDay ? const Color(0xFFF7F3EA) : const Color(0xFF13110D),
+          isDay ? const Color(0xFFEDE9D8) : const Color(0xFF13110D),
       systemNavigationBarIconBrightness:
           isDay ? Brightness.dark : Brightness.light,
     ));

@@ -128,6 +128,8 @@ class PrayerService with ChangeNotifier {
   /// notifyListeners() dari _tick() (setiap minit) sudah cukup kerap utk
   /// dikesan bila nilai ni bertukar sekitar waktu Subuh/Maghrib sebenar.
   bool get isDayTime {
+    if (kForceDayModeTemp) return true; // ⚠️ TEMP — lihat constants.dart
+
     if (_times == null) {
       // Fallback sblm waktu solat berjaya dikira (cth. app baru buka,
       // GPS belum settle) — anggar ikut jam sistem 6 pagi – 7 malam.
