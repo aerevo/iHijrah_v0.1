@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
 import '../screens/birthdate_prompt_screen.dart';
+import '../screens/edit_profile_screen.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import 'metallic_gold.dart';
@@ -29,7 +30,7 @@ class ProfileDetailView extends StatelessWidget {
           children: [
 
             // ── HEADER PROFIL ──────────────────────────────
-            _buildHeader(user),
+            _buildHeader(context, user),
             const SizedBox(height: 24),
 
             // ── LEVEL PROGRESS ─────────────────────────────
@@ -141,11 +142,19 @@ class ProfileDetailView extends StatelessWidget {
   }
 
   // ── HEADER ────────────────────────────────────────────────────
-  Widget _buildHeader(UserModel user) {
+  // Seluruh header (avatar + nama) tappable — buka EditProfileScreen.
+  // Ni satu-satunya laluan utk tukar avatar/nama/jantina/bio, yg
+  // sebelum ni wujud dlm UserModel tapi tiada UI utk diisi langsung.
+  Widget _buildHeader(BuildContext context, UserModel user) {
     final bool hasAvatar =
         user.avatarPath != null && user.avatarPath!.isNotEmpty;
 
-    return Row(
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+      ),
+      child: Row(
       children: [
 
         // Avatar
@@ -215,6 +224,20 @@ class ProfileDetailView extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Lencana pensel — penanda avatar/header ni boleh ditekan
+            Positioned(
+              top: 0, left: 0,
+              child: Container(
+                width: 24, height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kBackgroundDark,
+                  border: Border.all(color: kPrimaryGold.withOpacity(0.5), width: 1.5),
+                ),
+                child: const Icon(Icons.edit_rounded, size: 11, color: kPrimaryGold),
+              ),
+            ),
           ],
         ),
 
@@ -273,10 +296,24 @@ class ProfileDetailView extends StatelessWidget {
                 style: const TextStyle(
                     color: kTextSecondary, fontSize: 11),
               ),
+              const SizedBox(height: 6),
+              Text(
+                user.bio.isEmpty ? 'Ketik untuk tambah bio ringkas' : user.bio,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: user.bio.isEmpty ? kTextMuted : kTextSecondary,
+                  fontSize: 11,
+                  fontStyle:
+                      user.bio.isEmpty ? FontStyle.italic : FontStyle.normal,
+                  height: 1.4,
+                ),
+              ),
             ],
           ),
         ),
       ],
+      ),
     );
   }
 
