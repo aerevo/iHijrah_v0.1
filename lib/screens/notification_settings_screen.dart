@@ -96,8 +96,8 @@ class NotificationSettingsScreen extends StatelessWidget {
                   ),
                 ),
                 Switch(
-                  value: true,
-                  onChanged: (_) {},
+                  value: user.zikirReminderEnabled,
+                  onChanged: (v) => user.setZikirReminder(v),
                   activeColor: kPrimaryGold,
                 ),
               ],

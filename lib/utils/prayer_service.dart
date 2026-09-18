@@ -24,6 +24,9 @@ class PrayerService with ChangeNotifier {
 
   double _lat = DEFAULT_LATITUDE;
   double _lng = DEFAULT_LONGITUDE;
+  String _locationLabel = 'Kuala Lumpur';
+
+  String get locationLabel => _locationLabel;
 
   PrayerService(this._user) {
     _boot();
@@ -31,6 +34,10 @@ class PrayerService with ChangeNotifier {
 
   void updateUser(UserModel u) {
     _user = u;
+    // Tanpa ni, tukar user.themeMode dlm Tetapan takkan buat
+    // DayNightTheme (yg watch PrayerService, bukan UserModel terus)
+    // rebuild sehingga tick seterusnya (sampai 60 saat lambat).
+    notifyListeners();
   }
 
   // ── BOOT ──────────────────────────────────────────────────────
@@ -38,6 +45,7 @@ class PrayerService with ChangeNotifier {
     final p = await SharedPreferences.getInstance();
     _lat = p.getDouble('pref_lat') ?? DEFAULT_LATITUDE;
     _lng = p.getDouble('pref_lng') ?? DEFAULT_LONGITUDE;
+    _locationLabel = p.getString('pref_location_label') ?? 'Kuala Lumpur';
     _compute();
     _startTimers();
   }
@@ -77,12 +85,15 @@ class PrayerService with ChangeNotifier {
   }
 
   // ── PUBLIC API ────────────────────────────────────────────────
-  Future<void> updateLocation(double lat, double lng) async {
+  Future<void> updateLocation(double lat, double lng, {String? label}) async {
     _lat = lat; _lng = lng;
+    if (label != null) _locationLabel = label;
     final p = await SharedPreferences.getInstance();
     await p.setDouble('pref_lat', lat);
     await p.setDouble('pref_lng', lng);
+    if (label != null) await p.setString('pref_location_label', label);
     _compute();
+    notifyListeners();
   }
 
   /// Waktu solat tunggal — format "5:43 AM"
@@ -125,10 +136,11 @@ class PrayerService with ChangeNotifier {
 
   /// True = waktu siang (Subuh–Maghrib), false = waktu malam.
   /// Guna utk auto tema Siang/Malam feed (lihat theme/feed_theme.dart).
-  /// notifyListeners() dari _tick() (setiap minit) sudah cukup kerap utk
-  /// dikesan bila nilai ni bertukar sekitar waktu Subuh/Maghrib sebenar.
+  /// user.themeMode boleh override: 'day' paksa siang, 'night' paksa
+  /// malam, 'auto' (default) ikut waktu Subuh/Maghrib sebenar.
   bool get isDayTime {
-    if (kForceDayModeTemp) return true; // ⚠️ TEMP — lihat constants.dart
+    if (_user.themeMode == 'day')   return true;
+    if (_user.themeMode == 'night') return false;
 
     if (_times == null) {
       // Fallback sblm waktu solat berjaya dikira (cth. app baru buka,
