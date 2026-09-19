@@ -1,6 +1,7 @@
 // lib/widgets/amalan_list.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/user_model.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
 
@@ -10,6 +11,7 @@ class AmalanList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DailyContentProvider>();
+    final user     = context.watch<UserModel>();
     final list     = provider.todayAmalanList;
     final loading  = provider.isLoading;
 
@@ -49,57 +51,68 @@ class AmalanList extends StatelessWidget {
 
     return Column(
       children: list.map((amalan) {
+        // Sumber kebenaran sebenar ialah UserModel (persist + XP).
+        // amalan.isCompleted (provider) turut disemak sbg fallback drpd
+        // sesi yg sama, tapi dailyAmalanLog yg bertahan lepas app ditutup.
+        final bool done =
+            user.isAmalanDoneToday(amalan.id) || amalan.isCompleted;
+
+        void onToggle() {
+          provider.toggleAmalan(amalan.id);
+          user.toggleAmalanDone(amalan.id);
+        }
+
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: amalan.isCompleted
+            color: done
                 ? kPrimaryGold.withOpacity(0.08)
                 : kCardDark,
             borderRadius: BorderRadius.circular(AppSizes.cardRadius),
             border: Border.all(
-              color: amalan.isCompleted
+              color: done
                   ? kPrimaryGold.withOpacity(0.35)
                   : kBorderSubtle,
-              width: amalan.isCompleted ? 1.2 : 0.8,
+              width: done ? 1.2 : 0.8,
             ),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 2),
             leading: GestureDetector(
-              onTap: () => provider.toggleAmalan(amalan.id),
+              onTap: onToggle,
               child: AnimatedContainer(
                 duration: AppDurations.fast,
                 width: 28, height: 28,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: amalan.isCompleted
+                  color: done
                       ? kPrimaryGold
                       : Colors.transparent,
                   border: Border.all(
-                    color: amalan.isCompleted
+                    color: done
                         ? kPrimaryGold
                         : kTextMuted.withOpacity(0.4),
                     width: 1.5,
                   ),
                 ),
-                child: amalan.isCompleted
+                child: done
                     ? const Icon(Icons.check_rounded,
                         size: 15, color: Colors.black)
-                    : const SizedBox.shrink(), // ← Fix: Icon(null) removed
+                    : const SizedBox.shrink(),
               ),
             ),
             title: Text(
               amalan.title,
               style: TextStyle(
-                color: amalan.isCompleted
+                color: done
                     ? kPrimaryGold
                     : kTextPrimary,
                 fontSize: 13,
-                fontWeight: amalan.isCompleted
+                fontWeight: done
                     ? FontWeight.w600
                     : FontWeight.w400,
-                decoration: amalan.isCompleted
+                decoration: done
                     ? TextDecoration.lineThrough
                     : null,
                 decorationColor: kPrimaryGold.withOpacity(0.5),

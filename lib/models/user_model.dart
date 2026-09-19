@@ -85,6 +85,10 @@ class UserModel extends ChangeNotifier {
   DateTime? lastActiveDate;
   Map<String, bool> dailyFardhuLog  = {};
   Map<String, bool> dailyAmalanLog  = {};
+  // 'yyyy-MM-dd' — tarikh terakhir dailyFardhuLog/dailyAmalanLog di-reset.
+  // Tanpa ni, log tak pernah bersih & amalan yg sama takkan boleh
+  // ditanda semula esok (Map dikunci ikut id, bukan ikut tarikh).
+  String? lastLogResetDate;
   int      selawatCountToday = 0;
   bool     _zikirDoneToday   = false;
 
@@ -95,11 +99,6 @@ class UserModel extends ChangeNotifier {
   bool isAsrAlarmEnabled      = true;
   bool isMaghribAlarmEnabled  = true;
   bool isIshaAlarmEnabled     = true;
-  bool zikirReminderEnabled   = true;
-
-  // ── 6. TETAPAN APP ────────────────────────────────────────────
-  /// 'auto' (ikut waktu Subuh/Maghrib sebenar) | 'day' | 'night'
-  String themeMode = 'auto';
 
   // ── GETTERS ───────────────────────────────────────────────────
   bool get zikirDoneToday  => _zikirDoneToday;
@@ -153,13 +152,49 @@ class UserModel extends ChangeNotifier {
     if (level > treeLevel) treeLevel = level;
   }
 
-  bool isFardhuDoneToday(String prayer) => dailyFardhuLog[prayer] ?? false;
+  bool isFardhuDoneToday(String prayer) {
+    _ensureFreshDailyLogs();
+    return dailyFardhuLog[prayer] ?? false;
+  }
 
   void recordFardhu(String prayer) {
+    _ensureFreshDailyLogs();
     dailyFardhuLog[prayer] = true;
     addPoints(20);
     _updateStreak();
     notifyListeners();
+  }
+
+  // ── AMALAN SUNAT — tanda siap, simpan & bagi XP ────────────────
+  bool isAmalanDoneToday(String amalanId) {
+    _ensureFreshDailyLogs();
+    return dailyAmalanLog[amalanId] ?? false;
+  }
+
+  /// Toggle status siap. Bagi +15 XP HANYA bila bertukar ke siap (elak
+  /// exploit tekan-lepas-tekan berulang utk kumpul XP percuma). Tekan
+  /// semula utk nyahtanda TIDAK tolak XP balik — sengaja, elak UX buruk
+  /// (rasa dihukum) kalau tersalah tekan.
+  void toggleAmalanDone(String amalanId) {
+    _ensureFreshDailyLogs();
+    final bool wasDone = dailyAmalanLog[amalanId] ?? false;
+    dailyAmalanLog[amalanId] = !wasDone;
+    if (!wasDone) {
+      addPoints(15);
+      _updateStreak();
+    } else {
+      save();
+      notifyListeners();
+    }
+  }
+
+  void _ensureFreshDailyLogs() {
+    final String today = DateTime.now().toIso8601String().substring(0, 10);
+    if (lastLogResetDate != today) {
+      dailyFardhuLog.clear();
+      dailyAmalanLog.clear();
+      lastLogResetDate = today;
+    }
   }
 
   void _updateStreak() {
@@ -198,20 +233,6 @@ class UserModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setZikirReminder(bool enabled) {
-    zikirReminderEnabled = enabled;
-    save();
-    notifyListeners();
-  }
-
-  /// 'auto' | 'day' | 'night' — dibaca oleh PrayerService.isDayTime
-  /// utk override tema siang/malam FeedPalette.
-  void setThemeMode(String mode) {
-    themeMode = mode;
-    save();
-    notifyListeners();
-  }
-
   // ── STORAGE ───────────────────────────────────────────────────
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
@@ -232,6 +253,9 @@ class UserModel extends ChangeNotifier {
       'currentStreak':        currentStreak,
       'longestStreak':        longestStreak,
       'lastActiveDate':       lastActiveDate?.toIso8601String(),
+      'lastLogResetDate':     lastLogResetDate,
+      'dailyFardhuLog':       dailyFardhuLog,
+      'dailyAmalanLog':       dailyAmalanLog,
       'zikirDoneToday':       _zikirDoneToday,
       'adhanModeIndex':       adhanModeIndex,
       'isFajrAlarmEnabled':   isFajrAlarmEnabled,
@@ -239,8 +263,6 @@ class UserModel extends ChangeNotifier {
       'isAsrAlarmEnabled':    isAsrAlarmEnabled,
       'isMaghribAlarmEnabled':isMaghribAlarmEnabled,
       'isIshaAlarmEnabled':   isIshaAlarmEnabled,
-      'zikirReminderEnabled': zikirReminderEnabled,
-      'themeMode':            themeMode,
     }));
   }
 
@@ -267,6 +289,9 @@ class UserModel extends ChangeNotifier {
     m.currentStreak        = d['currentStreak']    ?? 0;
     m.longestStreak        = d['longestStreak']    ?? 0;
     if (d['lastActiveDate'] != null) m.lastActiveDate = DateTime.parse(d['lastActiveDate']);
+    m.lastLogResetDate    = d['lastLogResetDate'];
+    m.dailyFardhuLog      = Map<String, bool>.from(d['dailyFardhuLog'] ?? {});
+    m.dailyAmalanLog      = Map<String, bool>.from(d['dailyAmalanLog'] ?? {});
     m._zikirDoneToday      = d['zikirDoneToday']   ?? false;
     m.adhanModeIndex       = d['adhanModeIndex']   ?? 1;
     m.isFajrAlarmEnabled   = d['isFajrAlarmEnabled']    ?? true;
@@ -274,8 +299,6 @@ class UserModel extends ChangeNotifier {
     m.isAsrAlarmEnabled    = d['isAsrAlarmEnabled']     ?? true;
     m.isMaghribAlarmEnabled= d['isMaghribAlarmEnabled'] ?? true;
     m.isIshaAlarmEnabled   = d['isIshaAlarmEnabled']    ?? true;
-    m.zikirReminderEnabled = d['zikirReminderEnabled']  ?? true;
-    m.themeMode            = d['themeMode']             ?? 'auto';
     return m;
   }
 }
