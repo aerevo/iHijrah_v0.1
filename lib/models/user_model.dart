@@ -99,6 +99,11 @@ class UserModel extends ChangeNotifier {
   bool isAsrAlarmEnabled      = true;
   bool isMaghribAlarmEnabled  = true;
   bool isIshaAlarmEnabled     = true;
+  bool zikirReminderEnabled   = true;
+
+  // ── 6. TETAPAN APP ────────────────────────────────────────────
+  /// 'auto' (ikut waktu Subuh/Maghrib sebenar) | 'day' | 'night'
+  String themeMode = 'auto';
 
   // ── GETTERS ───────────────────────────────────────────────────
   bool get zikirDoneToday  => _zikirDoneToday;
@@ -233,6 +238,20 @@ class UserModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setZikirReminder(bool enabled) {
+    zikirReminderEnabled = enabled;
+    save();
+    notifyListeners();
+  }
+
+  /// 'auto' | 'day' | 'night' — dibaca oleh PrayerService.isDayTime
+  /// utk override tema siang/malam FeedPalette.
+  void setThemeMode(String mode) {
+    themeMode = mode;
+    save();
+    notifyListeners();
+  }
+
   // ── STORAGE ───────────────────────────────────────────────────
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
@@ -263,6 +282,8 @@ class UserModel extends ChangeNotifier {
       'isAsrAlarmEnabled':    isAsrAlarmEnabled,
       'isMaghribAlarmEnabled':isMaghribAlarmEnabled,
       'isIshaAlarmEnabled':   isIshaAlarmEnabled,
+      'zikirReminderEnabled': zikirReminderEnabled,
+      'themeMode':            themeMode,
     }));
   }
 
@@ -299,6 +320,8 @@ class UserModel extends ChangeNotifier {
     m.isAsrAlarmEnabled    = d['isAsrAlarmEnabled']     ?? true;
     m.isMaghribAlarmEnabled= d['isMaghribAlarmEnabled'] ?? true;
     m.isIshaAlarmEnabled   = d['isIshaAlarmEnabled']    ?? true;
+    m.zikirReminderEnabled = d['zikirReminderEnabled']  ?? true;
+    m.themeMode            = d['themeMode']             ?? 'auto';
     return m;
   }
 }
