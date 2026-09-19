@@ -162,12 +162,20 @@ class UserModel extends ChangeNotifier {
     return dailyFardhuLog[prayer] ?? false;
   }
 
+  /// Toggle status siap. Bagi +20 XP HANYA bila bertukar ke siap (elak
+  /// exploit tekan-berulang). Sebelum ni sentiasa set true + bagi XP
+  /// tiap kali dipanggil — kalau ada UI tekan, XP infinite.
   void recordFardhu(String prayer) {
     _ensureFreshDailyLogs();
-    dailyFardhuLog[prayer] = true;
-    addPoints(20);
-    _updateStreak();
-    notifyListeners();
+    final bool wasDone = dailyFardhuLog[prayer] ?? false;
+    dailyFardhuLog[prayer] = !wasDone;
+    if (!wasDone) {
+      addPoints(20);
+      _updateStreak();
+    } else {
+      save();
+      notifyListeners();
+    }
   }
 
   // ── AMALAN SUNAT — tanda siap, simpan & bagi XP ────────────────

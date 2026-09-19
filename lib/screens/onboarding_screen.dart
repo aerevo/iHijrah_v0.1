@@ -1,7 +1,10 @@
 // lib/screens/onboarding_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
@@ -26,6 +29,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int      _step           = 0;
   DateTime _selectedDate   = DateTime(1995, 1, 1);
   String   _selectedGender = 'Lelaki';
+  String?  _avatarPath;
+  bool     _picking        = false;
   bool     _saving         = false;
 
   // Preview Hijri selepas pilih tarikh
@@ -44,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _snack('Sila masukkan nama anda');
       return;
     }
-    if (_step < 2) {
+    if (_step < 3) {
       _pages.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
@@ -74,6 +79,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Salin ke storan KEKAL app (bukan simpan path cache image_picker
+  // terus) — sama pattern macam EditProfileScreen, elak avatar "hilang"
+  // bila OS bersihkan cache.
+  Future<void> _pickAvatar() async {
+    setState(() => _picking = true);
+    try {
+      final XFile? img = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 720,
+        imageQuality: 85,
+      );
+      if (img == null) { setState(() => _picking = false); return; }
+
+      final Directory docsDir = await getApplicationDocumentsDirectory();
+      final String ext = img.path.contains('.') ? img.path.split('.').last : 'jpg';
+      final String newPath =
+          '${docsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      await File(img.path).copy(newPath);
+
+      if (!mounted) return;
+      setState(() { _avatarPath = newPath; _picking = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _picking = false);
+      _snack('Tak dapat buka galeri. Cuba lagi.');
+    }
+  }
+
   Future<void> _submit() async {
     setState(() => _saving = true);
     try {
@@ -83,6 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           : _nameCtrl.text.trim();
       user.birthdate = _selectedDate;
       user.gender    = _selectedGender;
+      user.avatarPath = _avatarPath;
       // Simpan hijriDOB sebagai ISO string supaya HijriService boleh parse
       user.hijriDOB  = _selectedDate.toIso8601String();
       await user.save();
@@ -157,6 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         _stepWelcome(),
                         _stepIdentity(),
                         _stepGender(),
+                        _stepAvatar(),
                       ],
                     ),
                   ),
@@ -463,6 +498,92 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // ── STEP 4 — GAMBAR PROFIL (pilihan, boleh langkau) ──────────
+  Widget _stepAvatar() {
+    final bool hasAvatar = _avatarPath != null && _avatarPath!.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+
+          MetallicGold(
+            child: Text(
+              'Tambah Gambar Profil',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          const Text(
+            'Pilihan sahaja — boleh langkau & tambah kemudian dalam Tetapan.',
+            style: TextStyle(color: kTextSecondary, fontSize: 12.5, height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 36),
+
+          GestureDetector(
+            onTap: _picking ? null : _pickAvatar,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 120, height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: kCardDark,
+                    border: Border.all(
+                        color: kPrimaryGold.withOpacity(0.4), width: 1.5),
+                  ),
+                  child: ClipOval(
+                    child: _picking
+                        ? const Center(child: SizedBox(
+                            width: 24, height: 24,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: kPrimaryGold)))
+                        : (hasAvatar
+                            ? Image.file(File(_avatarPath!), fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _avatarPlaceholder())
+                            : _avatarPlaceholder()),
+                  ),
+                ),
+                Positioned(
+                  bottom: 2, right: 2,
+                  child: Container(
+                    width: 34, height: 34,
+                    decoration: const BoxDecoration(
+                        shape: BoxShape.circle, gradient: kGoldGradient),
+                    child: const Icon(Icons.camera_alt_rounded,
+                        size: 17, color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          if (!hasAvatar)
+            TextButton(
+              onPressed: _next,
+              child: const Text('Langkau buat masa ini →',
+                  style: TextStyle(color: kTextSecondary, fontSize: 12.5)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _avatarPlaceholder() => const Center(
+        child: Icon(Icons.person_rounded, color: kTextMuted, size: 50),
+      );
+
   // ── WIDGET HELPERS ────────────────────────────────────────────
   Widget _inputLabel(String text) => Text(
     text,
@@ -542,7 +663,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildDots() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) => AnimatedContainer(
+      children: List.generate(4, (i) => AnimatedContainer(
         duration: AppDurations.fast,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         width: _step == i ? 24 : 7,
@@ -590,7 +711,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.black))
                   : Text(
-                      _step == 2 ? 'Mulakan' : 'Seterusnya',
+                      _step == 3 ? 'Mulakan' : 'Seterusnya',
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, letterSpacing: 0.5),
                     ),
