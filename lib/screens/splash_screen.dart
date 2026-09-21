@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../home.dart';
 import '../models/user_model.dart';
 import '../screens/onboarding_screen.dart';
+import '../screens/auth_screen.dart';
 import '../utils/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
@@ -114,13 +116,25 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
     final user = Provider.of<UserModel>(context, listen: false);
 
+    // Belum log masuk — AuthScreen dulu (data pokok/streak/profil
+    // kena terikat ke akaun sejak awal, bukan lepas onboarding).
+    final bool loggedIn = FirebaseAuth.instance.currentUser != null;
+
     final bool needsOnboarding =
         user.name.isEmpty || user.birthdate == null;
 
+    Widget target;
+    if (!loggedIn) {
+      target = const AuthScreen();
+    } else if (needsOnboarding) {
+      target = const OnboardingScreen();
+    } else {
+      target = const HomePage();
+    }
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
-            needsOnboarding ? const OnboardingScreen() : const HomePage(),
+        pageBuilder: (_, __, ___) => target,
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 900),

@@ -1,6 +1,8 @@
 // lib/models/user_model.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import '../utils/hijri_service.dart';
 
@@ -260,39 +262,79 @@ class UserModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── STORAGE ───────────────────────────────────────────────────
+  // ── STORAGE (SharedPreferences local) ───────────────────────────
+  Map<String, dynamic> _toMap() => {
+    'name':                 name,
+    'email':                email,
+    'gender':               gender,
+    'bio':                  bio,
+    'avatarPath':           avatarPath,
+    'authMethod':           authMethod,
+    'birthdate':            birthdate?.toIso8601String(),
+    'hijriDOB':             hijriDOB,
+    'followersCount':       followersCount,
+    'followingCount':       followingCount,
+    'postsCount':           postsCount,
+    'treeLevel':            treeLevel,
+    'totalPoints':          totalPoints,
+    'currentStreak':        currentStreak,
+    'longestStreak':        longestStreak,
+    'lastActiveDate':       lastActiveDate?.toIso8601String(),
+    'lastLogResetDate':     lastLogResetDate,
+    'dailyFardhuLog':       dailyFardhuLog,
+    'dailyAmalanLog':       dailyAmalanLog,
+    'zikirDoneToday':       _zikirDoneToday,
+    'adhanModeIndex':       adhanModeIndex,
+    'isFajrAlarmEnabled':   isFajrAlarmEnabled,
+    'isDhuhrAlarmEnabled':  isDhuhrAlarmEnabled,
+    'isAsrAlarmEnabled':    isAsrAlarmEnabled,
+    'isMaghribAlarmEnabled':isMaghribAlarmEnabled,
+    'isIshaAlarmEnabled':   isIshaAlarmEnabled,
+    'zikirReminderEnabled': zikirReminderEnabled,
+    'themeMode':            themeMode,
+  };
+
+  void _applyMap(Map<String, dynamic> d) {
+    name           = d['name']       ?? '';
+    email          = d['email']      ?? '';
+    gender         = d['gender']     ?? 'Lelaki';
+    bio            = d['bio']        ?? '';
+    avatarPath     = d['avatarPath'];
+    authMethod     = d['authMethod'] ?? 'Guest';
+    hijriDOB       = d['hijriDOB'];
+    if (d['birthdate'] != null) birthdate = DateTime.parse(d['birthdate']);
+    followersCount       = d['followersCount']   ?? 0;
+    followingCount       = d['followingCount']   ?? 0;
+    postsCount           = d['postsCount']       ?? 0;
+    treeLevel            = d['treeLevel']        ?? 1;
+    totalPoints          = d['totalPoints']      ?? 0;
+    currentStreak        = d['currentStreak']    ?? 0;
+    longestStreak        = d['longestStreak']    ?? 0;
+    if (d['lastActiveDate'] != null) lastActiveDate = DateTime.parse(d['lastActiveDate']);
+    lastLogResetDate    = d['lastLogResetDate'];
+    dailyFardhuLog      = Map<String, bool>.from(d['dailyFardhuLog'] ?? {});
+    dailyAmalanLog      = Map<String, bool>.from(d['dailyAmalanLog'] ?? {});
+    _zikirDoneToday      = d['zikirDoneToday']   ?? false;
+    adhanModeIndex       = d['adhanModeIndex']   ?? 1;
+    isFajrAlarmEnabled   = d['isFajrAlarmEnabled']    ?? true;
+    isDhuhrAlarmEnabled  = d['isDhuhrAlarmEnabled']   ?? true;
+    isAsrAlarmEnabled    = d['isAsrAlarmEnabled']     ?? true;
+    isMaghribAlarmEnabled= d['isMaghribAlarmEnabled'] ?? true;
+    isIshaAlarmEnabled   = d['isIshaAlarmEnabled']    ?? true;
+    zikirReminderEnabled = d['zikirReminderEnabled']  ?? true;
+    themeMode            = d['themeMode']             ?? 'auto';
+  }
+
+  /// Simpan local (SharedPreferences) — SENTIASA berjalan & sentiasa
+  /// disiapkan (await-able) macam asal. Push ke cloud pula "fire and
+  /// forget" (tak di-await) — supaya tiap save() (dipanggil sangat
+  /// kerap: addPoints, toggle amalan, dll) tak jadi perlahan/block UI
+  /// sebab tunggu network. Kalau offline/gagal, local tetap selamat.
   Future<void> save() async {
+    final map = _toMap();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_data', json.encode({
-      'name':                 name,
-      'email':                email,
-      'gender':               gender,
-      'bio':                  bio,
-      'avatarPath':           avatarPath,
-      'authMethod':           authMethod,
-      'birthdate':            birthdate?.toIso8601String(),
-      'hijriDOB':             hijriDOB,
-      'followersCount':       followersCount,
-      'followingCount':       followingCount,
-      'postsCount':           postsCount,
-      'treeLevel':            treeLevel,
-      'totalPoints':          totalPoints,
-      'currentStreak':        currentStreak,
-      'longestStreak':        longestStreak,
-      'lastActiveDate':       lastActiveDate?.toIso8601String(),
-      'lastLogResetDate':     lastLogResetDate,
-      'dailyFardhuLog':       dailyFardhuLog,
-      'dailyAmalanLog':       dailyAmalanLog,
-      'zikirDoneToday':       _zikirDoneToday,
-      'adhanModeIndex':       adhanModeIndex,
-      'isFajrAlarmEnabled':   isFajrAlarmEnabled,
-      'isDhuhrAlarmEnabled':  isDhuhrAlarmEnabled,
-      'isAsrAlarmEnabled':    isAsrAlarmEnabled,
-      'isMaghribAlarmEnabled':isMaghribAlarmEnabled,
-      'isIshaAlarmEnabled':   isIshaAlarmEnabled,
-      'zikirReminderEnabled': zikirReminderEnabled,
-      'themeMode':            themeMode,
-    }));
+    await prefs.setString('user_data', json.encode(map));
+    _pushToCloud(map);
   }
 
   static Future<UserModel> load() async {
@@ -300,36 +342,44 @@ class UserModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('user_data');
     if (raw == null) return m;
-
-    final d = json.decode(raw);
-    m.name           = d['name']       ?? '';
-    m.email          = d['email']      ?? '';
-    m.gender         = d['gender']     ?? 'Lelaki';
-    m.bio            = d['bio']        ?? '';
-    m.avatarPath     = d['avatarPath'];
-    m.authMethod     = d['authMethod'] ?? 'Guest';
-    m.hijriDOB       = d['hijriDOB'];
-    if (d['birthdate'] != null) m.birthdate = DateTime.parse(d['birthdate']);
-    m.followersCount       = d['followersCount']   ?? 0;
-    m.followingCount       = d['followingCount']   ?? 0;
-    m.postsCount           = d['postsCount']       ?? 0;
-    m.treeLevel            = d['treeLevel']        ?? 1;
-    m.totalPoints          = d['totalPoints']      ?? 0;
-    m.currentStreak        = d['currentStreak']    ?? 0;
-    m.longestStreak        = d['longestStreak']    ?? 0;
-    if (d['lastActiveDate'] != null) m.lastActiveDate = DateTime.parse(d['lastActiveDate']);
-    m.lastLogResetDate    = d['lastLogResetDate'];
-    m.dailyFardhuLog      = Map<String, bool>.from(d['dailyFardhuLog'] ?? {});
-    m.dailyAmalanLog      = Map<String, bool>.from(d['dailyAmalanLog'] ?? {});
-    m._zikirDoneToday      = d['zikirDoneToday']   ?? false;
-    m.adhanModeIndex       = d['adhanModeIndex']   ?? 1;
-    m.isFajrAlarmEnabled   = d['isFajrAlarmEnabled']    ?? true;
-    m.isDhuhrAlarmEnabled  = d['isDhuhrAlarmEnabled']   ?? true;
-    m.isAsrAlarmEnabled    = d['isAsrAlarmEnabled']     ?? true;
-    m.isMaghribAlarmEnabled= d['isMaghribAlarmEnabled'] ?? true;
-    m.isIshaAlarmEnabled   = d['isIshaAlarmEnabled']    ?? true;
-    m.zikirReminderEnabled = d['zikirReminderEnabled']  ?? true;
-    m.themeMode            = d['themeMode']             ?? 'auto';
+    m._applyMap(json.decode(raw));
     return m;
+  }
+
+  // ── STORAGE (Firebase — backup, dipulih lepas reinstall) ────────
+  static String? _uidOrNull() => FirebaseAuth.instance.currentUser?.uid;
+
+  Future<void> _pushToCloud(Map<String, dynamic> map) async {
+    final String? uid = _uidOrNull();
+    if (uid == null) return; // belum log masuk — cloud sync x applicable
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set(map);
+    } catch (e) {
+      // Senyap sahaja — local (SharedPreferences) dah cukup utk app
+      // terus berfungsi walau offline. Cloud cuma backup/sync, bukan
+      // satu-satunya sumber data.
+      debugPrint('UserModel._pushToCloud gagal (offline?): $e');
+    }
+  }
+
+  /// Panggil SEKALI lepas login berjaya (dari AuthScreen) — bukan
+  /// automatik berulang, elak overwrite tak sengaja data local yg
+  /// mungkin lagi baru. Pulangkan true kalau dokumen cloud wujud &
+  /// berjaya dimuatkan (data cloud override local + di-cache semula).
+  Future<bool> pullFromCloud() async {
+    final String? uid = _uidOrNull();
+    if (uid == null) return false;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users').doc(uid).get();
+      if (!doc.exists || doc.data() == null) return false;
+      _applyMap(doc.data()!);
+      await save(); // cache ke local sekali, supaya offline pun ada
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('UserModel.pullFromCloud gagal: $e');
+      return false;
+    }
   }
 }
