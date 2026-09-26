@@ -13,6 +13,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
@@ -148,12 +149,11 @@ class _FeedPanelState extends State<FeedPanel> {
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
             ],
 
-            // ── KOMUNITI — satu lajur penuh, unboxed editorial ──────
-            // V3: SliverPadding sisi = 0. Post full-width, terapung
-            // terus atas latar krim skrin. Padding 16px kiri-kanan
-            // diurus dalam FeedCard itu sendiri (_buildEditorial &
-            // _buildTicket). Post dipisah oleh hairline + whitespace
-            // konten sendiri — tiada margin per-item lagi.
+            // ── KOMUNITI — post sebenar (Firestore) + seed content ──
+            // Post pengguna sebenar (drpd CreatePostScreen) muncul DULU
+            // (terkini atas), diikuti _allPosts (seed/dummy) sbg
+            // pengisi. Bila komuniti dah membesar & seed tak diperlukan
+            // lagi, buang _allPosts terus drpd senarai gabungan ni.
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -166,33 +166,74 @@ class _FeedPanelState extends State<FeedPanel> {
                     )),
               ),
             ),
-            SliverPadding(
-              // ← FeedCard V6 kembali ke kad bersempadan gaya FB —
-              // perlukan margin sisi + jarak antara kad supaya latar
-              // nampak lalu celah-celah (bukan continuous-flow lagi).
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 40),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    final post  = _posts[i];
-                    final ratio = _imageAspectFor(post);
-                    return Padding(
-                      padding: EdgeInsets.only(
-                          bottom: i == _posts.length - 1 ? 0 : 10),
-                      child: FadeSlideIn(
-                        index: i,
-                        child: FeedCard(post: post, imageAspectRatio: ratio),
-                      ),
-                    );
-                  },
-                  childCount: _posts.length,
-                ),
-              ),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('posts')
+                  .orderBy('createdAt', descending: true)
+                  .limit(50)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                final List<PostModel> realPosts = snapshot.hasData
+                    ? snapshot.data!.docs.map(_postFromDoc).toList()
+                    : <PostModel>[];
+                final List<PostModel> combined = [...realPosts, ..._posts];
+
+                return SliverPadding(
+                  // ← FeedCard V6 kembali ke kad bersempadan gaya FB —
+                  // perlukan margin sisi + jarak antara kad supaya latar
+                  // nampak lalu celah-celah (bukan continuous-flow lagi).
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) {
+                        final post  = combined[i];
+                        final ratio = _imageAspectFor(post);
+                        return Padding(
+                          padding: EdgeInsets.only(
+                              bottom: i == combined.length - 1 ? 0 : 10),
+                          child: FadeSlideIn(
+                            index: i,
+                            child: FeedCard(post: post, imageAspectRatio: ratio),
+                          ),
+                        );
+                      },
+                      childCount: combined.length,
+                    ),
+                  ),
+                );
+              },
             ),
 
           ],
         ),
       ),
+    );
+  }
+
+  // ── Post sebenar dari Firestore → PostModel ──────────────────
+  static String _timeAgo(Timestamp? ts) {
+    if (ts == null) return '';
+    final Duration diff = DateTime.now().difference(ts.toDate());
+    if (diff.inMinutes < 1)  return 'Baru sahaja';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24)   return '${diff.inHours}j';
+    return '${diff.inDays}h lalu';
+  }
+
+  static PostModel _postFromDoc(QueryDocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return PostModel(
+      id:            doc.id,
+      type:          d['type'] ?? 'article',
+      title:         d['title'] ?? '',
+      content:       d['content'] ?? '',
+      author:        d['author'] ?? 'Pengguna iHijrah',
+      authorId:      d['authorId'] ?? '',
+      time:          _timeAgo(d['createdAt'] as Timestamp?),
+      likes:         d['likes'] ?? 0,
+      commentsCount: d['commentsCount'] ?? 0,
+      assetPath:     d['assetPath'],
+      category:      d['category'],
     );
   }
 

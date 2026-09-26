@@ -13,6 +13,7 @@ import 'widgets/sidebar.dart';
 import 'widgets/flyout_panel.dart';
 import 'widgets/zikir_prompt.dart';
 import 'widgets/feed_panel.dart';
+import 'screens/create_post_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -170,6 +171,33 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
+
+          // ── 7. FAB — Buat Post (cuma waktu feed aktif) ────
+          if (sidebar.isClosed)
+            Positioned(
+              bottom: 24, right: 20,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+                ),
+                child: Container(
+                  width: 56, height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: kGoldGradient,
+                    boxShadow: [
+                      BoxShadow(
+                        color: kPrimaryGold.withOpacity(0.45),
+                        blurRadius: 16, spreadRadius: 1,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.edit_rounded,
+                      color: Colors.black, size: 24),
+                ),
+              ),
+            ),
           ],
         ),
       ),
