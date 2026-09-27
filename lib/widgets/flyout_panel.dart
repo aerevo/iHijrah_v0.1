@@ -17,6 +17,7 @@ import 'hijrah_tree.dart';
 import 'birthday_view.dart';
 import 'sirah_view.dart';
 import 'amalan_view.dart';
+import 'hadith_view.dart';
 
 class FlyoutPanel extends StatelessWidget {
   const FlyoutPanel({Key? key}) : super(key: key);
@@ -28,6 +29,7 @@ class FlyoutPanel extends StatelessWidget {
       case 'kalendar':  return 'Kalendar Hijrah';
       case 'sirah':     return 'Khazanah Nabi';
       case 'amalan':    return 'Misi Harian';
+      case 'hadith':    return 'Hadith Harian';
       case 'pokok':     return 'Pokok Hijrah';
       case 'birthday':  return 'Hari Jadi Hijrah';
       case 'notifikasi':return 'Tetapan';
@@ -43,6 +45,7 @@ class FlyoutPanel extends StatelessWidget {
       case 'kalendar':  return Icons.calendar_month_rounded;
       case 'sirah':     return Icons.auto_stories_rounded;
       case 'amalan':    return Icons.spa_rounded;
+      case 'hadith':    return Icons.menu_book_rounded;
       case 'pokok':     return Icons.park_rounded;
       case 'birthday':  return Icons.cake_rounded;
       case 'notifikasi':return Icons.settings_rounded;
@@ -57,6 +60,7 @@ class FlyoutPanel extends StatelessWidget {
       case 'kalendar':  return const CalendarView();
       case 'sirah':     return const SirahView();
       case 'amalan':    return const AmalanView();
+      case 'hadith':    return const HadithView();
       case 'pokok':     return const HijrahTree(isExpanded: true);
       case 'birthday':  return const BirthdayView();
       case 'notifikasi':return const SettingsView();

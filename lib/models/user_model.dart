@@ -262,6 +262,29 @@ class UserModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Kemaskini info profil asas (nama/jantina/bio/avatar) SEKALIGUS —
+  /// dipanggil dari EditProfileScreen. Encapsulate mutasi + save() +
+  /// notifyListeners() dalam SATU method supaya caller luar class TAK
+  /// PERLU (dan tak patut) sentuh field terus + panggil notifyListeners()
+  /// sendiri. notifyListeners() pada ChangeNotifier ditanda @protected
+  /// + @visibleForTesting — panggilan terus dari luar class (macam
+  /// EditProfileScreen buat sebelum ni) adalah invalid usage yang
+  /// analyzer flag (invalid_use_of_protected_member +
+  /// invalid_use_of_visible_for_testing_member).
+  Future<void> updateProfile({
+    required String name,
+    required String gender,
+    required String bio,
+    String? avatarPath,
+  }) async {
+    this.name       = name;
+    this.gender      = gender;
+    this.bio         = bio;
+    this.avatarPath  = avatarPath;
+    await save();
+    notifyListeners();
+  }
+
   // ── STORAGE (SharedPreferences local) ───────────────────────────
   Map<String, dynamic> _toMap() => {
     'name':                 name,

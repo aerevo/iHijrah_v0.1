@@ -165,13 +165,15 @@ class _DailyShell extends StatelessWidget {
 class DailyHadithCard extends StatelessWidget {
   final HadithToday hadith;
   final FeedPalette palette;
-  const DailyHadithCard({Key? key, required this.hadith, required this.palette}) : super(key: key);
+  final VoidCallback? onTap;
+  const DailyHadithCard({Key? key, required this.hadith, required this.palette, this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => _DailyShell(
     type: DailyCardType.hadith, palette: palette,
     isSpecial: hadith.isSpecial,
     title: hadith.text, subtitle: '— ${hadith.riwayat}',
+    onTap: onTap,
   );
 }
 
@@ -179,13 +181,15 @@ class DailyAmalanCard extends StatelessWidget {
   final AmalanToday amalan;
   final FeedPalette palette;
   final VoidCallback? onToggle;
-  const DailyAmalanCard({Key? key, required this.amalan, required this.palette, this.onToggle}) : super(key: key);
+  final VoidCallback? onTap;
+  const DailyAmalanCard({Key? key, required this.amalan, required this.palette, this.onToggle, this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => _DailyShell(
     type: DailyCardType.amalan, palette: palette,
     isSpecial: amalan.type == 'khas',
     title: amalan.title, subtitle: amalan.source,
+    onTap: onTap,
     trailing: GestureDetector(
       onTap: onToggle,
       child: PopScaleIn(
@@ -209,11 +213,13 @@ class DailyAmalanCard extends StatelessWidget {
 class DailySirahCard extends StatelessWidget {
   final SirahToday sirah;
   final FeedPalette palette;
-  const DailySirahCard({Key? key, required this.sirah, required this.palette}) : super(key: key);
+  final VoidCallback? onTap;
+  const DailySirahCard({Key? key, required this.sirah, required this.palette, this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => _DailyShell(
     type: DailyCardType.sirah, palette: palette, isSpecial: false,
     title: sirah.tajuk, subtitle: sirah.pengajaran,
+    onTap: onTap,
   );
 }

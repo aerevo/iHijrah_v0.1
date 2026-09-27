@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/daily_content_provider.dart';
 import '../utils/constants.dart';
-import 'metallic_gold.dart';
 
 class SirahCard extends StatelessWidget {
   const SirahCard({Key? key}) : super(key: key);

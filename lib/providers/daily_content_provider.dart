@@ -234,11 +234,6 @@ class DailyContentProvider with ChangeNotifier {
   };
 
   HadithToday _getHadithForToday(HijriCalendar today) {
-    final List<String> bulanEng = [
-      'Muharram', 'Safar', 'Rabi al-awwal', 'Rabi al-thani',
-      'Jumada al-awwal', 'Jumada al-thani', 'Rajab', "Sha'ban",
-      'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
-    ];
     // Try Malay name first (matches _specialHadiths keys)
     final List<String> bulanMy = [
       'Muharram', 'Safar', 'Rabiulawal', 'Rabiulakhir',

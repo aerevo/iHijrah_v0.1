@@ -8,7 +8,6 @@ import '../models/user_model.dart';
 import '../screens/birthdate_prompt_screen.dart';
 import '../screens/edit_profile_screen.dart';
 import '../utils/constants.dart';
-import '../utils/hijri_service.dart';
 import 'metallic_gold.dart';
 
 class ProfileDetailView extends StatelessWidget {

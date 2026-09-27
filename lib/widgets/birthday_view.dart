@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
 import '../utils/constants.dart';
-import '../utils/hijri_service.dart';
 import 'living_tree.dart';
 
 class BirthdayView extends StatefulWidget {

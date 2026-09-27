@@ -15,8 +15,8 @@ import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../models/sidebar_state_model.dart';
 import '../providers/daily_content_provider.dart';
-import '../utils/constants.dart';
 import '../theme/feed_theme.dart';
 import 'feed_card.dart';
 import 'daily_card.dart';
@@ -24,7 +24,6 @@ import 'anim_helpers.dart';
 
 // ── ITEM MODELS ───────────────────────────────────────────────
 abstract class _FeedItem {}
-class _PostItem   extends _FeedItem { final PostModel post;     _PostItem(this.post); }
 class _HadithItem extends _FeedItem { final HadithToday hadith; _HadithItem(this.hadith); }
 class _AmalanItem extends _FeedItem { final AmalanToday amalan; final int idx; _AmalanItem(this.amalan, this.idx); }
 class _SirahItem  extends _FeedItem { final SirahToday sirah;   _SirahItem(this.sirah); }
@@ -243,16 +242,29 @@ class _FeedPanelState extends State<FeedPanel> {
     return _aspectPool[post.id.hashCode.abs() % _aspectPool.length];
   }
 
+  // Tekan mana-mana kad harian → buka FlyoutPanel dgn kandungan PENUH
+  // (jalan yg sama macam tekan menu di sidebar) — bukan skrin/route
+  // baru. `setActiveMenu()` toggle: kalau flyout tu dah terbuka utk id
+  // sama, tekan lagi akan tutup — sama macam behaviour sidebar sedia ada.
   Widget _dailyCard(_FeedItem item, DailyContentProvider daily) {
+    final sidebar = context.read<SidebarStateModel>();
+
     if (item is _HadithItem) {
-      return DailyHadithCard(hadith: item.hadith, palette: widget.palette);
+      return DailyHadithCard(
+        hadith: item.hadith, palette: widget.palette,
+        onTap: () => sidebar.setActiveMenu('hadith'),
+      );
     }
     if (item is _AmalanItem) {
       return DailyAmalanCard(
         amalan: item.amalan, palette: widget.palette,
         onToggle: () => daily.toggleAmalan(item.amalan.id),
+        onTap: () => sidebar.setActiveMenu('amalan'),
       );
     }
-    return DailySirahCard(sirah: (item as _SirahItem).sirah, palette: widget.palette);
+    return DailySirahCard(
+      sirah: (item as _SirahItem).sirah, palette: widget.palette,
+      onTap: () => sidebar.setActiveMenu('sirah'),
+    );
   }
 }
