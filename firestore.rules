@@ -17,6 +17,17 @@ service cloud.firestore {
         && request.auth.uid == userId;
     }
 
+    // Firebase menyegarkan claim `auth_time` bila client panggil
+    // reauthenticateWithCredential() — jadi ni SECARA REALITI menguji
+    // "bila kali terakhir pengguna sahkan kata laluan", bukan sekadar
+    // bila token disign semula secara automatik. Tetingkap 5 minit
+    // (300 saat) ialah amalan biasa Firebase untuk operasi musnah
+    // (destructive) macam padam akaun.
+    function recentlyAuthenticated() {
+      return request.auth.token.auth_time >
+        request.time.toMillis() / 1000 - 300;
+    }
+
     match /users/{userId} {
 
       // User hanya boleh baca profil sendiri buat masa ini.
@@ -123,8 +134,11 @@ service cloud.firestore {
         && request.resource.data.email == resource.data.email
         && request.resource.data.authMethod == resource.data.authMethod;
 
-      // Account deletion belum diimplementasikan melalui client.
-      allow delete: if false;
+      // FIX #4 — Padam akaun sendiri sahaja: owner-only DAN mesti
+      // reauth dalam tempoh 5 minit terakhir (bukan sekadar sign-in
+      // lama). Client WAJIB panggil reauthenticateWithCredential()
+      // sebelum cuba padam users/{uid} — tanpa itu, rule ni tolak.
+      allow delete: if isOwner(userId) && recentlyAuthenticated();
     }
 
     match /posts/{postId} {

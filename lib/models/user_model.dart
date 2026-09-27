@@ -444,6 +444,10 @@ class UserModel extends ChangeNotifier {
   /// (atau kalau susunan kod diubah lain hari), nama & e-mel SEBENAR
   /// pengguna kat cloud boleh accidentally tertimpa jadi kosong.
   /// Fungsi ni sengaja TAK PERNAH panggil save()/_pushToCloud().
+  ///
+  /// Juga dipanggil sebagai langkah TERAKHIR oleh deleteAccount() —
+  /// selepas Firestore & Firebase Auth berjaya dipadam, sesi peranti
+  /// ni mesti dibersihkan sama macam logout biasa.
   Future<void> resetLocalSession() async {
     // Reset SETIAP field secara eksplisit di sini — SENGAJA tidak
     // bergantung kepada _applyMap(const {}). Sebab: _applyMap guna
@@ -488,6 +492,95 @@ class UserModel extends ChangeNotifier {
     await prefs.remove('birthday_state');
     await prefs.remove('birthday_note');
     notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PADAM AKAUN — FIX #4
+  // ═══════════════════════════════════════════════════════════════
+  /// Padam akaun sepenuhnya: post-post pengguna, dokumen users/{uid},
+  /// akaun Firebase Auth, dan akhirnya sesi local peranti ni.
+  ///
+  /// PENTING — client-side deletion BUKAN atomik. Urutan di bawah ni
+  /// sengaja disusun begini supaya kegagalan di mana-mana langkah
+  /// tidak sekali-kali meninggalkan akaun dalam keadaan lebih teruk
+  /// dari sebelum dipanggil:
+  ///
+  ///   1. Reauthenticate — WAJIB berjaya dulu. Kalau gagal (kata
+  ///      laluan salah, dll), method ni throw & TIADA APA-APA yang
+  ///      dipadam — bukan post, bukan users/{uid}, bukan Auth.
+  ///   2. Padam post-post pengguna (posts where authorId == uid).
+  ///      Guna batch selamat (< 500 operasi/batch).
+  ///   3. Padam dokumen users/{uid} — HANYA lepas (2) berjaya.
+  ///   4. Padam akaun Firebase Auth (currentUser.delete()) — langkah
+  ///      TERAKHIR & TAK BOLEH DIUNDUR, HANYA lepas (3) berjaya.
+  ///   5. Bersihkan sesi local (sama seperti resetLocalSession()).
+  ///
+  /// Kalau langkah (2), (3) atau (4) throw, exception itu terus
+  /// dilontar ke caller (UI) TANPA cuba teruskan ke langkah
+  /// seterusnya — caller mesti anggap padam TIDAK BERJAYA SEPENUHNYA
+  /// (mungkin sebahagian data dah terpadam) dan TIDAK boleh navigate
+  /// ke AuthScreen macam padam berjaya.
+  ///
+  /// Throws [FirebaseAuthException] bila reauth (langkah 1) gagal.
+  /// Throws [FirebaseException]/[Exception] lain bila langkah
+  /// Firestore/Auth selepas reauth gagal.
+  Future<void> deleteAccount({required String password}) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw StateError('Tiada pengguna log masuk.');
+    }
+    final String uid = currentUser.uid;
+    final String? userEmail = currentUser.email;
+    if (userEmail == null || userEmail.isEmpty) {
+      throw StateError('Akaun ini tiada e-mel berdaftar untuk reauthentication.');
+    }
+
+    // ── 1. REAUTHENTICATE ─────────────────────────────────────────
+    // Mesti berjaya SEBELUM apa-apa dipadam. Kalau baris ni throw
+    // (FirebaseAuthException, cth. 'wrong-password'), caller berhenti
+    // di sini — tiada post/users/Auth yang tersentuh langsung.
+    final credential = EmailAuthProvider.credential(
+      email: userEmail,
+      password: password,
+    );
+    await currentUser.reauthenticateWithCredential(credential);
+
+    // ── 2. PADAM POST-POST PENGGUNA SAHAJA ─────────────────────────
+    // postsCount TIDAK digunakan sebagai sumber — ia bukan medan yang
+    // diselenggara (lihat _protectedCloudFields), jadi query sebenar
+    // ke koleksi posts ialah satu-satunya cara boleh dipercayai.
+    final postsQuery = await FirebaseFirestore.instance
+        .collection('posts')
+        .where('authorId', isEqualTo: uid)
+        .get();
+
+    if (postsQuery.docs.isNotEmpty) {
+      // Firestore had 500 operasi/batch — 400 bagi ruang selamat.
+      const int batchSize = 400;
+      for (var i = 0; i < postsQuery.docs.length; i += batchSize) {
+        final batch = FirebaseFirestore.instance.batch();
+        final chunk = postsQuery.docs.skip(i).take(batchSize);
+        for (final doc in chunk) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
+    }
+    // Result kosong (pengguna tiada post langsung) dikendalikan
+    // secara semula jadi — gelung di atas tak jalan, terus ke (3).
+
+    // ── 3. PADAM DOKUMEN users/{uid} ───────────────────────────────
+    // HANYA sampai sini kalau (2) berjaya sepenuhnya tanpa exception.
+    await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+
+    // ── 4. PADAM AKAUN FIREBASE AUTH ───────────────────────────────
+    // Langkah TERAKHIR & TAK BOLEH DIUNDUR — HANYA lepas (3) berjaya.
+    await currentUser.delete();
+
+    // ── 5. BERSIHKAN SESI LOCAL ─────────────────────────────────────
+    // Sama seperti logout — tiada apa-apa untuk push ke cloud lagi,
+    // sebab akaun cloud dah tiada.
+    await resetLocalSession();
   }
 
   static Future<UserModel> load() async {

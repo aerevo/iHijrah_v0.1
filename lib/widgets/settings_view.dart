@@ -1,12 +1,12 @@
-// lib/widgets/settings_view.dart  (V2 — skrin Tetapan penuh)
+// lib/widgets/settings_view.dart  (V3 — + Padam Akaun)
 //
-// Sebelum ni cuma redirect terus ke NotificationSettingsScreen (12
-// baris). Kini skrin Tetapan sebenar: shortcut profil, peringatan
-// solat (sedia ada, suis Embun Jiwa dibetulkan supaya real), Lokasi
-// Solat (baru — PrayerService.updateLocation() dah wujud tapi tiada
-// UI panggil dia langsung sblm ni, jadi semua org dapat waktu solat
-// KL walau di mana pun), Tema (baru — Auto/Siang/Malam, gantikan
-// flag debug kForceDayModeTemp yg dah dibuang), dan Tentang.
+// V2: skrin Tetapan penuh (profil, peringatan solat, lokasi, tema,
+// tentang, logout). V3 tambah SATU ciri: "Padam Akaun" dalam zon
+// bahaya — reauthentication (kata laluan) wajib dulu, baru padam
+// post pengguna + dokumen users/{uid} + akaun Firebase Auth. Tiada
+// skrin lain disentuh.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -94,6 +94,151 @@ class SettingsView extends StatelessWidget {
         _snack(context, 'Ralat keluar: $e');
       }
     }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // PADAM AKAUN — reauth (kata laluan) WAJIB dulu, baru padam apa-apa.
+  // Urutan (client-side, tidak atomik sepenuhnya — lihat
+  // UserModel.deleteAccount() untuk sebab urutan ni penting):
+  //   1. Dialog amaran kekal & tak boleh dibatalkan.
+  //   2. Dialog kata laluan → reauthenticateWithCredential.
+  //   3. Kalau reauth gagal → TIDAK PADAM APA-APA, papar ralat, berhenti.
+  //   4. Kalau reauth berjaya → padam post pengguna → users/{uid} →
+  //      akaun Firebase Auth → sesi local → AuthScreen.
+  //   5. Kalau ralat SELEPAS reauth berjaya (contoh: network putus di
+  //      tengah) → JANGAN navigate ke AuthScreen (akaun mungkin
+  //      separuh dipadam sahaja) — biar pengguna kekal log masuk &
+  //      cuba semula.
+  // ══════════════════════════════════════════════════════════════
+  Future<void> _deleteAccount(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Padam Akaun?'),
+        content: const Text(
+          'Tindakan ini KEKAL dan TIDAK BOLEH DIBATALKAN.\n\n'
+          'Semua post, profil, mata Pokok Hijrah dan sejarah amalan '
+          'anda akan dipadam selama-lamanya dari iHijrah.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Teruskan',
+              style: TextStyle(color: kWarningRed, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    final password = await _promptPassword(context);
+    if (password == null || password.isEmpty || !context.mounted) return;
+
+    // Proses ni beberapa panggilan network berturutan (reauth →
+    // padam posts → padam users/{uid} → padam Auth) — kunci UI
+    // dengan loading yg tak boleh ditutup pengguna sendiri.
+    unawaited(showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: kPrimaryGold),
+      ),
+    ));
+
+    try {
+      final user = Provider.of<UserModel>(context, listen: false);
+      await user.deleteAccount(password: password);
+
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // tutup loading
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      // Reauth gagal (atau delete Auth gagal disebabkan sesi lama) —
+      // padam Firestore TIDAK berlaku dlm kes reauth gagal (ia
+      // berlaku sblm apa-apa dipadam), jadi selamat kekalkan pengguna
+      // di skrin ni.
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      final msg = (e.code == 'wrong-password' || e.code == 'invalid-credential')
+          ? 'Kata laluan salah. Akaun TIDAK dipadam.'
+          : (e.code == 'too-many-requests')
+              ? 'Terlalu banyak percubaan. Cuba lagi sebentar.'
+              : 'Pengesahan gagal. Akaun TIDAK dipadam.';
+      _snack(context, msg);
+    } catch (e) {
+      // Ralat SELEPAS reauth berjaya (contoh: gagal padam posts/
+      // users/Auth disebabkan network). Mungkin sebahagian data dah
+      // terpadam — JANGAN navigate ke AuthScreen; biar pengguna
+      // masih boleh log masuk & cuba padam semula.
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      _snack(
+        context,
+        'Ralat semasa memadam akaun. Sila cuba lagi atau hubungi sokongan.',
+      );
+    }
+  }
+
+  Future<String?> _promptPassword(BuildContext context) async {
+    final controller = TextEditingController();
+    bool obscure = true;
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Sahkan Kata Laluan'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Untuk keselamatan, masukkan kata laluan akaun anda '
+                'sebelum akaun dipadam.',
+                style: TextStyle(fontSize: 12.5),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                obscureText: obscure,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Kata laluan',
+                  suffixIcon: IconButton(
+                    icon: Icon(obscure
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded),
+                    onPressed: () => setState(() => obscure = !obscure),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: const Text(
+                'Padam Akaun',
+                style: TextStyle(color: kWarningRed, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -244,6 +389,36 @@ class SettingsView extends StatelessWidget {
                     child: Text('Keluar',
                         style: TextStyle(color: kWarningRed, fontSize: 13,
                             fontWeight: FontWeight.w600)),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: kTextMuted, size: 18),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── ZON BAHAYA — PADAM AKAUN ─────────────────────────
+          _sectionCard(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+              onTap: () => _deleteAccount(context),
+              child: const Row(
+                children: [
+                  Icon(Icons.delete_forever_rounded, color: kWarningRed, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Padam Akaun',
+                            style: TextStyle(color: kWarningRed, fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                        SizedBox(height: 2),
+                        Text('Padam kekal profil, post & data anda',
+                            style: TextStyle(color: kTextMuted, fontSize: 11)),
+                      ],
+                    ),
                   ),
                   Icon(Icons.chevron_right_rounded, color: kTextMuted, size: 18),
                 ],

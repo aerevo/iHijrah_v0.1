@@ -864,4 +864,89 @@ describe('iHijrah Firestore Rules', function () {
       context.firestore().doc('posts/test-post').delete()
     );
   });
+
+  // ═══════════════════════════════════════════════════════════════
+  // FIX #4 — Account deletion: users/{userId} delete rule
+  // ═══════════════════════════════════════════════════════════════
+  describe('Account deletion (users/{userId} delete)', function () {
+    const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+    beforeEach(async function () {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc('users/user-a').set({
+          name: 'User A',
+          email: 'user-a@example.com',
+          gender: 'Lelaki',
+          bio: '',
+          avatarPath: null,
+          authMethod: 'Email',
+          followersCount: 0,
+          followingCount: 0,
+          postsCount: 0,
+          treeLevel: 1,
+          totalPoints: 100,
+          currentStreak: 2,
+          longestStreak: 5,
+        });
+      });
+    });
+
+    it('owner CAN delete own users/{uid} with recent auth_time (<5min)', async function () {
+      const context = testEnv.authenticatedContext('user-a', {
+        email: 'user-a@example.com',
+        email_verified: true,
+        auth_time: nowSeconds(),
+      });
+
+      await assertSucceeds(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('owner CANNOT delete own users/{uid} with stale auth_time (>5min)', async function () {
+      const context = testEnv.authenticatedContext('user-a', {
+        email: 'user-a@example.com',
+        email_verified: true,
+        auth_time: nowSeconds() - 600, // 10 minit lalu — luar tetingkap 5 minit
+      });
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('another authenticated user CANNOT delete a different users/{uid}', async function () {
+      const context = testEnv.authenticatedContext('user-b', {
+        email: 'user-b@example.com',
+        email_verified: true,
+        auth_time: nowSeconds(),
+      });
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('unauthenticated user CANNOT delete users/{uid}', async function () {
+      const context = testEnv.unauthenticatedContext();
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('owner with NO auth_time claim at all CANNOT delete (treated as stale)', async function () {
+      // Sesetengah token lama/ujian mungkin tiada claim auth_time
+      // langsung — rule mesti tolak dgn selamat, bukan throw/allow
+      // secara tak sengaja.
+      const context = testEnv.authenticatedContext('user-a', {
+        email: 'user-a@example.com',
+        email_verified: true,
+      });
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+  });
 });
