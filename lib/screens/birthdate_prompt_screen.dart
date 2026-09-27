@@ -74,7 +74,7 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
       user.name      = name;
       user.birthdate = _selectedDate;
       user.hijriDOB  = _selectedDate.toIso8601String();
-      await user.save();
+      await user.saveAndWaitForCloud();
 
       if (!mounted) return;
 

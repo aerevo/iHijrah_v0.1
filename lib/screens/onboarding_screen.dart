@@ -119,7 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       user.avatarPath = _avatarPath;
       // Simpan hijriDOB sebagai ISO string supaya HijriService boleh parse
       user.hijriDOB  = _selectedDate.toIso8601String();
-      await user.save();
+      await user.saveAndWaitForCloud();
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(

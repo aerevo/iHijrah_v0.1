@@ -410,6 +410,28 @@ class UserModel extends ChangeNotifier {
     _pushToCloud(map);
   }
 
+  /// Seperti save(), tetapi tunggu sehingga write cloud untuk snapshot ini
+  /// selesai. Guna hanya pada flow kritikal seperti onboarding/birthdate
+  /// yang perlu memastikan dokumen users/{uid} sudah wujud sebelum teruskan.
+  Future<void> saveAndWaitForCloud() async {
+    final map = _toMap();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_data', json.encode(map));
+
+    final String? uid = _uidOrNull();
+    if (uid == null) return;
+
+    // Caller kritikal boleh tahu jika write cloud sebenar gagal.
+    final write = _pushChain.then((_) => _doPushToCloud(uid, map));
+
+    // Queue utama tetap hidup walaupun write ini gagal.
+    _pushChain = write.catchError((e) {
+      debugPrint('UserModel._pushToCloud queue gagal: $e');
+    });
+
+    await write;
+  }
+
   /// Panggil semasa LOGOUT SAHAJA. Reset semua field ke default di
   /// memori + kosongkan cache local (SharedPreferences) — TANPA push
   /// apa-apa ke cloud. Logout ≠ padam akaun: dokumen Firestore
@@ -491,7 +513,13 @@ class UserModel extends ChangeNotifier {
     final String? uid = _uidOrNull();
     if (uid == null) return;
 
-    _pushChain = _pushChain.then((_) => _doPushToCloud(uid, map));
+    final write = _pushChain.then((_) => _doPushToCloud(uid, map));
+
+    // save() biasa kekal fire-and-forget, tetapi failure tidak boleh
+    // mematikan queue untuk write seterusnya.
+    _pushChain = write.catchError((e) {
+      debugPrint('UserModel._pushToCloud queue gagal: $e');
+    });
   }
 
   Future<void> _doPushToCloud(
@@ -514,7 +542,7 @@ class UserModel extends ChangeNotifier {
     } on FirebaseException catch (e) {
       if (e.code != 'not-found') {
         debugPrint('UserModel._pushToCloud update gagal (offline?): $e');
-        return;
+        rethrow;
       }
 
       try {
@@ -523,9 +551,11 @@ class UserModel extends ChangeNotifier {
         await docRef.set(buildCreatePayload(map));
       } catch (e2) {
         debugPrint('UserModel._pushToCloud create gagal (offline?): $e2');
+        rethrow;
       }
     } catch (e) {
       debugPrint('UserModel._pushToCloud gagal (offline?): $e');
+      rethrow;
     }
   }
 
