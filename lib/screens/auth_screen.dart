@@ -16,6 +16,7 @@ import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
 import '../widgets/iridescent_background.dart';
 import '../screens/onboarding_screen.dart';
+import '../screens/email_verification_screen.dart';
 import '../home.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -89,9 +90,21 @@ class _AuthScreenState extends State<AuthScreen> {
       if (_isRegisterMode) {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
             email: email, password: pass);
+
+        // Hantar e-mel pengesahan SEKALI sahaja, sejurus akaun dicipta.
+        // Kalau ni gagal (cth. network hiccup), akaun Auth TETAP wujud —
+        // jangan block navigation di sini; EmailVerificationScreen ada
+        // butang "Hantar semula" utk cuba lagi nanti.
+        try {
+          await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+        } catch (e) {
+          debugPrint('AuthScreen: sendEmailVerification gagal: $e');
+        }
       } else {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
             email: email, password: pass);
+        // JANGAN auto-resend e-mel pengesahan di sini — login berulang
+        // bukan sebab utk hantar semula (elak throttling Firebase).
       }
 
       if (!mounted) return;
@@ -104,6 +117,22 @@ class _AuthScreenState extends State<AuthScreen> {
       await user.pullFromCloud();
 
       if (!mounted) return;
+
+      final bool emailVerified =
+          FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+
+      if (!emailVerified) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const EmailVerificationScreen(),
+            transitionsBuilder: (_, anim, __, child) =>
+                FadeTransition(opacity: anim, child: child),
+            transitionDuration: const Duration(milliseconds: 600),
+          ),
+        );
+        return;
+      }
+
       final bool needsOnboarding =
           user.name.isEmpty || user.birthdate == null;
 
@@ -117,9 +146,15 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       );
     } on FirebaseAuthException catch (e) {
+      // mounted check WAJIB sini — kod ni sampai selepas beberapa await
+      // (createUser/signIn), widget mungkin dah dispose (cth. user
+      // navigate keluar semasa request masih berjalan). setState() atas
+      // widget yg dah unmount akan throw exception.
+      if (!mounted) return;
       setState(() => _loading = false);
       _snack(_friendlyError(e.code));
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
       _snack('Ralat tidak dijangka. Cuba lagi.');
     }
