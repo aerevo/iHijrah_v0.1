@@ -73,7 +73,7 @@ class IHijrahApp extends StatelessWidget {
             primary:    kPrimaryGold,
             secondary:  kAccentOlive,
             surface:    kCardDark,
-            background: kBackgroundDark,
+            surface: kBackgroundDark,
           ),
           // Override text supaya Poppins dipakai seluruh app
           textTheme: const TextTheme(
