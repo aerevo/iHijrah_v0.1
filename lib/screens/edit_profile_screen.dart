@@ -92,15 +92,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _saving = true);
     try {
       final user = Provider.of<UserModel>(context, listen: false);
-      user.name       = name;
-      user.gender     = _gender;
-      user.bio        = _bioCtrl.text.trim();
-      user.avatarPath = _avatarPath;
-      await user.save();
-      // Mutasi field terus (bukan lalu method) — kena panggil manual
-      // supaya ProfileDetailView & Sidebar yg watch UserModel refresh
-      // serta-merta, bukan tunggu rebuild lain (cth. tick PrayerService).
-      user.notifyListeners();
+      // updateProfile() uruskan mutasi + save() + notifyListeners()
+      // semua dalam UserModel sendiri — ProfileDetailView & Sidebar yg
+      // watch UserModel tetap refresh serta-merta macam sebelum ni,
+      // tanpa screen ni panggil notifyListeners() terus dari luar class.
+      await user.updateProfile(
+        name:       name,
+        gender:     _gender,
+        bio:        _bioCtrl.text.trim(),
+        avatarPath: _avatarPath,
+      );
 
       if (!mounted) return;
       _snack('Profil dikemas kini.', color: kAccentGreen);
