@@ -1,0 +1,5 @@
+
+# Firebase emulator / local test files
+node_modules/
+firestore-debug.log
+firestore-emulator.log

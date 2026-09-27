@@ -18,10 +18,113 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // TEMPORARY:
-      // UserModel masih menyimpan banyak data app dalam satu dokumen
-      // dan menulisnya dari client. Akan diperketat dalam fasa seterusnya.
-      allow read, write: if isOwner(userId);
+
+      // User hanya boleh baca profil sendiri buat masa ini.
+      allow read: if isOwner(userId);
+
+      // New user document:
+      // identity + server-owned counters mesti bermula dengan nilai selamat.
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'gender',
+          'bio',
+          'avatarPath',
+          'authMethod',
+          'birthdate',
+          'hijriDOB',
+          'followersCount',
+          'followingCount',
+          'postsCount',
+          'treeLevel',
+          'totalPoints',
+          'currentStreak',
+          'longestStreak',
+          'lastActiveDate',
+          'lastLogResetDate',
+          'dailyFardhuLog',
+          'dailyAmalanLog',
+          'zikirDoneToday',
+          'adhanModeIndex',
+          'isFajrAlarmEnabled',
+          'isDhuhrAlarmEnabled',
+          'isAsrAlarmEnabled',
+          'isMaghribAlarmEnabled',
+          'isIshaAlarmEnabled',
+          'zikirReminderEnabled',
+          'themeMode'
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.authMethod is string
+        && request.resource.data.followersCount == 0
+        && request.resource.data.followingCount == 0
+        && request.resource.data.postsCount == 0
+        && request.resource.data.treeLevel == 1
+        && request.resource.data.totalPoints == 0
+        && request.resource.data.currentStreak == 0
+        && request.resource.data.longestStreak == 0;
+
+      // User boleh ubah profile/settings tertentu.
+      // Identity + counters/gamification stats tidak boleh berubah.
+      allow update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'gender',
+          'bio',
+          'avatarPath',
+          'authMethod',
+          'birthdate',
+          'hijriDOB',
+          'followersCount',
+          'followingCount',
+          'postsCount',
+          'treeLevel',
+          'totalPoints',
+          'currentStreak',
+          'longestStreak',
+          'lastActiveDate',
+          'lastLogResetDate',
+          'dailyFardhuLog',
+          'dailyAmalanLog',
+          'zikirDoneToday',
+          'adhanModeIndex',
+          'isFajrAlarmEnabled',
+          'isDhuhrAlarmEnabled',
+          'isAsrAlarmEnabled',
+          'isMaghribAlarmEnabled',
+          'isIshaAlarmEnabled',
+          'zikirReminderEnabled',
+          'themeMode'
+        ])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name',
+          'gender',
+          'bio',
+          'avatarPath',
+          'birthdate',
+          'hijriDOB',
+          'lastActiveDate',
+          'lastLogResetDate',
+          'dailyFardhuLog',
+          'dailyAmalanLog',
+          'zikirDoneToday',
+          'adhanModeIndex',
+          'isFajrAlarmEnabled',
+          'isDhuhrAlarmEnabled',
+          'isAsrAlarmEnabled',
+          'isMaghribAlarmEnabled',
+          'isIshaAlarmEnabled',
+          'zikirReminderEnabled',
+          'themeMode'
+        ])
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.authMethod == resource.data.authMethod;
+
+      // Account deletion belum diimplementasikan melalui client.
+      allow delete: if false;
     }
 
     match /posts/{postId} {
@@ -74,15 +177,12 @@ service cloud.firestore {
         )
         && request.resource.data.createdAt == request.time;
 
-      // Belum ada fungsi edit post yang memerlukan update.
-      // Kunci dahulu supaya client tidak boleh ubah field sesuka hati.
       allow update: if false;
 
       allow delete: if verified()
         && resource.data.authorId == request.auth.uid;
     }
 
-    // Default deny untuk collection/document lain
     match /{document=**} {
       allow read, write: if false;
     }
