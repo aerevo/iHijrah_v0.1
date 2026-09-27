@@ -74,12 +74,14 @@ class SettingsView extends StatelessWidget {
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
 
-      // Clear user model
+      // Bersihkan sesi LOCAL sahaja — resetLocalSession() sengaja
+      // TIDAK push apa-apa ke Firestore, supaya profil sebenar
+      // pengguna di cloud tak sekali-kali tertimpa kosong bila logout.
+      // (Cara lama set user.email/name = '' terus save() adalah BUG:
+      // save() sentiasa push ke cloud utk uid semasa.)
       if (context.mounted) {
         final user = Provider.of<UserModel>(context, listen: false);
-        user.email = '';
-        user.name = '';
-        await user.save();
+        await user.resetLocalSession();
 
         // Navigate back to AuthScreen
         Navigator.of(context).pushAndRemoveUntil(
