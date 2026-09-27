@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import '../utils/age_helper.dart';
 import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
@@ -45,6 +46,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _next() {
     FocusScope.of(context).unfocus();
+
+    if (_step == 1 && !isAtLeastAge(_selectedDate, 13)) {
+      _snack('iHijrah memerlukan umur minimum 13 tahun.');
+      return;
+    }
+
     if (_step == 1 && _nameCtrl.text.trim().isEmpty) {
       _snack('Sila masukkan nama anda');
       return;
