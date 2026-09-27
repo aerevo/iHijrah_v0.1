@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function verified() {
+      return signedIn()
+        && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return signedIn()
+        && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // TEMPORARY:
+      // UserModel masih menyimpan banyak data app dalam satu dokumen
+      // dan menulisnya dari client. Akan diperketat dalam fasa seterusnya.
+      allow read, write: if isOwner(userId);
+    }
+
+    match /posts/{postId} {
+
+      allow read: if verified();
+
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly([
+          'type',
+          'title',
+          'content',
+          'author',
+          'authorId',
+          'likes',
+          'commentsCount',
+          'assetPath',
+          'category',
+          'createdAt'
+        ])
+        && request.resource.data.type in ['article', 'quote']
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.author is string
+        && request.resource.data.author.size() <= 120
+        && request.resource.data.author ==
+          (
+            get(
+              /databases/$(database)/documents/users/$(request.auth.uid)
+            ).data.name == ''
+              ? 'Hamba Allah'
+              : get(
+                  /databases/$(database)/documents/users/$(request.auth.uid)
+                ).data.name
+          )
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 80
+        && request.resource.data.content is string
+        && request.resource.data.content.size() >= 10
+        && request.resource.data.content.size() <= 1000
+        && request.resource.data.likes is int
+        && request.resource.data.likes == 0
+        && request.resource.data.commentsCount is int
+        && request.resource.data.commentsCount == 0
+        && (
+          request.resource.data.assetPath == null
+          || request.resource.data.assetPath is string
+        )
+        && (
+          request.resource.data.category == null
+          || request.resource.data.category is string
+        )
+        && request.resource.data.createdAt == request.time;
+
+      // Belum ada fungsi edit post yang memerlukan update.
+      // Kunci dahulu supaya client tidak boleh ubah field sesuka hati.
+      allow update: if false;
+
+      allow delete: if verified()
+        && resource.data.authorId == request.auth.uid;
+    }
+
+    // Default deny untuk collection/document lain
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
