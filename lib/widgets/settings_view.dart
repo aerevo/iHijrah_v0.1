@@ -9,13 +9,15 @@
 // flag debug kForceDayModeTemp yg dah dibuang), dan Tentang.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user_model.dart';
 import '../models/sidebar_state_model.dart';
-import '../screens/notification_settings_screen.dart';
-import '../screens/edit_profile_screen.dart';
 import '../utils/constants.dart';
 import '../utils/prayer_service.dart';
+import '../screens/notification_settings_screen.dart';
+import '../screens/edit_profile_screen.dart';
+import '../screens/auth_screen.dart';
 
 // Bandar utama Malaysia + koordinat — cukup utk anggaran waktu solat
 // tepat. Boleh tambah lagi kalau perlu; ni bukan senarai lengkap
@@ -39,6 +41,58 @@ const List<({String name, double lat, double lng})> _kCities = [
 
 class SettingsView extends StatelessWidget {
   const SettingsView({Key? key}) : super(key: key);
+
+  void _snack(BuildContext context, String msg, {Color color = kWarningRed}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: color),
+    );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Keluar?'),
+        content: const Text('Anda yakin ingin keluar dari akaun?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Keluar', style: TextStyle(color: kWarningRed)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Clear user model
+      if (context.mounted) {
+        final user = Provider.of<UserModel>(context, listen: false);
+        user.email = '';
+        user.name = '';
+        await user.save();
+
+        // Navigate back to AuthScreen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AuthScreen()),
+          (route) => false, // Remove all previous routes
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _snack(context, 'Ralat keluar: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +219,28 @@ class SettingsView extends StatelessWidget {
                   Expanded(
                     child: Text('Tentang iHijrah',
                         style: TextStyle(color: kTextPrimary, fontSize: 13,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: kTextMuted, size: 18),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── LOGOUT ──────────────────────────────────────────
+          _sectionCard(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+              onTap: () => _logout(context),
+              child: const Row(
+                children: [
+                  Icon(Icons.logout_rounded, color: kWarningRed, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Keluar',
+                        style: TextStyle(color: kWarningRed, fontSize: 13,
                             fontWeight: FontWeight.w600)),
                   ),
                   Icon(Icons.chevron_right_rounded, color: kTextMuted, size: 18),
