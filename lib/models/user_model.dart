@@ -317,7 +317,51 @@ class UserModel extends ChangeNotifier {
     'themeMode':            themeMode,
   };
 
-  void _applyMap(Map<String, dynamic> d) {
+  static const List<String> _protectedCloudFields = [
+    'followersCount',
+    'followingCount',
+    'postsCount',
+    'treeLevel',
+    'totalPoints',
+    'currentStreak',
+    'longestStreak',
+  ];
+
+  static const List<String> _immutableUpdateFields = [
+    'email',
+    'authMethod',
+  ];
+
+  @visibleForTesting
+  static Map<String, dynamic> buildCreatePayload(
+    Map<String, dynamic> localMap,
+  ) {
+    return Map<String, dynamic>.from(localMap)
+      ..['followersCount'] = 0
+      ..['followingCount'] = 0
+      ..['postsCount'] = 0
+      ..['treeLevel'] = 1
+      ..['totalPoints'] = 0
+      ..['currentStreak'] = 0
+      ..['longestStreak'] = 0;
+  }
+
+  @visibleForTesting
+  static Map<String, dynamic> buildUpdatePayload(
+    Map<String, dynamic> localMap,
+  ) {
+    return Map<String, dynamic>.from(localMap)
+      ..removeWhere(
+        (key, _) =>
+            _protectedCloudFields.contains(key) ||
+            _immutableUpdateFields.contains(key),
+      );
+  }
+
+  void _applyMap(
+    Map<String, dynamic> d, {
+    bool preserveLocalGamification = false,
+  }) {
     name           = d['name']       ?? '';
     email          = d['email']      ?? '';
     gender         = d['gender']     ?? 'Lelaki';
@@ -326,26 +370,32 @@ class UserModel extends ChangeNotifier {
     authMethod     = d['authMethod'] ?? 'Guest';
     hijriDOB       = d['hijriDOB'];
     if (d['birthdate'] != null) birthdate = DateTime.parse(d['birthdate']);
-    followersCount       = d['followersCount']   ?? 0;
-    followingCount       = d['followingCount']   ?? 0;
-    postsCount           = d['postsCount']       ?? 0;
-    treeLevel            = d['treeLevel']        ?? 1;
-    totalPoints          = d['totalPoints']      ?? 0;
-    currentStreak        = d['currentStreak']    ?? 0;
-    longestStreak        = d['longestStreak']    ?? 0;
-    if (d['lastActiveDate'] != null) lastActiveDate = DateTime.parse(d['lastActiveDate']);
-    lastLogResetDate    = d['lastLogResetDate'];
-    dailyFardhuLog      = Map<String, bool>.from(d['dailyFardhuLog'] ?? {});
-    dailyAmalanLog      = Map<String, bool>.from(d['dailyAmalanLog'] ?? {});
-    _zikirDoneToday      = d['zikirDoneToday']   ?? false;
-    adhanModeIndex       = d['adhanModeIndex']   ?? 1;
-    isFajrAlarmEnabled   = d['isFajrAlarmEnabled']    ?? true;
-    isDhuhrAlarmEnabled  = d['isDhuhrAlarmEnabled']   ?? true;
-    isAsrAlarmEnabled    = d['isAsrAlarmEnabled']     ?? true;
-    isMaghribAlarmEnabled= d['isMaghribAlarmEnabled'] ?? true;
-    isIshaAlarmEnabled   = d['isIshaAlarmEnabled']    ?? true;
-    zikirReminderEnabled = d['zikirReminderEnabled']  ?? true;
-    themeMode            = d['themeMode']             ?? 'auto';
+    followersCount = d['followersCount'] ?? 0;
+    followingCount = d['followingCount'] ?? 0;
+    postsCount     = d['postsCount'] ?? 0;
+
+    if (!preserveLocalGamification) {
+      treeLevel     = d['treeLevel'] ?? 1;
+      totalPoints   = d['totalPoints'] ?? 0;
+      currentStreak = d['currentStreak'] ?? 0;
+      longestStreak = d['longestStreak'] ?? 0;
+    }
+
+    if (d['lastActiveDate'] != null) {
+      lastActiveDate = DateTime.parse(d['lastActiveDate']);
+    }
+    lastLogResetDate     = d['lastLogResetDate'];
+    dailyFardhuLog       = Map<String, bool>.from(d['dailyFardhuLog'] ?? {});
+    dailyAmalanLog       = Map<String, bool>.from(d['dailyAmalanLog'] ?? {});
+    _zikirDoneToday      = d['zikirDoneToday'] ?? false;
+    adhanModeIndex       = d['adhanModeIndex'] ?? 1;
+    isFajrAlarmEnabled   = d['isFajrAlarmEnabled'] ?? true;
+    isDhuhrAlarmEnabled  = d['isDhuhrAlarmEnabled'] ?? true;
+    isAsrAlarmEnabled    = d['isAsrAlarmEnabled'] ?? true;
+    isMaghribAlarmEnabled = d['isMaghribAlarmEnabled'] ?? true;
+    isIshaAlarmEnabled   = d['isIshaAlarmEnabled'] ?? true;
+    zikirReminderEnabled = d['zikirReminderEnabled'] ?? true;
+    themeMode             = d['themeMode'] ?? 'auto';
   }
 
   /// Simpan local (SharedPreferences) — SENTIASA berjalan & sentiasa
@@ -413,6 +463,8 @@ class UserModel extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_data');
+    await prefs.remove('birthday_state');
+    await prefs.remove('birthday_note');
     notifyListeners();
   }
 
@@ -428,15 +480,51 @@ class UserModel extends ChangeNotifier {
   // ── STORAGE (Firebase — backup, dipulih lepas reinstall) ────────
   static String? _uidOrNull() => FirebaseAuth.instance.currentUser?.uid;
 
-  Future<void> _pushToCloud(Map<String, dynamic> map) async {
+  Future<void> _pushChain = Future.value();
+
+  @visibleForTesting
+  static bool isStaleSession(String capturedUid, String? currentUid) {
+    return currentUid != capturedUid;
+  }
+
+  void _pushToCloud(Map<String, dynamic> map) {
     final String? uid = _uidOrNull();
-    if (uid == null) return; // belum log masuk — cloud sync x applicable
+    if (uid == null) return;
+
+    _pushChain = _pushChain.then((_) => _doPushToCloud(uid, map));
+  }
+
+  Future<void> _doPushToCloud(
+    String uid,
+    Map<String, dynamic> map,
+  ) async {
+    if (isStaleSession(uid, _uidOrNull())) {
+      debugPrint(
+        'UserModel._pushToCloud dilangkau — sesi UID dah berubah '
+        '(logout/tukar akaun semasa write masih dalam queue).',
+      );
+      return;
+    }
+
     try {
-      await FirebaseFirestore.instance.collection('users').doc(uid).set(map);
+      final docRef =
+          FirebaseFirestore.instance.collection('users').doc(uid);
+
+      await docRef.update(buildUpdatePayload(map));
+    } on FirebaseException catch (e) {
+      if (e.code != 'not-found') {
+        debugPrint('UserModel._pushToCloud update gagal (offline?): $e');
+        return;
+      }
+
+      try {
+        final docRef =
+            FirebaseFirestore.instance.collection('users').doc(uid);
+        await docRef.set(buildCreatePayload(map));
+      } catch (e2) {
+        debugPrint('UserModel._pushToCloud create gagal (offline?): $e2');
+      }
     } catch (e) {
-      // Senyap sahaja — local (SharedPreferences) dah cukup utk app
-      // terus berfungsi walau offline. Cloud cuma backup/sync, bukan
-      // satu-satunya sumber data.
       debugPrint('UserModel._pushToCloud gagal (offline?): $e');
     }
   }
@@ -452,8 +540,13 @@ class UserModel extends ChangeNotifier {
       final doc = await FirebaseFirestore.instance
           .collection('users').doc(uid).get();
       if (!doc.exists || doc.data() == null) return false;
-      _applyMap(doc.data()!);
-      await save(); // cache ke local sekali, supaya offline pun ada
+      _applyMap(
+        doc.data()!,
+        preserveLocalGamification: true,
+      );
+      final map = _toMap();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_data', json.encode(map));
       notifyListeners();
       return true;
     } catch (e) {
