@@ -337,6 +337,62 @@ class UserModel extends ChangeNotifier {
     _pushToCloud(map);
   }
 
+  /// Panggil semasa LOGOUT SAHAJA. Reset semua field ke default di
+  /// memori + kosongkan cache local (SharedPreferences) — TANPA push
+  /// apa-apa ke cloud. Logout ≠ padam akaun: dokumen Firestore
+  /// pengguna kekal utuh sepenuhnya; ni cuma bersihkan sesi peranti
+  /// ni supaya akaun/guest seterusnya tak warisi data lama.
+  ///
+  /// SEBAB fungsi khas ni wujud: cara lama set field jadi '' terus
+  /// panggil save() — save() tu SENTIASA push ke Firestore utk uid
+  /// yg log masuk semasa itu. Kalau reset tu berlaku SEBELUM signOut()
+  /// (atau kalau susunan kod diubah lain hari), nama & e-mel SEBENAR
+  /// pengguna kat cloud boleh accidentally tertimpa jadi kosong.
+  /// Fungsi ni sengaja TAK PERNAH panggil save()/_pushToCloud().
+  Future<void> resetLocalSession() async {
+    // Reset SETIAP field secara eksplisit di sini — SENGAJA tidak
+    // bergantung kepada _applyMap(const {}). Sebab: _applyMap guna
+    // corak "if (d['x'] != null) field = ..." untuk birthdate &
+    // lastActiveDate, jadi bila map input kosong, field tu terus TAK
+    // DISENTUH (bukan reset ke null macam field lain). Ini punca bug
+    // asal — nilai lama boleh terbawa ke sesi/akaun seterusnya pada
+    // peranti sama. Reset eksplisit di sini elak isu ni berulang walau
+    // _applyMap() diubah lain hari.
+    name                  = '';
+    birthdate             = null;
+    hijriDOB              = null;
+    avatarPath            = null;
+    gender                = 'Lelaki';
+    email                 = '';
+    authMethod            = 'Guest';
+    bio                   = '';
+    followersCount        = 0;
+    followingCount        = 0;
+    postsCount            = 0;
+    treeLevel             = 1;
+    totalPoints           = 0;
+    currentStreak         = 0;
+    longestStreak         = 0;
+    lastActiveDate        = null;
+    dailyFardhuLog        = {};
+    dailyAmalanLog        = {};
+    lastLogResetDate      = null;
+    selawatCountToday     = 0;
+    _zikirDoneToday       = false;
+    adhanModeIndex        = 1;
+    isFajrAlarmEnabled    = true;
+    isDhuhrAlarmEnabled   = true;
+    isAsrAlarmEnabled     = true;
+    isMaghribAlarmEnabled = true;
+    isIshaAlarmEnabled    = true;
+    zikirReminderEnabled  = true;
+    themeMode             = 'auto';
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_data');
+    notifyListeners();
+  }
+
   static Future<UserModel> load() async {
     final m = UserModel();
     final prefs = await SharedPreferences.getInstance();
