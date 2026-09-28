@@ -125,6 +125,13 @@ class _SplashScreenState extends State<SplashScreen>
     if (firebaseUser != null) {
       try {
         await firebaseUser.reload();
+        // Claim email_verified dalam ID token tak berubah bila reload().
+        // Kalau dah verified (cth. klik pautan semasa app tertutup),
+        // refresh token supaya rules posts (email_verified) lulus.
+        final User? refreshed = FirebaseAuth.instance.currentUser;
+        if (refreshed != null && refreshed.emailVerified) {
+          await refreshed.getIdToken(true);
+        }
       } catch (e) {
         // Jangan expose ralat kepada user & JANGAN anggap verified —
         // laluan bawah akan hantar ke EmailVerificationScreen.
