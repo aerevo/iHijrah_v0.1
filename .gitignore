@@ -3,3 +3,10 @@
 node_modules/
 firestore-debug.log
 firestore-emulator.log
+
+# Flutter / Dart generated
+/.dart_tool/
+/build/
+/.idea/
+.flutter-plugins
+.flutter-plugins-dependencies
