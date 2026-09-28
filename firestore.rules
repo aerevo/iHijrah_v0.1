@@ -28,6 +28,47 @@ service cloud.firestore {
         request.time.toMillis() / 1000 - 300;
     }
 
+    // ── Helper path untuk social (like/comment/reply) ─────────────
+    function postPath(postId) {
+      return /databases/$(database)/documents/posts/$(postId);
+    }
+
+    function likePath(postId, uid) {
+      return /databases/$(database)/documents/posts/$(postId)/likes/$(uid);
+    }
+
+    // Nama paparan penulis mesti sepadan dgn users/{uid}.name (atau
+    // 'Hamba Allah' jika kosong) — sama seperti create post. Comment
+    // menyimpan nama secara denormalized supaya UI tak perlu baca
+    // users/{uid} orang lain (yang sengaja owner-only).
+    function expectedAuthorName() {
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      ).data.name == ''
+        ? 'Hamba Allah'
+        : get(
+            /databases/$(database)/documents/users/$(request.auth.uid)
+          ).data.name;
+    }
+
+    // Bentuk dokumen comment/reply (sama untuk kedua-duanya).
+    function validCommentShape() {
+      return request.resource.data.keys().hasAll([
+          'authorId', 'author', 'content', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'authorId', 'author', 'content', 'createdAt'
+        ])
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.author is string
+        && request.resource.data.author.size() <= 120
+        && request.resource.data.author == expectedAuthorName()
+        && request.resource.data.content is string
+        && request.resource.data.content.size() >= 1
+        && request.resource.data.content.size() <= 500
+        && request.resource.data.createdAt == request.time;
+    }
+
     match /users/{userId} {
 
       // User hanya boleh baca profil sendiri buat masa ini.
@@ -191,10 +232,94 @@ service cloud.firestore {
         )
         && request.resource.data.createdAt == request.time;
 
-      allow update: if false;
+      // Satu-satunya update yang dibenarkan pada post: `likes` naik/turun
+      // TEPAT 1, dan HANYA jika dalam batch/transaction yang SAMA
+      // dokumen posts/{postId}/likes/{uid} (uid = pengguna ini) turut
+      // dicipta (+1) atau dipadam (-1). Ini yang menjadikan kaunter
+      // server-authoritative tanpa Cloud Function: client tak boleh
+      // ubah `likes` tanpa relation like yang sepadan.
+      allow update: if verified()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['likes'])
+        && request.resource.data.likes is int
+        && request.resource.data.likes >= 0
+        && (
+          (
+            request.resource.data.likes == resource.data.likes + 1
+            && !exists(likePath(postId, request.auth.uid))
+            && existsAfter(likePath(postId, request.auth.uid))
+          )
+          || (
+            request.resource.data.likes == resource.data.likes - 1
+            && exists(likePath(postId, request.auth.uid))
+            && !existsAfter(likePath(postId, request.auth.uid))
+          )
+        );
 
       allow delete: if verified()
         && resource.data.authorId == request.auth.uid;
+
+      // ── LIKES: posts/{postId}/likes/{uid} ───────────────────────
+      // ID dokumen = uid pengguna → satu like per pengguna per post
+      // (create pada dokumen sedia ada dianggap update → ditolak).
+      // Hanya pemilik boleh GET dokumen sendiri; tiada list, jadi
+      // senarai "siapa like" tak boleh di-enumerate (privasi + sedia
+      // untuk block nanti).
+      match /likes/{likeUid} {
+        allow get: if verified()
+          && request.auth.uid == likeUid;
+
+        allow create: if verified()
+          && request.auth.uid == likeUid
+          && request.resource.data.keys().hasOnly(['createdAt'])
+          && request.resource.data.createdAt == request.time
+          && exists(postPath(postId))
+          && getAfter(postPath(postId)).data.likes
+               == get(postPath(postId)).data.likes + 1;
+
+        // Post sudah dipadam → benarkan bersihkan like yatim sendiri.
+        allow delete: if verified()
+          && request.auth.uid == likeUid
+          && (
+            !exists(postPath(postId))
+            || getAfter(postPath(postId)).data.likes
+                 == get(postPath(postId)).data.likes - 1
+          );
+      }
+
+      // ── COMMENTS: posts/{postId}/comments/{commentId} ───────────
+      // Tiada kaunter denormalized: `posts.commentsCount` kekal 0 dan
+      // TIDAK boleh diubah (update post hanya benarkan `likes`). Kiraan
+      // sebenar diambil dgn aggregate count() — pelayan yg mengira,
+      // jadi tak boleh dimanipulasi client dan tak boleh drift.
+      // Update sengaja tiada (edit komen bukan skop Phase 1).
+      match /comments/{commentId} {
+        allow read: if verified();
+
+        allow create: if verified()
+          && validCommentShape()
+          && exists(postPath(postId));
+
+        allow delete: if verified()
+          && resource.data.authorId == request.auth.uid;
+
+        // ── REPLIES: .../comments/{commentId}/replies/{replyId} ───
+        // Satu tahap sahaja (tiada reply-kepada-reply): tiada match
+        // di bawah /replies, jadi catch-all menolaknya. Peraturan
+        // sama seperti comment; parent comment mesti wujud.
+        match /replies/{replyId} {
+          allow read: if verified();
+
+          allow create: if verified()
+            && validCommentShape()
+            && exists(
+              /databases/$(database)/documents/posts/$(postId)/comments/$(commentId)
+            );
+
+          allow delete: if verified()
+            && resource.data.authorId == request.auth.uid;
+        }
+      }
     }
 
     match /{document=**} {
