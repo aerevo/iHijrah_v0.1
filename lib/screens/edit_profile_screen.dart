@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
+import '../services/social_failure.dart';
 import '../utils/constants.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -96,7 +97,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // semua dalam UserModel sendiri — ProfileDetailView & Sidebar yg
       // watch UserModel tetap refresh serta-merta macam sebelum ni,
       // tanpa screen ni panggil notifyListeners() terus dari luar class.
-      await user.updateProfile(
+      final result = await user.updateProfile(
         name:       name,
         gender:     _gender,
         bio:        _bioCtrl.text.trim(),
@@ -104,6 +105,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (!mounted) return;
+
+      // updateProfile() TIDAK melempar untuk kegagalan cloud (timeout /
+      // permission-denied / Firestore) — ia memulangkan Result.failure.
+      // Perubahan LOCAL sudah tersimpan (tak dirollback); skrin kekal
+      // terbuka supaya pengguna nampak ralat dan boleh tekan Simpan semula
+      // (percubaan semula MANUAL sahaja, tiada auto-retry).
+      if (result.isFailure) {
+        setState(() => _saving = false);
+        _snack((result.error ?? SocialFailure.unknown).message);
+        return;
+      }
+
       _snack('Profil dikemas kini.', color: kAccentGreen);
       Navigator.of(context).pop();
     } catch (_) {

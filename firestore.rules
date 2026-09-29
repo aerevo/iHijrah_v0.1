@@ -69,6 +69,30 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    // ── Helper untuk profil awam + follow ─────────────────────────
+    function profilePath(uid) {
+      return /databases/$(database)/documents/profiles/$(uid);
+    }
+
+    // ID edge follow tetap: '{followerId}_{followeeId}'. Satu edge
+    // per pasangan → tak boleh follow dua kali (create pada dokumen
+    // sedia ada dianggap update → ditolak).
+    function followEdgeId(followerId, followeeId) {
+      return followerId + '_' + followeeId;
+    }
+
+    function followPath(followerId, followeeId) {
+      return /databases/$(database)/documents/follows/$(followEdgeId(followerId, followeeId));
+    }
+
+    function validProfileName(v) {
+      return v is string && v.size() >= 1 && v.size() <= 120;
+    }
+
+    function validProfileBio(v) {
+      return v is string && v.size() <= 300;
+    }
+
     match /users/{userId} {
 
       // User hanya boleh baca profil sendiri buat masa ini.
@@ -320,6 +344,124 @@ service cloud.firestore {
             && resource.data.authorId == request.auth.uid;
         }
       }
+    }
+
+    // ══ PROFIL AWAM: profiles/{uid} ═══════════════════════════════
+    // Salinan MINIMUM yang boleh dilihat pengguna lain: nama, bio,
+    // kiraan pengikut. SENGAJA tiada email, birthdate, hijriDOB,
+    // gender, XP/streak, atau apa-apa medan peribadi users/{uid}.
+    // Hanya `get` (ikut uid) — TIADA list, jadi senarai semua profil
+    // tak boleh di-enumerate.
+    match /profiles/{userId} {
+      allow get: if verified();
+
+      // Profil hanya boleh dicipta SELEPAS e-mel disahkan (akaun
+      // belum verify tak wujud secara awam). Kaunter mesti bermula 0.
+      allow create: if verified()
+        && isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'name', 'bio', 'followersCount', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name', 'bio', 'followersCount', 'createdAt'
+        ])
+        && validProfileName(request.resource.data.name)
+        && validProfileBio(request.resource.data.bio)
+        && request.resource.data.followersCount == 0
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if verified()
+        && (
+          // (a) Pemilik: nama + bio sahaja.
+          (
+            isOwner(userId)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['name', 'bio'])
+            && validProfileName(request.resource.data.name)
+            && validProfileBio(request.resource.data.bio)
+          )
+          // (b) Pengguna LAIN: `followersCount` naik/turun TEPAT 1,
+          // HANYA jika edge follows/{saya}_{profil ni} turut dicipta
+          // (+1) atau dipadam (-1) dalam batch yang SAMA. Corak sama
+          // seperti posts.likes — server-authoritative tanpa Cloud
+          // Function. Pemilik tak boleh ubah kaunter sendiri.
+          || (
+            request.auth.uid != userId
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['followersCount'])
+            && request.resource.data.followersCount is int
+            && request.resource.data.followersCount >= 0
+            && (
+              (
+                request.resource.data.followersCount
+                  == resource.data.followersCount + 1
+                && !exists(followPath(request.auth.uid, userId))
+                && existsAfter(followPath(request.auth.uid, userId))
+              )
+              || (
+                request.resource.data.followersCount
+                  == resource.data.followersCount - 1
+                && exists(followPath(request.auth.uid, userId))
+                && !existsAfter(followPath(request.auth.uid, userId))
+              )
+            )
+          )
+        );
+
+      // Padam profil sendiri = sebahagian padam akaun → wajib reauth
+      // baru-baru ini, sama seperti users/{uid}.
+      allow delete: if isOwner(userId) && recentlyAuthenticated();
+    }
+
+    // ══ FOLLOW: follows/{followerId}_{followeeId} ══════════════════
+    // Follow ialah satu arah (Follow ≠ Friend): A ikut B tak bermakna
+    // B ikut A. Edge = {followerId, followeeId, createdAt}.
+    // Senarai hanya boleh dibaca oleh pihak yang terlibat: pengguna
+    // boleh senaraikan orang yang DIA ikut dan orang yang mengikut
+    // DIA — bukan graf orang lain (privasi + sedia untuk block).
+    // Kiraan awam datang dari profiles.followersCount.
+    match /follows/{edgeId} {
+      allow list: if verified()
+        && (
+          resource.data.followerId == request.auth.uid
+          || resource.data.followeeId == request.auth.uid
+        );
+
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly([
+          'followerId', 'followeeId', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'followerId', 'followeeId', 'createdAt'
+        ])
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followeeId is string
+        && request.resource.data.followeeId != request.auth.uid
+        && edgeId == followEdgeId(
+          request.resource.data.followerId,
+          request.resource.data.followeeId
+        )
+        && request.resource.data.createdAt == request.time
+        // Kedua-dua pihak mesti ada profil awam.
+        && exists(profilePath(request.auth.uid))
+        && exists(profilePath(request.resource.data.followeeId))
+        // Kaunter followee mesti naik TEPAT 1 dalam batch yang sama.
+        && getAfter(profilePath(request.resource.data.followeeId))
+             .data.followersCount
+           == get(profilePath(request.resource.data.followeeId))
+             .data.followersCount + 1;
+
+      // Hanya follower boleh unfollow. Kalau profil followee sudah
+      // tiada (akaun dipadam), edge yatim boleh dibersihkan tanpa kaunter.
+      allow delete: if verified()
+        && resource.data.followerId == request.auth.uid
+        && (
+          !exists(profilePath(resource.data.followeeId))
+          || getAfter(profilePath(resource.data.followeeId))
+               .data.followersCount
+             == get(profilePath(resource.data.followeeId))
+               .data.followersCount - 1
+        );
     }
 
     match /{document=**} {

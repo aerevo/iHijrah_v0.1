@@ -7,6 +7,7 @@ import 'models/user_model.dart';
 import 'models/sidebar_state_model.dart';
 import 'utils/constants.dart';
 import 'utils/audio_service.dart';
+import 'services/profile_service.dart';
 import 'theme/feed_theme.dart';
 
 import 'widgets/sidebar.dart';
@@ -36,6 +37,11 @@ class _HomePageState extends State<HomePage>
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AudioService>(context, listen: false).playIntroAudio();
+      // Pastikan profil awam wujud & terkini (perlu untuk follow).
+      final user = Provider.of<UserModel>(context, listen: false);
+      ProfileService.instance
+          .ensureMyProfile(name: user.name, bio: user.bio)
+          .ignore();
     });
   }
 
