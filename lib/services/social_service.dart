@@ -15,6 +15,90 @@ import '../models/comment_model.dart';
 import '../utils/result.dart';
 import 'social_failure.dart';
 
+/// Hasil [SocialService.purgeMySocialContent] — untuk diagnostik padam
+/// akaun. `isClean == false` bermakna ada kandungan pengguna yang MASIH
+/// tertinggal (bukan "berjaya sepenuhnya").
+class SocialCleanupReport {
+  const SocialCleanupReport({
+    required this.postsScanned,
+    required this.likesRemoved,
+    required this.commentsRemoved,
+    required this.repliesRemoved,
+    required this.failedCount,
+    required this.failedPaths,
+    required this.scanComplete,
+  });
+
+  final int postsScanned;
+  final int likesRemoved;
+  final int commentsRemoved;
+  final int repliesRemoved;
+
+  /// Jumlah item yang gagal dipadam / gagal disenaraikan.
+  final int failedCount;
+
+  /// Contoh laluan yang gagal (dihadkan supaya laporan tidak membengkak).
+  final List<String> failedPaths;
+
+  /// false jika imbasan berhenti awal (had post, had masa, atau ralat
+  /// membaca senarai) — kandungan yang belum diimbas tidak diketahui.
+  final bool scanComplete;
+
+  int get itemsRemoved => likesRemoved + commentsRemoved + repliesRemoved;
+
+  bool get isClean => scanComplete && failedCount == 0;
+}
+
+class _PurgeTally {
+  _PurgeTally(this._budget) {
+    _clock.start();
+  }
+
+  static const int _maxFailedPaths = 50;
+
+  final Duration _budget;
+  final Stopwatch _clock = Stopwatch();
+
+  int postsScanned = 0;
+  int likesRemoved = 0;
+  int commentsRemoved = 0;
+  int repliesRemoved = 0;
+  int failedCount = 0;
+  bool scanComplete = true;
+  bool stopped = false;
+  final List<String> failedPaths = <String>[];
+
+  void fail(String path) {
+    failedCount++;
+    if (failedPaths.length < _maxFailedPaths) {
+      failedPaths.add(path);
+    }
+  }
+
+  /// true (dan imbasan ditanda tak lengkap) apabila bajet masa habis.
+  bool outOfBudget() {
+    if (stopped) {
+      return true;
+    }
+    if (_clock.elapsed > _budget) {
+      stopped = true;
+      scanComplete = false;
+      return true;
+    }
+    return false;
+  }
+
+  SocialCleanupReport toReport() => SocialCleanupReport(
+        postsScanned: postsScanned,
+        likesRemoved: likesRemoved,
+        commentsRemoved: commentsRemoved,
+        repliesRemoved: repliesRemoved,
+        failedCount: failedCount,
+        failedPaths: List<String>.unmodifiable(failedPaths),
+        scanComplete: scanComplete,
+      );
+}
+
 class SocialService {
   SocialService({FirebaseFirestore? firestore, FirebaseAuth? auth})
       : _db = firestore ?? FirebaseFirestore.instance,
@@ -211,6 +295,248 @@ class SocialService {
     } catch (e) {
       debugPrint('SocialService.deleteReply gagal: $e');
       return Result<bool, SocialFailure>.failure(socialFailureFromError(e));
+    }
+  }
+
+  // ── PADAM AKAUN: BERSIHKAN KANDUNGAN SOSIAL SAYA ─────────────
+  //
+  // Apa yang rules BENARKAN pengguna padam sendiri (dan hanya itu):
+  //   • like sendiri  — mesti berpasangan dgn kaunter (setLiked)
+  //   • komen sendiri, reply sendiri — di post MANA-MANA
+  // Apa yang TIDAK boleh (perlu backend berkeistimewaan): like / komen /
+  // reply ORANG LAIN, termasuk yang berada di bawah post milik pengguna
+  // ini — tiada siapa selain penulisnya boleh memadamnya.
+  //
+  // Rules tiada laluan carian merentas post (tiada collection-group,
+  // dokumen like tiada medan uid), jadi satu-satunya cara yang selamat
+  // ialah mengimbas koleksi posts berhalaman dan menyoal setiap post.
+  // Kos ∝ jumlah post + komen — sebab itu ada had post dan bajet masa
+  // (tetingkap recent-auth 5 minit utk padam profil/users mesti kekal
+  // terbuka selepas ini). Jika had dicapai, laporan ditanda TIDAK bersih.
+
+  static const int _purgePageSize = 100;
+  static const int _purgeMaxPosts = 5000;
+  static const int _purgeConcurrency = 10;
+  static const Duration _purgeTimeBudget = Duration(seconds: 120);
+
+  /// Padam like / komen / reply milik pengguna semasa pada SEMUA post
+  /// (termasuk post sendiri, sebelum post itu dipadam).
+  ///
+  /// Pulangkan failure HANYA jika imbasan tak dapat bermula (belum ada
+  /// apa dipadam). Kegagalan selepas itu direkod dalam
+  /// [SocialCleanupReport] (best-effort, sama seperti edge follow) —
+  /// caller mesti menyemak [SocialCleanupReport.isClean].
+  Future<Result<SocialCleanupReport, SocialFailure>>
+      purgeMySocialContent() async {
+    final String? me = _uid;
+    if (me == null) {
+      return Result<SocialCleanupReport, SocialFailure>.failure(
+        SocialFailure.unauthenticated,
+      );
+    }
+
+    final _PurgeTally tally = _PurgeTally(_purgeTimeBudget);
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    bool firstPage = true;
+
+    while (true) {
+      if (tally.outOfBudget()) {
+        break;
+      }
+
+      Query<Map<String, dynamic>> query = _db
+          .collection('posts')
+          .orderBy(FieldPath.documentId)
+          .limit(_purgePageSize);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+
+      QuerySnapshot<Map<String, dynamic>>? page;
+      Object? pageError;
+      try {
+        page = await query.get();
+      } catch (e) {
+        pageError = e;
+      }
+
+      if (page == null) {
+        debugPrint('SocialService.purge: senarai post gagal: $pageError');
+        if (firstPage) {
+          return Result<SocialCleanupReport, SocialFailure>.failure(
+            socialFailureFromError(pageError ?? StateError('page null')),
+          );
+        }
+        tally.scanComplete = false;
+        tally.fail('posts (senarai selepas ${cursor?.id})');
+        break;
+      }
+      firstPage = false;
+      if (page.docs.isEmpty) {
+        break;
+      }
+
+      final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs = page.docs;
+      for (var i = 0; i < docs.length; i += _purgeConcurrency) {
+        if (tally.outOfBudget()) {
+          break;
+        }
+        if (tally.postsScanned >= _purgeMaxPosts) {
+          tally.scanComplete = false;
+          tally.stopped = true;
+          break;
+        }
+        final List<QueryDocumentSnapshot<Map<String, dynamic>>> chunk =
+            docs.skip(i).take(_purgeConcurrency).toList();
+        tally.postsScanned += chunk.length;
+        await Future.wait(
+          chunk.map((d) => _purgeMyContentInPost(d.id, me, tally)),
+        );
+      }
+      if (tally.stopped) {
+        break;
+      }
+
+      cursor = docs.last;
+      if (docs.length < _purgePageSize) {
+        break;
+      }
+    }
+
+    return Result<SocialCleanupReport, SocialFailure>.success(
+      tally.toReport(),
+    );
+  }
+
+  /// Satu post: like saya → komen & reply saya. Tidak melempar; semua
+  /// kegagalan direkod dalam [t].
+  Future<void> _purgeMyContentInPost(
+    String postId,
+    String me,
+    _PurgeTally t,
+  ) async {
+    // 1. Like saya. Guna setLiked(false) supaya delete like + kaunter
+    //    kekal berpasangan seperti yang dikuatkuasakan rules.
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> likeSnap =
+          await _post(postId).collection('likes').doc(me).get();
+      if (likeSnap.exists) {
+        final Result<bool, SocialFailure> r =
+            await setLiked(postId, like: false);
+        if (r.isSuccess) {
+          t.likesRemoved++;
+        } else {
+          t.fail('posts/$postId/likes/$me');
+        }
+      }
+    } catch (e) {
+      debugPrint('SocialService.purge: like $postId gagal: $e');
+      t.fail('posts/$postId/likes/$me');
+    }
+
+    // 2. Semua komen post ini (berhalaman): reply saya dipadam dulu,
+    //    kemudian komen saya sendiri.
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    while (true) {
+      if (t.outOfBudget()) {
+        return;
+      }
+
+      Query<Map<String, dynamic>> query = _comments(postId)
+          .orderBy(FieldPath.documentId)
+          .limit(_purgePageSize);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+      final QuerySnapshot<Map<String, dynamic>>? page = await _tryGet(query);
+      if (page == null) {
+        t.scanComplete = false;
+        t.fail('posts/$postId/comments (senarai)');
+        return;
+      }
+      if (page.docs.isEmpty) {
+        return;
+      }
+
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> c in page.docs) {
+        if (t.outOfBudget()) {
+          return;
+        }
+        await _purgeMyRepliesUnder(postId, c.id, me, t);
+        if (c.data()['authorId'] == me) {
+          try {
+            await c.reference.delete();
+            t.commentsRemoved++;
+          } catch (e) {
+            debugPrint('SocialService.purge: komen ${c.id} gagal: $e');
+            t.fail('posts/$postId/comments/${c.id}');
+          }
+        }
+      }
+
+      cursor = page.docs.last;
+      if (page.docs.length < _purgePageSize) {
+        return;
+      }
+    }
+  }
+
+  /// Reply milik saya di bawah satu komen (komen sesiapa). Batch < had 500.
+  Future<void> _purgeMyRepliesUnder(
+    String postId,
+    String commentId,
+    String me,
+    _PurgeTally t,
+  ) async {
+    final Set<String> seen = <String>{};
+    while (true) {
+      final QuerySnapshot<Map<String, dynamic>>? page = await _tryGet(
+        _replies(postId, commentId)
+            .where('authorId', isEqualTo: me)
+            .limit(_purgePageSize),
+      );
+      if (page == null) {
+        t.scanComplete = false;
+        t.fail('posts/$postId/comments/$commentId/replies (senarai)');
+        return;
+      }
+
+      final List<QueryDocumentSnapshot<Map<String, dynamic>>> fresh =
+          page.docs.where((d) => !seen.contains(d.id)).toList();
+      if (fresh.isEmpty) {
+        return;
+      }
+
+      try {
+        final WriteBatch batch = _db.batch();
+        for (final QueryDocumentSnapshot<Map<String, dynamic>> d in fresh) {
+          seen.add(d.id);
+          batch.delete(d.reference);
+        }
+        await batch.commit();
+        t.repliesRemoved += fresh.length;
+      } catch (e) {
+        debugPrint(
+          'SocialService.purge: reply $postId/$commentId gagal: $e',
+        );
+        t.fail('posts/$postId/comments/$commentId/replies (padam)');
+        return;
+      }
+
+      if (page.docs.length < _purgePageSize) {
+        return;
+      }
+    }
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>?> _tryGet(
+    Query<Map<String, dynamic>> query,
+  ) async {
+    try {
+      return await query.get();
+    } catch (e) {
+      debugPrint('SocialService.purge: query gagal: $e');
+      return null;
     }
   }
 }

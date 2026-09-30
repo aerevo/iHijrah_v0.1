@@ -11,6 +11,7 @@ import '../utils/hijri_service.dart';
 import '../utils/result.dart';
 import '../services/profile_service.dart';
 import '../services/social_failure.dart';
+import '../services/social_service.dart';
 
 /// Hasil [UserModel.pullFromCloudDetailed].
 enum CloudPullResult {
@@ -632,6 +633,13 @@ class UserModel extends ChangeNotifier {
   /// Laporan pembersihan padam akaun terakhir (untuk UI/diagnostik).
   ProfileCleanupReport? lastDeletionCleanupReport;
 
+  /// Hasil pembersihan like/komen/reply pada deleteAccount() terakhir.
+  /// Selepas padam BERJAYA ia kekal (bersama [lastDeletionCleanupReport])
+  /// supaya kandungan yang tertinggal boleh didiagnosis — `isClean ==
+  /// false` bermakna akaun sudah dipadam TETAPI sebahagian kandungan
+  /// belum. Dikosongkan oleh resetLocalSession() pada logout/sesi seterusnya.
+  SocialCleanupReport? lastSocialCleanupReport;
+
   /// true = padam akaun sedang berjalan.
   bool get isDeletionInProgress => _deletionInProgress;
 
@@ -976,6 +984,7 @@ class UserModel extends ChangeNotifier {
     _deletionInProgress = false;
     _deletionIncomplete = false;
     lastDeletionCleanupReport = null;
+    lastSocialCleanupReport = null;
 
     // Reset SETIAP field secara eksplisit di sini — SENGAJA tidak
     // bergantung kepada _applyMap(const {}). Sebab: _applyMap guna
@@ -1034,7 +1043,11 @@ class UserModel extends ChangeNotifier {
   ///   2. SEKAT semua write baharu (users + profil awam) dan naikkan
   ///      generation — write yang beratur menjadi tak berbahaya, write
   ///      baharu tak diterima. Tunggu queue kosong (had 8s).
-  ///   3. Padam post-post pengguna (batch < 500 operasi).
+  ///   3. SocialService.purgeMySocialContent(): like (berpasangan dgn
+  ///      kaunter), komen dan reply milik pengguna pada SEMUA post — dulu,
+  ///      sebelum post sendiri dipadam. Best-effort dgn laporan; jika
+  ///      imbasan tak dapat bermula, padam dibatalkan (belum ada apa dipadam).
+  ///   3b. Padam post-post pengguna (batch < 500 operasi).
   ///   4. ProfileService.deleteMyProfileAndEdges(): edge keluar (+kaunter),
   ///      profil awam, edge masuk. Kegagalan padam profil = berhenti.
   ///   5. Padam users/{uid}.
@@ -1052,16 +1065,26 @@ class UserModel extends ChangeNotifier {
   ///     deleteAccount() sekali lagi (langkah yang sudah selesai jadi
   ///     no-op) atau log keluar.
   ///
+  /// Hasil pembersihan (kedua-dua laporan) dikekalkan selepas padam
+  /// berjaya — semak `lastSocialCleanupReport?.isClean` dan
+  /// `lastDeletionCleanupReport?.edgesFailed`. Akaun yang dipadam dengan
+  /// laporan tidak bersih BUKAN "bersih sepenuhnya".
+  ///
   /// HAD YANG MASIH ADA (tak boleh diselesaikan client-side tanpa
   /// melemahkan rules — TIDAK dipalsukan di sini):
-  ///   • komen / reply / like yang pengguna tinggalkan pada post ORANG
-  ///     LAIN kekal (tiada cara berindeks utk menyenaraikannya; komen
-  ///     menyimpan nama penulis denormalized);
-  ///   • komen / like pada post milik pengguna yang dipadam menjadi
-  ///     subkoleksi yatim (Firestore tak cascade); rules tak membenarkan
-  ///     sesiapa memadam item orang lain;
+  ///   • like / komen / reply ORANG LAIN di bawah post milik pengguna ini
+  ///     menjadi subkoleksi yatim (Firestore tak cascade; rules hanya
+  ///     membenarkan penulisnya memadam). Like yatim boleh dipadam oleh
+  ///     pemiliknya (post sudah tiada); komen/reply yatim tidak dapat
+  ///     ditemui semula melalui app;
+  ///   • reply ORANG LAIN di bawah komen milik pengguna ini kekal yatim;
+  ///   • edge follow MASUK (orang lain → pengguna ini) kekal — hanya
+  ///     follower boleh memadamnya;
   ///   • kaunter followersCount followee terlebih 1 untuk edge keluar yang
-  ///     gagal dibersihkan (lihat [lastDeletionCleanupReport]).
+  ///     gagal dibersihkan (lihat [lastDeletionCleanupReport]);
+  ///   • imbasan client ∝ jumlah post/komen dan dihadkan (had post + bajet
+  ///     masa 120s supaya tetingkap recent-auth 5 minit kekal terbuka) —
+  ///     jika dicapai, laporan ditanda tidak bersih.
   ///   Pembersihan penuh memerlukan backend berkeistimewaan (kemudian).
   ///
   /// Throws [FirebaseAuthException] bila reauth (langkah 1) gagal.
@@ -1099,8 +1122,26 @@ class UserModel extends ChangeNotifier {
     await _drainPushChain(const Duration(seconds: 8));
 
     bool destructiveStarted = false;
+    ProfileCleanupReport? profileReport;
+    SocialCleanupReport? socialReport;
     try {
-      // ── 3. PADAM POST-POST PENGGUNA ─────────────────────────────
+      // ── 3a. BERSIHKAN LIKE / KOMEN / REPLY SAYA ─────────────────
+      // Mesti SEBELUM post sendiri dipadam (komen/reply di bawah post
+      // yang sudah dipadam tak lagi boleh ditemui) dan sebelum akaun
+      // Auth dipadam (token diperlukan oleh rules).
+      final purge = await SocialService.instance.purgeMySocialContent();
+      if (purge.isFailure) {
+        // Imbasan tak dapat bermula → belum ada apa dipadam → dibatalkan
+        // melalui laluan "belum destruktif" di bawah.
+        throw StateError('Gagal membersihkan kandungan sosial. Cuba lagi.');
+      }
+      socialReport = purge.data;
+      lastSocialCleanupReport = socialReport;
+      if ((socialReport?.itemsRemoved ?? 0) > 0) {
+        destructiveStarted = true;
+      }
+
+      // ── 3b. PADAM POST-POST PENGGUNA ────────────────────────────
       // postsCount TIDAK digunakan sebagai sumber — ia bukan medan yang
       // diselenggara (lihat _protectedCloudFields), jadi query sebenar
       // ke koleksi posts ialah satu-satunya cara boleh dipercayai.
@@ -1130,7 +1171,8 @@ class UserModel extends ChangeNotifier {
       if (cleanup.isFailure) {
         throw StateError('Gagal memadam profil awam. Cuba lagi.');
       }
-      lastDeletionCleanupReport = cleanup.data;
+      profileReport = cleanup.data;
+      lastDeletionCleanupReport = profileReport;
 
       // ── 5. PADAM DOKUMEN users/{uid} ────────────────────────────
       await FirebaseFirestore.instance.collection('users').doc(uid).delete();
@@ -1160,6 +1202,21 @@ class UserModel extends ChangeNotifier {
 
     // ── 7. BERSIHKAN SESI LOCAL ─────────────────────────────────────
     await resetLocalSession();
+
+    // resetLocalSession() mengosongkan laporan — pulihkan supaya hasil
+    // pembersihan boleh diperiksa selepas padam berjaya.
+    lastDeletionCleanupReport = profileReport;
+    lastSocialCleanupReport = socialReport;
+    final bool cleanedFully = (profileReport?.edgesFailed ?? 0) == 0 &&
+        (socialReport?.isClean ?? true);
+    if (!cleanedFully) {
+      debugPrint(
+        'UserModel.deleteAccount: akaun dipadam TETAPI pembersihan tidak '
+        'penuh — edge gagal: ${profileReport?.edgesFailed ?? 0}, '
+        'kandungan sosial gagal: ${socialReport?.failedCount ?? 0}, '
+        'imbasan lengkap: ${socialReport?.scanComplete ?? true}.',
+      );
+    }
   }
 
   static Future<UserModel> load() async {
