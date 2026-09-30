@@ -13,6 +13,7 @@ import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'anim_helpers.dart';
 import '../services/social_service.dart';
+import '../services/social_failure.dart';
 import 'comments_sheet.dart';
 
 Color _typeColor(String t) {

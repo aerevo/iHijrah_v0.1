@@ -18,6 +18,20 @@ import '../models/profile_model.dart';
 import '../utils/result.dart';
 import 'social_failure.dart';
 
+class ProfileCleanupReport {
+  const ProfileCleanupReport({
+    required this.edgesProcessed,
+    required this.failedEdgeIds,
+    required this.profileDeleted,
+  });
+
+  final int edgesProcessed;
+  final List<String> failedEdgeIds;
+  final bool profileDeleted;
+
+  int get edgesFailed => failedEdgeIds.length;
+}
+
 class ProfileService {
   ProfileService({FirebaseFirestore? firestore, FirebaseAuth? auth})
       : _db = firestore ?? FirebaseFirestore.instance,
@@ -56,15 +70,16 @@ class ProfileService {
   }
 
   /// Nama kosong → 'Hamba Allah' (sama seperti post/komen).
-  @visibleForTesting
-  static String cleanName(String raw) {
+  static String normalizeUserName(String raw) {
     final String t = raw.trim();
     if (t.isEmpty) return 'Hamba Allah';
     return _truncate(t, maxNameLength);
   }
 
-  @visibleForTesting
   static String cleanBio(String raw) => _truncate(raw.trim(), maxBioLength);
+
+  @visibleForTesting
+  static String cleanName(String raw) => normalizeUserName(raw);
 
   // ── PROFIL AWAM ──────────────────────────────────────────────
 
@@ -75,10 +90,15 @@ class ProfileService {
   Future<Result<bool, SocialFailure>> ensureMyProfile({
     required String name,
     required String bio,
+    String? expectedUid,
   }) async {
     final String? uid = _uid;
     if (uid == null) {
       return Result<bool, SocialFailure>.failure(SocialFailure.unauthenticated);
+    }
+
+    if (expectedUid != null && expectedUid != uid) {
+      return Result<bool, SocialFailure>.failure(SocialFailure.conflict);
     }
     final String n = cleanName(name);
     final String b = cleanBio(bio);
@@ -160,7 +180,9 @@ class ProfileService {
   }) async {
     final String? me = _uid;
     if (me == null) {
-      return Result<bool, SocialFailure>.failure(SocialFailure.unauthenticated);
+      return Result<bool, SocialFailure>.failure(
+        SocialFailure.unauthenticated,
+      );
     }
     if (targetUid.isEmpty || targetUid == me) {
       return Result<bool, SocialFailure>.failure(
@@ -295,14 +317,19 @@ class ProfileService {
   /// Edge di mana orang LAIN mengikut saya tidak boleh dipadam dari sini
   /// (rules: hanya follower boleh padam edge). Ia menjadi yatim; pengikut
   /// itu boleh membersihkannya sendiri bila unfollow.
-  Future<Result<bool, SocialFailure>> deleteMyProfileAndEdges() async {
+  Future<Result<ProfileCleanupReport, SocialFailure>>
+      deleteMyProfileAndEdges() async {
     final String? me = _uid;
     if (me == null) {
-      return Result<bool, SocialFailure>.failure(SocialFailure.unauthenticated);
+      return Result<ProfileCleanupReport, SocialFailure>.failure(
+        SocialFailure.unauthenticated,
+      );
     }
 
     try {
       final Set<String> seen = <String>{};
+      final List<String> failedEdgeIds = <String>[];
+
       while (true) {
         final QuerySnapshot<Map<String, dynamic>> page =
             await _follows.where('followerId', isEqualTo: me).limit(100).get();
@@ -329,16 +356,25 @@ class ProfileService {
             }
             await batch.commit();
           } catch (e) {
+            failedEdgeIds.add(doc.id);
             debugPrint('ProfileService: unfollow ${doc.id} dilangkau: $e');
           }
         }
       }
 
       await _profile(me).delete();
-      return Result<bool, SocialFailure>.success(true);
+      return Result<ProfileCleanupReport, SocialFailure>.success(
+        ProfileCleanupReport(
+          edgesProcessed: seen.length,
+          failedEdgeIds: List.unmodifiable(failedEdgeIds),
+          profileDeleted: true,
+        ),
+      );
     } catch (e) {
       debugPrint('ProfileService.deleteMyProfileAndEdges gagal: $e');
-      return Result<bool, SocialFailure>.failure(socialFailureFromError(e));
+      return Result<ProfileCleanupReport, SocialFailure>.failure(
+        socialFailureFromError(e),
+      );
     }
   }
 }
