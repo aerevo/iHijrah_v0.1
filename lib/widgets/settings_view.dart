@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../models/sidebar_state_model.dart';
 import '../utils/constants.dart';
+import '../utils/delete_account_messages.dart';
 import '../utils/prayer_service.dart';
 import '../screens/notification_settings_screen.dart';
 import '../screens/edit_profile_screen.dart';
@@ -141,19 +142,26 @@ class SettingsView extends StatelessWidget {
     final password = await _promptPassword(context);
     if (password == null || password.isEmpty || !context.mounted) return;
 
+    final user = Provider.of<UserModel>(context, listen: false);
+
     // Proses ni beberapa panggilan network berturutan (reauth →
     // padam posts → padam users/{uid} → padam Auth) — kunci UI
     // dengan loading yg tak boleh ditutup pengguna sendiri.
+    // barrierDismissible:false hanya menghalang ketik di luar dialog;
+    // PopScope(canPop:false) menghalang butang/gerak isyarat belakang.
+    // Penutupan oleh kod (Navigator.pop di bawah) tidak terjejas.
     unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: kPrimaryGold),
+      builder: (_) => PopScope(
+        canPop: false,
+        child: const Center(
+          child: CircularProgressIndicator(color: kPrimaryGold),
+        ),
       ),
     ));
 
     try {
-      final user = Provider.of<UserModel>(context, listen: false);
       await user.deleteAccount(password: password);
 
       if (!context.mounted) return;
@@ -163,18 +171,20 @@ class SettingsView extends StatelessWidget {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      // Reauth gagal (atau delete Auth gagal disebabkan sesi lama) —
-      // padam Firestore TIDAK berlaku dlm kes reauth gagal (ia
-      // berlaku sblm apa-apa dipadam), jadi selamat kekalkan pengguna
-      // di skrin ni.
+      // Dua punca FirebaseAuthException:
+      //  • reauth gagal (langkah 1) — belum ada apa dipadam;
+      //  • langkah padam Auth (langkah 6) gagal SELEPAS post/profil/
+      //    users sudah dipadam — user.isDeletionIncomplete == true.
+      // Mesej "TIDAK dipadam" hanya betul untuk yang pertama.
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      final msg = (e.code == 'wrong-password' || e.code == 'invalid-credential')
-          ? 'Kata laluan salah. Akaun TIDAK dipadam.'
-          : (e.code == 'too-many-requests')
-              ? 'Terlalu banyak percubaan. Cuba lagi sebentar.'
-              : 'Pengesahan gagal. Akaun TIDAK dipadam.';
-      _snack(context, msg);
+      _snack(
+        context,
+        deleteAccountErrorMessage(
+          deletionIncomplete: user.isDeletionIncomplete,
+          authErrorCode: e.code,
+        ),
+      );
     } catch (e) {
       // Ralat SELEPAS reauth berjaya (contoh: gagal padam posts/
       // users/Auth disebabkan network). Mungkin sebahagian data dah
@@ -184,7 +194,9 @@ class SettingsView extends StatelessWidget {
       Navigator.of(context, rootNavigator: true).pop();
       _snack(
         context,
-        'Ralat semasa memadam akaun. Sila cuba lagi atau hubungi sokongan.',
+        deleteAccountErrorMessage(
+          deletionIncomplete: user.isDeletionIncomplete,
+        ),
       );
     }
   }
