@@ -3,6 +3,8 @@ name: Build Flutter APK
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -13,22 +15,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    # JDK 17 kekal sebagai lalai (Gradle/Android build). JDK 21 dipasang
+    # sekali untuk Firestore emulator (firebase-tools 15 mewajibkan Java 21+)
+    # dan hanya diaktifkan dalam langkah "Rules tests" di bawah.
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: |
+          21
+          17
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.24.0'
         channel: 'stable'
+
+    # mocha 12 memerlukan Node ^20.19 atau >=22.12.
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
     
     - name: Clean Flutter
-      run: flutter clean
-    
-    - name: Clean Flutter build cache
       run: flutter clean
 
     - name: Get dependencies
@@ -36,6 +46,21 @@ jobs:
     
     - name: Analyze
       run: flutter analyze
+
+    - name: Flutter tests
+      run: flutter test
+
+    # `npm install` (bukan `npm ci`): package-lock.json semasa tidak
+    # mengandungi firebase-tools yang diisytiharkan dalam package.json.
+    - name: Install Node dependencies
+      run: npm install --no-audit --no-fund
+
+    - name: Rules tests (npm test)
+      run: |
+        export JAVA_HOME="$JAVA_HOME_21_X64"
+        export PATH="$JAVA_HOME/bin:$PATH"
+        java -version
+        npm test
 
     - name: Build APK
       run: flutter build apk --release

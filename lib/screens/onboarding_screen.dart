@@ -47,8 +47,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _next() {
     FocusScope.of(context).unfocus();
 
-    if (_step == 1 && !isAtLeastAge(_selectedDate, 13)) {
-      _snack('iHijrah memerlukan umur minimum 13 tahun.');
+    if (_step == 1 && !isAtLeastAge(_selectedDate, kMinimumAccountAge)) {
+      _snack('iHijrah memerlukan umur minimum $kMinimumAccountAge tahun.');
       return;
     }
 
