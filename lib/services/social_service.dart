@@ -352,7 +352,14 @@ class SocialService {
       t.stopped = true;
       throw TimeoutException('Bajet purge habis', _purgeTimeBudget);
     }
-    return op().timeout(limit);
+    return op().timeout(
+      limit,
+      onTimeout: () {
+        t.scanComplete = false;
+        t.stopped = true;
+        throw TimeoutException('Operasi purge tamat masa', limit);
+      },
+    );
   }
 
   /// Padam like / komen / reply milik pengguna semasa pada SEMUA post
