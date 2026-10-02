@@ -1087,9 +1087,11 @@ class UserModel extends ChangeNotifier {
   ///   3b. Padam post-post pengguna (batch < 500 operasi).
   ///   4. ProfileService.deleteMyProfileAndEdges(): edge keluar (+kaunter),
   ///      profil awam, edge masuk. Kegagalan padam profil = berhenti.
-  ///   5. Padam users/{uid}.
-  ///   6. Padam akaun Firebase Auth (tak boleh diundur).
-  ///   7. Bersihkan sesi local (resetLocalSession) — termasuk data
+  ///   5. Reauthenticate semula (F3-D) sebelum langkah akhir, supaya
+  ///      tetingkap recent-auth tidak luput selepas purge yang panjang.
+  ///   6. Padam users/{uid}.
+  ///   7. Padam akaun Firebase Auth (tak boleh diundur).
+  ///   8. Bersihkan sesi local (resetLocalSession) — termasuk data
   ///      birthday/session.
   ///
   /// Kegagalan:
@@ -1262,7 +1264,7 @@ class UserModel extends ChangeNotifier {
       rethrow;
     }
 
-    // ── 7. BERSIHKAN SESI LOCAL ─────────────────────────────────────
+    // ── 8. BERSIHKAN SESI LOCAL ─────────────────────────────────────
     await resetLocalSession();
 
     // resetLocalSession() mengosongkan laporan — pulihkan supaya hasil
