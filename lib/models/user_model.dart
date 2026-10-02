@@ -1230,6 +1230,17 @@ class UserModel extends ChangeNotifier {
         destructiveStarted = true;
       }
 
+      // F3-F: JANGAN teruskan pemadaman akaun jika social purge
+      // belum terbukti lengkap. Report yang partial/failed bermaksud
+      // masih ada kandungan pengguna yang tidak diketahui atau gagal
+      // dipadam. Berhenti di sini supaya Auth/users tidak dipadam
+      // seolah-olah cleanup sudah selesai; retry boleh sambung purge.
+      if (socialReport == null || !socialReport.isClean) {
+        throw StateError(
+          'Pembersihan kandungan sosial belum lengkap. Cuba lagi.',
+        );
+      }
+
       // ── 3b. PADAM POST-POST PENGGUNA ────────────────────────────
       // postsCount TIDAK digunakan sebagai sumber — ia bukan medan yang
       // diselenggara (lihat _protectedCloudFields), jadi query sebenar
@@ -1266,6 +1277,16 @@ class UserModel extends ChangeNotifier {
       }
       profileReport = cleanup.data;
       lastDeletionCleanupReport = profileReport;
+
+      // F3-F: Edge follow yang gagal bermaksud graf follow belum
+      // dibersihkan sepenuhnya. Jangan padam users/Auth dalam keadaan
+      // report masih tidak bersih. Retry boleh membersihkan edge yang
+      // tertinggal sebelum langkah akhir.
+      if (profileReport == null || profileReport.edgesFailed != 0) {
+        throw StateError(
+          'Pembersihan follow belum lengkap. Cuba lagi.',
+        );
+      }
 
       // ── 5. REAUTH SEBELUM LANGKAH AKHIR ─────────────────────────
       // F3-D: proses purge + padam post boleh mengambil masa melebihi
