@@ -1342,14 +1342,14 @@ class UserModel extends ChangeNotifier {
     // pembersihan boleh diperiksa selepas padam berjaya.
     lastDeletionCleanupReport = profileReport;
     lastSocialCleanupReport = socialReport;
-    final bool cleanedFully = (profileReport?.edgesFailed ?? 0) == 0 &&
-        (socialReport?.isClean ?? true);
+    final bool cleanedFully = profileReport.edgesFailed == 0 &&
+        socialReport.isClean;
     if (!cleanedFully) {
       debugPrint(
         'UserModel.deleteAccount: akaun dipadam TETAPI pembersihan tidak '
-        'penuh — edge gagal: ${profileReport?.edgesFailed ?? 0}, '
-        'kandungan sosial gagal: ${socialReport?.failedCount ?? 0}, '
-        'imbasan lengkap: ${socialReport?.scanComplete ?? true}.',
+        'penuh — edge gagal: ${profileReport.edgesFailed}, '
+        'kandungan sosial gagal: ${socialReport.failedCount}, '
+        'imbasan lengkap: ${socialReport.scanComplete}.',
       );
     }
   }
