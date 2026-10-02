@@ -341,7 +341,7 @@ void main() {
       path = _region(
         'lib/models/user_model.dart',
         '3b. PADAM POST-POST PENGGUNA',
-        '6. PADAM AKAUN FIREBASE AUTH',
+        '7. PADAM AKAUN FIREBASE AUTH',
       );
     });
 
@@ -357,15 +357,46 @@ void main() {
       expect(path.contains('.delete().timeout(_destructiveOpTimeout)'), isTrue);
     });
 
+    test('F3-D reauth happens after long Firestore work and before final deletes', () {
+      final String src = File('lib/models/user_model.dart').readAsStringSync();
+
+      final int profile = src.indexOf(
+        'final cleanup = await ProfileService.instance.deleteMyProfileAndEdges();',
+      );
+      final int reauth = src.indexOf(
+        'await currentUser.reauthenticateWithCredential(credential);',
+        profile,
+      );
+      final int usersMarker = src.indexOf(
+        'PADAM DOKUMEN users/{uid}',
+        reauth,
+      );
+      final int usersDelete = src.indexOf(
+        "collection('users')",
+        usersMarker,
+      );
+      final int authDelete = src.indexOf(
+        'await currentUser.delete();',
+        usersDelete,
+      );
+
+      expect(profile, greaterThanOrEqualTo(0));
+      expect(reauth, greaterThan(profile));
+      expect(usersMarker, greaterThan(reauth));
+      expect(usersDelete, greaterThan(usersMarker));
+      expect(authDelete, greaterThan(usersDelete));
+    });
+
     test('deletion order is unchanged', () {
       final String src = File('lib/models/user_model.dart').readAsStringSync();
       final List<String> order = <String>[
         '3a. BERSIHKAN LIKE / KOMEN / REPLY SAYA',
         '3b. PADAM POST-POST PENGGUNA',
         '4. PADAM PROFIL AWAM + EDGE FOLLOW',
-        '5. PADAM DOKUMEN users/{uid}',
-        '6. PADAM AKAUN FIREBASE AUTH',
-        '7. BERSIHKAN SESI LOCAL',
+        '5. REAUTH SEBELUM LANGKAH AKHIR',
+        '6. PADAM DOKUMEN users/{uid}',
+        '7. PADAM AKAUN FIREBASE AUTH',
+        '8. BERSIHKAN SESI LOCAL',
       ];
       int last = -1;
       for (final String marker in order) {

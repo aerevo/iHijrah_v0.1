@@ -1220,14 +1220,23 @@ class UserModel extends ChangeNotifier {
       profileReport = cleanup.data;
       lastDeletionCleanupReport = profileReport;
 
-      // ── 5. PADAM DOKUMEN users/{uid} ────────────────────────────
+      // ── 5. REAUTH SEBELUM LANGKAH AKHIR ─────────────────────────
+      // F3-D: proses purge + padam post boleh mengambil masa melebihi
+      // tetingkap "recent login" Firebase Auth. Reauth semula sekarang,
+      // selepas kerja Firestore yang panjang tetapi SEBELUM users/{uid}
+      // dan Auth dipadam. Jika recent-auth sudah luput, kita berhenti
+      // dengan state incomplete yang selamat — Auth masih wujud dan
+      // caller boleh retry dengan password yang sama.
+      await currentUser.reauthenticateWithCredential(credential);
+
+      // ── 6. PADAM DOKUMEN users/{uid} ────────────────────────────
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .delete()
           .timeout(_destructiveOpTimeout);
 
-      // ── 6. PADAM AKAUN FIREBASE AUTH ────────────────────────────
+      // ── 7. PADAM AKAUN FIREBASE AUTH ────────────────────────────
       // Langkah TERAKHIR & TAK BOLEH DIUNDUR.
       await currentUser.delete();
       // Akaun sudah tiada. `_writesBlocked` kekal sehingga resetLocalSession
