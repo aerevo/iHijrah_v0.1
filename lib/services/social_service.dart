@@ -7,11 +7,14 @@
 //   dokumen posts/{postId}/likes/{uid}; firestore.rules menguatkuasakan
 //   pasangan ini (existsAfter/getAfter) — client tak boleh memintas.
 // → Ralat dipulangkan sbg Result<_, SocialFailure>, bukan ditelan.
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/comment_model.dart';
+import '../utils/bounded_timeout.dart';
 import '../utils/result.dart';
 import 'social_failure.dart';
 
@@ -74,6 +77,11 @@ class _PurgeTally {
       failedPaths.add(path);
     }
   }
+
+  /// Had masa untuk satu operasi rangkaian: [cap] tetapi tidak melebihi
+  /// baki bajet. Zero = bajet habis (jangan mulakan operasi).
+  Duration opTimeout(Duration cap) =>
+      boundedOpTimeout(remaining: _budget - _clock.elapsed, cap: cap);
 
   /// true (dan imbasan ditanda tak lengkap) apabila bajet masa habis.
   bool outOfBudget() {
@@ -319,6 +327,34 @@ class SocialService {
   static const int _purgeConcurrency = 10;
   static const Duration _purgeTimeBudget = Duration(seconds: 120);
 
+  /// Had atas satu operasi rangkaian dalam purge. Had sebenar ialah
+  /// min(had ini, baki bajet 120s) — lihat [_purgeOp].
+  static const Duration _purgeOpTimeout = Duration(seconds: 30);
+
+  /// Bacaan KRITIKAL padam akaun: pelayan sahaja. Jika pelayan tak dapat
+  /// dicapai ia melempar (unavailable) — TIDAK jatuh ke cache. Hasil cache
+  /// (mungkin kosong/lapuk) tak boleh dianggap muktamad semasa memadam.
+  static const GetOptions _serverOnly = GetOptions(source: Source.server);
+
+  /// Jalankan satu operasi rangkaian dalam purge dengan had masa
+  /// min(_purgeOpTimeout, baki bajet). Melempar [TimeoutException] jika
+  /// bajet sudah habis atau operasi tidak selesai dalam had — pemanggil
+  /// merekodnya sebagai kegagalan/tidak lengkap (TIDAK pernah sebagai
+  /// kosong/berjaya).
+  ///
+  /// NOTA: timeout hanya berhenti MENUNGGU; ia tak membatalkan operasi
+  /// asas. Tulis yang beratur boleh siap kemudian — memang yang dikehendaki
+  /// (padam itu idempoten), tetapi laporan tetap mencatatnya sebagai gagal.
+  Future<R> _purgeOp<R>(_PurgeTally t, Future<R> Function() op) async {
+    final Duration limit = t.opTimeout(_purgeOpTimeout);
+    if (limit <= Duration.zero) {
+      t.scanComplete = false;
+      t.stopped = true;
+      throw TimeoutException('Bajet purge habis', _purgeTimeBudget);
+    }
+    return op().timeout(limit);
+  }
+
   /// Padam like / komen / reply milik pengguna semasa pada SEMUA post
   /// (termasuk post sendiri, sebelum post itu dipadam).
   ///
@@ -355,7 +391,7 @@ class SocialService {
       QuerySnapshot<Map<String, dynamic>>? page;
       Object? pageError;
       try {
-        page = await query.get();
+        page = await _purgeOp(tally, () => query.get(_serverOnly));
       } catch (e) {
         pageError = e;
       }
@@ -364,7 +400,9 @@ class SocialService {
         debugPrint('SocialService.purge: senarai post gagal: $pageError');
         if (firstPage) {
           return Result<SocialCleanupReport, SocialFailure>.failure(
-            socialFailureFromError(pageError ?? StateError('page null')),
+            pageError is TimeoutException
+                ? SocialFailure.network
+                : socialFailureFromError(pageError ?? StateError('page null')),
           );
         }
         tally.scanComplete = false;
@@ -418,11 +456,15 @@ class SocialService {
     // 1. Like saya. Guna setLiked(false) supaya delete like + kaunter
     //    kekal berpasangan seperti yang dikuatkuasakan rules.
     try {
-      final DocumentSnapshot<Map<String, dynamic>> likeSnap =
-          await _post(postId).collection('likes').doc(me).get();
+      final DocumentSnapshot<Map<String, dynamic>> likeSnap = await _purgeOp(
+        t,
+        () => _post(postId).collection('likes').doc(me).get(_serverOnly),
+      );
       if (likeSnap.exists) {
+        // setLiked() TIDAK diubah (transaksi berpasangan kaunter kekal);
+        // hanya penantiannya dihadkan di sini, pada laluan padam sahaja.
         final Result<bool, SocialFailure> r =
-            await setLiked(postId, like: false);
+            await _purgeOp(t, () => setLiked(postId, like: false));
         if (r.isSuccess) {
           t.likesRemoved++;
         } else {
@@ -448,7 +490,8 @@ class SocialService {
       if (cursor != null) {
         query = query.startAfterDocument(cursor);
       }
-      final QuerySnapshot<Map<String, dynamic>>? page = await _tryGet(query);
+      final QuerySnapshot<Map<String, dynamic>>? page =
+          await _tryGet(query, t);
       if (page == null) {
         t.scanComplete = false;
         t.fail('posts/$postId/comments (senarai)');
@@ -465,7 +508,7 @@ class SocialService {
         await _purgeMyRepliesUnder(postId, c.id, me, t);
         if (c.data()['authorId'] == me) {
           try {
-            await c.reference.delete();
+            await _purgeOp(t, () => c.reference.delete());
             t.commentsRemoved++;
           } catch (e) {
             debugPrint('SocialService.purge: komen ${c.id} gagal: $e');
@@ -494,6 +537,7 @@ class SocialService {
         _replies(postId, commentId)
             .where('authorId', isEqualTo: me)
             .limit(_purgePageSize),
+        t,
       );
       if (page == null) {
         t.scanComplete = false;
@@ -513,7 +557,7 @@ class SocialService {
           seen.add(d.id);
           batch.delete(d.reference);
         }
-        await batch.commit();
+        await _purgeOp(t, () => batch.commit());
         t.repliesRemoved += fresh.length;
       } catch (e) {
         debugPrint(
@@ -529,11 +573,16 @@ class SocialService {
     }
   }
 
+  /// Bacaan senarai dalam purge: pelayan sahaja + berhad masa. Kegagalan
+  /// (termasuk timeout / pelayan tak dapat dicapai) dipulangkan sebagai
+  /// null — pemanggil menandakan imbasan TIDAK lengkap; ia tak pernah
+  /// ditafsir sebagai senarai kosong.
   Future<QuerySnapshot<Map<String, dynamic>>?> _tryGet(
     Query<Map<String, dynamic>> query,
+    _PurgeTally t,
   ) async {
     try {
-      return await query.get();
+      return await _purgeOp(t, () => query.get(_serverOnly));
     } catch (e) {
       debugPrint('SocialService.purge: query gagal: $e');
       return null;

@@ -303,6 +303,15 @@ class ProfileService {
 
   // ── PADAM AKAUN ──────────────────────────────────────────────
 
+  /// Bacaan KRITIKAL padam akaun: pelayan sahaja (tiada jatuh ke cache —
+  /// hasil cache yang kosong/lapuk tak boleh dianggap muktamad).
+  static const GetOptions _serverOnly = GetOptions(source: Source.server);
+
+  /// Had masa satu operasi rangkaian dalam laluan padam akaun. Timeout
+  /// hanya berhenti menunggu (operasi asas tak dibatalkan) dan dilaporkan
+  /// sebagai kegagalan — tidak pernah sebagai kosong/berjaya.
+  static const Duration _destructiveOpTimeout = Duration(seconds: 30);
+
   /// Dipanggil oleh UserModel.deleteAccount SELEPAS reauth berjaya dan
   /// SEBELUM users/{uid} + akaun Auth dipadam.
   ///
@@ -331,8 +340,14 @@ class ProfileService {
       final List<String> failedEdgeIds = <String>[];
 
       while (true) {
-        final QuerySnapshot<Map<String, dynamic>> page =
-            await _follows.where('followerId', isEqualTo: me).limit(100).get();
+        // Senarai edge: pelayan sahaja + berhad. Kegagalan/timeout
+        // dilempar ke catch luar → failure (BUKAN senarai kosong), jadi
+        // caller tak meneruskan padam akaun.
+        final QuerySnapshot<Map<String, dynamic>> page = await _follows
+            .where('followerId', isEqualTo: me)
+            .limit(100)
+            .get(_serverOnly)
+            .timeout(_destructiveOpTimeout);
         final List<QueryDocumentSnapshot<Map<String, dynamic>>> fresh =
             page.docs.where((d) => !seen.contains(d.id)).toList();
         if (fresh.isEmpty) break; // habis, atau semua yang tinggal gagal
@@ -346,15 +361,16 @@ class ProfileService {
             if (target.isNotEmpty) {
               final DocumentReference<Map<String, dynamic>> tRef =
                   _profile(target);
-              final DocumentSnapshot<Map<String, dynamic>> tSnap =
-                  await tRef.get();
+              final DocumentSnapshot<Map<String, dynamic>> tSnap = await tRef
+                  .get(_serverOnly)
+                  .timeout(_destructiveOpTimeout);
               if (tSnap.exists) {
                 batch.update(tRef, <String, dynamic>{
                   'followersCount': FieldValue.increment(-1),
                 });
               }
             }
-            await batch.commit();
+            await batch.commit().timeout(_destructiveOpTimeout);
           } catch (e) {
             failedEdgeIds.add(doc.id);
             debugPrint('ProfileService: unfollow ${doc.id} dilangkau: $e');
@@ -362,7 +378,7 @@ class ProfileService {
         }
       }
 
-      await _profile(me).delete();
+      await _profile(me).delete().timeout(_destructiveOpTimeout);
       return Result<ProfileCleanupReport, SocialFailure>.success(
         ProfileCleanupReport(
           edgesProcessed: seen.length,

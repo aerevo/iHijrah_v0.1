@@ -640,6 +640,12 @@ class UserModel extends ChangeNotifier {
   /// belum. Dikosongkan oleh resetLocalSession() pada logout/sesi seterusnya.
   SocialCleanupReport? lastSocialCleanupReport;
 
+  /// Had masa satu operasi rangkaian memusnahkan dalam deleteAccount()
+  /// (query post sendiri, commit batch post, padam users/{uid}). Timeout
+  /// hanya berhenti menunggu dan dilempar ke catch deleteAccount() —
+  /// akaun ditandakan tidak lengkap, tidak pernah dianggap berjaya.
+  static const Duration _destructiveOpTimeout = Duration(seconds: 30);
+
   /// true = padam akaun sedang berjalan.
   bool get isDeletionInProgress => _deletionInProgress;
 
@@ -1145,11 +1151,15 @@ class UserModel extends ChangeNotifier {
       // postsCount TIDAK digunakan sebagai sumber — ia bukan medan yang
       // diselenggara (lihat _protectedCloudFields), jadi query sebenar
       // ke koleksi posts ialah satu-satunya cara boleh dipercayai.
+      // Bacaan KRITIKAL: pelayan sahaja + berhad. Jika gagal / timeout ia
+      // dilempar → catch di bawah (BUKAN dianggap "tiada post") supaya
+      // padam tak diteruskan atas dasar senarai kosong palsu.
       final QuerySnapshot<Map<String, dynamic>> postsQuery =
           await FirebaseFirestore.instance
               .collection('posts')
               .where('authorId', isEqualTo: uid)
-              .get();
+              .get(const GetOptions(source: Source.server))
+              .timeout(_destructiveOpTimeout);
 
       if (postsQuery.docs.isNotEmpty) {
         destructiveStarted = true;
@@ -1161,7 +1171,7 @@ class UserModel extends ChangeNotifier {
           for (final doc in chunk) {
             batch.delete(doc.reference);
           }
-          await batch.commit();
+          await batch.commit().timeout(_destructiveOpTimeout);
         }
       }
 
@@ -1175,7 +1185,11 @@ class UserModel extends ChangeNotifier {
       lastDeletionCleanupReport = profileReport;
 
       // ── 5. PADAM DOKUMEN users/{uid} ────────────────────────────
-      await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .delete()
+          .timeout(_destructiveOpTimeout);
 
       // ── 6. PADAM AKAUN FIREBASE AUTH ────────────────────────────
       // Langkah TERAKHIR & TAK BOLEH DIUNDUR.
