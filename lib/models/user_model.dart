@@ -95,6 +95,12 @@ class PostModel {
 // ═══════════════════════════════════════════
 class UserModel extends ChangeNotifier {
 
+  // F3-C: marker persistent untuk deletion yang terhenti selepas
+  // proses destructive bermula. UID disimpan supaya marker satu akaun
+  // tidak menyekat akaun lain pada peranti yang sama.
+  static const String _deletionIncompleteUidKey =
+      'deletion_incomplete_uid';
+
   /// Mulakan pemantau auth-session SEKALI untuk setiap instance.
   /// Semua laluan yang menukar identiti Firebase (logout, login semula,
   /// tukar akaun, padam akaun) menaikkan generation tanpa bergantung
@@ -981,6 +987,30 @@ class UserModel extends ChangeNotifier {
   /// PERTAMA (sebelum sebarang await) ialah invalidate generation, jadi
   /// walaupun ia dipanggil selepas signOut() oleh kod lama, semua write
   /// yang beratur sebelum ini menjadi tak berbahaya.
+  Future<void> _persistDeletionIncompleteMarker(String uid) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_deletionIncompleteUidKey, uid);
+  }
+
+  Future<void> _clearDeletionIncompleteMarker() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_deletionIncompleteUidKey);
+  }
+
+  Future<void> _restoreDeletionIncompleteMarker() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? markerUid = prefs.getString(_deletionIncompleteUidKey);
+    final String? currentUid = _uidOrNull();
+
+    if (markerUid != null && markerUid == currentUid) {
+      _deletionIncomplete = true;
+      _writesBlocked = true;
+      debugPrint(
+        'UserModel: deletion incomplete dipulihkan untuk UID semasa.',
+      );
+    }
+  }
+
   Future<void> resetLocalSession() async {
     _sessionGeneration++;
     _sessionUid = _uidOrNull();
@@ -1033,6 +1063,7 @@ class UserModel extends ChangeNotifier {
     await prefs.remove('user_data');
     await prefs.remove('birthday_state');
     await prefs.remove('birthday_note');
+    await prefs.remove(_deletionIncompleteUidKey);
     notifyListeners();
   }
 
@@ -1116,6 +1147,11 @@ class UserModel extends ChangeNotifier {
       password: password,
     );
     await currentUser.reauthenticateWithCredential(credential);
+
+    // F3-C: marker mesti berjaya disimpan SEBELUM operasi destructive.
+    // Jika app crash/force-close selepas titik ini, load() boleh
+    // memulihkan keadaan incomplete selepas restart.
+    await _persistDeletionIncompleteMarker(uid);
 
     // ── 2. SEKAT WRITE + INVALIDATE SESI ─────────────────────────
     _deletionInProgress = true;
@@ -1205,6 +1241,9 @@ class UserModel extends ChangeNotifier {
         _deletionIncomplete = true;
         debugPrint('UserModel.deleteAccount TIDAK lengkap: $e');
       } else {
+        // Belum ada apa yang dipadam → marker tidak lagi diperlukan.
+        await _clearDeletionIncompleteMarker();
+
         // Belum ada apa yang dipadam → pulihkan sesi biasa dan hantar
         // semula perubahan tempatan yang dilangkau semasa sekatan.
         _writesBlocked = false;
@@ -1235,6 +1274,7 @@ class UserModel extends ChangeNotifier {
 
   static Future<UserModel> load() async {
     final UserModel m = UserModel();
+    await m._restoreDeletionIncompleteMarker();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? raw = prefs.getString('user_data');
     if (raw == null) return m;

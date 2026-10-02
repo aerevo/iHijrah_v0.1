@@ -28,6 +28,131 @@ int _count(String hay, String needle) =>
     needle.allMatches(hay).length;
 
 void main() {
+  group('static guard — F3-C persistent deletion marker', () {
+    late String userModel;
+
+    setUpAll(() {
+      userModel = File('lib/models/user_model.dart').readAsStringSync();
+    });
+
+    test('defines a UID-scoped persistent deletion marker', () {
+      expect(
+        userModel.contains(
+          "static const String _deletionIncompleteUidKey =",
+        ),
+        isTrue,
+      );
+      expect(
+        userModel.contains("'deletion_incomplete_uid'"),
+        isTrue,
+      );
+    });
+
+    test(
+      'persists marker after re-authentication and before destructive work',
+      () {
+        final int reauth = userModel.indexOf(
+          'await currentUser.reauthenticateWithCredential(credential);',
+        );
+        final int persist = userModel.indexOf(
+          'await _persistDeletionIncompleteMarker(uid);',
+          reauth,
+        );
+        final int destructive = userModel.indexOf(
+          '_deletionInProgress = true;',
+          persist,
+        );
+
+        expect(reauth, greaterThanOrEqualTo(0));
+        expect(persist, greaterThan(reauth));
+        expect(destructive, greaterThan(persist));
+      },
+    );
+
+    test('restores marker only for the current Firebase UID', () {
+      expect(
+        userModel.contains(
+          'final String? markerUid = prefs.getString(_deletionIncompleteUidKey);',
+        ),
+        isTrue,
+      );
+      expect(
+        userModel.contains(
+          'final String? currentUid = _uidOrNull();',
+        ),
+        isTrue,
+      );
+      expect(
+        userModel.contains(
+          'if (markerUid != null && markerUid == currentUid)',
+        ),
+        isTrue,
+      );
+      expect(
+        userModel.contains('_deletionIncomplete = true;'),
+        isTrue,
+      );
+      expect(
+        userModel.contains('_writesBlocked = true;'),
+        isTrue,
+      );
+    });
+
+    test('clears marker on successful local-session reset', () {
+      final int reset = userModel.indexOf(
+        'Future<void> resetLocalSession() async',
+      );
+      final int clear = userModel.indexOf(
+        'await prefs.remove(_deletionIncompleteUidKey);',
+        reset,
+      );
+
+      expect(reset, greaterThanOrEqualTo(0));
+      expect(clear, greaterThan(reset));
+    });
+
+    test('clears marker when deletion fails before destructive work', () {
+      final int catchStart = userModel.indexOf(
+        'bool destructiveStarted = false;',
+      );
+      final int clear = userModel.indexOf(
+        'await _clearDeletionIncompleteMarker();',
+        catchStart,
+      );
+      final int restoreWrites = userModel.indexOf(
+        '_writesBlocked = false;',
+        clear,
+      );
+      final int restoreIncomplete = userModel.indexOf(
+        '_deletionIncomplete = false;',
+        restoreWrites,
+      );
+
+      expect(catchStart, greaterThanOrEqualTo(0));
+      expect(clear, greaterThan(catchStart));
+      expect(restoreWrites, greaterThan(clear));
+      expect(restoreIncomplete, greaterThan(restoreWrites));
+    });
+
+    test('load restores the marker before reading cached user data', () {
+      final int load = userModel.indexOf(
+        'static Future<UserModel> load() async',
+      );
+      final int restore = userModel.indexOf(
+        'await m._restoreDeletionIncompleteMarker();',
+        load,
+      );
+      final int cachedData = userModel.indexOf(
+        "final String? raw = prefs.getString('user_data');",
+        load,
+      );
+
+      expect(load, greaterThanOrEqualTo(0));
+      expect(restore, greaterThan(load));
+      expect(cachedData, greaterThan(restore));
+    });
+  });
+
   group('boundedOpTimeout', () {
     const Duration cap = Duration(seconds: 30);
 
