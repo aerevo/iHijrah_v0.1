@@ -99,14 +99,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
       if (img == null) { setState(() => _picking = false); return; }
 
+      // F3-E: Jangan padam avatar pilihan sebelumnya di sini.
+      // Write onboarding boleh masih berada dalam queue jika save
+      // sebelumnya timeout/gagal selepas write dihantar.
       final Directory docsDir = await getApplicationDocumentsDirectory();
       final String ext = img.path.contains('.') ? img.path.split('.').last : 'jpg';
       final String newPath =
           '${docsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
       await File(img.path).copy(newPath);
 
       if (!mounted) return;
-      setState(() { _avatarPath = newPath; _picking = false; });
+      setState(() {
+        _avatarPath = newPath;
+        _picking = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _picking = false);
@@ -138,7 +145,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       );
     } catch (e) {
-      setState(() => _saving = false);
+      // F3-E: Jangan padam avatar apabila save gagal/timeout.
+      // saveAndWaitForCloud() menunggu queue tetapi tidak membatalkan
+      // write yang sudah dihantar. Cloud mungkin sudah menerima
+      // avatarPath walaupun caller mendapat exception.
+      if (!mounted) return;
+      setState(() {
+        _avatarPath = null;
+        _saving = false;
+      });
       _snack('Ralat menyimpan data. Cuba lagi.');
     }
   }

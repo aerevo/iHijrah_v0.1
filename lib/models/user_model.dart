@@ -1,9 +1,11 @@
 // lib/models/user_model.dart
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -1011,6 +1013,49 @@ class UserModel extends ChangeNotifier {
     }
   }
 
+  /// F3-E: Bersihkan fail avatar local yang dijana oleh iHijrah.
+  ///
+  /// Semua avatar iHijrah disimpan dengan nama "avatar_<timestamp>.<ext>".
+  /// Helper ini hanya menyentuh regular file dengan format nama
+  /// "avatar_<timestamp>.<extension>". Fail/directory lain dalam
+  /// ApplicationDocumentsDirectory tidak disentuh.
+  Future<void> _cleanupLocalAvatarFiles() async {
+    try {
+      final Directory docsDir = await getApplicationDocumentsDirectory();
+
+      if (!await docsDir.exists()) return;
+
+      await for (final FileSystemEntity entity in docsDir.list(
+        followLinks: false,
+      )) {
+        if (entity is! File) continue;
+
+        final String name = entity.uri.pathSegments.isNotEmpty
+            ? entity.uri.pathSegments.last
+            : '';
+
+        // Hanya fail yang dijana oleh picker iHijrah:
+        // avatar_<timestamp>.<extension>
+        final Match? match = RegExp(
+          r'^avatar_[0-9]+\.[A-Za-z0-9]+$',
+        ).firstMatch(name);
+
+        if (match == null) continue;
+
+        try {
+          await entity.delete();
+        } catch (e) {
+          debugPrint(
+            'UserModel: gagal padam avatar local "$name": $e',
+          );
+        }
+      }
+    } catch (e) {
+      // Local cleanup tidak boleh menggagalkan reset sesi.
+      debugPrint('UserModel: avatar cleanup gagal: $e');
+    }
+  }
+
   Future<void> resetLocalSession() async {
     _sessionGeneration++;
     _sessionUid = _uidOrNull();
@@ -1263,6 +1308,11 @@ class UserModel extends ChangeNotifier {
       }
       rethrow;
     }
+
+    // ── 7b. CLEANUP AVATAR LOCAL ───────────────────────────────
+    // Hanya selepas Firebase Auth berjaya dipadam.
+    // Logout biasa tidak memanggil cleanup ini.
+    await _cleanupLocalAvatarFiles();
 
     // ── 8. BERSIHKAN SESI LOCAL ─────────────────────────────────────
     await resetLocalSession();
