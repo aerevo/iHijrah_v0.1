@@ -534,6 +534,37 @@ service cloud.firestore {
         );
     }
 
+    // ══ ACCOUNT DELETION REQUEST: F3-G ═══════════════════════════
+    // Client hanya boleh MEMBUAT request pemadaman untuk UID sendiri.
+    // Selepas create, client tidak boleh mengubah status atau memadam
+    // request. Backend/Admin SDK menjadi pihak yang mengurus lifecycle
+    // request dan cleanup privileged.
+    //
+    // Request ini TIDAK memberi client kuasa memadam social content
+    // pengguna lain. Semua cleanup privileged dibuat oleh backend.
+    match /accountDeletionRequests/{userId} {
+      allow create: if verified()
+        && isOwner(userId)
+        && recentlyAuthenticated()
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+
+      // Client tidak boleh membaca lifecycle request secara bebas.
+      // Backend/Admin SDK tidak tertakluk kepada Firestore Rules.
+      allow read, update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

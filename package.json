@@ -7,7 +7,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project ihijrah-178fc \"mocha --exit test/firestore.rules.test.js test/profile_follow.rules.test.js test/account_deletion.rules.test.js test/age_enforcement.rules.test.js\""
+    "test": "firebase emulators:exec --only firestore --project ihijrah-178fc \"mocha --exit test/firestore.rules.test.js test/profile_follow.rules.test.js test/account_deletion.rules.test.js test/account_deletion_request.rules.test.js test/age_enforcement.rules.test.js\""
   },
   "repository": {
     "type": "git",
