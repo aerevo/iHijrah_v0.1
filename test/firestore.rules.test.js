@@ -951,6 +951,240 @@ describe('iHijrah Firestore Rules', function () {
   });
 
   // ══════════════════════════════════════════════════════════════
+  // POSTS — kontrak create / edit / delete (Post bundle audit)
+  // Rules sengaja TIDAK membenarkan edit post (hanya `likes` ±1 yang
+  // berpasangan dgn like doc). Ujian edit di sini mengunci kontrak itu:
+  // pemilik pun tak boleh ubah authorId / createdAt / likes /
+  // commentsCount / kandungan, dan orang lain lagi tak boleh.
+  // ══════════════════════════════════════════════════════════════
+  describe('posts: create / edit / delete contract', function () {
+    const { serverTimestamp } = require('firebase/firestore');
+
+    const seedUsers = async (creatorName = 'Test User') => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        await db.doc('users/creator').set({ name: creatorName });
+        await db.doc('users/other').set({ name: 'Other User' });
+      });
+    };
+
+    const seedPost = async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc('posts/p1').set({
+          type: 'article',
+          title: 'Tajuk asal',
+          content: 'Kandungan asal post ini.',
+          author: 'Test User',
+          authorId: 'creator',
+          likes: 3,
+          commentsCount: 0,
+          assetPath: null,
+          category: null,
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+        });
+      });
+    };
+
+    const verifiedCtx = (uid) =>
+      testEnv.authenticatedContext(uid, { email_verified: true });
+
+    const validPost = (over = {}) => ({
+      type: 'article',
+      title: 'Tajuk ringkas',
+      content: 'Kandungan post yang sah.',
+      author: 'Test User',
+      authorId: 'creator',
+      likes: 0,
+      commentsCount: 0,
+      assetPath: null,
+      category: null,
+      createdAt: serverTimestamp(),
+      ...over,
+    });
+
+    const createPost = (ctx, data) =>
+      ctx.firestore().collection('posts').add(data);
+
+    // Buang satu medan daripada payload sah.
+    const without = (key) => {
+      const d = validPost();
+      delete d[key];
+      return d;
+    };
+
+    // ── CREATE ──────────────────────────────────────────────────
+    it('verified user CAN create an article post with a title', async function () {
+      await seedUsers();
+      await assertSucceeds(createPost(verifiedCtx('creator'), validPost()));
+    });
+
+    it("empty profile name CAN post as 'Hamba Allah'", async function () {
+      await seedUsers('');
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ author: 'Hamba Allah' }))
+      );
+    });
+
+    it('create with a type outside article/quote is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ type: 'video' }))
+      );
+    });
+
+    it('title: exactly 80 chars is allowed, 81 is denied', async function () {
+      await seedUsers();
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ title: 'a'.repeat(80) }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ title: 'a'.repeat(81) }))
+      );
+    });
+
+    it('content: 10 and 1000 chars are allowed, 1001 is denied', async function () {
+      await seedUsers();
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ content: 'x'.repeat(10) }))
+      );
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ content: 'x'.repeat(1000) }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ content: 'x'.repeat(1001) }))
+      );
+    });
+
+    it('create with non-string title / content is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ title: 123 }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ content: 1234567890123 }))
+      );
+    });
+
+    it('create with a missing required field is denied (title, createdAt)', async function () {
+      await seedUsers();
+      await assertFails(createPost(verifiedCtx('creator'), without('title')));
+      await assertFails(createPost(verifiedCtx('creator'), without('createdAt')));
+    });
+
+    it('create with client-supplied createdAt (not server time) is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ createdAt: new Date() }))
+      );
+    });
+
+    it('create with a spoofed author display name is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ author: 'Other User' }))
+      );
+    });
+
+    it('create with commentsCount != 0 or non-int likes is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ commentsCount: 1 }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ likes: '0' }))
+      );
+    });
+
+    it('create with non-string assetPath / category is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ assetPath: 123 }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ category: 123 }))
+      );
+    });
+
+    // ── EDIT (semua ditolak: kontrak semasa) ────────────────────
+    it('owner CANNOT edit title or content of own post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ title: 'Tajuk baharu' }));
+      await assertFails(db.doc('posts/p1').update({ content: 'Kandungan baharu.' }));
+    });
+
+    it('owner CANNOT change authorId (ownership transfer)', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ authorId: 'other' }));
+    });
+
+    it('owner CANNOT change createdAt', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ createdAt: new Date() }));
+    });
+
+    it('owner CANNOT set likes or commentsCount directly', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ likes: 999 }));
+      await assertFails(db.doc('posts/p1').update({ commentsCount: 5 }));
+    });
+
+    it('owner CANNOT add an updatedAt or other unknown field', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ updatedAt: serverTimestamp() }));
+      await assertFails(db.doc('posts/p1').update({ isAdmin: true }));
+    });
+
+    it("another user CANNOT edit someone else's post", async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('other').firestore();
+      await assertFails(db.doc('posts/p1').update({ content: 'Dirampas.' }));
+    });
+
+    it("another user CANNOT take over a post by setting authorId to themselves", async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('other').firestore();
+      await assertFails(db.doc('posts/p1').update({ authorId: 'other' }));
+    });
+
+    it('unauthenticated user CANNOT edit a post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.doc('posts/p1').update({ content: 'Tanpa login.' }));
+    });
+
+    // ── DELETE (owner CAN / another CANNOT sudah dilindungi di atas:
+    //    'owner CAN delete own post' & 'user CANNOT delete another users post') ──
+    it('unauthenticated user CANNOT delete a post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.doc('posts/p1').delete());
+    });
+
+    it('owner with an UNVERIFIED email CANNOT delete own post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = testEnv
+        .authenticatedContext('creator', { email_verified: false })
+        .firestore();
+      await assertFails(db.doc('posts/p1').delete());
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════
   // SOCIAL — LIKES (Phase 1 / Batch 1)
   // Kaunter `posts.likes` hanya boleh berubah TEPAT ±1 dalam batch
   // yang sama dgn create/delete posts/{id}/likes/{uid}.

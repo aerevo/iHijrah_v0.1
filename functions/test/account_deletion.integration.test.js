@@ -391,3 +391,385 @@ test(
     assert.equal(thirdAuth.uid, thirdUid);
   },
 );
+
+/*
+ * ---------------------------------------------------------------------
+ * commentsCount semantics during account deletion
+ *
+ * firestore.rules keep posts.commentsCount at 0 (clients never bump it),
+ * so real posts can have comments while commentsCount === 0. Account
+ * deletion must still delete those comments:
+ *
+ *   commentsCount integer >= 1 -> decrement + delete comment
+ *   commentsCount === 0        -> delete comment, counter stays 0
+ *   anything else              -> throw (corrupt data is not repaired)
+ * ---------------------------------------------------------------------
+ */
+
+async function ensureAuthUser(uid) {
+  try {
+    await auth.deleteUser(uid);
+  } catch (error) {
+    if (error?.code !== 'auth/user-not-found') {
+      throw error;
+    }
+  }
+
+  await auth.createUser({
+    uid,
+    email: `${uid}@example.com`,
+    password: 'Password123!',
+  });
+}
+
+async function cleanupCountScenario({ uids, postIds }) {
+  for (const postId of postIds) {
+    await deleteDocTree(db.collection('posts').doc(postId));
+  }
+
+  for (const uid of uids) {
+    await db.collection('accountDeletionRequests').doc(uid).delete();
+    await db.collection('users').doc(uid).delete();
+    await db.collection('profiles').doc(uid).delete();
+
+    try {
+      await auth.deleteUser(uid);
+    } catch (error) {
+      if (error?.code !== 'auth/user-not-found') {
+        throw error;
+      }
+    }
+  }
+}
+
+async function seedUserDocs(uid) {
+  await db.collection('users').doc(uid).set({
+    uid,
+    displayName: uid,
+    followingCount: 0,
+  });
+
+  await db.collection('profiles').doc(uid).set({
+    uid,
+    followersCount: 0,
+  });
+}
+
+async function requestDeletion(uid) {
+  await db
+    .collection('accountDeletionRequests')
+    .doc(uid)
+    .set({
+      uid,
+      status: 'pending',
+      createdAt: new Date(),
+    });
+}
+
+test(
+  'F3-G: account deletion succeeds when posts have commentsCount 0 but real comments',
+  async () => {
+    const uid = 'f3g-zero-user';
+    const otherUid = 'f3g-zero-other';
+    const scenario = {
+      uids: [uid, otherUid],
+      postIds: ['f3g-zero-own-post', 'f3g-zero-other-post'],
+    };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await ensureAuthUser(uid);
+      await ensureAuthUser(otherUid);
+      await seedUserDocs(uid);
+      await seedUserDocs(otherUid);
+
+      /*
+       * Other user's post: commentsCount is 0 (what rules enforce) yet it
+       * holds the deleting user's comment + reply and another user's comment.
+       */
+      const otherPost = db.collection('posts').doc('f3g-zero-other-post');
+
+      await otherPost.set({
+        type: 'article',
+        title: 'Other post',
+        content: 'Post by another user, commentsCount 0.',
+        author: 'Other',
+        authorId: otherUid,
+        likes: 0,
+        commentsCount: 0,
+        assetPath: null,
+        category: null,
+        createdAt: new Date(),
+      });
+
+      const userComment = otherPost
+        .collection('comments')
+        .doc('zero-user-comment');
+
+      await userComment.set({
+        authorId: uid,
+        author: uid,
+        content: 'Comment by the deleting user',
+        createdAt: new Date(),
+      });
+
+      await userComment.collection('replies').doc('zero-user-reply').set({
+        authorId: uid,
+        author: uid,
+        content: 'Reply by the deleting user',
+        createdAt: new Date(),
+      });
+
+      await otherPost.collection('comments').doc('zero-other-comment').set({
+        authorId: otherUid,
+        author: otherUid,
+        content: 'Comment by someone else',
+        createdAt: new Date(),
+      });
+
+      /*
+       * Deleting user's own post: commentsCount 0 with another user's
+       * comment underneath (deleteNestedPost path).
+       */
+      const ownPost = db.collection('posts').doc('f3g-zero-own-post');
+
+      await ownPost.set({
+        type: 'article',
+        title: 'Own post',
+        content: 'Post by the deleting user, commentsCount 0.',
+        author: uid,
+        authorId: uid,
+        likes: 0,
+        commentsCount: 0,
+        assetPath: null,
+        category: null,
+        createdAt: new Date(),
+      });
+
+      await ownPost.collection('comments').doc('zero-own-comment').set({
+        authorId: otherUid,
+        author: otherUid,
+        content: 'Someone else commented on the deleting user post',
+        createdAt: new Date(),
+      });
+
+      await requestDeletion(uid);
+
+      /*
+       * Must NOT throw "Invalid commentsCount".
+       */
+      await processDeletion(uid);
+
+      const request = await db
+        .collection('accountDeletionRequests')
+        .doc(uid)
+        .get();
+
+      assert.equal(request.data().status, 'completed');
+      assert.equal(request.data().phase, 'completed');
+
+      /*
+       * The deleting user's comment + reply are gone.
+       */
+      await assertMissing(
+        'posts/f3g-zero-other-post/comments/zero-user-comment',
+      );
+      await assertMissing(
+        'posts/f3g-zero-other-post/comments/zero-user-comment/replies/zero-user-reply',
+      );
+
+      /*
+       * Deleting user's own post and its nested comment are gone.
+       */
+      await assertMissing('posts/f3g-zero-own-post');
+      await assertMissing(
+        'posts/f3g-zero-own-post/comments/zero-own-comment',
+      );
+
+      /*
+       * Other user's post remains, counter stays exactly 0 (not -1).
+       */
+      const remaining = await otherPost.get();
+
+      assert.equal(remaining.exists, true);
+      assert.strictEqual(remaining.data().commentsCount, 0);
+      assert.equal(remaining.data().authorId, otherUid);
+
+      const otherComment = await otherPost
+        .collection('comments')
+        .doc('zero-other-comment')
+        .get();
+
+      assert.equal(otherComment.exists, true);
+
+      /*
+       * Account fully removed; other user untouched.
+       */
+      await assertMissing(`users/${uid}`);
+      await assertMissing(`profiles/${uid}`);
+
+      await assert.rejects(
+        () => auth.getUser(uid),
+        (error) => error?.code === 'auth/user-not-found',
+      );
+
+      assert.equal((await auth.getUser(otherUid)).uid, otherUid);
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'F3-G: commentsCount >= 1 is still decremented when the comment is deleted',
+  async () => {
+    const uid = 'f3g-pos-user';
+    const otherUid = 'f3g-pos-other';
+    const scenario = {
+      uids: [uid, otherUid],
+      postIds: ['f3g-pos-other-post'],
+    };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await ensureAuthUser(uid);
+      await ensureAuthUser(otherUid);
+      await seedUserDocs(uid);
+      await seedUserDocs(otherUid);
+
+      const otherPost = db.collection('posts').doc('f3g-pos-other-post');
+
+      await otherPost.set({
+        type: 'article',
+        title: 'Other post',
+        content: 'Post by another user, commentsCount 2.',
+        author: 'Other',
+        authorId: otherUid,
+        likes: 0,
+        commentsCount: 2,
+        assetPath: null,
+        category: null,
+        createdAt: new Date(),
+      });
+
+      await otherPost.collection('comments').doc('pos-user-comment').set({
+        authorId: uid,
+        author: uid,
+        content: 'Comment by the deleting user',
+        createdAt: new Date(),
+      });
+
+      await otherPost.collection('comments').doc('pos-other-comment').set({
+        authorId: otherUid,
+        author: otherUid,
+        content: 'Comment by someone else',
+        createdAt: new Date(),
+      });
+
+      await requestDeletion(uid);
+      await processDeletion(uid);
+
+      await assertMissing('posts/f3g-pos-other-post/comments/pos-user-comment');
+
+      const remaining = await otherPost.get();
+
+      assert.strictEqual(remaining.data().commentsCount, 1);
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+const MISSING = Symbol('missing');
+
+for (const [label, badValue] of [
+  ['negative integer', -1],
+  ['string', '1'],
+  ['null', null],
+  ['missing field', MISSING],
+]) {
+  test(
+    `F3-G: invalid commentsCount (${label}) fails deletion and is NOT repaired`,
+    async () => {
+      const key = label.replace(/\W+/g, '-');
+      const uid = `f3g-bad-${key}-user`;
+      const otherUid = `f3g-bad-${key}-other`;
+      const postId = `f3g-bad-${key}-post`;
+      const scenario = { uids: [uid, otherUid], postIds: [postId] };
+
+      await cleanupCountScenario(scenario);
+
+      try {
+        await ensureAuthUser(uid);
+        await ensureAuthUser(otherUid);
+        await seedUserDocs(uid);
+        await seedUserDocs(otherUid);
+
+        const post = {
+          type: 'article',
+          title: 'Corrupt counter post',
+          content: 'Post with an invalid commentsCount.',
+          author: 'Other',
+          authorId: otherUid,
+          likes: 0,
+          assetPath: null,
+          category: null,
+          createdAt: new Date(),
+        };
+
+        if (badValue !== MISSING) {
+          post.commentsCount = badValue;
+        }
+
+        const postRef = db.collection('posts').doc(postId);
+
+        await postRef.set(post);
+
+        await postRef.collection('comments').doc('bad-user-comment').set({
+          authorId: uid,
+          author: uid,
+          content: 'Comment by the deleting user',
+          createdAt: new Date(),
+        });
+
+        await requestDeletion(uid);
+
+        await assert.rejects(
+          () => processDeletion(uid),
+          /Invalid commentsCount/,
+        );
+
+        const request = await db
+          .collection('accountDeletionRequests')
+          .doc(uid)
+          .get();
+
+        assert.equal(request.data().status, 'failed');
+        assert.match(request.data().lastError, /Invalid commentsCount/);
+
+        /*
+         * Nothing was deleted or silently repaired.
+         */
+        assert.equal(
+          (await postRef.collection('comments').doc('bad-user-comment').get())
+            .exists,
+          true,
+        );
+
+        const after = (await postRef.get()).data();
+
+        if (badValue === MISSING) {
+          assert.equal('commentsCount' in after, false);
+        } else {
+          assert.deepStrictEqual(after.commentsCount, badValue);
+        }
+
+        assert.equal((await auth.getUser(uid)).uid, uid);
+      } finally {
+        await cleanupCountScenario(scenario);
+      }
+    },
+  );
+}

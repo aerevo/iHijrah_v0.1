@@ -342,6 +342,25 @@ async function deleteRepliesForComment(
   );
 }
 
+/*
+ * posts.commentsCount is not maintained by clients (firestore.rules keep it
+ * at 0), so a post may legitimately have comments while commentsCount is 0.
+ *
+ *   integer >= 1       -> true  (caller decrements, then deletes the comment)
+ *   integer === 0      -> false (caller deletes the comment, no decrement)
+ *   anything else      -> throws (negative, non-integer, missing: corrupt
+ *                         data is surfaced, never silently repaired)
+ */
+function shouldDecrementCommentsCount(commentsCount, postPath) {
+  if (!Number.isInteger(commentsCount) || commentsCount < 0) {
+    throw new Error(
+      `Invalid commentsCount on ${postPath}.`,
+    );
+  }
+
+  return commentsCount >= 1;
+}
+
 async function deleteNestedPost(
   postRef,
   uid,
@@ -382,17 +401,15 @@ async function deleteNestedPost(
           const commentsCount = data.commentsCount;
 
           if (
-            !Number.isInteger(commentsCount) ||
-            commentsCount < 1
+            shouldDecrementCommentsCount(
+              commentsCount,
+              postRef.path,
+            )
           ) {
-            throw new Error(
-              `Invalid commentsCount on ${postRef.path}.`,
-            );
+            tx.update(postRef, {
+              commentsCount: commentsCount - 1,
+            });
           }
-
-          tx.update(postRef, {
-            commentsCount: commentsCount - 1,
-          });
 
           tx.delete(comment.ref);
         });
@@ -471,15 +488,16 @@ async function removeOwnComments(uid, worker) {
           const data = postSnap.data() || {};
           const commentsCount = data.commentsCount;
 
-          if (!Number.isInteger(commentsCount) || commentsCount < 1) {
-            throw new Error(
-              `Invalid commentsCount on ${postRef.path}.`,
-            );
+          if (
+            shouldDecrementCommentsCount(
+              commentsCount,
+              postRef.path,
+            )
+          ) {
+            tx.update(postRef, {
+              commentsCount: commentsCount - 1,
+            });
           }
-
-          tx.update(postRef, {
-            commentsCount: commentsCount - 1,
-          });
 
           tx.delete(comment.ref);
         });

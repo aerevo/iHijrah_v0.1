@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
+import '../services/social_failure.dart';
 import '../utils/constants.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -44,6 +45,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Future<void> _submit() async {
+    // Butang sudah dinyahaktifkan semasa _posting, tetapi dua ketukan
+    // dalam bingkai yang sama boleh lepas sebelum rebuild → dua post.
+    if (_posting) return;
+
     final String content = _contentCtrl.text.trim();
     final String title   = _titleCtrl.text.trim();
 
@@ -86,9 +91,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       _snack('Post berjaya diterbitkan!', color: kAccentGreen);
       Navigator.of(context).pop();
     } catch (e) {
+      debugPrint('CreatePostScreen: terbit post gagal: $e');
       if (!mounted) return;
       setState(() => _posting = false);
-      _snack('Gagal terbitkan post. Cuba lagi.');
+      // E-mel belum disahkan / sesi tamat / rangkaian dibezakan; selain
+      // itu kekalkan mesej asal.
+      final SocialFailure failure = socialFailureFromError(e);
+      _snack(failure == SocialFailure.unknown
+          ? 'Gagal terbitkan post. Cuba lagi.'
+          : failure.message);
     }
   }
 
