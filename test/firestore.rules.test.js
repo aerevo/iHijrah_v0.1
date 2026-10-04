@@ -1856,6 +1856,90 @@ describe('iHijrah Firestore Rules', function () {
       );
     });
 
+    // ── count() — aggregate yang digunakan UI (SocialService.commentCount) ──
+    // UI TIDAK membaca posts.commentsCount (kekal 0); ia memanggil
+    // collection('posts/{p}/comments').count().get(). Compat SDK tiada
+    // count(), jadi guna getCountFromServer (modular) pada instance yang sama.
+    // Kebenaran dijangka mengikut `allow read: if verified()` — ujian ini
+    // merekod behavior sebenar rules, bukan mengubahnya.
+    describe('count() aggregate (as used by the UI)', function () {
+      const { collection, getCountFromServer } = require('firebase/firestore');
+
+      const countComments = (db) =>
+        getCountFromServer(collection(db, 'posts/p1/comments'));
+
+      const seedReply = async (commentId, replyId) => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          await context
+            .firestore()
+            .doc(`posts/p1/comments/${commentId}/replies/${replyId}`)
+            .set({
+              authorId: 'someone', author: 'Seed',
+              content: 'Reply sedia ada.', createdAt: new Date(),
+            });
+        });
+      };
+
+      it('verified user CAN count() comments; result = comment docs, ignoring posts.commentsCount', async function () {
+        await seedPostAndUsers(); // posts/p1.commentsCount == 0
+        await seedComment('c1', 'someone');
+        await seedComment('c2', 'someone-else');
+        const snap = await assertSucceeds(
+          countComments(verifiedCtx('user-a').firestore())
+        );
+        assert.strictEqual(snap.data().count, 2);
+      });
+
+      it('count() on a post with no comments returns 0', async function () {
+        await seedPostAndUsers();
+        const snap = await assertSucceeds(
+          countComments(verifiedCtx('user-a').firestore())
+        );
+        assert.strictEqual(snap.data().count, 0);
+      });
+
+      it('count() does NOT include replies (they live in a subcollection)', async function () {
+        await seedPostAndUsers();
+        await seedComment('c1', 'someone');
+        await seedReply('c1', 'r1');
+        await seedReply('c1', 'r2');
+        const snap = await assertSucceeds(
+          countComments(verifiedCtx('user-a').firestore())
+        );
+        assert.strictEqual(snap.data().count, 1);
+      });
+
+      it('count() reflects a deletion (server-computed, cannot drift)', async function () {
+        await seedPostAndUsers();
+        await seedComment('c1', 'user-a');
+        await seedComment('c2', 'someone');
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(db.doc('posts/p1/comments/c1').delete());
+        const snap = await assertSucceeds(countComments(db));
+        assert.strictEqual(snap.data().count, 1);
+      });
+
+      it('unverified user CANNOT count() comments', async function () {
+        await seedPostAndUsers();
+        await seedComment('c1', 'someone');
+        await assertFails(
+          countComments(
+            testEnv
+              .authenticatedContext('user-x', { email_verified: false })
+              .firestore()
+          )
+        );
+      });
+
+      it('unauthenticated user CANNOT count() comments', async function () {
+        await seedPostAndUsers();
+        await seedComment('c1', 'someone');
+        await assertFails(
+          countComments(testEnv.unauthenticatedContext().firestore())
+        );
+      });
+    });
+
     // ── update / delete ──
     it('author CANNOT edit own comment (updates disabled in Phase 1)', async function () {
       await seedPostAndUsers();
@@ -1894,6 +1978,67 @@ describe('iHijrah Firestore Rules', function () {
       await seedComment('c1', 'user-a');
       const db = testEnv.unauthenticatedContext().firestore();
       await assertFails(db.doc('posts/p1/comments/c1').delete());
+    });
+
+    // ── comment yang parent post-nya sudah tiada ──
+    // Firestore tak cascade subcollection: padam post meninggalkan
+    // posts/{p}/comments/* . Rules delete comment hanya menyemak verified +
+    // pemilik (resource.data.authorId), bukan kewujudan post. Ujian merekod
+    // keputusan sebenar; jika emulator memberi keputusan lain, itu dapatan
+    // untuk dilaporkan, bukan untuk "dibetulkan" dalam bundle ini.
+    describe('delete comment after the parent post is gone', function () {
+      const assertPostGone = () =>
+        testEnv.withSecurityRulesDisabled(async (context) => {
+          const snap = await context.firestore().doc('posts/p1').get();
+          assert.strictEqual(snap.exists, false, 'post sepatutnya sudah tiada');
+          const c = await context.firestore().doc('posts/p1/comments/c1').get();
+          assert.strictEqual(c.exists, true, 'comment sepatutnya masih ada');
+        });
+
+      it('owner CAN delete own comment after the post was removed (backend/admin path)', async function () {
+        await seedPostAndUsers();
+        await seedComment('c1', 'user-a');
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          await context.firestore().doc('posts/p1').delete();
+        });
+        await assertPostGone();
+
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(db.doc('posts/p1/comments/c1').delete());
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          const c = await context.firestore().doc('posts/p1/comments/c1').get();
+          assert.strictEqual(c.exists, false);
+        });
+      });
+
+      it('owner CAN delete own comment after the POST OWNER removed the post via rules', async function () {
+        await seedPostAndUsers(); // posts/p1.authorId == 'author'
+        await seedComment('c1', 'user-a');
+        await assertSucceeds(
+          verifiedCtx('author').firestore().doc('posts/p1').delete()
+        );
+        await assertPostGone();
+
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(db.doc('posts/p1/comments/c1').delete());
+      });
+
+      it("another user CANNOT delete someone else's comment after the post is gone", async function () {
+        await seedPostAndUsers();
+        await seedComment('c1', 'user-a');
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          await context.firestore().doc('posts/p1').delete();
+        });
+        await assertPostGone();
+
+        await assertFails(
+          verifiedCtx('attacker').firestore().doc('posts/p1/comments/c1').delete()
+        );
+        // Bekas post yang sudah dipadam juga tak memberi kuasa kepada pemilik post lama.
+        await assertFails(
+          verifiedCtx('author').firestore().doc('posts/p1/comments/c1').delete()
+        );
+      });
     });
 
     // ── counters / protected fields ──
