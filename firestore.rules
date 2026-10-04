@@ -17,6 +17,145 @@ service cloud.firestore {
         && request.auth.uid == userId;
     }
 
+    // Firebase menyegarkan claim `auth_time` bila client panggil
+    // reauthenticateWithCredential() — jadi ni SECARA REALITI menguji
+    // "bila kali terakhir pengguna sahkan kata laluan", bukan sekadar
+    // bila token disign semula secara automatik. Tetingkap 5 minit
+    // (300 saat) ialah amalan biasa Firebase untuk operasi musnah
+    // (destructive) macam padam akaun.
+    function recentlyAuthenticated() {
+      return request.auth.token.auth_time >
+        request.time.toMillis() / 1000 - 300;
+    }
+
+    // ── Helper path untuk social (like/comment/reply) ─────────────
+    function postPath(postId) {
+      return /databases/$(database)/documents/posts/$(postId);
+    }
+
+    function likePath(postId, uid) {
+      return /databases/$(database)/documents/posts/$(postId)/likes/$(uid);
+    }
+
+    // Nama paparan penulis mesti sepadan dgn users/{uid}.name (atau
+    // 'Hamba Allah' jika kosong) — sama seperti create post. Comment
+    // menyimpan nama secara denormalized supaya UI tak perlu baca
+    // users/{uid} orang lain (yang sengaja owner-only).
+    function expectedAuthorName() {
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      ).data.name == ''
+        ? 'Hamba Allah'
+        : get(
+            /databases/$(database)/documents/users/$(request.auth.uid)
+          ).data.name;
+    }
+
+    // Bentuk dokumen comment/reply (sama untuk kedua-duanya).
+    function validCommentShape() {
+      return request.resource.data.keys().hasAll([
+          'authorId', 'author', 'content', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'authorId', 'author', 'content', 'createdAt'
+        ])
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.author is string
+        && request.resource.data.author.size() <= 120
+        && request.resource.data.author == expectedAuthorName()
+        && request.resource.data.content is string
+        && request.resource.data.content.size() >= 1
+        && request.resource.data.content.size() <= 500
+        && request.resource.data.createdAt == request.time;
+    }
+
+    // ── Helper untuk profil awam + follow ─────────────────────────
+    function profilePath(uid) {
+      return /databases/$(database)/documents/profiles/$(uid);
+    }
+
+    // ID edge follow tetap: '{followerId}_{followeeId}'. Satu edge
+    // per pasangan → tak boleh follow dua kali (create pada dokumen
+    // sedia ada dianggap update → ditolak).
+    function followEdgeId(followerId, followeeId) {
+      return followerId + '_' + followeeId;
+    }
+
+    function followPath(followerId, followeeId) {
+      return /databases/$(database)/documents/follows/$(followEdgeId(followerId, followeeId));
+    }
+
+    function validProfileName(v) {
+      return v is string && v.size() >= 1 && v.size() <= 120;
+    }
+
+    function validProfileBio(v) {
+      return v is string && v.size() <= 300;
+    }
+
+    // ── UMUR MINIMUM AKAUN (server-side) ───────────────────────────
+    // Client menyimpan `birthdate` sebagai string ISO-8601 daripada
+    // DateTime.toIso8601String() (mis. '2013-09-30T00:00:00.000'; ada
+    // 'Z' jika UTC) — lihat UserModel._toMap(). `hijriDOB` sentiasa
+    // ditulis sama dengan `birthdate` oleh onboarding dan skrin edit
+    // tarikh lahir, jadi ia TIDAK dibenarkan menjadi sumber DOB lain.
+    //
+    // Invarian: DOB yang DISIMPAN tidak boleh mewakili umur < 13 tahun.
+    // Pemalar ini mesti sama dengan kMinimumAccountAge (lib/utils/constants.dart).
+    function minimumAccountAge() {
+      return 13;
+    }
+
+    function isLeapYear(y) {
+      return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+    }
+
+    // Bentuk yang diterima: 'YYYY-MM-DD' atau 'YYYY-MM-DDTHH:MM:SS[.fff][Z]',
+    // tahun 1900–2099, bulan/hari sah (29 Feb hanya untuk tahun lompat —
+    // disemak dalam dobCalendarValid).
+    function dobWellFormed(s) {
+      return s is string
+        && s.matches(
+          '^(19|20)[0-9]{2}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-9]))(T[0-9:.]*Z?)?$'
+        )
+        && dobCalendarValid(s);
+    }
+
+    function dobCalendarValid(s) {
+      let p = s.split('[-T]');
+      return !(p[1] == '02' && p[2] == '29') || isLeapYear(int(p[0]));
+    }
+
+    // Kiraan kalendar tepat (bukan beza tahun kasar): umur >= 13 jika
+    // YYYYMMDD(DOB) <= (tahun semasa - 13)YYYYMMDD(hari ini). Hari ini =
+    // tarikh UTC `request.time` (masa server). Ikut konvensyen
+    // age_helper.dart: DOB 29 Feb dikira genap umur pada 28 Feb dalam tahun
+    // bukan-lompat (tahun lahir lompat + 13 sentiasa bukan-lompat).
+    function dobMeetsMinimumAge(s) {
+      let p = s.split('[-T]');
+      let dobInt = int(p[0] + p[1] + p[2]);
+      let observed = (p[1] == '02' && p[2] == '29') ? dobInt - 1 : dobInt;
+      return observed <= (request.time.year() - minimumAccountAge()) * 10000
+        + request.time.month() * 100
+        + request.time.day();
+    }
+
+    // Keadaan SELEPAS tulis untuk dua medan DOB:
+    //   • tiada birthdate (belum onboarding) → hijriDOB juga mesti kosong
+    //     (client guna `birthdate ?? hijriDOB`, jadi hijriDOB sendirian
+    //     ialah laluan pintas);
+    //   • ada birthdate → bentuk sah, umur >= 13, dan hijriDOB kosong atau
+    //     sama persis dengan birthdate.
+    function dobFieldsValid(d) {
+      return (!('birthdate' in d) || d.birthdate == null)
+        ? (!('hijriDOB' in d) || d.hijriDOB == null)
+        : (dobWellFormed(d.birthdate)
+            && dobMeetsMinimumAge(d.birthdate)
+            && (!('hijriDOB' in d)
+                || d.hijriDOB == null
+                || d.hijriDOB == d.birthdate));
+    }
+
     match /users/{userId} {
 
       // User hanya boleh baca profil sendiri buat masa ini.
@@ -64,7 +203,8 @@ service cloud.firestore {
         && request.resource.data.treeLevel == 1
         && request.resource.data.totalPoints == 0
         && request.resource.data.currentStreak == 0
-        && request.resource.data.longestStreak == 0;
+        && request.resource.data.longestStreak == 0
+        && dobFieldsValid(request.resource.data);
 
       // User boleh ubah profile/settings tertentu.
       // Identity + counters/gamification stats tidak boleh berubah.
@@ -121,10 +261,19 @@ service cloud.firestore {
           'themeMode'
         ])
         && request.resource.data.email == resource.data.email
-        && request.resource.data.authMethod == resource.data.authMethod;
+        && request.resource.data.authMethod == resource.data.authMethod
+        // DOB hanya disemak apabila birthdate/hijriDOB BERUBAH, supaya
+        // dokumen sedia ada yang tidak mengubahnya (cth. kemas kini tema)
+        // tidak terhalang. Perubahan DOB wajib sah di bawah invarian umur.
+        && (!request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['birthdate', 'hijriDOB'])
+            || dobFieldsValid(request.resource.data));
 
-      // Account deletion belum diimplementasikan melalui client.
-      allow delete: if false;
+      // FIX #4 — Padam akaun sendiri sahaja: owner-only DAN mesti
+      // reauth dalam tempoh 5 minit terakhir (bukan sekadar sign-in
+      // lama). Client WAJIB panggil reauthenticateWithCredential()
+      // sebelum cuba padam users/{uid} — tanpa itu, rule ni tolak.
+      allow delete: if isOwner(userId) && recentlyAuthenticated();
     }
 
     match /posts/{postId} {
@@ -177,10 +326,243 @@ service cloud.firestore {
         )
         && request.resource.data.createdAt == request.time;
 
-      allow update: if false;
+      // Satu-satunya update yang dibenarkan pada post: `likes` naik/turun
+      // TEPAT 1, dan HANYA jika dalam batch/transaction yang SAMA
+      // dokumen posts/{postId}/likes/{uid} (uid = pengguna ini) turut
+      // dicipta (+1) atau dipadam (-1). Ini yang menjadikan kaunter
+      // server-authoritative tanpa Cloud Function: client tak boleh
+      // ubah `likes` tanpa relation like yang sepadan.
+      allow update: if verified()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['likes'])
+        && request.resource.data.likes is int
+        && request.resource.data.likes >= 0
+        && (
+          (
+            request.resource.data.likes == resource.data.likes + 1
+            && !exists(likePath(postId, request.auth.uid))
+            && existsAfter(likePath(postId, request.auth.uid))
+          )
+          || (
+            request.resource.data.likes == resource.data.likes - 1
+            && exists(likePath(postId, request.auth.uid))
+            && !existsAfter(likePath(postId, request.auth.uid))
+          )
+        );
 
       allow delete: if verified()
         && resource.data.authorId == request.auth.uid;
+
+      // ── LIKES: posts/{postId}/likes/{uid} ───────────────────────
+      // ID dokumen = uid pengguna → satu like per pengguna per post
+      // (create pada dokumen sedia ada dianggap update → ditolak).
+      // Hanya pemilik boleh GET dokumen sendiri; tiada list, jadi
+      // senarai "siapa like" tak boleh di-enumerate (privasi + sedia
+      // untuk block nanti).
+      match /likes/{likeUid} {
+        allow get: if verified()
+          && request.auth.uid == likeUid;
+
+        allow create: if verified()
+          && request.auth.uid == likeUid
+          && request.resource.data.keys().hasOnly(['createdAt'])
+          && request.resource.data.createdAt == request.time
+          && exists(postPath(postId))
+          && getAfter(postPath(postId)).data.likes
+               == get(postPath(postId)).data.likes + 1;
+
+        // Post sudah dipadam → benarkan bersihkan like yatim sendiri.
+        allow delete: if verified()
+          && request.auth.uid == likeUid
+          && (
+            !exists(postPath(postId))
+            || getAfter(postPath(postId)).data.likes
+                 == get(postPath(postId)).data.likes - 1
+          );
+      }
+
+      // ── COMMENTS: posts/{postId}/comments/{commentId} ───────────
+      // Tiada kaunter denormalized: `posts.commentsCount` kekal 0 dan
+      // TIDAK boleh diubah (update post hanya benarkan `likes`). Kiraan
+      // sebenar diambil dgn aggregate count() — pelayan yg mengira,
+      // jadi tak boleh dimanipulasi client dan tak boleh drift.
+      // Update sengaja tiada (edit komen bukan skop Phase 1).
+      match /comments/{commentId} {
+        allow read: if verified();
+
+        allow create: if verified()
+          && validCommentShape()
+          && exists(postPath(postId));
+
+        allow delete: if verified()
+          && resource.data.authorId == request.auth.uid;
+
+        // ── REPLIES: .../comments/{commentId}/replies/{replyId} ───
+        // Satu tahap sahaja (tiada reply-kepada-reply): tiada match
+        // di bawah /replies, jadi catch-all menolaknya. Peraturan
+        // sama seperti comment; parent comment mesti wujud.
+        match /replies/{replyId} {
+          allow read: if verified();
+
+          allow create: if verified()
+            && validCommentShape()
+            && exists(
+              /databases/$(database)/documents/posts/$(postId)/comments/$(commentId)
+            );
+
+          allow delete: if verified()
+            && resource.data.authorId == request.auth.uid;
+        }
+      }
+    }
+
+    // ══ PROFIL AWAM: profiles/{uid} ═══════════════════════════════
+    // Salinan MINIMUM yang boleh dilihat pengguna lain: nama, bio,
+    // kiraan pengikut. SENGAJA tiada email, birthdate, hijriDOB,
+    // gender, XP/streak, atau apa-apa medan peribadi users/{uid}.
+    // Hanya `get` (ikut uid) — TIADA list, jadi senarai semua profil
+    // tak boleh di-enumerate.
+    match /profiles/{userId} {
+      allow get: if verified();
+
+      // Profil hanya boleh dicipta SELEPAS e-mel disahkan (akaun
+      // belum verify tak wujud secara awam). Kaunter mesti bermula 0.
+      allow create: if verified()
+        && isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'name', 'bio', 'followersCount', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name', 'bio', 'followersCount', 'createdAt'
+        ])
+        && validProfileName(request.resource.data.name)
+        && validProfileBio(request.resource.data.bio)
+        && request.resource.data.followersCount == 0
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if verified()
+        && (
+          // (a) Pemilik: nama + bio sahaja.
+          (
+            isOwner(userId)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['name', 'bio'])
+            && validProfileName(request.resource.data.name)
+            && validProfileBio(request.resource.data.bio)
+          )
+          // (b) Pengguna LAIN: `followersCount` naik/turun TEPAT 1,
+          // HANYA jika edge follows/{saya}_{profil ni} turut dicipta
+          // (+1) atau dipadam (-1) dalam batch yang SAMA. Corak sama
+          // seperti posts.likes — server-authoritative tanpa Cloud
+          // Function. Pemilik tak boleh ubah kaunter sendiri.
+          || (
+            request.auth.uid != userId
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['followersCount'])
+            && request.resource.data.followersCount is int
+            && request.resource.data.followersCount >= 0
+            && (
+              (
+                request.resource.data.followersCount
+                  == resource.data.followersCount + 1
+                && !exists(followPath(request.auth.uid, userId))
+                && existsAfter(followPath(request.auth.uid, userId))
+              )
+              || (
+                request.resource.data.followersCount
+                  == resource.data.followersCount - 1
+                && exists(followPath(request.auth.uid, userId))
+                && !existsAfter(followPath(request.auth.uid, userId))
+              )
+            )
+          )
+        );
+
+      // Padam profil sendiri = sebahagian padam akaun → wajib reauth
+      // baru-baru ini, sama seperti users/{uid}.
+      allow delete: if isOwner(userId) && recentlyAuthenticated();
+    }
+
+    // ══ FOLLOW: follows/{followerId}_{followeeId} ══════════════════
+    // Follow ialah satu arah (Follow ≠ Friend): A ikut B tak bermakna
+    // B ikut A. Edge = {followerId, followeeId, createdAt}.
+    // Senarai hanya boleh dibaca oleh pihak yang terlibat: pengguna
+    // boleh senaraikan orang yang DIA ikut dan orang yang mengikut
+    // DIA — bukan graf orang lain (privasi + sedia untuk block).
+    // Kiraan awam datang dari profiles.followersCount.
+    match /follows/{edgeId} {
+      allow list: if verified()
+        && (
+          resource.data.followerId == request.auth.uid
+          || resource.data.followeeId == request.auth.uid
+        );
+
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly([
+          'followerId', 'followeeId', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'followerId', 'followeeId', 'createdAt'
+        ])
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followeeId is string
+        && request.resource.data.followeeId != request.auth.uid
+        && edgeId == followEdgeId(
+          request.resource.data.followerId,
+          request.resource.data.followeeId
+        )
+        && request.resource.data.createdAt == request.time
+        // Kedua-dua pihak mesti ada profil awam.
+        && exists(profilePath(request.auth.uid))
+        && exists(profilePath(request.resource.data.followeeId))
+        // Kaunter followee mesti naik TEPAT 1 dalam batch yang sama.
+        && getAfter(profilePath(request.resource.data.followeeId))
+             .data.followersCount
+           == get(profilePath(request.resource.data.followeeId))
+             .data.followersCount + 1;
+
+      // Hanya follower boleh unfollow. Kalau profil followee sudah
+      // tiada (akaun dipadam), edge yatim boleh dibersihkan tanpa kaunter.
+      allow delete: if verified()
+        && resource.data.followerId == request.auth.uid
+        && (
+          !exists(profilePath(resource.data.followeeId))
+          || getAfter(profilePath(resource.data.followeeId))
+               .data.followersCount
+             == get(profilePath(resource.data.followeeId))
+               .data.followersCount - 1
+        );
+    }
+
+    // ══ ACCOUNT DELETION REQUEST: F3-G ═══════════════════════════
+    // Client hanya boleh MEMBUAT request pemadaman untuk UID sendiri.
+    // Selepas create, client tidak boleh mengubah status atau memadam
+    // request. Backend/Admin SDK menjadi pihak yang mengurus lifecycle
+    // request dan cleanup privileged.
+    //
+    // Request ini TIDAK memberi client kuasa memadam social content
+    // pengguna lain. Semua cleanup privileged dibuat oleh backend.
+    match /accountDeletionRequests/{userId} {
+      allow create: if verified()
+        && isOwner(userId)
+        && recentlyAuthenticated()
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+
+      // Client tidak boleh membaca lifecycle request secara bebas.
+      // Backend/Admin SDK tidak tertakluk kepada Firestore Rules.
+      allow read, update, delete: if false;
     }
 
     match /{document=**} {

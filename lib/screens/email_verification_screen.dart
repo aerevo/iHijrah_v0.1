@@ -69,17 +69,24 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
     _reloadInFlight = true;
     if (manual && mounted) setState(() => _checking = true);
+    bool verified = false;
     try {
       await user.reload();
+      final User? fresh = FirebaseAuth.instance.currentUser;
+      if (fresh != null && fresh.emailVerified) {
+        // reload() cuma kemas kini flag tempatan; claim email_verified
+        // dalam ID token kekal lama sampai token di-refresh. Rules
+        // posts guna claim tu, jadi paksa refresh SEBELUM route —
+        // kalau gagal, jangan anggap siap; poll seterusnya cuba lagi.
+        await fresh.getIdToken(true);
+        verified = true;
+      }
     } catch (e) {
-      debugPrint('EmailVerificationScreen: reload gagal: $e');
+      debugPrint('EmailVerificationScreen: reload/refresh token gagal: $e');
     } finally {
       _reloadInFlight = false;
     }
     if (!mounted) return;
-
-    final bool verified =
-        FirebaseAuth.instance.currentUser?.emailVerified ?? false;
 
     if (manual && mounted) setState(() => _checking = false);
     if (verified) {
@@ -145,7 +152,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   Future<void> _signOut() async {
     _pollTimer?.cancel();
     _cooldownTimer?.cancel();
+    final UserModel userModel = Provider.of<UserModel>(context, listen: false);
     await FirebaseAuth.instance.signOut();
+    // Sama macam logout biasa (SettingsView): bersihkan sesi local supaya
+    // akaun seterusnya pada peranti ni tak warisi data akaun ini.
+    // resetLocalSession() tak push apa-apa ke cloud.
+    await userModel.resetLocalSession();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AuthScreen()),

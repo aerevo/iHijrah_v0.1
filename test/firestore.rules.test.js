@@ -864,4 +864,1008 @@ describe('iHijrah Firestore Rules', function () {
       context.firestore().doc('posts/test-post').delete()
     );
   });
+
+  // ═══════════════════════════════════════════════════════════════
+  // FIX #4 — Account deletion: users/{userId} delete rule
+  // ═══════════════════════════════════════════════════════════════
+  describe('Account deletion (users/{userId} delete)', function () {
+    const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+    beforeEach(async function () {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc('users/user-a').set({
+          name: 'User A',
+          email: 'user-a@example.com',
+          gender: 'Lelaki',
+          bio: '',
+          avatarPath: null,
+          authMethod: 'Email',
+          followersCount: 0,
+          followingCount: 0,
+          postsCount: 0,
+          treeLevel: 1,
+          totalPoints: 100,
+          currentStreak: 2,
+          longestStreak: 5,
+        });
+      });
+    });
+
+    it('owner CAN delete own users/{uid} with recent auth_time (<5min)', async function () {
+      const context = testEnv.authenticatedContext('user-a', {
+        email: 'user-a@example.com',
+        email_verified: true,
+        auth_time: nowSeconds(),
+      });
+
+      await assertSucceeds(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('owner CANNOT delete own users/{uid} with stale auth_time (>5min)', async function () {
+      const context = testEnv.authenticatedContext('user-a', {
+        email: 'user-a@example.com',
+        email_verified: true,
+        auth_time: nowSeconds() - 600, // 10 minit lalu — luar tetingkap 5 minit
+      });
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('another authenticated user CANNOT delete a different users/{uid}', async function () {
+      const context = testEnv.authenticatedContext('user-b', {
+        email: 'user-b@example.com',
+        email_verified: true,
+        auth_time: nowSeconds(),
+      });
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('unauthenticated user CANNOT delete users/{uid}', async function () {
+      const context = testEnv.unauthenticatedContext();
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+
+    it('owner with NO auth_time claim at all CANNOT delete (treated as stale)', async function () {
+      // Sesetengah token lama/ujian mungkin tiada claim auth_time
+      // langsung — rule mesti tolak dgn selamat, bukan throw/allow
+      // secara tak sengaja.
+      const context = testEnv.authenticatedContext('user-a', {
+        email: 'user-a@example.com',
+        email_verified: true,
+      });
+
+      await assertFails(
+        context.firestore().doc('users/user-a').delete()
+      );
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // POSTS — kontrak create / edit / delete (Post bundle audit)
+  // Rules sengaja TIDAK membenarkan edit post (hanya `likes` ±1 yang
+  // berpasangan dgn like doc). Ujian edit di sini mengunci kontrak itu:
+  // pemilik pun tak boleh ubah authorId / createdAt / likes /
+  // commentsCount / kandungan, dan orang lain lagi tak boleh.
+  // ══════════════════════════════════════════════════════════════
+  describe('posts: create / edit / delete contract', function () {
+    const { serverTimestamp } = require('firebase/firestore');
+
+    const seedUsers = async (creatorName = 'Test User') => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        await db.doc('users/creator').set({ name: creatorName });
+        await db.doc('users/other').set({ name: 'Other User' });
+      });
+    };
+
+    const seedPost = async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc('posts/p1').set({
+          type: 'article',
+          title: 'Tajuk asal',
+          content: 'Kandungan asal post ini.',
+          author: 'Test User',
+          authorId: 'creator',
+          likes: 3,
+          commentsCount: 0,
+          assetPath: null,
+          category: null,
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+        });
+      });
+    };
+
+    const verifiedCtx = (uid) =>
+      testEnv.authenticatedContext(uid, { email_verified: true });
+
+    const validPost = (over = {}) => ({
+      type: 'article',
+      title: 'Tajuk ringkas',
+      content: 'Kandungan post yang sah.',
+      author: 'Test User',
+      authorId: 'creator',
+      likes: 0,
+      commentsCount: 0,
+      assetPath: null,
+      category: null,
+      createdAt: serverTimestamp(),
+      ...over,
+    });
+
+    const createPost = (ctx, data) =>
+      ctx.firestore().collection('posts').add(data);
+
+    // Buang satu medan daripada payload sah.
+    const without = (key) => {
+      const d = validPost();
+      delete d[key];
+      return d;
+    };
+
+    // ── CREATE ──────────────────────────────────────────────────
+    it('verified user CAN create an article post with a title', async function () {
+      await seedUsers();
+      await assertSucceeds(createPost(verifiedCtx('creator'), validPost()));
+    });
+
+    it("empty profile name CAN post as 'Hamba Allah'", async function () {
+      await seedUsers('');
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ author: 'Hamba Allah' }))
+      );
+    });
+
+    it('create with a type outside article/quote is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ type: 'video' }))
+      );
+    });
+
+    it('title: exactly 80 chars is allowed, 81 is denied', async function () {
+      await seedUsers();
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ title: 'a'.repeat(80) }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ title: 'a'.repeat(81) }))
+      );
+    });
+
+    it('content: 10 and 1000 chars are allowed, 1001 is denied', async function () {
+      await seedUsers();
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ content: 'x'.repeat(10) }))
+      );
+      await assertSucceeds(
+        createPost(verifiedCtx('creator'), validPost({ content: 'x'.repeat(1000) }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ content: 'x'.repeat(1001) }))
+      );
+    });
+
+    it('create with non-string title / content is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ title: 123 }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ content: 1234567890123 }))
+      );
+    });
+
+    it('create with a missing required field is denied (title, createdAt)', async function () {
+      await seedUsers();
+      await assertFails(createPost(verifiedCtx('creator'), without('title')));
+      await assertFails(createPost(verifiedCtx('creator'), without('createdAt')));
+    });
+
+    it('create with client-supplied createdAt (not server time) is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ createdAt: new Date() }))
+      );
+    });
+
+    it('create with a spoofed author display name is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ author: 'Other User' }))
+      );
+    });
+
+    it('create with commentsCount != 0 or non-int likes is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ commentsCount: 1 }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ likes: '0' }))
+      );
+    });
+
+    it('create with non-string assetPath / category is denied', async function () {
+      await seedUsers();
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ assetPath: 123 }))
+      );
+      await assertFails(
+        createPost(verifiedCtx('creator'), validPost({ category: 123 }))
+      );
+    });
+
+    // ── EDIT (semua ditolak: kontrak semasa) ────────────────────
+    it('owner CANNOT edit title or content of own post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ title: 'Tajuk baharu' }));
+      await assertFails(db.doc('posts/p1').update({ content: 'Kandungan baharu.' }));
+    });
+
+    it('owner CANNOT change authorId (ownership transfer)', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ authorId: 'other' }));
+    });
+
+    it('owner CANNOT change createdAt', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ createdAt: new Date() }));
+    });
+
+    it('owner CANNOT set likes or commentsCount directly', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ likes: 999 }));
+      await assertFails(db.doc('posts/p1').update({ commentsCount: 5 }));
+    });
+
+    it('owner CANNOT add an updatedAt or other unknown field', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('creator').firestore();
+      await assertFails(db.doc('posts/p1').update({ updatedAt: serverTimestamp() }));
+      await assertFails(db.doc('posts/p1').update({ isAdmin: true }));
+    });
+
+    it("another user CANNOT edit someone else's post", async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('other').firestore();
+      await assertFails(db.doc('posts/p1').update({ content: 'Dirampas.' }));
+    });
+
+    it("another user CANNOT take over a post by setting authorId to themselves", async function () {
+      await seedUsers();
+      await seedPost();
+      const db = verifiedCtx('other').firestore();
+      await assertFails(db.doc('posts/p1').update({ authorId: 'other' }));
+    });
+
+    it('unauthenticated user CANNOT edit a post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.doc('posts/p1').update({ content: 'Tanpa login.' }));
+    });
+
+    // ── DELETE (owner CAN / another CANNOT sudah dilindungi di atas:
+    //    'owner CAN delete own post' & 'user CANNOT delete another users post') ──
+    it('unauthenticated user CANNOT delete a post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.doc('posts/p1').delete());
+    });
+
+    it('owner with an UNVERIFIED email CANNOT delete own post', async function () {
+      await seedUsers();
+      await seedPost();
+      const db = testEnv
+        .authenticatedContext('creator', { email_verified: false })
+        .firestore();
+      await assertFails(db.doc('posts/p1').delete());
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // SOCIAL — LIKES (Phase 1 / Batch 1)
+  // Kaunter `posts.likes` hanya boleh berubah TEPAT ±1 dalam batch
+  // yang sama dgn create/delete posts/{id}/likes/{uid}.
+  // ══════════════════════════════════════════════════════════════
+  describe('social: likes', function () {
+    const { serverTimestamp } = require('firebase/firestore');
+
+    const seedPost = async (likes = 0) => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc('posts/p1').set({
+          type: 'quote',
+          title: '',
+          content: 'Post untuk ujian like.',
+          author: 'Author',
+          authorId: 'author',
+          likes,
+          commentsCount: 0,
+          assetPath: null,
+          category: null,
+          createdAt: new Date(),
+        });
+      });
+    };
+
+    const seedLike = async (uid) => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc(`posts/p1/likes/${uid}`).set({
+          createdAt: new Date(),
+        });
+      });
+    };
+
+    const verifiedCtx = (uid) =>
+      testEnv.authenticatedContext(uid, { email_verified: true });
+
+    // Bina batch "like": create like doc + likes -> newCount
+    const likeBatch = (db, uid, newCount, likeData) => {
+      const batch = db.batch();
+      batch.set(db.doc(`posts/p1/likes/${uid}`),
+        likeData || { createdAt: serverTimestamp() });
+      batch.update(db.doc('posts/p1'), { likes: newCount });
+      return batch.commit();
+    };
+
+    // Bina batch "unlike": delete like doc + likes -> newCount
+    const unlikeBatch = (db, uid, newCount) => {
+      const batch = db.batch();
+      batch.delete(db.doc(`posts/p1/likes/${uid}`));
+      batch.update(db.doc('posts/p1'), { likes: newCount });
+      return batch.commit();
+    };
+
+    it('verified user CAN like a post (like doc + likes +1 in one batch)', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+
+      await assertSucceeds(likeBatch(db, 'user-a', 1));
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const post = await context.firestore().doc('posts/p1').get();
+        if (post.data().likes !== 1) {
+          throw new Error('expected likes == 1, got ' + post.data().likes);
+        }
+      });
+    });
+
+    it('unauthenticated user CANNOT like', async function () {
+      await seedPost(0);
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(likeBatch(db, 'user-a', 1));
+    });
+
+    it('unverified user CANNOT like', async function () {
+      await seedPost(0);
+      const db = testEnv
+        .authenticatedContext('user-a', { email_verified: false })
+        .firestore();
+      await assertFails(likeBatch(db, 'user-a', 1));
+    });
+
+    it('user CANNOT like as another user (spoofed uid)', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(likeBatch(db, 'victim', 1));
+    });
+
+    it('like doc WITHOUT matching likes +1 is denied', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.doc('posts/p1/likes/user-a').set({ createdAt: serverTimestamp() })
+      );
+    });
+
+    it('likes +1 WITHOUT a like doc is denied', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc('posts/p1').update({ likes: 1 }));
+    });
+
+    it('like with counter jump of +2 is denied', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(likeBatch(db, 'user-a', 2));
+    });
+
+    it('DUPLICATE like by same user is denied and count stays correct', async function () {
+      await seedPost(1);
+      await seedLike('user-a');
+      const db = verifiedCtx('user-a').firestore();
+
+      await assertFails(likeBatch(db, 'user-a', 2));
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const post = await context.firestore().doc('posts/p1').get();
+        if (post.data().likes !== 1) {
+          throw new Error('likes must stay 1, got ' + post.data().likes);
+        }
+      });
+    });
+
+    it('two different users CAN each like (counts 1 then 2)', async function () {
+      await seedPost(1);
+      await seedLike('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(likeBatch(db, 'user-a', 2));
+    });
+
+    it('like doc with extra field is denied', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        likeBatch(db, 'user-a', 1, {
+          createdAt: serverTimestamp(),
+          isAdmin: true,
+        })
+      );
+    });
+
+    it('like doc with client-supplied createdAt (not server time) is denied', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        likeBatch(db, 'user-a', 1, { createdAt: new Date('2020-01-01') })
+      );
+    });
+
+    it('user CAN unlike own like (delete + likes -1)', async function () {
+      await seedPost(1);
+      await seedLike('user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(unlikeBatch(db, 'user-a', 0));
+    });
+
+    it('unlike WITHOUT decrementing counter is denied', async function () {
+      await seedPost(1);
+      await seedLike('user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc('posts/p1/likes/user-a').delete());
+    });
+
+    it('decrementing counter WITHOUT deleting like doc is denied', async function () {
+      await seedPost(1);
+      await seedLike('user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc('posts/p1').update({ likes: 0 }));
+    });
+
+    it("user CANNOT delete another user's like", async function () {
+      await seedPost(1);
+      await seedLike('victim');
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(unlikeBatch(db, 'victim', 0));
+    });
+
+    it('user CANNOT unlike a post they never liked (counter would drift)', async function () {
+      await seedPost(1);
+      await seedLike('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(unlikeBatch(db, 'user-a', 0));
+    });
+
+    it('user CANNOT set likes counter directly to an arbitrary value', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc('posts/p1').update({ likes: 999 }));
+    });
+
+    it('user CANNOT push likes below zero', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc('posts/p1').update({ likes: -1 }));
+    });
+
+    it('likes update cannot smuggle another field (content)', async function () {
+      await seedPost(0);
+      const db = verifiedCtx('user-a').firestore();
+      const batch = db.batch();
+      batch.set(db.doc('posts/p1/likes/user-a'), { createdAt: serverTimestamp() });
+      batch.update(db.doc('posts/p1'), { likes: 1, content: 'Diubah oleh penyerang.' });
+      await assertFails(batch.commit());
+    });
+
+    it('user CAN read own like doc but NOT another users like doc', async function () {
+      await seedPost(2);
+      await seedLike('user-a');
+      await seedLike('user-b');
+      const db = verifiedCtx('user-a').firestore();
+
+      await assertSucceeds(db.doc('posts/p1/likes/user-a').get());
+      await assertFails(db.doc('posts/p1/likes/user-b').get());
+    });
+
+    it('user CANNOT list all likes of a post', async function () {
+      await seedPost(1);
+      await seedLike('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.collection('posts/p1/likes').get());
+    });
+
+    it('user CAN clean up own orphan like after the post was deleted', async function () {
+      await seedLike('user-a'); // tiada posts/p1
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(db.doc('posts/p1/likes/user-a').delete());
+    });
+
+    it('user CANNOT like a post that does not exist', async function () {
+      const db = verifiedCtx('user-a').firestore();
+      const batch = db.batch();
+      batch.set(db.doc('posts/ghost/likes/user-a'), { createdAt: serverTimestamp() });
+      await assertFails(batch.commit());
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // SOCIAL — COMMENTS (Phase 1 / Batch 2)
+  // ══════════════════════════════════════════════════════════════
+  describe('social: comments', function () {
+    const { serverTimestamp } = require('firebase/firestore');
+
+    const seedPostAndUsers = async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        await db.doc('posts/p1').set({
+          type: 'quote', title: '', content: 'Post untuk ujian komen.',
+          author: 'Author', authorId: 'author', likes: 0,
+          commentsCount: 0, assetPath: null, category: null,
+          createdAt: new Date(),
+        });
+        await db.doc('users/user-a').set({
+          name: 'User A', email: 'user-a@example.com', authMethod: 'Email',
+          followersCount: 0, followingCount: 0, postsCount: 0,
+          treeLevel: 1, totalPoints: 0, currentStreak: 0, longestStreak: 0,
+        });
+        await db.doc('users/user-noname').set({
+          name: '', email: 'n@example.com', authMethod: 'Email',
+          followersCount: 0, followingCount: 0, postsCount: 0,
+          treeLevel: 1, totalPoints: 0, currentStreak: 0, longestStreak: 0,
+        });
+      });
+    };
+
+    const seedComment = async (id, authorId) => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc(`posts/p1/comments/${id}`).set({
+          authorId, author: 'Seed', content: 'Komen sedia ada.',
+          createdAt: new Date(),
+        });
+      });
+    };
+
+    const verifiedCtx = (uid) =>
+      testEnv.authenticatedContext(uid, { email_verified: true });
+
+    const validComment = (over = {}) => ({
+      authorId: 'user-a',
+      author: 'User A',
+      content: 'Komen yang sah.',
+      createdAt: serverTimestamp(),
+      ...over,
+    });
+
+    // ── create ──
+    it('verified user CAN create a valid comment', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(db.collection('posts/p1/comments').add(validComment()));
+    });
+
+    it("user with empty name CAN comment as 'Hamba Allah'", async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-noname').firestore();
+      await assertSucceeds(
+        db.collection('posts/p1/comments').add(
+          validComment({ authorId: 'user-noname', author: 'Hamba Allah' })
+        )
+      );
+    });
+
+    it('unauthenticated user CANNOT create a comment', async function () {
+      await seedPostAndUsers();
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.collection('posts/p1/comments').add(validComment()));
+    });
+
+    it('unverified user CANNOT create a comment', async function () {
+      await seedPostAndUsers();
+      const db = testEnv
+        .authenticatedContext('user-a', { email_verified: false })
+        .firestore();
+      await assertFails(db.collection('posts/p1/comments').add(validComment()));
+    });
+
+    it('user CANNOT spoof authorId', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(validComment({ authorId: 'user-a' }))
+      );
+    });
+
+    it('user CANNOT spoof the display name (author != users/{uid}.name)', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(validComment({ author: 'Ustaz Palsu' }))
+      );
+    });
+
+    it('comment with empty content is denied', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(validComment({ content: '' }))
+      );
+    });
+
+    it('comment longer than 500 chars is denied; exactly 500 is allowed', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(validComment({ content: 'a'.repeat(501) }))
+      );
+      await assertSucceeds(
+        db.collection('posts/p1/comments').add(validComment({ content: 'a'.repeat(500) }))
+      );
+    });
+
+    it('comment with non-string content is denied', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(validComment({ content: 12345 }))
+      );
+    });
+
+    it('comment missing a required field is denied', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      const data = validComment();
+      delete data.content;
+      await assertFails(db.collection('posts/p1/comments').add(data));
+    });
+
+    it('comment with an extra field is denied', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(validComment({ isAdmin: true }))
+      );
+    });
+
+    it('comment with client-supplied createdAt is denied', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments').add(
+          validComment({ createdAt: new Date('2020-01-01') })
+        )
+      );
+    });
+
+    it('user CANNOT comment on a post that does not exist', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.collection('posts/ghost/comments').add(validComment()));
+    });
+
+    // ── read ──
+    it('verified user CAN read comments; unverified CANNOT', async function () {
+      await seedPostAndUsers();
+      await seedComment('c1', 'someone');
+      await assertSucceeds(
+        verifiedCtx('user-a').firestore().collection('posts/p1/comments').get()
+      );
+      await assertFails(
+        testEnv
+          .authenticatedContext('user-x', { email_verified: false })
+          .firestore()
+          .collection('posts/p1/comments')
+          .get()
+      );
+    });
+
+    // ── update / delete ──
+    it('author CANNOT edit own comment (updates disabled in Phase 1)', async function () {
+      await seedPostAndUsers();
+      await seedComment('c1', 'user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.doc('posts/p1/comments/c1').update({ content: 'Diedit.' })
+      );
+    });
+
+    it("user CANNOT edit another user's comment", async function () {
+      await seedPostAndUsers();
+      await seedComment('c1', 'victim');
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(
+        db.doc('posts/p1/comments/c1').update({ content: 'Dirampas.' })
+      );
+    });
+
+    it('author CAN delete own comment', async function () {
+      await seedPostAndUsers();
+      await seedComment('c1', 'user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(db.doc('posts/p1/comments/c1').delete());
+    });
+
+    it("user CANNOT delete another user's comment", async function () {
+      await seedPostAndUsers();
+      await seedComment('c1', 'victim');
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(db.doc('posts/p1/comments/c1').delete());
+    });
+
+    it('unauthenticated user CANNOT delete a comment', async function () {
+      await seedPostAndUsers();
+      await seedComment('c1', 'user-a');
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.doc('posts/p1/comments/c1').delete());
+    });
+
+    // ── counters / protected fields ──
+    it('user CANNOT modify commentsCount directly', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc('posts/p1').update({ commentsCount: 5 }));
+    });
+
+    it('creating a comment CANNOT be paired with a commentsCount bump', async function () {
+      await seedPostAndUsers();
+      const db = verifiedCtx('user-a').firestore();
+      const batch = db.batch();
+      batch.set(db.doc('posts/p1/comments/c1'), validComment());
+      batch.update(db.doc('posts/p1'), { commentsCount: 1 });
+      await assertFails(batch.commit());
+    });
+
+    it('creating a comment CANNOT be paired with a protected user-field change', async function () {
+      await seedPostAndUsers();
+      const db = testEnv
+        .authenticatedContext('user-a', {
+          email: 'user-a@example.com',
+          email_verified: true,
+        })
+        .firestore();
+      const batch = db.batch();
+      batch.set(db.doc('posts/p1/comments/c1'), validComment());
+      batch.update(db.doc('users/user-a'), { totalPoints: 999999 });
+      await assertFails(batch.commit());
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // SOCIAL — REPLIES (Phase 1 / Batch 3)
+  // posts/{postId}/comments/{commentId}/replies/{replyId} — 1 tahap.
+  // ══════════════════════════════════════════════════════════════
+  describe('social: replies', function () {
+    const { serverTimestamp } = require('firebase/firestore');
+
+    const seed = async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        await db.doc('posts/p1').set({
+          type: 'quote', title: '', content: 'Post untuk ujian reply.',
+          author: 'Author', authorId: 'author', likes: 0,
+          commentsCount: 0, assetPath: null, category: null,
+          createdAt: new Date(),
+        });
+        await db.doc('posts/p1/comments/c1').set({
+          authorId: 'someone', author: 'Someone', content: 'Komen induk.',
+          createdAt: new Date(),
+        });
+        await db.doc('users/user-a').set({
+          name: 'User A', email: 'user-a@example.com', authMethod: 'Email',
+          followersCount: 0, followingCount: 0, postsCount: 0,
+          treeLevel: 1, totalPoints: 0, currentStreak: 0, longestStreak: 0,
+        });
+        await db.doc('users/user-noname').set({
+          name: '', email: 'n@example.com', authMethod: 'Email',
+          followersCount: 0, followingCount: 0, postsCount: 0,
+          treeLevel: 1, totalPoints: 0, currentStreak: 0, longestStreak: 0,
+        });
+      });
+    };
+
+    const seedReply = async (id, authorId) => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc(`posts/p1/comments/c1/replies/${id}`).set({
+          authorId, author: 'Seed', content: 'Reply sedia ada.',
+          createdAt: new Date(),
+        });
+      });
+    };
+
+    const verifiedCtx = (uid) =>
+      testEnv.authenticatedContext(uid, { email_verified: true });
+
+    const REPLIES = 'posts/p1/comments/c1/replies';
+
+    const validReply = (over = {}) => ({
+      authorId: 'user-a',
+      author: 'User A',
+      content: 'Balasan yang sah.',
+      createdAt: serverTimestamp(),
+      ...over,
+    });
+
+    it('verified user CAN create a valid reply', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(db.collection(REPLIES).add(validReply()));
+    });
+
+    it("user with empty name CAN reply as 'Hamba Allah'", async function () {
+      await seed();
+      const db = verifiedCtx('user-noname').firestore();
+      await assertSucceeds(
+        db.collection(REPLIES).add(
+          validReply({ authorId: 'user-noname', author: 'Hamba Allah' })
+        )
+      );
+    });
+
+    it('unauthenticated user CANNOT create a reply', async function () {
+      await seed();
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.collection(REPLIES).add(validReply()));
+    });
+
+    it('unverified user CANNOT create a reply', async function () {
+      await seed();
+      const db = testEnv
+        .authenticatedContext('user-a', { email_verified: false })
+        .firestore();
+      await assertFails(db.collection(REPLIES).add(validReply()));
+    });
+
+    it('user CANNOT spoof authorId on a reply', async function () {
+      await seed();
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(
+        db.collection(REPLIES).add(validReply({ authorId: 'user-a' }))
+      );
+    });
+
+    it('user CANNOT spoof the display name on a reply', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection(REPLIES).add(validReply({ author: 'Ustaz Palsu' }))
+      );
+    });
+
+    it('reply with empty / oversized / non-string content is denied', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.collection(REPLIES).add(validReply({ content: '' })));
+      await assertFails(
+        db.collection(REPLIES).add(validReply({ content: 'a'.repeat(501) }))
+      );
+      await assertFails(db.collection(REPLIES).add(validReply({ content: 42 })));
+    });
+
+    it('reply with an extra field or client createdAt is denied', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.collection(REPLIES).add(validReply({ isAdmin: true })));
+      await assertFails(
+        db.collection(REPLIES).add(validReply({ createdAt: new Date('2020-01-01') }))
+      );
+    });
+
+    it('reply missing a required field is denied', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      const data = validReply();
+      delete data.author;
+      await assertFails(db.collection(REPLIES).add(data));
+    });
+
+    it('user CANNOT reply to a comment that does not exist', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection('posts/p1/comments/ghost/replies').add(validReply())
+      );
+    });
+
+    it('user CANNOT create a second reply level (reply-to-reply)', async function () {
+      await seed();
+      await seedReply('r1', 'someone');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(
+        db.collection(`${REPLIES}/r1/replies`).add(validReply())
+      );
+    });
+
+    it('verified user CAN read replies; unverified CANNOT', async function () {
+      await seed();
+      await seedReply('r1', 'someone');
+      await assertSucceeds(verifiedCtx('user-a').firestore().collection(REPLIES).get());
+      await assertFails(
+        testEnv
+          .authenticatedContext('user-x', { email_verified: false })
+          .firestore()
+          .collection(REPLIES)
+          .get()
+      );
+    });
+
+    it('collection-group query on replies is denied', async function () {
+      await seed();
+      await seedReply('r1', 'someone');
+      await assertFails(verifiedCtx('user-a').firestore().collectionGroup('replies').get());
+    });
+
+    it('author CANNOT edit own reply (updates disabled)', async function () {
+      await seed();
+      await seedReply('r1', 'user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertFails(db.doc(`${REPLIES}/r1`).update({ content: 'Diedit.' }));
+    });
+
+    it("user CANNOT edit another user's reply", async function () {
+      await seed();
+      await seedReply('r1', 'victim');
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(db.doc(`${REPLIES}/r1`).update({ content: 'Dirampas.' }));
+    });
+
+    it('author CAN delete own reply', async function () {
+      await seed();
+      await seedReply('r1', 'user-a');
+      const db = verifiedCtx('user-a').firestore();
+      await assertSucceeds(db.doc(`${REPLIES}/r1`).delete());
+    });
+
+    it("user CANNOT delete another user's reply", async function () {
+      await seed();
+      await seedReply('r1', 'victim');
+      const db = verifiedCtx('attacker').firestore();
+      await assertFails(db.doc(`${REPLIES}/r1`).delete());
+    });
+
+    it('unauthenticated user CANNOT delete a reply', async function () {
+      await seed();
+      await seedReply('r1', 'user-a');
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertFails(db.doc(`${REPLIES}/r1`).delete());
+    });
+
+    it('replying CANNOT be paired with a counter change on post or comment', async function () {
+      await seed();
+      const db = verifiedCtx('user-a').firestore();
+      const batch = db.batch();
+      batch.set(db.doc(`${REPLIES}/r1`), validReply());
+      batch.update(db.doc('posts/p1'), { commentsCount: 1 });
+      await assertFails(batch.commit());
+    });
+  });
 });

@@ -1,4 +1,7 @@
 // lib/home.dart
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
@@ -27,6 +30,10 @@ class _HomePageState extends State<HomePage>
 
   late AnimationController _confettiCtrl;
 
+  /// Elak dua bootstrap serentak (mis. rebuild ganjil) menyegerakkan
+  /// profil dua kali.
+  bool _bootstrapRunning = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,8 +42,61 @@ class _HomePageState extends State<HomePage>
       duration: const Duration(seconds: 3),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       Provider.of<AudioService>(context, listen: false).playIntroAudio();
+      // Bootstrap profil awam: async, berurutan, dan TIDAK menelan ralat
+      // (semua ralat dilog dalam _bootstrapPublicProfile).
+      unawaited(_bootstrapPublicProfile());
     });
+  }
+
+  /// Urutan (bukan fire-and-forget):
+  ///   1. guest → berhenti (tiada panggilan rangkaian);
+  ///   2. tarik data users/{uid} TERKINI dan TUNGGU siap — nama/bio
+  ///      tempatan mungkin lapuk, jadi tak boleh dipakai sebelum ini;
+  ///   3. pastikan UID sesi masih sama;
+  ///   4. e-mel MESTI sudah verified (Firebase Auth) — kalau belum, tiada
+  ///      profil awam dicipta dan tiada ralat palsu; aliran pengesahan
+  ///      e-mel yang sedia ada menguruskannya;
+  ///   5. segerakkan profil awam SEKALI melalui UserModel (yang menyemak
+  ///      sesi/generation dan kesegaran data).
+  /// Tiada setState / navigasi di sini; `mounted` disemak sebelum setiap
+  /// langkah yang menyentuh context.
+  Future<void> _bootstrapPublicProfile() async {
+    if (_bootstrapRunning) return;
+    _bootstrapRunning = true;
+    try {
+      if (!mounted) return;
+      // Ambil rujukan SEBELUM sebarang await (context tak selamat selepas).
+      final UserModel user = Provider.of<UserModel>(context, listen: false);
+
+      final User? authUser = FirebaseAuth.instance.currentUser;
+      if (authUser == null) return; // guest
+      final String uid = authUser.uid;
+
+      final CloudPullResult pull = await user.pullFromCloudDetailed();
+      if (!mounted) return;
+      if (FirebaseAuth.instance.currentUser?.uid != uid) return; // sesi berubah
+
+      if (pull != CloudPullResult.applied) {
+        debugPrint(
+          'HomePage: pull users/$uid tidak berjaya ($pull) — '
+          'profil awam tidak disegerakkan kali ini.',
+        );
+        return;
+      }
+
+      if (FirebaseAuth.instance.currentUser?.emailVerified != true) return;
+
+      final result = await user.syncPublicProfile();
+      if (result.isFailure) {
+        debugPrint('HomePage: sync profil awam gagal: ${result.error}');
+      }
+    } catch (e, st) {
+      debugPrint('HomePage._bootstrapPublicProfile ralat: $e\n$st');
+    } finally {
+      _bootstrapRunning = false;
+    }
   }
 
   @override
@@ -173,6 +233,9 @@ class _HomePageState extends State<HomePage>
           ),
 
           // ── 7. FAB — Buat Post (cuma waktu feed aktif) ────
+          // NOTA: UI ini BUKAN sempadan keselamatan. Cipta post hanya
+          // dibenarkan untuk pengguna verified oleh firestore.rules; apa-apa
+          // guard di UI hanyalah kemudahan pengguna.
           if (sidebar.isClosed)
             Positioned(
               bottom: 24, right: 20,
