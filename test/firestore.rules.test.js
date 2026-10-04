@@ -1,4 +1,5 @@
 const fs = require('fs');
+const assert = require('assert');
 const {
   initializeTestEnvironment,
   assertSucceeds,
@@ -1416,6 +1417,272 @@ describe('iHijrah Firestore Rules', function () {
       const batch = db.batch();
       batch.set(db.doc('posts/ghost/likes/user-a'), { createdAt: serverTimestamp() });
       await assertFails(batch.commit());
+    });
+
+    // ── Laluan SERVICE: transaction ala SocialService.setLiked ────
+    // Ujian di atas guna batch dgn kiraan eksplisit. Blok ini menjalankan
+    // runTransaction + FieldValue.increment (bentuk sebenar setLiked) dan
+    // operasi serentak, supaya race betul-betul diuji terhadap rules.
+    describe('service-shaped transactions (mirror of SocialService.setLiked)', function () {
+      this.timeout(30000);
+      const { increment } = require('firebase/firestore');
+
+      // Cermin setLiked() dalam lib/services/social_service.dart.
+      // Ujian "mirror matches" di bawah menjaga ia tak tersasar.
+      const setLikedTx = (db, uid, like) =>
+        db.runTransaction(async (tx) => {
+          const postRef = db.doc('posts/p1');
+          const likeRef = db.doc(`posts/p1/likes/${uid}`);
+          const snap = await tx.get(likeRef);
+          if (like) {
+            if (snap.exists) return;
+            tx.set(likeRef, { createdAt: serverTimestamp() });
+            tx.update(postRef, { likes: increment(1) });
+          } else {
+            if (!snap.exists) return;
+            tx.delete(likeRef);
+            tx.update(postRef, { likes: increment(-1) });
+          }
+        });
+
+      // withSecurityRulesDisabled() (rules-unit-testing 5.x) memulangkan
+      // Promise<void> dan MEMBUANG nilai pulangan callback, jadi keadaan
+      // ditangkap dalam pembolehubah luar dan dipulangkan selepas await.
+      const readState = async (uids) => {
+        let state;
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          const db = context.firestore();
+          const post = await db.doc('posts/p1').get();
+          const docs = {};
+          for (const uid of uids) {
+            docs[uid] = (await db.doc(`posts/p1/likes/${uid}`).get()).exists;
+          }
+          state = {
+            postExists: post.exists,
+            likes: post.exists ? post.data().likes : undefined,
+            docs,
+            likeDocCount: Object.values(docs).filter(Boolean).length,
+          };
+        });
+        return state;
+      };
+
+      // Post dengan medan `likes` mentah (rosak / tiada) — tak boleh
+      // dicipta melalui rules, jadi di-seed dgn rules dimatikan.
+      const seedRawPost = async (likesField) => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          const data = {
+            type: 'quote',
+            title: '',
+            content: 'Post untuk ujian like.',
+            author: 'Author',
+            authorId: 'author',
+            commentsCount: 0,
+            assetPath: null,
+            category: null,
+            createdAt: new Date(),
+          };
+          if (likesField.present) data.likes = likesField.value;
+          await context.firestore().doc('posts/p1').set(data);
+        });
+      };
+
+      it('mirror matches lib/services/social_service.dart setLiked()', function () {
+        const src = fs.readFileSync('lib/services/social_service.dart', 'utf8');
+        const start = src.indexOf('Future<Result<bool, SocialFailure>> setLiked(');
+        const end = src.indexOf('// ── COMMENT', start);
+        assert.ok(start > -1);
+        assert.ok(end > start);
+        const body = src.slice(start, end).replace(/\s+/g, ' ');
+        for (const needle of [
+          'runTransaction<void>',
+          'await tx.get(likeRef)',
+          'if (snap.exists) return;',
+          'if (!snap.exists) return;',
+          'tx.set(likeRef',
+          'FieldValue.increment(1)',
+          'tx.delete(likeRef)',
+          'FieldValue.increment(-1)',
+        ]) {
+          assert.ok(body.includes(needle), `hilang: ${needle}`);
+        }
+        // Tiada tulis di luar transaction.
+        assert.ok(!body.includes('likeRef.set('));
+        assert.ok(!body.includes('likeRef.delete('));
+        assert.ok(!body.includes('postRef.update('));
+      });
+
+      it('single like via transaction: like doc created and likes +1', async function () {
+        await seedPost(0);
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(setLikedTx(db, 'user-a', true));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], true);
+        assert.strictEqual(st.likes, 1);
+      });
+
+      it('single unlike via transaction: like doc deleted and likes -1', async function () {
+        await seedPost(1);
+        await seedLike('user-a');
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(setLikedTx(db, 'user-a', false));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], false);
+        assert.strictEqual(st.likes, 0);
+      });
+
+      it('unlike WITHOUT a like doc is a no-op (likes stays 0, never -1)', async function () {
+        await seedPost(0);
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(setLikedTx(db, 'user-a', false));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], false);
+        assert.strictEqual(st.likes, 0);
+      });
+
+      it('like on an already-liked post is a no-op (no double increment)', async function () {
+        await seedPost(1);
+        await seedLike('user-a');
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(setLikedTx(db, 'user-a', true));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], true);
+        assert.strictEqual(st.likes, 1);
+      });
+
+      // Pada ujian serentak, yang dikunci ialah INTEGRITI keadaan akhir
+      // (kiraan == bilangan like doc). Sama ada transaction kalah-perlumbaan
+      // diulang senyap atau ditolak bergantung pada pelayan, jadi hasil
+      // setiap janji tidak dikunci; sekurang-kurangnya satu mesti berjaya.
+      const settle = async (promises) => {
+        const results = await Promise.allSettled(promises);
+        assert.ok(results.some((r) => r.status === 'fulfilled'));
+        return results;
+      };
+
+      it('CONCURRENT like × like (same user): one like doc, likes = 1', async function () {
+        await seedPost(0);
+        const db = verifiedCtx('user-a').firestore();
+        await settle([
+          setLikedTx(db, 'user-a', true),
+          setLikedTx(db, 'user-a', true),
+        ]);
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], true);
+        assert.strictEqual(st.likes, 1);
+      });
+
+      it('CONCURRENT unlike × unlike (same user): no like doc, likes = 0 (never negative)', async function () {
+        await seedPost(1);
+        await seedLike('user-a');
+        const db = verifiedCtx('user-a').firestore();
+        await settle([
+          setLikedTx(db, 'user-a', false),
+          setLikedTx(db, 'user-a', false),
+        ]);
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], false);
+        assert.strictEqual(st.likes, 0);
+      });
+
+      it('CONCURRENT like × unlike (same user, starting liked): likes == number of like docs', async function () {
+        await seedPost(1);
+        await seedLike('user-a');
+        const db = verifiedCtx('user-a').firestore();
+        await settle([
+          setLikedTx(db, 'user-a', true),
+          setLikedTx(db, 'user-a', false),
+        ]);
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.likes, st.likeDocCount);
+        assert.ok([0, 1].includes(st.likes));
+      });
+
+      it('CONCURRENT like by user A × like by user B: two like docs, likes = 2', async function () {
+        await seedPost(0);
+        const dbA = verifiedCtx('user-a').firestore();
+        const dbB = verifiedCtx('user-b').firestore();
+        await settle([
+          setLikedTx(dbA, 'user-a', true),
+          setLikedTx(dbB, 'user-b', true),
+        ]);
+        const st = await readState(['user-a', 'user-b']);
+        assert.strictEqual(st.likes, st.likeDocCount);
+        assert.strictEqual(st.likes, 2);
+      });
+
+      // ── Post tiada / orphan ──────────────────────────────────
+      it('like on a MISSING post fails atomically (no orphan like doc)', async function () {
+        const db = verifiedCtx('user-a').firestore();
+        await assertFails(
+          db.runTransaction(async (tx) => {
+            const postRef = db.doc('posts/ghost');
+            const likeRef = db.doc('posts/ghost/likes/user-a');
+            const snap = await tx.get(likeRef);
+            if (!snap.exists) {
+              tx.set(likeRef, { createdAt: serverTimestamp() });
+              tx.update(postRef, { likes: increment(1) });
+            }
+          })
+        );
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          const snap = await context.firestore().doc('posts/ghost/likes/user-a').get();
+          assert.strictEqual(snap.exists, false);
+        });
+      });
+
+      it('unlike of an orphan like via the transaction fails ATOMICALLY; direct cleanup still works', async function () {
+        // Post sudah dipadam tetapi like doc yatim masih ada.
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          await context.firestore().doc('posts/p1/likes/user-a').set({
+            createdAt: new Date(),
+          });
+        });
+        const db = verifiedCtx('user-a').firestore();
+
+        // Laluan setLiked(false): tx.update(post) pada post tiada → gagal,
+        // jadi padam like turut digulung balik (tiada separuh-tulis).
+        await assertFails(setLikedTx(db, 'user-a', false));
+        let st = await readState(['user-a']);
+        assert.strictEqual(st.postExists, false);
+        assert.strictEqual(st.docs['user-a'], true);
+
+        // Rules sengaja benarkan pembersihan like yatim sendiri.
+        await assertSucceeds(db.doc('posts/p1/likes/user-a').delete());
+        st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], false);
+      });
+
+      // ── Kaunter rosak (tak boleh dicipta melalui rules) ─────
+      it('like is denied when posts.likes is a string (no like doc created)', async function () {
+        await seedRawPost({ present: true, value: 'abc' });
+        const db = verifiedCtx('user-a').firestore();
+        await assertFails(setLikedTx(db, 'user-a', true));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], false);
+        assert.strictEqual(st.likes, 'abc');
+      });
+
+      it('like is denied when posts.likes is missing (no like doc created)', async function () {
+        await seedRawPost({ present: false });
+        const db = verifiedCtx('user-a').firestore();
+        await assertFails(setLikedTx(db, 'user-a', true));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], false);
+        assert.strictEqual(st.likes, undefined);
+      });
+
+      it('DRIFT: unlike is denied when a like doc exists but likes == 0 (state unchanged)', async function () {
+        // Didokumenkan sebagai risiko data-rosak: kaunter tak boleh jadi -1,
+        // jadi unlike tak boleh diselesaikan sehingga data dibetulkan.
+        await seedPost(0);
+        await seedLike('user-a');
+        const db = verifiedCtx('user-a').firestore();
+        await assertFails(setLikedTx(db, 'user-a', false));
+        const st = await readState(['user-a']);
+        assert.strictEqual(st.docs['user-a'], true);
+        assert.strictEqual(st.likes, 0);
+      });
     });
   });
 
