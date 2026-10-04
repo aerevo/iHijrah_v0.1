@@ -2271,6 +2271,109 @@ describe('iHijrah Firestore Rules', function () {
       await assertFails(db.doc(`${REPLIES}/r1`).delete());
     });
 
+    // ── parent hilang: post / comment ─────────────────────────────
+    // Firestore tak cascade subcollection. Rules reply hanya menyemak
+    // `exists(comment)` untuk create, dan verified + pemilik untuk delete;
+    // tiada semakan kewujudan post. Ujian merekod behavior rules SEKARANG
+    // (bukan behavior yang dikehendaki). "Unauthenticated CANNOT delete"
+    // sudah dilindungi ujian sedia ada di atas, jadi tidak diulang.
+    describe('missing parent: orphan behaviour (current rules)', function () {
+      const removeDoc = (path) =>
+        testEnv.withSecurityRulesDisabled(async (context) => {
+          await context.firestore().doc(path).delete();
+        });
+
+      // withSecurityRulesDisabled() (rules-unit-testing 5.x) memulangkan
+      // Promise<void> dan membuang nilai pulangan callback; keadaan
+      // ditangkap ke pembolehubah luar.
+      const existsMap = async (paths) => {
+        const out = {};
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          for (const path of paths) {
+            out[path] = (await context.firestore().doc(path).get()).exists;
+          }
+        });
+        return out;
+      };
+
+      const POST = 'posts/p1';
+      const COMMENT = 'posts/p1/comments/c1';
+
+      it('W1: reply CAN be created under an orphaned comment whose POST was deleted (records current behaviour)', async function () {
+        await seed();
+        await removeDoc(POST); // komen kekal: tiada cascade
+        const before = await existsMap([POST, COMMENT]);
+        assert.strictEqual(before[POST], false);
+        assert.strictEqual(before[COMMENT], true);
+
+        // Rule create reply hanya semak exists(comment), bukan post →
+        // dijangka DIBENARKAN. Ini mengesahkan W1 (orphan-tree); jika rules
+        // kelak menyemak post, tukar kepada assertFails.
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(db.collection(REPLIES).add(validReply()));
+
+        let size;
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+          size = (await context.firestore().collection(REPLIES).get()).size;
+        });
+        assert.strictEqual(size, 1);
+      });
+
+      it('owner CAN delete own reply after the parent COMMENT was deleted', async function () {
+        await seed();
+        await seedReply('r1', 'user-a');
+        await removeDoc(COMMENT); // reply kekal sebagai yatim
+        const before = await existsMap([COMMENT, `${REPLIES}/r1`]);
+        assert.strictEqual(before[COMMENT], false);
+        assert.strictEqual(before[`${REPLIES}/r1`], true);
+
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(db.doc(`${REPLIES}/r1`).delete());
+
+        const after = await existsMap([`${REPLIES}/r1`]);
+        assert.strictEqual(after[`${REPLIES}/r1`], false);
+      });
+
+      it("another user CANNOT delete someone else's reply after the parent COMMENT was deleted", async function () {
+        await seed();
+        await seedReply('r1', 'user-a');
+        await removeDoc(COMMENT);
+
+        await assertFails(
+          verifiedCtx('attacker').firestore().doc(`${REPLIES}/r1`).delete()
+        );
+        // Penulis komen induk (dahulu) pun tak mewarisi kuasa ke atas reply.
+        await assertFails(
+          verifiedCtx('someone').firestore().doc(`${REPLIES}/r1`).delete()
+        );
+        const after = await existsMap([`${REPLIES}/r1`]);
+        assert.strictEqual(after[`${REPLIES}/r1`], true);
+      });
+
+      it('owner CAN delete own reply when BOTH the post and the parent comment are gone', async function () {
+        await seed();
+        await seedReply('r1', 'user-a');
+        await removeDoc(COMMENT);
+        await removeDoc(POST);
+        const before = await existsMap([POST, COMMENT, `${REPLIES}/r1`]);
+        assert.strictEqual(before[POST], false);
+        assert.strictEqual(before[COMMENT], false);
+        assert.strictEqual(before[`${REPLIES}/r1`], true);
+
+        const db = verifiedCtx('user-a').firestore();
+        await assertSucceeds(db.doc(`${REPLIES}/r1`).delete());
+      });
+    });
+
+    it('unverified user CANNOT delete own reply', async function () {
+      await seed();
+      await seedReply('r1', 'user-a');
+      const db = testEnv
+        .authenticatedContext('user-a', { email_verified: false })
+        .firestore();
+      await assertFails(db.doc(`${REPLIES}/r1`).delete());
+    });
+
     it('replying CANNOT be paired with a counter change on post or comment', async function () {
       await seed();
       const db = verifiedCtx('user-a').firestore();
