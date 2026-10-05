@@ -28,6 +28,33 @@ service cloud.firestore {
         request.time.toMillis() / 1000 - 300;
     }
 
+    // ── W3: ACCOUNT DELETION WRITE FREEZE ─────────────────────────
+    // Sebaik sahaja accountDeletionRequests/{uid} WUJUD, client UID
+    // tersebut tidak boleh lagi mencipta / mengubah data baru (lihat
+    // `!clientWriteFrozen(...)` pada rule create/update di bawah).
+    //
+    // SENGAJA hanya menyemak KEWUJUDAN dokumen, bukan `status`:
+    // fail-closed untuk pending/processing/failed/completed. Tiada
+    // laluan cancel/unfreeze dari client (request tak boleh diubah
+    // atau dipadam oleh client — lihat match accountDeletionRequests).
+    //
+    // exists() tidak tertakluk kepada rule `read` dokumen itu (yang
+    // `if false`), jadi lookup ini berfungsi. Helper ini TIDAK
+    // digunakan pada mana-mana `delete` atau pada branch kaunter
+    // berpasangan (posts.likes, profiles.followersCount) supaya
+    // pembersihan destruktif kekal berfungsi.
+    function deletionRequestPath(uid) {
+      return /databases/$(database)/documents/accountDeletionRequests/$(uid);
+    }
+
+    function deletionRequestExists(uid) {
+      return exists(deletionRequestPath(uid));
+    }
+
+    function clientWriteFrozen(uid) {
+      return deletionRequestExists(uid);
+    }
+
     // ── Helper path untuk social (like/comment/reply) ─────────────
     function postPath(postId) {
       return /databases/$(database)/documents/posts/$(postId);
@@ -164,6 +191,7 @@ service cloud.firestore {
       // New user document:
       // identity + server-owned counters mesti bermula dengan nilai selamat.
       allow create: if isOwner(userId)
+        && !clientWriteFrozen(userId)
         && request.resource.data.keys().hasOnly([
           'name',
           'email',
@@ -209,6 +237,7 @@ service cloud.firestore {
       // User boleh ubah profile/settings tertentu.
       // Identity + counters/gamification stats tidak boleh berubah.
       allow update: if isOwner(userId)
+        && !clientWriteFrozen(userId)
         && request.resource.data.keys().hasOnly([
           'name',
           'email',
@@ -281,6 +310,7 @@ service cloud.firestore {
       allow read: if verified();
 
       allow create: if verified()
+        && !clientWriteFrozen(request.auth.uid)
         && request.resource.data.keys().hasOnly([
           'type',
           'title',
@@ -365,6 +395,7 @@ service cloud.firestore {
 
         allow create: if verified()
           && request.auth.uid == likeUid
+          && !clientWriteFrozen(request.auth.uid)
           && request.resource.data.keys().hasOnly(['createdAt'])
           && request.resource.data.createdAt == request.time
           && exists(postPath(postId))
@@ -391,6 +422,7 @@ service cloud.firestore {
         allow read: if verified();
 
         allow create: if verified()
+          && !clientWriteFrozen(request.auth.uid)
           && validCommentShape()
           && exists(postPath(postId));
 
@@ -405,6 +437,7 @@ service cloud.firestore {
           allow read: if verified();
 
           allow create: if verified()
+            && !clientWriteFrozen(request.auth.uid)
             && validCommentShape()
             && exists(
               /databases/$(database)/documents/posts/$(postId)/comments/$(commentId)
@@ -429,6 +462,7 @@ service cloud.firestore {
       // belum verify tak wujud secara awam). Kaunter mesti bermula 0.
       allow create: if verified()
         && isOwner(userId)
+        && !clientWriteFrozen(userId)
         && request.resource.data.keys().hasOnly([
           'name', 'bio', 'followersCount', 'createdAt'
         ])
@@ -442,9 +476,13 @@ service cloud.firestore {
 
       allow update: if verified()
         && (
-          // (a) Pemilik: nama + bio sahaja.
+          // (a) Pemilik: nama + bio sahaja. Dibekukan (W3) jika
+          // request padam akaun wujud. Branch (b) di bawah SENGAJA
+          // tidak disentuh — ia hanya sah berpasangan dgn follow
+          // create (dibekukan) / follow delete (cleanup, dibenarkan).
           (
             isOwner(userId)
+            && !clientWriteFrozen(userId)
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['name', 'bio'])
             && validProfileName(request.resource.data.name)
@@ -507,6 +545,10 @@ service cloud.firestore {
         && request.resource.data.followerId == request.auth.uid
         && request.resource.data.followeeId is string
         && request.resource.data.followeeId != request.auth.uid
+        // W3: follower sedang memadam akaun, ATAU followee sedang
+        // memadam akaun → edge baru tidak boleh dicipta.
+        && !clientWriteFrozen(request.auth.uid)
+        && !clientWriteFrozen(request.resource.data.followeeId)
         && edgeId == followEdgeId(
           request.resource.data.followerId,
           request.resource.data.followeeId

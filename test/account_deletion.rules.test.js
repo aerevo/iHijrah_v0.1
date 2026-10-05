@@ -23,6 +23,9 @@ const {
   assertSucceeds,
   assertFails,
 } = require('@firebase/rules-unit-testing');
+// W3: rules mensyaratkan `createdAt == request.time` → mesti serverTimestamp.
+const firebase = require('firebase/compat/app');
+require('firebase/compat/firestore');
 
 const PROJECT_ID = 'ihijrah-178fc';
 
@@ -427,6 +430,351 @@ describe('iHijrah Firestore Rules — account deletion cleanup', function () {
       await seedProfile('fan');
       await seedEdge('fan', 'me'); // profil 'me' sudah tiada
       await assertSucceeds(verifiedCtx('fan').firestore().doc('follows/fan_me').delete());
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // W3 — Account Deletion Write Freeze
+  // ══════════════════════════════════════════════════════════════
+  // Sebaik sahaja accountDeletionRequests/{uid} WUJUD (status apa pun),
+  // client UID itu tidak boleh mencipta / mengubah data baru. DELETE
+  // dan pasangan kaunter (likes / followersCount) kekal berfungsi supaya
+  // cleanup destruktif tidak rosak.
+  //
+  // Setiap kes freeze diuji BERPASANGAN: write yang SAMA mesti BERJAYA
+  // tanpa request (kawalan), dan DITOLAK apabila request wujud. Tanpa
+  // kawalan, penolakan boleh datang dari sebab lain (medan salah dll.)
+  // dan ujian tidak membuktikan apa-apa tentang freeze.
+  describe('W3 — write freeze once accountDeletionRequests/{uid} exists', function () {
+    this.timeout(120000);
+
+    const serverTs = () => firebase.firestore.FieldValue.serverTimestamp();
+
+    // Verified + email claim (users create) + reauth baru (padam akaun).
+    const actor = (uid) =>
+      verifiedCtx(uid, { email: `${uid}@example.com`, auth_time: nowSeconds() });
+
+    const seedDeletionRequest = (uid, status = 'pending') =>
+      admin((db) =>
+        db.doc(`accountDeletionRequests/${uid}`).set({
+          uid,
+          status,
+          createdAt: new Date(),
+        })
+      );
+
+    const userDoc = (uid, name = 'Me') => ({
+      name,
+      email: `${uid}@example.com`,
+      authMethod: 'email',
+      followersCount: 0,
+      followingCount: 0,
+      postsCount: 0,
+      treeLevel: 1,
+      totalPoints: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+    });
+
+    const seedUser = (uid, name = 'Me') =>
+      admin((db) => db.doc(`users/${uid}`).set(userDoc(uid, name)));
+
+    const none = async () => {};
+
+    // `frozen` = UID yang request-nya dibuat; `landed()` = write benar-benar
+    // masuk ke Firestore.
+    const freezeCases = [
+      {
+        name: 'own user CREATE',
+        uid: 'me',
+        frozen: 'me',
+        seed: none,
+        write: (db) => db.doc('users/me').set(userDoc('me')),
+        landed: () => exists('users/me'),
+      },
+      {
+        name: 'own user UPDATE',
+        uid: 'me',
+        frozen: 'me',
+        seed: () => seedUser('me'),
+        write: (db) => db.doc('users/me').update({ themeMode: 'dark' }),
+        landed: async () => (await field('users/me', 'themeMode')) === 'dark',
+      },
+      {
+        name: 'post CREATE',
+        uid: 'me',
+        frozen: 'me',
+        seed: () => seedUser('me', 'Me'),
+        write: (db) =>
+          db.doc('posts/p-new').set({
+            type: 'quote',
+            title: '',
+            content: 'Kandungan post baru W3.',
+            author: 'Me',
+            authorId: 'me',
+            likes: 0,
+            commentsCount: 0,
+            assetPath: null,
+            category: null,
+            createdAt: serverTs(),
+          }),
+        landed: () => exists('posts/p-new'),
+      },
+      {
+        name: 'like CREATE (paired with counter +1)',
+        uid: 'me',
+        frozen: 'me',
+        seed: () => seedPost('p1', 'other', 0),
+        write: (db) => {
+          const batch = db.batch();
+          batch.set(db.doc('posts/p1/likes/me'), { createdAt: serverTs() });
+          batch.update(db.doc('posts/p1'), { likes: 1 });
+          return batch.commit();
+        },
+        landed: () => exists('posts/p1/likes/me'),
+      },
+      {
+        name: 'comment CREATE',
+        uid: 'me',
+        frozen: 'me',
+        seed: async () => {
+          await seedUser('me', 'Me');
+          await seedPost('p1', 'other', 0);
+        },
+        write: (db) =>
+          db.doc('posts/p1/comments/c-new').set({
+            authorId: 'me',
+            author: 'Me',
+            content: 'Komen baru W3.',
+            createdAt: serverTs(),
+          }),
+        landed: () => exists('posts/p1/comments/c-new'),
+      },
+      {
+        name: 'reply CREATE',
+        uid: 'me',
+        frozen: 'me',
+        seed: async () => {
+          await seedUser('me', 'Me');
+          await seedPost('p1', 'other', 0);
+          await seedComment('p1', 'c1', 'other');
+        },
+        write: (db) =>
+          db.doc('posts/p1/comments/c1/replies/r-new').set({
+            authorId: 'me',
+            author: 'Me',
+            content: 'Reply baru W3.',
+            createdAt: serverTs(),
+          }),
+        landed: () => exists('posts/p1/comments/c1/replies/r-new'),
+      },
+      {
+        name: 'outgoing follow CREATE (follower is deleting)',
+        uid: 'me',
+        frozen: 'me',
+        seed: async () => {
+          await seedProfile('me');
+          await seedProfile('target');
+        },
+        write: (db) => {
+          const batch = db.batch();
+          batch.set(db.doc('follows/me_target'), {
+            followerId: 'me',
+            followeeId: 'target',
+            createdAt: serverTs(),
+          });
+          batch.update(db.doc('profiles/target'), { followersCount: 1 });
+          return batch.commit();
+        },
+        landed: () => exists('follows/me_target'),
+      },
+      {
+        name: 'another user following the deleting user (followee is deleting)',
+        uid: 'fan',
+        frozen: 'me', // HANYA followee yang ada request; 'fan' tiada.
+        seed: async () => {
+          await seedProfile('fan');
+          await seedProfile('me');
+        },
+        write: (db) => {
+          const batch = db.batch();
+          batch.set(db.doc('follows/fan_me'), {
+            followerId: 'fan',
+            followeeId: 'me',
+            createdAt: serverTs(),
+          });
+          batch.update(db.doc('profiles/me'), { followersCount: 1 });
+          return batch.commit();
+        },
+        landed: () => exists('follows/fan_me'),
+      },
+      {
+        name: 'own profile CREATE',
+        uid: 'me',
+        frozen: 'me',
+        seed: none,
+        write: (db) =>
+          db.doc('profiles/me').set({
+            name: 'Me',
+            bio: '',
+            followersCount: 0,
+            createdAt: serverTs(),
+          }),
+        landed: () => exists('profiles/me'),
+      },
+      {
+        name: 'own profile UPDATE (name/bio)',
+        uid: 'me',
+        frozen: 'me',
+        seed: () => seedProfile('me'),
+        write: (db) =>
+          db.doc('profiles/me').update({ name: 'Nama Baru', bio: 'Bio baru' }),
+        landed: async () => (await field('profiles/me', 'name')) === 'Nama Baru',
+      },
+    ];
+
+    for (const c of freezeCases) {
+      it(`${c.name}: ALLOWED without request, DENIED once request exists`, async function () {
+        // Kawalan: tiada request → write sah mesti berjaya.
+        await c.seed();
+        await assertSucceeds(c.write(actor(c.uid).firestore()));
+        expect(await c.landed(), `${c.name}: control write must land`);
+
+        // Freeze: keadaan sama + request → mesti ditolak, dan tiada kesan.
+        await testEnv.clearFirestore();
+        await c.seed();
+        await seedDeletionRequest(c.frozen);
+        await assertFails(c.write(actor(c.uid).firestore()));
+        expect(!(await c.landed()), `${c.name}: frozen write must NOT land`);
+      });
+    }
+
+    // ── Fail-closed: status tidak penting ────────────────────────
+    for (const status of ['pending', 'processing', 'failed', 'completed']) {
+      it(`status '${status}' keeps the freeze (existence only, 'failed' does NOT reopen writes)`, async function () {
+        await seedProfile('me');
+        await seedDeletionRequest('me', status);
+        await assertFails(
+          actor('me').firestore().doc('profiles/me').update({ name: 'Nama Baru', bio: '' })
+        );
+        expect((await field('profiles/me', 'name')) === 'User me', 'profile must be unchanged');
+      });
+    }
+
+    // ── Skop: hanya UID yang ada request ─────────────────────────
+    it("someone ELSE's deletion request does not freeze me (lookup is per-UID)", async function () {
+      await seedUser('me', 'Me');
+      await seedPost('p1', 'other', 0);
+      await seedDeletionRequest('someone-else');
+      const db = actor('me').firestore();
+      await assertSucceeds(
+        db.doc('posts/p-ok').set({
+          type: 'quote',
+          title: '',
+          content: 'Post ini mesti dibenarkan.',
+          author: 'Me',
+          authorId: 'me',
+          likes: 0,
+          commentsCount: 0,
+          assetPath: null,
+          category: null,
+          createdAt: serverTs(),
+        })
+      );
+      await assertSucceeds(
+        db.doc('posts/p1/comments/c-ok').set({
+          authorId: 'me',
+          author: 'Me',
+          content: 'Komen ini mesti dibenarkan.',
+          createdAt: serverTs(),
+        })
+      );
+    });
+
+    // ── Cleanup destruktif TIDAK rosak apabila request wujud ─────
+    describe('destructive cleanup still works while the request exists', function () {
+      it('full purge algorithm succeeds, counters stay correct', async function () {
+        await seedScenario();
+        await seedDeletionRequest('me');
+        await assertSucceeds(purgeAsUser(deletingCtx('me').firestore(), 'me'));
+
+        expect(!(await exists('posts/theirs1/likes/me')), 'my like on theirs1 must be gone');
+        expect(!(await exists('posts/mine/likes/me')), 'my like on my own post must be gone');
+        expect(!(await exists('posts/theirs1/comments/c1')), 'my comment c1 must be gone');
+        expect(!(await exists('posts/theirs1/comments/c1/replies/r2')), 'my reply r2 must be gone');
+        expect(!(await exists('posts/theirs1/comments/c2/replies/r3')), 'my reply r3 must be gone');
+        expect(!(await exists('posts/mine/comments/c3')), 'my comment c3 must be gone');
+        expect(!(await exists('posts/mine')), 'my own post must be gone');
+        expect((await field('posts/theirs1', 'likes')) === 1, 'theirs1.likes must be 1');
+        expect(await exists('posts/theirs1/likes/third'), "third user's like must remain");
+      });
+
+      it('OUTGOING unfollow with paired counter decrement still succeeds', async function () {
+        await seedProfile('me');
+        await seedProfile('target', 1);
+        await seedEdge('me', 'target');
+        await seedDeletionRequest('me');
+
+        const db = deletingCtx('me').firestore();
+        const batch = db.batch();
+        batch.delete(db.doc('follows/me_target'));
+        batch.update(db.doc('profiles/target'), { followersCount: 0 });
+        await assertSucceeds(batch.commit());
+        expect(!(await exists('follows/me_target')), 'outgoing edge must be gone');
+      });
+
+      it('a follower can still UNFOLLOW the deleting user (counter pairing intact)', async function () {
+        await seedProfile('fan');
+        await seedProfile('me', 1);
+        await seedEdge('fan', 'me');
+        await seedDeletionRequest('me');
+
+        const db = verifiedCtx('fan').firestore();
+        const batch = db.batch();
+        batch.delete(db.doc('follows/fan_me'));
+        batch.update(db.doc('profiles/me'), { followersCount: 0 });
+        await assertSucceeds(batch.commit());
+        expect(!(await exists('follows/fan_me')), 'fan edge must be gone');
+      });
+
+      it('deleting user can still delete own users/{uid} and profiles/{uid}', async function () {
+        await seedUser('me');
+        await seedProfile('me');
+        await seedDeletionRequest('me');
+
+        const db = deletingCtx('me').firestore();
+        await assertSucceeds(db.doc('profiles/me').delete());
+        await assertSucceeds(db.doc('users/me').delete());
+      });
+    });
+
+    // ── accountDeletionRequests itu sendiri ─────────────────────
+    describe('accountDeletionRequests itself', function () {
+      it('creating the request is still ALLOWED (freeze does not block its own trigger)', async function () {
+        await assertSucceeds(
+          actor('me').firestore().doc('accountDeletionRequests/me').set({
+            uid: 'me',
+            status: 'pending',
+            createdAt: serverTs(),
+          })
+        );
+      });
+
+      it('client has NO cancel/unfreeze path: update, delete, read and re-create are DENIED', async function () {
+        await seedDeletionRequest('me', 'failed');
+        const db = actor('me').firestore();
+        await assertFails(db.doc('accountDeletionRequests/me').update({ status: 'pending' }));
+        await assertFails(db.doc('accountDeletionRequests/me').delete());
+        await assertFails(db.doc('accountDeletionRequests/me').get());
+        await assertFails(
+          db.doc('accountDeletionRequests/me').set({
+            uid: 'me',
+            status: 'pending',
+            createdAt: serverTs(),
+          })
+        );
+        expect(await exists('accountDeletionRequests/me'), 'request must still exist');
+      });
     });
   });
 });
