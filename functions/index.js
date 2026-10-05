@@ -683,6 +683,28 @@ async function removeOutgoingFollows(uid, worker) {
   );
 }
 
+/*
+ * users.followingCount is NOT maintained by the production follow flow:
+ * setFollowing() only changes profiles.followersCount, firestore.rules
+ * create users/{uid} with followingCount == 0 and do not let clients
+ * change it. So a follower's counter is normally 0 and must not block
+ * deleting the edge.
+ *
+ *   integer >= 1       -> true  (caller decrements, then deletes the edge)
+ *   integer === 0      -> false (caller deletes the edge, no decrement)
+ *   anything else      -> throws (negative, non-integer, missing, null,
+ *                         string: corrupt data is surfaced, never repaired)
+ */
+function shouldDecrementFollowingCount(followingCount, userPath) {
+  if (!Number.isInteger(followingCount) || followingCount < 0) {
+    throw new Error(
+      `Invalid followingCount on ${userPath}.`,
+    );
+  }
+
+  return followingCount >= 1;
+}
+
 async function removeIncomingFollows(uid, worker) {
   const query = db
     .collection('follows')
@@ -724,17 +746,15 @@ async function removeIncomingFollows(uid, worker) {
             const count = user.followingCount;
 
             if (
-              !Number.isInteger(count) ||
-              count < 1
+              shouldDecrementFollowingCount(
+                count,
+                userRef.path,
+              )
             ) {
-              throw new Error(
-                `Invalid followingCount on ${userRef.path}.`,
-              );
+              tx.update(userRef, {
+                followingCount: count - 1,
+              });
             }
-
-            tx.update(userRef, {
-              followingCount: count - 1,
-            });
           }
 
           tx.delete(edge.ref);

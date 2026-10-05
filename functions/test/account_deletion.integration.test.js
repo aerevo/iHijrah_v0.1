@@ -773,3 +773,203 @@ for (const [label, badValue] of [
     },
   );
 }
+
+/*
+ * ---------------------------------------------------------------------
+ * users.followingCount semantics for INCOMING follows during deletion
+ *
+ * The production follow flow never maintains users.followingCount
+ * (setFollowing only changes profiles.followersCount; rules keep the
+ * field at 0 and clients cannot change it), so a follower's counter is
+ * normally 0. The first F3-G test above seeds followingCount: 1 on the
+ * follower (kept: it still covers the decrement path). These tests use
+ * the production-realistic value.
+ *
+ *   integer >= 1 -> decrement + delete edge   (first F3-G test)
+ *   integer === 0 -> delete edge, counter stays 0
+ *   anything else -> throw; corrupt data is neither repaired nor hidden
+ * ---------------------------------------------------------------------
+ */
+
+test(
+  'F3-G: incoming follow with follower followingCount 0 (production-realistic) is removed and deletion completes',
+  async () => {
+    const uid = 'f3g-fol0-target';
+    const followerUid = 'f3g-fol0-follower';
+    const followeeUid = 'f3g-fol0-followee';
+    const scenario = {
+      uids: [uid, followerUid, followeeUid],
+      postIds: [],
+    };
+
+    await cleanupCountScenario(scenario);
+    await db.collection('follows').doc(`${followerUid}_${uid}`).delete();
+    await db.collection('follows').doc(`${uid}_${followeeUid}`).delete();
+
+    try {
+      await ensureAuthUser(uid);
+      await ensureAuthUser(followerUid);
+      await ensureAuthUser(followeeUid);
+
+      // followingCount = 0 on EVERY user: what production actually stores.
+      await seedUserDocs(uid);
+      await seedUserDocs(followerUid);
+      await seedUserDocs(followeeUid);
+
+      /*
+       * followerUid -> uid  (INCOMING for the deleting user)
+       * uid -> followeeUid  (OUTGOING; followersCount logic is unchanged)
+       */
+      await db.collection('follows').doc(`${followerUid}_${uid}`).set({
+        followerId: followerUid,
+        followeeId: uid,
+        createdAt: new Date(),
+      });
+
+      await db.collection('follows').doc(`${uid}_${followeeUid}`).set({
+        followerId: uid,
+        followeeId: followeeUid,
+        createdAt: new Date(),
+      });
+
+      await db.collection('profiles').doc(uid).update({ followersCount: 1 });
+      await db
+        .collection('profiles')
+        .doc(followeeUid)
+        .update({ followersCount: 1 });
+
+      await requestDeletion(uid);
+
+      /*
+       * Must NOT throw "Invalid followingCount".
+       */
+      await processDeletion(uid);
+
+      const request = await db
+        .collection('accountDeletionRequests')
+        .doc(uid)
+        .get();
+
+      assert.equal(request.data().status, 'completed');
+      assert.equal(request.data().phase, 'completed');
+
+      // Incoming edge removed.
+      await assertMissing(`follows/${followerUid}_${uid}`);
+
+      // Follower untouched: still exists, counter exactly 0 (not -1).
+      const follower = await db.collection('users').doc(followerUid).get();
+
+      assert.equal(follower.exists, true);
+      assert.strictEqual(follower.data().followingCount, 0);
+
+      // Outgoing logic unchanged: edge removed, followee counter 1 -> 0.
+      await assertMissing(`follows/${uid}_${followeeUid}`);
+
+      const followeeProfile = await db
+        .collection('profiles')
+        .doc(followeeUid)
+        .get();
+
+      assert.strictEqual(followeeProfile.data().followersCount, 0);
+
+      // Deleting user is gone; the others' Auth accounts are not.
+      await assertMissing(`profiles/${uid}`);
+
+      await assert.rejects(
+        () => auth.getUser(uid),
+        (error) => error?.code === 'auth/user-not-found',
+      );
+
+      assert.equal((await auth.getUser(followerUid)).uid, followerUid);
+    } finally {
+      await db.collection('follows').doc(`${followerUid}_${uid}`).delete();
+      await db.collection('follows').doc(`${uid}_${followeeUid}`).delete();
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+const FOLLOWING_MISSING = Symbol('missing');
+
+for (const [label, badValue] of [
+  ['negative integer', -1],
+  ['non-integer number', 0.5],
+  ['string', '0'],
+  ['null', null],
+  ['missing field', FOLLOWING_MISSING],
+]) {
+  test(
+    `F3-G: invalid follower followingCount (${label}) fails deletion and is NOT repaired`,
+    async () => {
+      const key = label.replace(/\W+/g, '-');
+      const uid = `f3g-folbad-${key}-target`;
+      const followerUid = `f3g-folbad-${key}-follower`;
+      const scenario = { uids: [uid, followerUid], postIds: [] };
+      const edgeId = `${followerUid}_${uid}`;
+
+      await cleanupCountScenario(scenario);
+      await db.collection('follows').doc(edgeId).delete();
+
+      try {
+        await ensureAuthUser(uid);
+        await ensureAuthUser(followerUid);
+        await seedUserDocs(uid);
+
+        const follower = {
+          uid: followerUid,
+          displayName: followerUid,
+        };
+
+        if (badValue !== FOLLOWING_MISSING) {
+          follower.followingCount = badValue;
+        }
+
+        await db.collection('users').doc(followerUid).set(follower);
+        await db
+          .collection('profiles')
+          .doc(followerUid)
+          .set({ uid: followerUid, followersCount: 0 });
+
+        await db.collection('follows').doc(edgeId).set({
+          followerId: followerUid,
+          followeeId: uid,
+          createdAt: new Date(),
+        });
+
+        await db.collection('profiles').doc(uid).update({ followersCount: 1 });
+
+        await requestDeletion(uid);
+
+        await assert.rejects(
+          () => processDeletion(uid),
+          /Invalid followingCount/,
+        );
+
+        const request = await db
+          .collection('accountDeletionRequests')
+          .doc(uid)
+          .get();
+
+        assert.equal(request.data().status, 'failed');
+        assert.match(request.data().lastError, /Invalid followingCount/);
+
+        // Corrupt data is surfaced: edge NOT deleted, value NOT repaired.
+        assert.equal((await db.collection('follows').doc(edgeId).get()).exists, true);
+
+        const after = (await db.collection('users').doc(followerUid).get()).data();
+
+        if (badValue === FOLLOWING_MISSING) {
+          assert.equal('followingCount' in after, false);
+        } else {
+          assert.deepStrictEqual(after.followingCount, badValue);
+        }
+
+        // Deletion did not proceed to remove the Auth user.
+        assert.equal((await auth.getUser(uid)).uid, uid);
+      } finally {
+        await db.collection('follows').doc(edgeId).delete();
+        await cleanupCountScenario(scenario);
+      }
+    },
+  );
+}
