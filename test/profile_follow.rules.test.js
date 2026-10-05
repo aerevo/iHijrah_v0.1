@@ -675,4 +675,289 @@ describe('iHijrah Firestore Rules — profiles & follow', function () {
       await assertFails(db.doc('follows/user-a_user-b').get());
     });
   });
+
+  // ══════════════════════════════════════════════════════════════
+  // FOLLOW — laluan SERVICE (increment) + operasi serentak
+  // Ujian di atas menulis kiraan eksplisit dalam batch. Blok ini mencerminkan
+  // ProfileService.setFollowing() sebenar: semakan status (query) di luar
+  // batch, kemudian WriteBatch dgn edge + FieldValue.increment(±1).
+  // Operasi serentak diuji terhadap rules; yang dikunci ialah KEADAAN AKHIR
+  // dan invarian edge <-> profiles/{followee}.followersCount. Satu operasi
+  // yang kalah perlumbaan/duplicate DIJANGKA ditolak dgn permission-denied;
+  // itu behavior yang betul, bukan kegagalan.
+  // ══════════════════════════════════════════════════════════════
+  describe('follow: service-shaped writes & concurrency (mirror of ProfileService.setFollowing)', function () {
+    this.timeout(30000);
+    const assert = require('assert');
+    const { increment } = require('firebase/firestore');
+
+    // Cermin setFollowing() dalam lib/services/profile_service.dart.
+    // Ujian "mirror matches" di bawah menjaga ia tak tersasar.
+    // Pulangan: 'ok' (batch commit), 'noop' (status sudah sepadan),
+    // 'conflict' (profil sendiri belum wujud).
+    const setFollowingMirror = async (db, me, target, follow) => {
+      const edge = db.doc(`follows/${me}_${target}`);
+      const targetProfile = db.doc(`profiles/${target}`);
+
+      const existing = await db
+        .collection('follows')
+        .where('followerId', '==', me)
+        .where('followeeId', '==', target)
+        .limit(1)
+        .get();
+      const alreadyFollowing = !existing.empty;
+      if (alreadyFollowing === follow) return 'noop';
+
+      const batch = db.batch();
+      if (follow) {
+        const mine = await db.doc(`profiles/${me}`).get();
+        if (!mine.exists) return 'conflict';
+        batch.set(edge, {
+          followerId: me,
+          followeeId: target,
+          createdAt: serverTimestamp(),
+        });
+        batch.update(targetProfile, { followersCount: increment(1) });
+      } else {
+        batch.delete(edge);
+        const targetSnap = await targetProfile.get();
+        if (targetSnap.exists) {
+          batch.update(targetProfile, { followersCount: increment(-1) });
+        }
+      }
+      await batch.commit();
+      return 'ok';
+    };
+
+    // withSecurityRulesDisabled() (rules-unit-testing 5.x) memulangkan
+    // Promise<void>: keadaan ditangkap ke pembolehubah luar.
+    const readGraph = async (followee, followers) => {
+      let graph;
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        const snap = await db.doc(`profiles/${followee}`).get();
+        const edges = {};
+        for (const f of followers) {
+          edges[f] = (await db.doc(`follows/${f}_${followee}`).get()).exists;
+        }
+        graph = {
+          count: snap.data().followersCount,
+          edges,
+          edgeCount: Object.values(edges).filter(Boolean).length,
+        };
+      });
+      return graph;
+    };
+
+    // Jalankan serentak; setiap penolakan MESTI permission-denied.
+    const race = async (...promises) => {
+      const results = await Promise.allSettled(promises);
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          assert.strictEqual(
+            r.reason && r.reason.code,
+            'permission-denied',
+            `penolakan tak dijangka: ${r.reason}`
+          );
+        }
+      }
+      return results;
+    };
+    const okCount = (results) =>
+      results.filter((r) => r.status === 'fulfilled' && r.value === 'ok').length;
+
+    it('mirror matches lib/services/profile_service.dart setFollowing()', function () {
+      const src = fs.readFileSync('lib/services/profile_service.dart', 'utf8');
+      const start = src.indexOf('Future<Result<bool, SocialFailure>> setFollowing(');
+      const end = src.indexOf('/// Orang yang mengikut SAYA', start);
+      assert.ok(start > -1 && end > start);
+      const body = src.slice(start, end).replace(/\s+/g, ' ');
+      for (const needle of [
+        'if (alreadyFollowing == follow)',
+        '_db.batch()',
+        'if (!mine.exists)',
+        'batch.set(edge,',
+        "'followersCount': FieldValue.increment(1)",
+        'batch.delete(edge)',
+        'if (target.exists)',
+        "'followersCount': FieldValue.increment(-1)",
+        'await batch.commit()',
+      ]) {
+        assert.ok(body.includes(needle), `hilang: ${needle}`);
+      }
+      // Tiada tulis di luar batch.
+      assert.ok(!body.includes('edge.set('));
+      assert.ok(!body.includes('edge.delete('));
+      assert.ok(!body.includes('targetProfile.update('));
+      assert.ok(!body.includes('runTransaction'));
+    });
+
+    // ── laluan increment (bentuk sebenar client) ────────────────
+    it('service-shaped follow (increment +1): edge created, followersCount 0 -> 1', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      assert.strictEqual(await assertSucceeds(setFollowingMirror(db, 'user-a', 'user-b', true)), 'ok');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], true);
+      assert.strictEqual(g.count, 1);
+    });
+
+    it('service-shaped unfollow (increment -1): edge deleted, followersCount 1 -> 0', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b', { followersCount: 1 });
+      await seedEdge('user-a', 'user-b');
+      const db = verifiedCtx('user-a').firestore();
+      assert.strictEqual(await assertSucceeds(setFollowingMirror(db, 'user-a', 'user-b', false)), 'ok');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], false);
+      assert.strictEqual(g.count, 0);
+    });
+
+    // ── duplicate (berturutan) ──────────────────────────────────
+    it('DUPLICATE follow via the service path is a no-op (count stays 1)', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      assert.strictEqual(await assertSucceeds(setFollowingMirror(db, 'user-a', 'user-b', true)), 'ok');
+      assert.strictEqual(await assertSucceeds(setFollowingMirror(db, 'user-a', 'user-b', true)), 'noop');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], true);
+      assert.strictEqual(g.count, 1);
+    });
+
+    it('DUPLICATE unfollow via the service path is a no-op (count stays 0, never -1)', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b', { followersCount: 1 });
+      await seedEdge('user-a', 'user-b');
+      const db = verifiedCtx('user-a').firestore();
+      assert.strictEqual(await assertSucceeds(setFollowingMirror(db, 'user-a', 'user-b', false)), 'ok');
+      assert.strictEqual(await assertSucceeds(setFollowingMirror(db, 'user-a', 'user-b', false)), 'noop');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], false);
+      assert.strictEqual(g.count, 0);
+    });
+
+    it('DUPLICATE unfollow batch that BYPASSES the status check is denied (counter untouched)', async function () {
+      // user-c masih mengikut, jadi kiraan 1 nampak "sah" untuk -1,
+      // tetapi user-a TIADA edge untuk dipadam.
+      await seedProfile('user-a');
+      await seedProfile('user-c');
+      await seedProfile('user-b', { followersCount: 1 });
+      await seedEdge('user-c', 'user-b');
+      const db = verifiedCtx('user-a').firestore();
+      const batch = db.batch();
+      batch.delete(db.doc('follows/user-a_user-b'));
+      batch.update(db.doc('profiles/user-b'), { followersCount: increment(-1) });
+      await assertFails(batch.commit());
+      const g = await readGraph('user-b', ['user-a', 'user-c']);
+      assert.strictEqual(g.count, 1);
+      assert.strictEqual(g.edges['user-c'], true);
+    });
+
+    // ── auth ────────────────────────────────────────────────────
+    it('unverified user CANNOT unfollow (edge and counter untouched)', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b', { followersCount: 1 });
+      await seedEdge('user-a', 'user-b');
+      const db = testEnv
+        .authenticatedContext('user-a', { email_verified: false })
+        .firestore();
+      await assertFails(unfollowBatch(db, 'user-a', 'user-b', 0));
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], true);
+      assert.strictEqual(g.count, 1);
+    });
+
+    // ── SERENTAK ────────────────────────────────────────────────
+    it('CONCURRENT follow x follow (same user): exactly one counts, edge exists, followersCount = 1', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      const results = await race(
+        setFollowingMirror(db, 'user-a', 'user-b', true),
+        setFollowingMirror(db, 'user-a', 'user-b', true)
+      );
+      assert.strictEqual(okCount(results), 1, 'tepat satu follow boleh berjaya');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], true);
+      assert.strictEqual(g.count, 1);
+    });
+
+    it('CONCURRENT follow by TWO users on the same target: both succeed, followersCount = 2 = edges', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-c');
+      await seedProfile('user-b');
+      const results = await race(
+        setFollowingMirror(verifiedCtx('user-a').firestore(), 'user-a', 'user-b', true),
+        setFollowingMirror(verifiedCtx('user-c').firestore(), 'user-c', 'user-b', true)
+      );
+      assert.strictEqual(okCount(results), 2);
+      const g = await readGraph('user-b', ['user-a', 'user-c']);
+      assert.strictEqual(g.edgeCount, 2);
+      assert.strictEqual(g.count, 2);
+    });
+
+    it('CONCURRENT unfollow x unfollow (same user): exactly one counts, edge gone, followersCount = 0 (never -1)', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b', { followersCount: 1 });
+      await seedEdge('user-a', 'user-b');
+      const db = verifiedCtx('user-a').firestore();
+      const results = await race(
+        setFollowingMirror(db, 'user-a', 'user-b', false),
+        setFollowingMirror(db, 'user-a', 'user-b', false)
+      );
+      assert.strictEqual(okCount(results), 1, 'tepat satu unfollow boleh berjaya');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.edges['user-a'], false);
+      assert.strictEqual(g.count, 0);
+    });
+
+    it('CONCURRENT unfollow by TWO followers of the same target: both succeed, followersCount 2 -> 0', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-c');
+      await seedProfile('user-b', { followersCount: 2 });
+      await seedEdge('user-a', 'user-b');
+      await seedEdge('user-c', 'user-b');
+      const results = await race(
+        setFollowingMirror(verifiedCtx('user-a').firestore(), 'user-a', 'user-b', false),
+        setFollowingMirror(verifiedCtx('user-c').firestore(), 'user-c', 'user-b', false)
+      );
+      assert.strictEqual(okCount(results), 2);
+      const g = await readGraph('user-b', ['user-a', 'user-c']);
+      assert.strictEqual(g.edgeCount, 0);
+      assert.strictEqual(g.count, 0);
+    });
+
+    it('CONCURRENT follow x unfollow (starting FOLLOWED): invariant followersCount == edge after the race', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b', { followersCount: 1 });
+      await seedEdge('user-a', 'user-b');
+      const db = verifiedCtx('user-a').firestore();
+      const results = await race(
+        setFollowingMirror(db, 'user-a', 'user-b', true),
+        setFollowingMirror(db, 'user-a', 'user-b', false)
+      );
+      // Mana-mana susunan sah (unfollow sahaja, atau unfollow lalu follow
+      // semula); yang wajib: tiada drift dan tiada kiraan negatif.
+      assert.ok(okCount(results) >= 1, 'sekurang-kurangnya unfollow berjaya');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.count, g.edgeCount);
+      assert.ok(g.count === 0 || g.count === 1);
+    });
+
+    it('CONCURRENT follow x unfollow (starting NOT followed): invariant followersCount == edge after the race', async function () {
+      await seedProfile('user-a');
+      await seedProfile('user-b');
+      const db = verifiedCtx('user-a').firestore();
+      const results = await race(
+        setFollowingMirror(db, 'user-a', 'user-b', true),
+        setFollowingMirror(db, 'user-a', 'user-b', false)
+      );
+      assert.ok(okCount(results) >= 1, 'sekurang-kurangnya follow berjaya');
+      const g = await readGraph('user-b', ['user-a']);
+      assert.strictEqual(g.count, g.edgeCount);
+      assert.ok(g.count === 0 || g.count === 1);
+    });
+  });
 });
