@@ -1023,10 +1023,12 @@ async function processDeletion(uid) {
       status: 'completed',
     };
   } catch (error) {
+    const retryPhase = phase === 'verify' ? 'posts' : phase;
+
     await markFailed(
       uid,
       worker,
-      phase,
+      retryPhase,
       error,
     );
 

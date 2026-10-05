@@ -889,6 +889,93 @@ test(
   },
 );
 
+
+test(
+  'F3-G: verify failure retries from posts and completes deletion',
+  async () => {
+    const uid = 'f3g-retry-user';
+    const postId = 'f3g-retry-own-post';
+    const scenario = {
+      uids: [uid],
+      postIds: [postId],
+    };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await ensureAuthUser(uid);
+      await seedUserDocs(uid);
+
+      /*
+       * Deliberate residue:
+       * the deleting user's own post remains when the worker starts
+       * at verify, so phaseVerify() must genuinely fail.
+       */
+      await db.collection('posts').doc(postId).set({
+        authorId: uid,
+        createdAt: new Date(),
+      });
+
+      /*
+       * Start directly at verify to reproduce the retry bug.
+       */
+      await db
+        .collection('accountDeletionRequests')
+        .doc(uid)
+        .set({
+          uid,
+          status: 'pending',
+          phase: 'verify',
+          createdAt: new Date(),
+        });
+
+      await assert.rejects(
+        () => processDeletion(uid),
+        /F3-G verification failed: residual user data exists/,
+      );
+
+      /*
+       * W1 target:
+       * a verify failure must retry from posts, not verify.
+       */
+      const failedRequest = await db
+        .collection('accountDeletionRequests')
+        .doc(uid)
+        .get();
+
+      assert.equal(failedRequest.exists, true);
+      assert.equal(failedRequest.data().status, 'failed');
+      assert.equal(failedRequest.data().phase, 'posts');
+
+      /*
+       * Second invocation must resume from posts, remove the residue,
+       * complete verification, then delete Auth last.
+       */
+      await processDeletion(uid);
+
+      const completedRequest = await db
+        .collection('accountDeletionRequests')
+        .doc(uid)
+        .get();
+
+      assert.equal(completedRequest.exists, true);
+      assert.equal(completedRequest.data().status, 'completed');
+      assert.equal(completedRequest.data().phase, 'completed');
+
+      await assertMissing(`posts/${postId}`);
+      await assertMissing(`profiles/${uid}`);
+      await assertMissing(`users/${uid}`);
+
+      await assert.rejects(
+        () => auth.getUser(uid),
+        (error) => error?.code === 'auth/user-not-found',
+      );
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
 const FOLLOWING_MISSING = Symbol('missing');
 
 for (const [label, badValue] of [
