@@ -1060,3 +1060,431 @@ for (const [label, badValue] of [
     },
   );
 }
+
+/*
+ * ---------------------------------------------------------------------
+ * W5 — lease recovery
+ *
+ * claimRequest() is atomic. An UNEXPIRED lease owned by another worker
+ * blocks the claim; an EXPIRED lease (leaseUntil <= now) is reclaimable
+ * and the persisted phase is preserved. The trigger entry point
+ * (processDeletionOrRetry) must not report success while another
+ * worker holds an active lease, otherwise Cloud Functions stops
+ * retrying and a crashed worker's request stays 'processing' forever.
+ *
+ * These use the real claimRequest()/processDeletion() against the
+ * emulators; nothing in the deletion pipeline is mocked.
+ * ---------------------------------------------------------------------
+ */
+
+const { claimRequest, processDeletionOrRetry } = __test;
+
+const w5Future = () => new Date(Date.now() + 5 * 60 * 1000);
+const w5Past = () => new Date(Date.now() - 60 * 1000);
+
+async function w5Seed(uid, fields) {
+  await db
+    .collection('accountDeletionRequests')
+    .doc(uid)
+    .set({ uid, createdAt: new Date(), ...fields });
+}
+
+async function w5Read(uid) {
+  return (
+    await db.collection('accountDeletionRequests').doc(uid).get()
+  ).data();
+}
+
+test(
+  'W5: an ACTIVE lease blocks a second worker; the owner keeps the request, and the trigger does not swallow it',
+  async () => {
+    const uid = 'w5-active';
+    const scenario = { uids: [uid], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      const leaseUntil = w5Future();
+
+      await w5Seed(uid, {
+        status: 'processing',
+        phase: 'follows',
+        workerId: 'worker-A',
+        leaseUntil,
+      });
+
+      const claim = await claimRequest(uid);
+
+      assert.deepEqual(claim, { worker: null, reason: 'lease-active' });
+
+      const after = await w5Read(uid);
+
+      assert.equal(after.status, 'processing');
+      assert.equal(after.phase, 'follows');
+      assert.equal(after.workerId, 'worker-A');
+      assert.equal(after.leaseUntil.toMillis(), leaseUntil.getTime());
+
+      // processDeletion() refuses without touching the request.
+      assert.deepEqual(await processDeletion(uid), {
+        processed: false,
+        uid,
+        reason: 'lease-active',
+      });
+
+      // The trigger entry point must NOT report success: it throws so
+      // Cloud Functions retries until the lease expires.
+      await assert.rejects(
+        () => processDeletionOrRetry(uid),
+        /held by another worker/,
+      );
+
+      const stillOwned = await w5Read(uid);
+
+      assert.equal(stillOwned.workerId, 'worker-A');
+      assert.equal(stillOwned.status, 'processing');
+      assert.equal(stillOwned.phase, 'follows');
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'W5: an EXPIRED lease is reclaimable atomically and the persisted phase is preserved',
+  async () => {
+    const uid = 'w5-expired';
+    const uidNoLease = 'w5-expired-nolease';
+    const scenario = { uids: [uid, uidNoLease], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await w5Seed(uid, {
+        status: 'processing',
+        phase: 'profile',
+        workerId: 'worker-A',
+        leaseUntil: w5Past(),
+        lastError: 'previous worker timed out',
+      });
+
+      const claim = await claimRequest(uid);
+
+      assert.equal(claim.reason, 'claimed');
+      assert.ok(claim.worker);
+      assert.notEqual(claim.worker, 'worker-A');
+
+      const after = await w5Read(uid);
+
+      assert.equal(after.status, 'processing');
+      assert.equal(after.phase, 'profile', 'phase must not be reset');
+      assert.equal(after.workerId, claim.worker);
+      assert.ok(after.leaseUntil.toMillis() > Date.now());
+      assert.equal(after.lastError, null);
+
+      // 'processing' with no usable lease is also reclaimable.
+      await w5Seed(uidNoLease, {
+        status: 'processing',
+        phase: 'verify',
+        workerId: 'worker-A',
+      });
+
+      const claim2 = await claimRequest(uidNoLease);
+
+      assert.equal(claim2.reason, 'claimed');
+      assert.equal((await w5Read(uidNoLease)).phase, 'verify');
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'W5: two workers racing for the same request: exactly one owner',
+  async () => {
+    const uid = 'w5-race';
+    const scenario = { uids: [uid], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      for (const seed of [
+        { status: 'pending' },
+        {
+          status: 'processing',
+          phase: 'follows',
+          workerId: 'worker-A',
+          leaseUntil: w5Past(),
+        },
+        { status: 'failed', phase: 'profile', workerId: null, leaseUntil: null },
+      ]) {
+        for (let round = 0; round < 5; round += 1) {
+          await w5Seed(uid, seed);
+
+          const claims = await Promise.all([
+            claimRequest(uid),
+            claimRequest(uid),
+          ]);
+
+          const winners = claims.filter((claim) => claim.worker);
+          const losers = claims.filter((claim) => !claim.worker);
+
+          assert.equal(
+            winners.length,
+            1,
+            `exactly one winner (${seed.status}, round ${round})`,
+          );
+          assert.equal(losers[0].reason, 'lease-active');
+
+          // The persisted owner is the winner.
+          assert.equal((await w5Read(uid)).workerId, winners[0].worker);
+        }
+      }
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'W5: two real processDeletion() runs racing: exactly one processes, request completes, Auth deleted once',
+  async () => {
+    const uid = 'w5-race-full';
+    const scenario = { uids: [uid], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await ensureAuthUser(uid);
+      await seedUserDocs(uid);
+      await requestDeletion(uid);
+
+      const results = await Promise.all([
+        processDeletion(uid),
+        processDeletion(uid),
+      ]);
+
+      assert.equal(
+        results.filter((result) => result.processed === true).length,
+        1,
+      );
+
+      const loser = results.find((result) => result.processed === false);
+
+      assert.ok(['lease-active', 'completed'].includes(loser.reason));
+
+      const request = await w5Read(uid);
+
+      assert.equal(request.status, 'completed');
+      assert.equal(request.phase, 'completed');
+
+      await assertMissing(`users/${uid}`);
+      await assertMissing(`profiles/${uid}`);
+
+      await assert.rejects(
+        () => auth.getUser(uid),
+        (error) => error?.code === 'auth/user-not-found',
+      );
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'W5: after the lease expires a new worker RESUMES from the persisted phase (does not restart at posts) and completes',
+  async () => {
+    const uid = 'w5-resume';
+    const followeeUid = 'w5-resume-followee';
+    const edgeId = `${uid}_${followeeUid}`;
+    const scenario = { uids: [uid, followeeUid], postIds: [] };
+    const requestRef = db.collection('accountDeletionRequests').doc(uid);
+    const seen = [];
+    let unsubscribe = null;
+
+    await cleanupCountScenario(scenario);
+    await db.collection('follows').doc(edgeId).delete();
+
+    try {
+      await ensureAuthUser(uid);
+      await ensureAuthUser(followeeUid);
+      await seedUserDocs(uid);
+      await seedUserDocs(followeeUid);
+
+      // 'posts' already done by the previous worker; 'follows' was in
+      // progress when it died: the outgoing edge is still present.
+      await db.collection('follows').doc(edgeId).set({
+        followerId: uid,
+        followeeId: followeeUid,
+        createdAt: new Date(),
+      });
+
+      await db
+        .collection('profiles')
+        .doc(followeeUid)
+        .update({ followersCount: 1 });
+
+      await w5Seed(uid, {
+        status: 'processing',
+        phase: 'follows',
+        workerId: 'worker-A',
+        leaseUntil: w5Past(),
+      });
+
+      // Observe every persisted state transition (read-only).
+      unsubscribe = requestRef.onSnapshot((snapshot) => {
+        const data = snapshot.data();
+
+        if (!data) {
+          return;
+        }
+
+        const key = `${data.status}:${data.phase}`;
+
+        if (seen[seen.length - 1] !== key) {
+          seen.push(key);
+        }
+      });
+
+      const startedAt = Date.now();
+
+      while (seen.length === 0) {
+        assert.ok(Date.now() - startedAt < 10000, 'listener did not start');
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+
+      const result = await processDeletionOrRetry(uid);
+
+      assert.equal(result.processed, true);
+      assert.equal(result.status, 'completed');
+
+      const waitStarted = Date.now();
+
+      while (!seen.includes('completed:completed')) {
+        assert.ok(
+          Date.now() - waitStarted < 10000,
+          `completed state not observed: ${JSON.stringify(seen)}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+
+      // Started at the seeded phase, never went back to 'posts'.
+      assert.equal(seen[0], 'processing:follows');
+      assert.ok(
+        !seen.some((key) => key.endsWith(':posts')),
+        `must not restart at posts: ${JSON.stringify(seen)}`,
+      );
+
+      // The interrupted 'follows' phase genuinely ran to completion.
+      await assertMissing(`follows/${edgeId}`);
+
+      assert.strictEqual(
+        (await db.collection('profiles').doc(followeeUid).get()).data()
+          .followersCount,
+        0,
+      );
+
+      const request = await w5Read(uid);
+
+      assert.equal(request.status, 'completed');
+      assert.equal(request.phase, 'completed');
+
+      await assertMissing(`profiles/${uid}`);
+      await assertMissing(`users/${uid}`);
+
+      await assert.rejects(
+        () => auth.getUser(uid),
+        (error) => error?.code === 'auth/user-not-found',
+      );
+
+      assert.equal((await auth.getUser(followeeUid)).uid, followeeUid);
+    } finally {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+
+      await db.collection('follows').doc(edgeId).delete();
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'W5: failed requests are still claimable and keep their phase (failed -> retry/resume unchanged)',
+  async () => {
+    const uid = 'w5-failed';
+    const uidStale = 'w5-failed-stale';
+    const scenario = { uids: [uid, uidStale], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await w5Seed(uid, {
+        status: 'failed',
+        phase: 'profile',
+        workerId: null,
+        leaseUntil: null,
+        lastError: 'boom',
+      });
+
+      const claim = await claimRequest(uid);
+
+      assert.equal(claim.reason, 'claimed');
+
+      const after = await w5Read(uid);
+
+      assert.equal(after.status, 'processing');
+      assert.equal(after.phase, 'profile');
+      assert.equal(after.workerId, claim.worker);
+      assert.equal(after.lastError, null);
+
+      // A 'failed' request is never lease-gated, even with a leftover lease.
+      await w5Seed(uidStale, {
+        status: 'failed',
+        phase: 'follows',
+        workerId: 'worker-A',
+        leaseUntil: w5Future(),
+      });
+
+      const claim2 = await claimRequest(uidStale);
+
+      assert.equal(claim2.reason, 'claimed');
+      assert.equal((await w5Read(uidStale)).phase, 'follows');
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
+  'W5: the trigger entry point does not retry FINAL outcomes (completed, missing)',
+  async () => {
+    const uid = 'w5-final';
+    const missingUid = 'w5-final-missing';
+    const scenario = { uids: [uid, missingUid], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await w5Seed(uid, {
+        status: 'completed',
+        phase: 'completed',
+        workerId: null,
+        leaseUntil: null,
+      });
+
+      assert.deepEqual(await processDeletionOrRetry(uid), {
+        processed: false,
+        uid,
+        reason: 'completed',
+      });
+
+      assert.deepEqual(await processDeletionOrRetry(missingUid), {
+        processed: false,
+        uid: missingUid,
+        reason: 'missing',
+      });
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);

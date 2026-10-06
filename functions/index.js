@@ -81,15 +81,26 @@ function deletionRef(uid) {
   return db.collection('accountDeletionRequests').doc(uid);
 }
 
+/*
+ * Atomically claim the request. Resolves to:
+ *
+ *   { worker: <id>,  reason: 'claimed' }
+ *   { worker: null,  reason: 'missing' }       no such request
+ *   { worker: null,  reason: 'completed' }     nothing left to do
+ *   { worker: null,  reason: 'lease-active' }  another worker owns an
+ *                                              unexpired lease
+ *
+ * An expired lease (leaseUntil <= now) is reclaimable.
+ */
 async function claimRequest(uid) {
   const ref = deletionRef(uid);
   const id = workerId();
 
-  const claimed = await db.runTransaction(async (tx) => {
+  const outcome = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
 
     if (!snap.exists) {
-      return false;
+      return 'missing';
     }
 
     const data = snap.data() || {};
@@ -101,7 +112,7 @@ async function claimRequest(uid) {
     }
 
     if (data.status === 'completed') {
-      return false;
+      return 'completed';
     }
 
     const status = data.status;
@@ -124,7 +135,7 @@ async function claimRequest(uid) {
       data.workerId !== id &&
       currentLeaseUntil > nowMs()
     ) {
-      return false;
+      return 'lease-active';
     }
 
     const phase = phaseIsKnown(data.phase)
@@ -144,10 +155,13 @@ async function claimRequest(uid) {
       { merge: true },
     );
 
-    return true;
+    return 'claimed';
   });
 
-  return claimed ? id : null;
+  return {
+    worker: outcome === 'claimed' ? id : null,
+    reason: outcome,
+  };
 }
 
 async function renewLease(uid, id) {
@@ -944,12 +958,14 @@ async function phaseAuth(uid, worker) {
 }
 
 async function processDeletion(uid) {
-  const worker = await claimRequest(uid);
+  const claim = await claimRequest(uid);
+  const worker = claim.worker;
 
   if (!worker) {
     return {
       processed: false,
       uid,
+      reason: claim.reason,
     };
   }
 
@@ -1045,6 +1061,43 @@ async function processDeletion(uid) {
   }
 }
 
+/*
+ * Trigger entry point (W5).
+ *
+ * processDeletion() resolves { processed: false } when another worker
+ * holds an UNEXPIRED lease. If the handler simply returned in that
+ * case, the event would count as successful and Cloud Functions would
+ * stop retrying: a worker that crashed or hit the 540s timeout while
+ * its lease was still active (LEASE_MS is 10 minutes, renewed during
+ * work) would leave the request 'processing' forever, because this
+ * trigger only fires on create.
+ *
+ * Throwing instead makes Cloud Functions retry (retry: true, backoff
+ * 10-600s, 24h window) until the lease expires and a retry can reclaim
+ * the request, or the owner finishes ('completed' => no error).
+ *
+ * Only 'lease-active' is retried; 'completed' and 'missing' are final.
+ */
+async function processDeletionOrRetry(uid) {
+  const result = await processDeletion(uid);
+
+  if (
+    result.processed === false &&
+    result.reason === 'lease-active'
+  ) {
+    logger.warn(
+      'F3-G: deletion lease held by another worker; retrying.',
+      { uid },
+    );
+
+    throw new Error(
+      `F3-G deletion lease for ${uid} is held by another worker.`,
+    );
+  }
+
+  return result;
+}
+
 exports.processAccountDeletion = onDocumentCreated(
   {
     document: 'accountDeletionRequests/{uid}',
@@ -1088,7 +1141,7 @@ exports.processAccountDeletion = onDocumentCreated(
       return;
     }
 
-    await processDeletion(uid);
+    await processDeletionOrRetry(uid);
   },
 );
 
@@ -1097,7 +1150,9 @@ exports.processAccountDeletion = onDocumentCreated(
  * This is not a client callable endpoint.
  */
 exports.__test = {
+  claimRequest,
   processDeletion,
+  processDeletionOrRetry,
   phasePosts,
   phaseFollows,
   phaseProfile,
