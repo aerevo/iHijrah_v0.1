@@ -43,6 +43,18 @@ class _FeedPanelState extends State<FeedPanel> {
   List<PostModel> _posts      = [];
   bool            _cached     = false;
 
+  // Stream disimpan (bukan dibuat semula tiap build) supaya rebuild
+  // FeedPanel tak resubscribe & tak kosongkan post sebenar seketika.
+  // Butang "Cuba lagi" buat stream baharu.
+  Stream<QuerySnapshot> _postsStream = _openPostsStream();
+
+  static Stream<QuerySnapshot> _openPostsStream() =>
+      FirebaseFirestore.instance
+          .collection('posts')
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots();
+
   static const List<PostModel> _allPosts = [
     PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',        author:'Ustaz Don',       authorAge:'40',likes:1240,time:'2j',  assetPath:'assets/images/dummy_post1.jpg'),
     PostModel(id:'102',type:'quote',  title:'Kata Hikmah',                     content:'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',          author:"Imam Syafi'i",    authorAge:'',  likes:850, time:'5j'),
@@ -166,16 +178,23 @@ class _FeedPanelState extends State<FeedPanel> {
               ),
             ),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('posts')
-                  .orderBy('createdAt', descending: true)
-                  .limit(50)
-                  .snapshots(),
+              stream: _postsStream,
               builder: (context, snapshot) {
                 final List<PostModel> realPosts = snapshot.hasData
                     ? snapshot.data!.docs.map(_postFromDoc).toList()
                     : <PostModel>[];
                 final List<PostModel> combined = [...realPosts, ..._posts];
+
+                // Status stream: error / memuatkan dipaparkan sbg baris
+                // di atas senarai (seed content kekal kelihatan).
+                final bool hasError = snapshot.hasError;
+                final bool isLoading = !hasError &&
+                    !snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.waiting;
+                final int offset = (hasError || isLoading) ? 1 : 0;
+                if (hasError) {
+                  debugPrint('FeedPanel: stream posts gagal: ${snapshot.error}');
+                }
 
                 return SliverPadding(
                   // ← FeedCard V6 kembali ke kad bersempadan gaya FB —
@@ -185,18 +204,22 @@ class _FeedPanelState extends State<FeedPanel> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, i) {
-                        final post  = combined[i];
+                        if (offset == 1 && i == 0) {
+                          return _feedStatus(snapshot.error);
+                        }
+                        final int idx = i - offset;
+                        final post  = combined[idx];
                         final ratio = _imageAspectFor(post);
                         return Padding(
                           padding: EdgeInsets.only(
-                              bottom: i == combined.length - 1 ? 0 : 10),
+                              bottom: idx == combined.length - 1 ? 0 : 10),
                           child: FadeSlideIn(
-                            index: i,
+                            index: idx,
                             child: FeedCard(post: post, imageAspectRatio: ratio),
                           ),
                         );
                       },
-                      childCount: combined.length,
+                      childCount: combined.length + offset,
                     ),
                   ),
                 );
@@ -205,6 +228,51 @@ class _FeedPanelState extends State<FeedPanel> {
 
           ],
         ),
+      ),
+    );
+  }
+
+  // Baris status di atas senarai komuniti. error == null → sedang
+  // memuatkan; selain itu → ralat + butang "Cuba lagi". Mesej tak
+  // dedahkan ralat mentah kepada pengguna.
+  Widget _feedStatus(Object? error) {
+    if (error == null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Center(
+          child: SizedBox(
+            width: 18, height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              valueColor: AlwaysStoppedAnimation<Color>(widget.palette.accent),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // FirebaseException.toString() mengandungi kod, cth.
+    // "[cloud_firestore/permission-denied] ...".
+    final bool denied = error.toString().contains('permission-denied');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        children: [
+          Text(
+            denied
+                ? 'Tak dapat muat post komuniti. Pastikan e-mel anda sudah '
+                  'disahkan, atau log masuk semula.'
+                : 'Tak dapat muat post komuniti. Semak sambungan internet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: widget.palette.textMuted),
+          ),
+          TextButton(
+            onPressed: () =>
+                setState(() => _postsStream = _openPostsStream()),
+            child: Text('Cuba lagi',
+                style: TextStyle(color: widget.palette.accent)),
+          ),
+        ],
       ),
     );
   }

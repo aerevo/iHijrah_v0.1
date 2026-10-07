@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
+import '../utils/age_helper.dart';
 import '../utils/constants.dart';
 import '../utils/hijri_service.dart';
 import '../home.dart';
@@ -68,13 +69,21 @@ class _BirthdatePromptScreenState extends State<BirthdatePromptScreen> {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) { _snack('Sila masukkan nama anda'); return; }
 
+    // Had umur yang SAMA dengan onboarding. Mesti sebelum sebarang
+    // perubahan pada UserModel di bawah — tarikh yang ditolak tidak boleh
+    // sampai ke model, prefs atau cloud.
+    if (!isAtLeastAge(_selectedDate, kMinimumAccountAge)) {
+      _snack('iHijrah memerlukan umur minimum $kMinimumAccountAge tahun.');
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final user = Provider.of<UserModel>(context, listen: false);
       user.name      = name;
       user.birthdate = _selectedDate;
       user.hijriDOB  = _selectedDate.toIso8601String();
-      await user.save();
+      await user.saveAndWaitForCloud();
 
       if (!mounted) return;
 

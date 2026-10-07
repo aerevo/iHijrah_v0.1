@@ -12,6 +12,9 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'anim_helpers.dart';
+import '../services/social_service.dart';
+import '../services/social_failure.dart';
+import 'comments_sheet.dart';
 
 Color _typeColor(String t) {
   switch (t) {
@@ -66,6 +69,9 @@ class FeedCard extends StatelessWidget {
     final Color accent = _typeColor(post.type);
     final bool hasImg = post.assetPath != null && post.assetPath!.isNotEmpty;
     final bool isVideo = post.type == 'video';
+    // Post sebenar (Firestore) sentiasa ada authorId; seed/dummy tiada.
+    // Hanya post sebenar boleh disuka/dikomen (seed tiada dokumen di Firestore).
+    final bool isLive = post.authorId.isNotEmpty;
     final int h = post.id.hashCode.abs();
     final String initial = post.author.trim().isNotEmpty
         ? post.author.trim()[0].toUpperCase() : '?';
@@ -181,14 +187,14 @@ class FeedCard extends StatelessWidget {
 
               const Divider(height: 1, thickness: 1, color: _kBorder),
 
-              // ── Baris tindakan: Suka · Simpan ────────────
+              // ── Baris tindakan: Suka · Komen · Simpan ────────
               SizedBox(
                 height: 40,
                 child: Row(children: [
-                  Expanded(child: _ActionSlot(
-                      icon: Icons.thumb_up_alt_outlined,
-                      activeIcon: Icons.thumb_up_rounded,
-                      label: 'Suka', activeColor: accent)),
+                  Expanded(child: _LikeSlot(
+                      postId: post.id, isLive: isLive, accent: accent)),
+                  Container(width: 1, color: _kBorder),
+                  Expanded(child: _CommentSlot(postId: post.id, isLive: isLive)),
                   Container(width: 1, color: _kBorder),
                   Expanded(child: _ActionSlot(
                       icon: Icons.bookmark_border_rounded,
@@ -243,6 +249,164 @@ class _ActionSlotState extends State<_ActionSlot> {
           Text(widget.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c)),
         ],
       ),
+    );
+  }
+}
+
+// ── Badan butang tindakan (ikon + label) — dikongsi oleh slot yang
+// keadaannya datang dari Firebase (bukan toggle tempatan) ──────────
+class _SlotBody extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+  const _SlotBody({
+    required this.icon, required this.label,
+    required this.color, this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
+      );
+}
+
+void _showFeedSnack(BuildContext context, String msg) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(msg), backgroundColor: kWarningRed,
+        behavior: SnackBarBehavior.floating),
+  );
+}
+
+// ── Suka — keadaan sebenar dari Firestore (posts/{id}/likes/{uid}) ──
+// Kiraan di atas datang dari dokumen post (stream feed), jadi ia hanya
+// berubah bila pelayan mengesahkan transaction — bukan kiraan tempatan.
+class _LikeSlot extends StatefulWidget {
+  final String postId;
+  final bool isLive;
+  final Color accent;
+  const _LikeSlot({
+    required this.postId, required this.isLive, required this.accent,
+  });
+
+  @override
+  State<_LikeSlot> createState() => _LikeSlotState();
+}
+
+class _LikeSlotState extends State<_LikeSlot> {
+  Stream<bool>? _likedStream;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isLive) {
+      _likedStream = SocialService.instance.watchLiked(widget.postId);
+    }
+  }
+
+  Future<void> _toggle(bool currentlyLiked) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final result = await SocialService.instance
+        .setLiked(widget.postId, like: !currentlyLiked);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    result.onError((f) => _showFeedSnack(context, f.message));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isLive) {
+      return _SlotBody(
+        icon: Icons.thumb_up_alt_outlined,
+        label: 'Suka',
+        color: kTextMuted,
+        onTap: () => _showFeedSnack(
+            context, 'Ini kandungan contoh — hanya post komuniti boleh disuka.'),
+      );
+    }
+
+    return StreamBuilder<bool>(
+      stream: _likedStream,
+      initialData: false,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          debugPrint('LikeSlot: stream like gagal: ${snap.error}');
+        }
+        final bool liked = snap.data ?? false;
+        final Color c = _busy
+            ? kTextMuted
+            : (liked ? widget.accent : kTextSecondary);
+        return _SlotBody(
+          icon: liked ? Icons.thumb_up_rounded : Icons.thumb_up_alt_outlined,
+          label: 'Suka',
+          color: c,
+          onTap: _busy ? null : () => _toggle(liked),
+        );
+      },
+    );
+  }
+}
+
+// ── Komen — kiraan dari aggregate count() (dikira pelayan) ─────────
+// Dimuat semula selepas sheet ditutup supaya kiraan segar.
+class _CommentSlot extends StatefulWidget {
+  final String postId;
+  final bool isLive;
+  const _CommentSlot({required this.postId, required this.isLive});
+
+  @override
+  State<_CommentSlot> createState() => _CommentSlotState();
+}
+
+class _CommentSlotState extends State<_CommentSlot> {
+  Future<int?>? _count;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isLive) {
+      _count = SocialService.instance.commentCount(widget.postId);
+    }
+  }
+
+  Future<void> _open() async {
+    if (!widget.isLive) {
+      _showFeedSnack(
+          context, 'Ini kandungan contoh — hanya post komuniti boleh dikomen.');
+      return;
+    }
+    await showCommentsSheet(context, postId: widget.postId);
+    if (!mounted) return;
+    setState(() {
+      _count = SocialService.instance.commentCount(widget.postId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int?>(
+      future: _count,
+      builder: (context, snap) {
+        final int? n = snap.data;
+        final String label = (n != null && n > 0) ? 'Komen · $n' : 'Komen';
+        return _SlotBody(
+          icon: Icons.chat_bubble_outline_rounded,
+          label: label,
+          color: widget.isLive ? kTextSecondary : kTextMuted,
+          onTap: _open,
+        );
+      },
     );
   }
 }

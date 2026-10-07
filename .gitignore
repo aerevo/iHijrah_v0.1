@@ -2,4 +2,17 @@
 # Firebase emulator / local test files
 node_modules/
 firestore-debug.log
+firebase-debug.log
 firestore-emulator.log
+
+# Flutter / Dart generated
+/.dart_tool/
+/build/
+/.idea/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+/functions/node_modules/
+/functions/.runtimeconfig.json
+/functions/.env
+/functions/.env.*

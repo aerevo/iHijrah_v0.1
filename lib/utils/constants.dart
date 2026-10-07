@@ -2,6 +2,13 @@
 import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════
+// UMUR MINIMUM AKAUN (tetapan produk) — dikongsi oleh onboarding dan
+// skrin edit tarikh lahir supaya kedua-duanya sentiasa sama. Semakan
+// umur sebenar guna isAtLeastAge() (utils/age_helper.dart).
+// ═══════════════════════════════════════════
+const int kMinimumAccountAge = 13;
+
+// ═══════════════════════════════════════════
 // MOD SIANG/MALAM — kini dikawal oleh UserModel.themeMode
 // ('auto'/'day'/'night'), ditetapkan dlm Tetapan → Tema. Lihat
 // PrayerService.isDayTime. Flag const debug lama (kForceDayModeTemp)

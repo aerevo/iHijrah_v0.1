@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import '../utils/age_helper.dart';
 import '../utils/hijri_service.dart';
 import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
@@ -45,6 +46,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _next() {
     FocusScope.of(context).unfocus();
+
+    if (_step == 1 && !isAtLeastAge(_selectedDate, kMinimumAccountAge)) {
+      _snack('iHijrah memerlukan umur minimum $kMinimumAccountAge tahun.');
+      return;
+    }
+
     if (_step == 1 && _nameCtrl.text.trim().isEmpty) {
       _snack('Sila masukkan nama anda');
       return;
@@ -92,14 +99,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
       if (img == null) { setState(() => _picking = false); return; }
 
+      // F3-E: Jangan padam avatar pilihan sebelumnya di sini.
+      // Write onboarding boleh masih berada dalam queue jika save
+      // sebelumnya timeout/gagal selepas write dihantar.
       final Directory docsDir = await getApplicationDocumentsDirectory();
       final String ext = img.path.contains('.') ? img.path.split('.').last : 'jpg';
       final String newPath =
           '${docsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
       await File(img.path).copy(newPath);
 
       if (!mounted) return;
-      setState(() { _avatarPath = newPath; _picking = false; });
+      setState(() {
+        _avatarPath = newPath;
+        _picking = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _picking = false);
@@ -119,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       user.avatarPath = _avatarPath;
       // Simpan hijriDOB sebagai ISO string supaya HijriService boleh parse
       user.hijriDOB  = _selectedDate.toIso8601String();
-      await user.save();
+      await user.saveAndWaitForCloud();
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -131,7 +145,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       );
     } catch (e) {
-      setState(() => _saving = false);
+      // F3-E: Jangan padam avatar apabila save gagal/timeout.
+      // saveAndWaitForCloud() menunggu queue tetapi tidak membatalkan
+      // write yang sudah dihantar. Cloud mungkin sudah menerima
+      // avatarPath walaupun caller mendapat exception.
+      if (!mounted) return;
+      setState(() {
+        _avatarPath = null;
+        _saving = false;
+      });
       _snack('Ralat menyimpan data. Cuba lagi.');
     }
   }

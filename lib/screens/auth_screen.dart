@@ -91,6 +91,9 @@ class _AuthScreenState extends State<AuthScreen> {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
             email: email, password: pass);
 
+        final userModel = Provider.of<UserModel>(context, listen: false);
+        userModel.authMethod = 'Email';
+
         // Hantar e-mel pengesahan SEKALI sahaja, sejurus akaun dicipta.
         // Kalau ni gagal (cth. network hiccup), akaun Auth TETAP wujud —
         // jangan block navigation di sini; EmailVerificationScreen ada

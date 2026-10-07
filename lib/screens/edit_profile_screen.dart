@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
+import '../services/social_failure.dart';
 import '../utils/constants.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _bioCtrl  = TextEditingController();
   String  _gender     = 'Lelaki';
   String? _avatarPath;
+  String? _originalAvatarPath;
   bool    _picking    = false;
   bool    _saving     = false;
 
@@ -37,8 +39,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _bioCtrl.text  = user.bio;
       if (mounted) {
         setState(() {
-          _gender     = user.gender.isEmpty ? 'Lelaki' : user.gender;
-          _avatarPath = user.avatarPath;
+          _gender             = user.gender.isEmpty ? 'Lelaki' : user.gender;
+          _avatarPath          = user.avatarPath;
+          _originalAvatarPath  = user.avatarPath;
         });
       }
     });
@@ -63,14 +66,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       if (img == null) { setState(() => _picking = false); return; }
 
+      // F3-E: Jangan padam avatar pilihan sebelumnya di sini.
+      // Cloud write boleh masih berada dalam queue selepas timeout/failure.
+      // Memadam fail lama boleh merosakkan avatarPath yang sebenarnya
+      // sudah sempat diterima Firestore.
       final Directory docsDir = await getApplicationDocumentsDirectory();
       final String ext = img.path.contains('.') ? img.path.split('.').last : 'jpg';
       final String newPath =
           '${docsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
       await File(img.path).copy(newPath);
 
       if (!mounted) return;
-      setState(() { _avatarPath = newPath; _picking = false; });
+      setState(() {
+        _avatarPath = newPath;
+        _picking = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _picking = false);
@@ -96,7 +107,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // semua dalam UserModel sendiri — ProfileDetailView & Sidebar yg
       // watch UserModel tetap refresh serta-merta macam sebelum ni,
       // tanpa screen ni panggil notifyListeners() terus dari luar class.
-      await user.updateProfile(
+      final result = await user.updateProfile(
         name:       name,
         gender:     _gender,
         bio:        _bioCtrl.text.trim(),
@@ -104,6 +115,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (!mounted) return;
+
+      // updateProfile() TIDAK melempar untuk kegagalan cloud (timeout /
+      // permission-denied / Firestore) — ia memulangkan Result.failure.
+      // Perubahan LOCAL sudah tersimpan (tak dirollback); skrin kekal
+      // terbuka supaya pengguna nampak ralat dan boleh tekan Simpan semula
+      // (percubaan semula MANUAL sahaja, tiada auto-retry).
+      if (result.isFailure) {
+        // F3-E: Jangan padam avatar baru pada Result.failure.
+        // _queuePush() mungkin masih mempunyai write yang sedang
+        // beratur/berjalan walaupun caller menerima failure atau timeout.
+        // Fail dikekalkan supaya retry/cached cloud reference tidak
+        // menunjuk kepada fail yang sudah dipadam.
+        if (!mounted) return;
+
+        setState(() {
+          _avatarPath = _originalAvatarPath;
+          _saving = false;
+        });
+
+        _snack((result.error ?? SocialFailure.unknown).message);
+        return;
+      }
+
+      // F3-E: cloud save berjaya. Hanya sekarang avatar asal
+      // selamat untuk dibuang.
+      final String? oldAvatar = _originalAvatarPath;
+      final String? newAvatar = _avatarPath;
+
+      if (oldAvatar != null &&
+          oldAvatar.isNotEmpty &&
+          oldAvatar != newAvatar) {
+        try {
+          final File oldFile = File(oldAvatar);
+          if (await oldFile.exists()) {
+            await oldFile.delete();
+          }
+        } catch (e) {
+          // Save cloud sudah berjaya; cleanup local ialah best-effort.
+          debugPrint(
+            'EditProfile: gagal cleanup avatar lama: $e',
+          );
+        }
+      }
+
       _snack('Profil dikemas kini.', color: kAccentGreen);
       Navigator.of(context).pop();
     } catch (_) {

@@ -1,12 +1,12 @@
-// lib/widgets/settings_view.dart  (V2 — skrin Tetapan penuh)
+// lib/widgets/settings_view.dart  (V3 — + Padam Akaun)
 //
-// Sebelum ni cuma redirect terus ke NotificationSettingsScreen (12
-// baris). Kini skrin Tetapan sebenar: shortcut profil, peringatan
-// solat (sedia ada, suis Embun Jiwa dibetulkan supaya real), Lokasi
-// Solat (baru — PrayerService.updateLocation() dah wujud tapi tiada
-// UI panggil dia langsung sblm ni, jadi semua org dapat waktu solat
-// KL walau di mana pun), Tema (baru — Auto/Siang/Malam, gantikan
-// flag debug kForceDayModeTemp yg dah dibuang), dan Tentang.
+// V2: skrin Tetapan penuh (profil, peringatan solat, lokasi, tema,
+// tentang, logout). V3 tambah SATU ciri: "Padam Akaun" dalam zon
+// bahaya — reauthentication (kata laluan) wajib dulu, baru padam
+// post pengguna + dokumen users/{uid} + akaun Firebase Auth. Tiada
+// skrin lain disentuh.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../models/sidebar_state_model.dart';
 import '../utils/constants.dart';
+import '../utils/delete_account_messages.dart';
 import '../utils/prayer_service.dart';
 import '../screens/notification_settings_screen.dart';
 import '../screens/edit_profile_screen.dart';
@@ -68,9 +69,14 @@ class SettingsView extends StatelessWidget {
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !context.mounted) return;
 
     try {
+      // D2: tentukan SEBELUM signOut (selepas itu currentUser == null)
+      // sama ada UID ini ada permintaan padam akaun yang tertunggak.
+      final user = Provider.of<UserModel>(context, listen: false);
+      final bool deletionOutstanding = user.hasOutstandingDeletionMarker;
+
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
 
@@ -79,9 +85,11 @@ class SettingsView extends StatelessWidget {
       // pengguna di cloud tak sekali-kali tertimpa kosong bila logout.
       // (Cara lama set user.email/name = '' terus save() adalah BUG:
       // save() sentiasa push ke cloud utk uid semasa.)
+      // Logout semasa padam akaun tertunggak: marker + sekatan write kekal.
       if (context.mounted) {
-        final user = Provider.of<UserModel>(context, listen: false);
-        await user.resetLocalSession();
+        await user.resetLocalSession(
+          preserveDeletionMarker: deletionOutstanding,
+        );
 
         // Navigate back to AuthScreen
         Navigator.of(context).pushAndRemoveUntil(
@@ -94,6 +102,158 @@ class SettingsView extends StatelessWidget {
         _snack(context, 'Ralat keluar: $e');
       }
     }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // PADAM AKAUN (F01) — reauth (kata laluan) WAJIB dulu, kemudian client
+  // HANYA menghantar permintaan padam akaun kepada backend F3-G.
+  //   1. Dialog amaran kekal & tak boleh dibatalkan.
+  //   2. Dialog kata laluan → reauthenticateWithCredential.
+  //   3. Kalau reauth gagal → tiada apa dihantar, papar ralat, berhenti.
+  //   4. Kalau reauth berjaya → write client dibekukan, permintaan
+  //      dihantar; backend memadam data dan akaun Auth.
+  //   5. Berjaya = permintaan DIHANTAR (bukan akaun dipadam). Kekal di
+  //      skrin ini; JANGAN navigasi ke AuthScreen seolah-olah selesai.
+  //   6. Ralat selepas niat disimpan → akaun kekal beku; papar mesej
+  //      "belum pasti", bukan "akaun tidak dipadam".
+  // ══════════════════════════════════════════════════════════════
+  Future<void> _deleteAccount(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Padam Akaun?'),
+        content: const Text(
+          'Tindakan ini KEKAL dan TIDAK BOLEH DIBATALKAN.\n\n'
+          'Semua post, profil, mata Pokok Hijrah dan sejarah amalan '
+          'anda akan dipadam selama-lamanya dari iHijrah.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Teruskan',
+              style: TextStyle(color: kWarningRed, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    final password = await _promptPassword(context);
+    if (password == null || password.isEmpty || !context.mounted) return;
+
+    final user = Provider.of<UserModel>(context, listen: false);
+
+    // Proses ni beberapa panggilan network berturutan (reauth →
+    // hantar request padam akaun) — kunci UI
+    // dengan loading yg tak boleh ditutup pengguna sendiri.
+    // barrierDismissible:false hanya menghalang ketik di luar dialog;
+    // PopScope(canPop:false) menghalang butang/gerak isyarat belakang.
+    // Penutupan oleh kod (Navigator.pop di bawah) tidak terjejas.
+    unawaited(showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: const Center(
+          child: CircularProgressIndicator(color: kPrimaryGold),
+        ),
+      ),
+    ));
+
+    try {
+      await user.deleteAccount(password: password);
+
+      // F01: berjaya = permintaan DIHANTAR, BUKAN akaun dipadam. Kekal di
+      // skrin ini (beku) — jangan navigasi keluar seolah-olah selesai.
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // tutup loading
+      _snack(context, deleteAccountSubmittedMessage);
+    } on FirebaseAuthException catch (e) {
+      // FirebaseAuthException di sini datang daripada reauth (langkah 1) —
+      // belum ada apa-apa dihantar dan user.isDeletionIncomplete == false.
+      // Jika permintaan sudah tertunggak, mesej "TIDAK dipadam" tidak
+      // digunakan (lihat deleteAccountErrorMessage).
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      _snack(
+        context,
+        deleteAccountErrorMessage(
+          deletionIncomplete: user.isDeletionIncomplete,
+          authErrorCode: e.code,
+        ),
+      );
+    } catch (e) {
+      // Ralat SELEPAS reauth berjaya (contoh: request tamat masa /
+      // ditolak). Hasil request mungkin tidak pasti — akaun kekal beku
+      // (isDeletionIncomplete == true). JANGAN navigate ke AuthScreen.
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      _snack(
+        context,
+        deleteAccountErrorMessage(
+          deletionIncomplete: user.isDeletionIncomplete,
+        ),
+      );
+    }
+  }
+
+  Future<String?> _promptPassword(BuildContext context) async {
+    final controller = TextEditingController();
+    bool obscure = true;
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Sahkan Kata Laluan'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Untuk keselamatan, masukkan kata laluan akaun anda '
+                'sebelum akaun dipadam.',
+                style: TextStyle(fontSize: 12.5),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                obscureText: obscure,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Kata laluan',
+                  suffixIcon: IconButton(
+                    icon: Icon(obscure
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded),
+                    onPressed: () => setState(() => obscure = !obscure),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: const Text(
+                'Padam Akaun',
+                style: TextStyle(color: kWarningRed, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -244,6 +404,36 @@ class SettingsView extends StatelessWidget {
                     child: Text('Keluar',
                         style: TextStyle(color: kWarningRed, fontSize: 13,
                             fontWeight: FontWeight.w600)),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: kTextMuted, size: 18),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── ZON BAHAYA — PADAM AKAUN ─────────────────────────
+          _sectionCard(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+              onTap: () => _deleteAccount(context),
+              child: const Row(
+                children: [
+                  Icon(Icons.delete_forever_rounded, color: kWarningRed, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Padam Akaun',
+                            style: TextStyle(color: kWarningRed, fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                        SizedBox(height: 2),
+                        Text('Padam kekal profil, post & data anda',
+                            style: TextStyle(color: kTextMuted, fontSize: 11)),
+                      ],
+                    ),
                   ),
                   Icon(Icons.chevron_right_rounded, color: kTextMuted, size: 18),
                 ],

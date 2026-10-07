@@ -9,6 +9,7 @@ import '../home.dart';
 import '../models/user_model.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/auth_screen.dart';
+import '../screens/email_verification_screen.dart';
 import '../utils/audio_service.dart';
 import '../utils/constants.dart';
 import '../widgets/metallic_gold.dart';
@@ -112,20 +113,50 @@ class _SplashScreenState extends State<SplashScreen>
     Timer(const Duration(milliseconds: 4600), _navigate);
   }
 
-  void _navigate() {
+  Future<void> _navigate() async {
+    if (!mounted) return;
+
+    // Semak sesi Firebase SEBELUM tentukan destinasi. currentUser != null
+    // sahaja TIDAK cukup — emailVerified pada objek cache boleh lapuk,
+    // jadi reload() dulu utk ambil status terkini dari server.
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    bool reloadFailed = false;
+
+    if (firebaseUser != null) {
+      try {
+        await firebaseUser.reload();
+        // Claim email_verified dalam ID token tak berubah bila reload().
+        // Kalau dah verified (cth. klik pautan semasa app tertutup),
+        // refresh token supaya rules posts (email_verified) lulus.
+        final User? refreshed = FirebaseAuth.instance.currentUser;
+        if (refreshed != null && refreshed.emailVerified) {
+          await refreshed.getIdToken(true);
+        }
+      } catch (e) {
+        // Jangan expose ralat kepada user & JANGAN anggap verified —
+        // laluan bawah akan hantar ke EmailVerificationScreen.
+        reloadFailed = true;
+        debugPrint('SplashScreen: currentUser.reload() gagal: $e');
+      }
+      // Ambil semula selepas reload (mungkin dah jadi null, cth. akaun
+      // dipadam/dilumpuhkan di server).
+      firebaseUser = FirebaseAuth.instance.currentUser;
+    }
+
     if (!mounted) return;
     final user = Provider.of<UserModel>(context, listen: false);
-
-    // Belum log masuk — AuthScreen dulu (data pokok/streak/profil
-    // kena terikat ke akaun sejak awal, bukan lepas onboarding).
-    final bool loggedIn = FirebaseAuth.instance.currentUser != null;
 
     final bool needsOnboarding =
         user.name.isEmpty || user.birthdate == null;
 
     Widget target;
-    if (!loggedIn) {
+    if (firebaseUser == null) {
+      // Belum log masuk — AuthScreen dulu (data pokok/streak/profil
+      // kena terikat ke akaun sejak awal, bukan lepas onboarding).
       target = const AuthScreen();
+    } else if (reloadFailed || !firebaseUser.emailVerified) {
+      // Belum verify (atau status tak dapat disahkan) — tak boleh masuk.
+      target = const EmailVerificationScreen();
     } else if (needsOnboarding) {
       target = const OnboardingScreen();
     } else {
