@@ -96,6 +96,12 @@ async function claimRequest(uid) {
   const ref = deletionRef(uid);
   const id = workerId();
 
+  // W6 (observability only): facts about the transaction outcome,
+  // captured here and logged AFTER the transaction. They are never read
+  // by any claim/reclaim decision.
+  let claimedFrom = null;
+  let leaseHolder = null;
+
   const outcome = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
 
@@ -135,12 +141,25 @@ async function claimRequest(uid) {
       data.workerId !== id &&
       currentLeaseUntil > nowMs()
     ) {
+      leaseHolder = {
+        holderWorkerId: data.workerId,
+        holderPhase: phaseIsKnown(data.phase) ? data.phase : null,
+        leaseUntilMs: currentLeaseUntil,
+      };
+
       return 'lease-active';
     }
 
     const phase = phaseIsKnown(data.phase)
       ? data.phase
       : 'posts';
+
+    claimedFrom = {
+      phase,
+      previousStatus: status,
+      previousWorkerId: data.workerId || null,
+      previousLeaseUntilMs: currentLeaseUntil,
+    };
 
     tx.set(
       ref,
@@ -157,6 +176,56 @@ async function claimRequest(uid) {
 
     return 'claimed';
   });
+
+  // W6: lifecycle events. 'processing' that got past the lease check
+  // above can only be an expired (or ownerless) lease => reclaim.
+  if (outcome === 'claimed' && claimedFrom) {
+    const reclaimed = claimedFrom.previousStatus === 'processing';
+
+    logger.info(
+      reclaimed
+        ? 'F3-G: expired lease reclaimed.'
+        : 'F3-G: request claimed.',
+      {
+        event: reclaimed ? 'reclaim' : 'claim',
+        uid,
+        workerId: id,
+        phase: claimedFrom.phase,
+        previousStatus: claimedFrom.previousStatus,
+        ...(reclaimed
+          ? {
+              previousWorkerId: claimedFrom.previousWorkerId,
+              previousLeaseUntilMs: claimedFrom.previousLeaseUntilMs,
+            }
+          : {}),
+        leaseMs: LEASE_MS,
+      },
+    );
+
+    // Anything other than a first claim continues from the persisted
+    // phase (failed -> retry/resume, or an expired processing lease).
+    if (claimedFrom.previousStatus !== 'pending') {
+      logger.info(
+        'F3-G: resuming from persisted phase.',
+        {
+          event: 'resume',
+          uid,
+          workerId: id,
+          phase: claimedFrom.phase,
+          previousStatus: claimedFrom.previousStatus,
+        },
+      );
+    }
+  } else if (outcome === 'lease-active' && leaseHolder) {
+    logger.info(
+      'F3-G: lease held by another worker.',
+      {
+        event: 'lease-active',
+        uid,
+        ...leaseHolder,
+      },
+    );
+  }
 
   return {
     worker: outcome === 'claimed' ? id : null,
@@ -246,7 +315,9 @@ async function markFailed(uid, id, phase, error) {
     logger.error(
       'F3-G: failed to persist failure state.',
       {
+        event: 'failure-persist-failed',
         uid,
+        workerId: id,
         phase,
         error: String(markError),
       },
@@ -1023,6 +1094,17 @@ async function processDeletion(uid) {
           worker,
           followingPhase,
         );
+
+        logger.info(
+          'F3-G: phase completed.',
+          {
+            event: 'phase-complete',
+            uid,
+            workerId: worker,
+            phase,
+            nextPhase: followingPhase,
+          },
+        );
       }
     }
 
@@ -1030,7 +1112,11 @@ async function processDeletion(uid) {
 
     logger.info(
       'F3-G: account deletion completed.',
-      { uid },
+      {
+        event: 'completion',
+        uid,
+        workerId: worker,
+      },
     );
 
     return {
@@ -1040,6 +1126,18 @@ async function processDeletion(uid) {
     };
   } catch (error) {
     const retryPhase = phase === 'verify' ? 'posts' : phase;
+
+    if (error instanceof LeaseLostError) {
+      logger.warn(
+        'F3-G: worker lease lost.',
+        {
+          event: 'lease-lost',
+          uid,
+          workerId: worker,
+          phase,
+        },
+      );
+    }
 
     await markFailed(
       uid,
@@ -1051,8 +1149,11 @@ async function processDeletion(uid) {
     logger.error(
       'F3-G: account deletion failed.',
       {
+        event: 'failure',
         uid,
+        workerId: worker,
         phase,
+        retryPhase,
         error: String(error),
       },
     );
@@ -1087,7 +1188,10 @@ async function processDeletionOrRetry(uid) {
   ) {
     logger.warn(
       'F3-G: deletion lease held by another worker; retrying.',
-      { uid },
+      {
+        event: 'lease-retry',
+        uid,
+      },
     );
 
     throw new Error(

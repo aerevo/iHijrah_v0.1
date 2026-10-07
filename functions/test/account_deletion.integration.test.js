@@ -1488,3 +1488,109 @@ test(
     }
   },
 );
+
+/*
+ * ---------------------------------------------------------------------
+ * W6 — observability only.
+ *
+ * The lifecycle events added to functions/index.js must carry uid,
+ * workerId and phase, and claim / reclaim / resume / lease-active must be
+ * distinguishable. These use the real claimRequest() against the emulators;
+ * logger output is captured by temporarily replacing the logger methods.
+ * No deletion behaviour is asserted differently from W5.
+ * ---------------------------------------------------------------------
+ */
+
+const { logger: w6Logger } = require('firebase-functions');
+
+async function w6Capture(fn) {
+  const events = [];
+  const originals = {};
+
+  for (const level of ['info', 'warn', 'error']) {
+    originals[level] = w6Logger[level];
+    w6Logger[level] = (message, fields) => {
+      events.push({ level, message, ...(fields || {}) });
+    };
+  }
+
+  try {
+    await fn();
+  } finally {
+    for (const level of ['info', 'warn', 'error']) {
+      w6Logger[level] = originals[level];
+    }
+  }
+
+  return events;
+}
+
+test(
+  'W6: claim, reclaim, resume and lease-active are logged with uid, workerId and phase',
+  async () => {
+    const uids = ['w6-pending', 'w6-expired', 'w6-failed', 'w6-active'];
+    const scenario = { uids, postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await w5Seed('w6-pending', { status: 'pending' });
+      await w5Seed('w6-expired', {
+        status: 'processing',
+        phase: 'follows',
+        workerId: 'worker-A',
+        leaseUntil: w5Past(),
+      });
+      await w5Seed('w6-failed', {
+        status: 'failed',
+        phase: 'profile',
+        workerId: null,
+        leaseUntil: null,
+      });
+      await w5Seed('w6-active', {
+        status: 'processing',
+        phase: 'follows',
+        workerId: 'worker-B',
+        leaseUntil: w5Future(),
+      });
+
+      const claims = {};
+      const events = await w6Capture(async () => {
+        for (const uid of uids) {
+          claims[uid] = await claimRequest(uid);
+        }
+      });
+
+      const of = (uid, name) =>
+        events.filter((e) => e.uid === uid && e.event === name);
+
+      // Fresh request: claim only.
+      assert.equal(of('w6-pending', 'claim').length, 1);
+      assert.equal(of('w6-pending', 'claim')[0].workerId, claims['w6-pending'].worker);
+      assert.equal(of('w6-pending', 'claim')[0].phase, 'posts');
+      assert.equal(of('w6-pending', 'reclaim').length, 0);
+      assert.equal(of('w6-pending', 'resume').length, 0);
+
+      // Expired lease: reclaim (distinguishable from claim) + resume.
+      assert.equal(of('w6-expired', 'claim').length, 0);
+      assert.equal(of('w6-expired', 'reclaim').length, 1);
+      assert.equal(of('w6-expired', 'reclaim')[0].previousWorkerId, 'worker-A');
+      assert.equal(of('w6-expired', 'reclaim')[0].phase, 'follows');
+      assert.equal(of('w6-expired', 'resume')[0].phase, 'follows');
+      assert.equal(of('w6-expired', 'resume')[0].workerId, claims['w6-expired'].worker);
+
+      // Failed request: claim + resume from the persisted phase.
+      assert.equal(of('w6-failed', 'claim')[0].previousStatus, 'failed');
+      assert.equal(of('w6-failed', 'resume')[0].phase, 'profile');
+
+      // Active lease: not claimed; the holder is identified.
+      assert.equal(claims['w6-active'].reason, 'lease-active');
+      assert.equal(of('w6-active', 'lease-active')[0].holderWorkerId, 'worker-B');
+      assert.equal(of('w6-active', 'claim').length, 0);
+      assert.equal(of('w6-active', 'reclaim').length, 0);
+      assert.equal(of('w6-active', 'resume').length, 0);
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
