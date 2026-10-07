@@ -103,6 +103,12 @@ class UserModel extends ChangeNotifier {
   static const String _deletionIncompleteUidKey =
       'deletion_incomplete_uid';
 
+  // F01: penanda bahawa request accountDeletionRequests/{uid} telah
+  // dihantar. Client tidak boleh membaca request, jadi ini satu-satunya
+  // cara panggilan seterusnya mengelak mencipta request kedua.
+  static const String _deletionSubmittedUidKey =
+      'deletion_request_submitted_uid';
+
   /// Mulakan pemantau auth-session SEKALI untuk setiap instance.
   /// Semua laluan yang menukar identiti Firebase (logout, login semula,
   /// tukar akaun, padam akaun) menaikkan generation tanpa bergantung
@@ -621,11 +627,21 @@ class UserModel extends ChangeNotifier {
   /// [_onAuthStateEvent].
   bool _authBaselineSeen = false;
 
-  /// true = tiada write cloud/profil baharu dibenarkan (padam akaun
-  /// sedang berjalan ATAU gagal separuh jalan).
+  /// true = tiada write cloud/profil baharu dibenarkan (permintaan padam
+  /// akaun sedang dihantar ATAU sudah dihantar/tidak pasti dan belum selesai).
   bool _writesBlocked = false;
   bool _deletionInProgress = false;
+
+  /// F01/D2: permintaan padam akaun masih TERTUNGGAK atau hasilnya belum
+  /// pasti; write client mesti kekal disekat. TIDAK bermaksud client telah
+  /// memadam sebahagian data.
   bool _deletionIncomplete = false;
+
+  /// D2: cache dalam memori bagi marker persisten (UID yang padam akaunnya
+  /// tertunggak) dan penanda "request dihantar". Dimuat oleh load() supaya
+  /// _adoptSessionIdentity() (segerak) boleh menguatkuasakannya.
+  String? _deletionMarkerUid;
+  String? _deletionSubmittedUid;
 
   /// users/{uid} di cloud dianggap sepadan dgn nama/bio tempatan
   /// (selepas pull/push berjaya dalam sesi ini). Syarat menyegerakkan
@@ -638,31 +654,53 @@ class UserModel extends ChangeNotifier {
 
   Future<void> _pushChain = Future<void>.value();
 
-  /// Laporan pembersihan padam akaun terakhir (untuk UI/diagnostik).
+  /// Laporan pembersihan lama (untuk UI/diagnostik). F01: deleteAccount()
+  /// tidak lagi memadam apa-apa di client, jadi medan ini tidak diisi lagi;
+  /// dikekalkan supaya API awam tidak berubah.
   ProfileCleanupReport? lastDeletionCleanupReport;
 
-  /// Hasil pembersihan like/komen/reply pada deleteAccount() terakhir.
-  /// Selepas padam BERJAYA ia kekal (bersama [lastDeletionCleanupReport])
-  /// supaya kandungan yang tertinggal boleh didiagnosis — `isClean ==
-  /// false` bermakna akaun sudah dipadam TETAPI sebahagian kandungan
-  /// belum. Dikosongkan oleh resetLocalSession() pada logout/sesi seterusnya.
+  /// Seperti [lastDeletionCleanupReport]: tidak diisi lagi oleh F01.
+  /// Dikosongkan oleh resetLocalSession().
   SocialCleanupReport? lastSocialCleanupReport;
 
-  /// Had masa satu operasi rangkaian memusnahkan dalam deleteAccount()
-  /// (query post sendiri, commit batch post, padam users/{uid}). Timeout
-  /// hanya berhenti menunggu dan dilempar ke catch deleteAccount() —
-  /// akaun ditandakan tidak lengkap, tidak pernah dianggap berjaya.
+  /// Had masa menghantar request padam akaun dalam deleteAccount(). Timeout
+  /// hanya berhenti menunggu: hasil request menjadi TIDAK PASTI, jadi marker
+  /// dan sekatan write kekal (fail-closed) dan ralat dilempar.
   static const Duration _destructiveOpTimeout = Duration(seconds: 30);
 
   /// true = padam akaun sedang berjalan.
   bool get isDeletionInProgress => _deletionInProgress;
 
-  /// true = padam akaun bermula tetapi TIDAK selesai (mis. Auth gagal
-  /// dipadam). Write cloud/profil disekat sehingga deleteAccount()
-  /// berjaya atau pengguna log keluar.
+  /// true = permintaan padam akaun tertunggak / hasil belum pasti. Write
+  /// cloud/profil disekat. Log keluar TIDAK membuang sekatan ini.
   bool get isDeletionIncomplete => _deletionIncomplete;
 
+  /// D2: UID semasa mempunyai marker padam akaun yang tertunggak.
+  bool get hasOutstandingDeletionMarker {
+    final String? uid = _uidOrNull() ?? _sessionUid;
+    return uid != null && uid == _deletionMarkerUid;
+  }
+
+  @visibleForTesting
+  bool get debugWritesBlocked => _writesBlocked;
+
+  @visibleForTesting
+  String? get debugDeletionMarkerUid => _deletionMarkerUid;
+
+  @visibleForTesting
+  String? get debugDeletionSubmittedUid => _deletionSubmittedUid;
+
+  /// Hanya untuk ujian unit tanpa Firebase.
+  @visibleForTesting
+  static String? Function()? debugUidOverride;
+
+  /// Hanya untuk ujian: simulasi event authStateChanges().
+  @visibleForTesting
+  void debugHandleAuthUid(String? uid) => _handleAuthUid(uid);
+
   static String? _uidOrNull() {
+    final String? Function()? override = debugUidOverride;
+    if (override != null) return override();
     try {
       return FirebaseAuth.instance.currentUser?.uid;
     } catch (_) {
@@ -693,7 +731,11 @@ class UserModel extends ChangeNotifier {
   /// [_syncSessionIdentity] (baca currentUser secara malas) dan
   /// [_onAuthStateEvent] (uid daripada event auth).
   void _adoptSessionIdentity(String? uid) {
-    if (uid == _sessionUid) return;
+    if (uid == _sessionUid) {
+      // D2: UID sama TIDAK boleh memintas penguatkuasaan marker.
+      _enforceDeletionMarker(uid);
+      return;
+    }
     _sessionUid = uid;
     _sessionGeneration++;
     _cloudInSync = false;
@@ -701,6 +743,20 @@ class UserModel extends ChangeNotifier {
     if (!_deletionInProgress) {
       _writesBlocked = false;
       _deletionIncomplete = false;
+    }
+    // D2: UID yang sama dengan marker tertunggak kekal beku selepas
+    // log keluar/masuk. UID lain TIDAK mewarisi sekatan itu.
+    _enforceDeletionMarker(uid);
+  }
+
+  /// D2: jika [uid] ialah UID marker padam akaun yang tertunggak, sekat
+  /// write. Segerak (guna cache memori `_deletionMarkerUid` yang dimuat oleh
+  /// load()). Tidak pernah membuang marker dan tidak pernah melonggarkan
+  /// sekatan — hanya menguatkuasakan.
+  void _enforceDeletionMarker(String? uid) {
+    if (uid != null && uid == _deletionMarkerUid) {
+      _deletionIncomplete = true;
+      _writesBlocked = true;
     }
   }
 
@@ -743,10 +799,15 @@ class UserModel extends ChangeNotifier {
   /// uid yang sama), tiada apa berubah. Kes berlumba yang jarang berlaku
   /// menghasilkan generation++ tambahan — arah selamat (write dilangkau,
   /// data local kekal, push seterusnya menghantar semula).
-  void _onAuthStateEvent(User? user) {
-    final String? uid = user?.uid;
+  void _onAuthStateEvent(User? user) => _handleAuthUid(user?.uid);
+
+  void _handleAuthUid(String? uid) {
     final bool isBaseline = !_authBaselineSeen;
     _authBaselineSeen = true;
+
+    // D2: kuatkuasa marker SEBELUM sebarang early return (event baseline
+    // dan UID sama turut dilindungi).
+    _enforceDeletionMarker(uid);
 
     if (uid == _sessionUid) return;
 
@@ -973,9 +1034,11 @@ class UserModel extends ChangeNotifier {
   /// (Tidak menunggu queue — write offline yang tergantung tak boleh
   /// menghalang logout.)
   Future<void> signOutAndReset() async {
+    // D2: tentukan SEBELUM signOut (selepas itu currentUser == null).
+    final bool deletionOutstanding = hasOutstandingDeletionMarker;
     _invalidateSession();
     await FirebaseAuth.instance.signOut();
-    await resetLocalSession();
+    await resetLocalSession(preserveDeletionMarker: deletionOutstanding);
   }
 
   /// Panggil semasa LOGOUT SAHAJA (atau sebagai langkah akhir padam
@@ -992,23 +1055,47 @@ class UserModel extends ChangeNotifier {
   Future<void> _persistDeletionIncompleteMarker(String uid) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_deletionIncompleteUidKey, uid);
+    _deletionMarkerUid = uid;
   }
 
+  Future<void> _persistDeletionSubmittedMarker(String uid) async {
+    // Cache DAHULU: walaupun penulisan prefs gagal, proses ini sudah tahu
+    // request telah dicipta dan tidak akan mencipta yang kedua.
+    _deletionSubmittedUid = uid;
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_deletionSubmittedUidKey, uid);
+  }
+
+  // Disimpan untuk laluan pengesahan siap (D1) yang BELUM wujud. Tiada
+  // pemanggil sekarang — marker TIDAK dibuang secara automatik oleh F01/D2.
+  // ignore: unused_element
   Future<void> _clearDeletionIncompleteMarker() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_deletionIncompleteUidKey);
+    await prefs.remove(_deletionSubmittedUidKey);
+    _deletionMarkerUid = null;
+    _deletionSubmittedUid = null;
   }
 
   Future<void> _restoreDeletionIncompleteMarker() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? markerUid = prefs.getString(_deletionIncompleteUidKey);
-    final String? currentUid = _uidOrNull();
+    final String? submittedUid = prefs.getString(_deletionSubmittedUidKey);
+    // Cache marker (juga untuk UID lain — ia kekal sehingga ada laluan
+    // pembersihan sah). Sekatan hanya untuk UID semasa yang sama.
+    _deletionMarkerUid = markerUid;
+    _deletionSubmittedUid = submittedUid;
 
-    if (markerUid != null && markerUid == currentUid) {
-      _deletionIncomplete = true;
-      _writesBlocked = true;
+    // Constructor sudah memulakan listener Auth sebelum restore ini siap.
+    // Kuatkuasa untuk UID semasa DAN UID yang mungkin sudah diambil oleh
+    // listener supaya perlumbaan tidak melepaskan UID bermarker. Auth yang
+    // null sementara TIDAK membuang marker.
+    final String? currentUid = _uidOrNull();
+    _enforceDeletionMarker(currentUid);
+    _enforceDeletionMarker(_sessionUid);
+    if (_writesBlocked) {
       debugPrint(
-        'UserModel: deletion incomplete dipulihkan untuk UID semasa.',
+        'UserModel: deletion tertunggak dipulihkan untuk UID semasa.',
       );
     }
   }
@@ -1019,6 +1106,11 @@ class UserModel extends ChangeNotifier {
   /// Helper ini hanya menyentuh regular file dengan format nama
   /// "avatar_<timestamp>.<extension>". Fail/directory lain dalam
   /// ApplicationDocumentsDirectory tidak disentuh.
+  ///
+  /// F01: BUKAN lagi dipanggil oleh deleteAccount(). Disimpan untuk laluan
+  /// pengesahan siap (D1) yang belum wujud; jangan panggil sebelum siap
+  /// disahkan.
+  // ignore: unused_element
   Future<void> _cleanupLocalAvatarFiles() async {
     try {
       final Directory docsDir = await getApplicationDocumentsDirectory();
@@ -1056,14 +1148,23 @@ class UserModel extends ChangeNotifier {
     }
   }
 
-  Future<void> resetLocalSession() async {
+  ///
+  /// D2 — [preserveDeletionMarker] = true (logout semasa padam akaun
+  /// tertunggak): data sesi biasa TETAP dibersihkan, tetapi sekatan write
+  /// (`_writesBlocked`, `_deletionIncomplete`) dan marker persisten kekal.
+  /// Reset TIDAK PERNAH membuang marker persisten: marker satu akaun tidak
+  /// boleh terpadam kerana akaun lain log keluar; hanya laluan pengesahan
+  /// siap (D1, belum ada) yang boleh membuangnya.
+  Future<void> resetLocalSession({bool preserveDeletionMarker = false}) async {
     _sessionGeneration++;
     _sessionUid = _uidOrNull();
     _cloudInSync = false;
     _docSeenGeneration = -1;
-    _writesBlocked = false;
     _deletionInProgress = false;
-    _deletionIncomplete = false;
+    if (!preserveDeletionMarker) {
+      _writesBlocked = false;
+      _deletionIncomplete = false;
+    }
     lastDeletionCleanupReport = null;
     lastSocialCleanupReport = null;
 
@@ -1108,71 +1209,43 @@ class UserModel extends ChangeNotifier {
     await prefs.remove('user_data');
     await prefs.remove('birthday_state');
     await prefs.remove('birthday_note');
-    await prefs.remove(_deletionIncompleteUidKey);
     notifyListeners();
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // PADAM AKAUN — FIX #4
+  // PADAM AKAUN — F01 + D2: CLIENT = PENGHANTAR REQUEST SAHAJA
   // ═══════════════════════════════════════════════════════════════
-  /// Padam akaun: post-post pengguna, profil awam + edge follow,
-  /// dokumen users/{uid}, akaun Firebase Auth, dan akhirnya sesi local.
+  /// Menghantar permintaan padam akaun kepada backend F3-G yang sedia ada
+  /// (`accountDeletionRequests/{uid}`) dan KEKAL dibekukan. Pulangan biasa
+  /// bermaksud "permintaan DIHANTAR" — BUKAN "akaun telah dipadam".
   ///
-  /// Client-side deletion BUKAN atomik. Urutan:
+  /// Urutan:
+  ///   1. Reauthenticate — WAJIB berjaya dulu (rules memerlukan
+  ///      `recentlyAuthenticated()`). Gagal → tiada apa berubah.
+  ///   2. Bekukan write client + invalidate generation sesi.
+  ///   3. Simpan marker niat PERSISTEN (`deletion_incomplete_uid`).
+  ///   4. Kosongkan queue push (had 8s).
+  ///   5. Cipta `accountDeletionRequests/{uid}` dengan TEPAT
+  ///      {uid, status: 'pending', createdAt: serverTimestamp}. Dokumen ini
+  ///      mengaktifkan W3 write-freeze di pelayan dan mencetuskan F3-G.
+  ///   6. Simpan penanda "dihantar" dan KEKAL beku. Selesai.
   ///
-  ///   1. Reauthenticate — WAJIB berjaya dulu. Kalau gagal, method ni
-  ///      throw & TIADA apa-apa berubah (write tidak disekat).
-  ///   2. SEKAT semua write baharu (users + profil awam) dan naikkan
-  ///      generation — write yang beratur menjadi tak berbahaya, write
-  ///      baharu tak diterima. Tunggu queue kosong (had 8s).
-  ///   3. SocialService.purgeMySocialContent(): like (berpasangan dgn
-  ///      kaunter), komen dan reply milik pengguna pada SEMUA post — dulu,
-  ///      sebelum post sendiri dipadam. Best-effort dgn laporan; jika
-  ///      imbasan tak dapat bermula, padam dibatalkan (belum ada apa dipadam).
-  ///   3b. Padam post-post pengguna (batch < 500 operasi).
-  ///   4. ProfileService.deleteMyProfileAndEdges(): edge keluar (+kaunter),
-  ///      profil awam, edge masuk. Kegagalan padam profil = berhenti.
-  ///   5. Reauthenticate semula (F3-D) sebelum langkah akhir, supaya
-  ///      tetingkap recent-auth tidak luput selepas purge yang panjang.
-  ///   6. Padam users/{uid}.
-  ///   7. Padam akaun Firebase Auth (tak boleh diundur).
-  ///   8. Bersihkan sesi local (resetLocalSession) — termasuk data
-  ///      birthday/session.
+  /// FAIL-CLOSED: sebaik sahaja marker niat berjaya ditulis (langkah 3),
+  /// TIADA ralat boleh membuang marker atau membuka semula write. Khususnya
+  /// `permission-denied` BUKAN bukti request tidak wujud (create atas
+  /// dokumen sedia ada ialah update, yang ditolak rules). Hasil tidak pasti
+  /// = kekal beku; ralat dilempar semula apa adanya.
   ///
-  /// Kegagalan:
-  ///   • sebelum sebarang padam (reauth / query post gagal): write
-  ///     dipulihkan, exception dilempar.
-  ///   • selepas padam bermula (mis. Auth gagal dipadam walaupun Firestore
-  ///     dah dipadam): sesi kekal DISEKAT ([isDeletionIncomplete]) —
-  ///     TIADA push/profil dicipta semula — dan exception dilempar. Caller
-  ///     TIDAK boleh menavigasi seolah-olah padam berjaya. Panggil
-  ///     deleteAccount() sekali lagi (langkah yang sudah selesai jadi
-  ///     no-op) atau log keluar.
+  /// Panggilan seterusnya apabila UID ini sudah ada penanda "dihantar":
+  /// tiada reauthentication, tiada request kedua, tiada pembukaan beku.
   ///
-  /// Hasil pembersihan (kedua-dua laporan) dikekalkan selepas padam
-  /// berjaya — semak `lastSocialCleanupReport?.isClean` dan
-  /// `lastDeletionCleanupReport?.edgesFailed`. Akaun yang dipadam dengan
-  /// laporan tidak bersih BUKAN "bersih sepenuhnya".
+  /// Client TIDAK memadam apa-apa di sini. Backend memiliki posts, social,
+  /// follows, profil, users/{uid}, verify dan Firebase Auth. Pengesanan siap
+  /// (D1) BELUM dilaksanakan — tiada pembersihan/reset tempatan di sini.
   ///
-  /// HAD YANG MASIH ADA (tak boleh diselesaikan client-side tanpa
-  /// melemahkan rules — TIDAK dipalsukan di sini):
-  ///   • like / komen / reply ORANG LAIN di bawah post milik pengguna ini
-  ///     menjadi subkoleksi yatim (Firestore tak cascade; rules hanya
-  ///     membenarkan penulisnya memadam). Like yatim boleh dipadam oleh
-  ///     pemiliknya (post sudah tiada); komen/reply yatim tidak dapat
-  ///     ditemui semula melalui app;
-  ///   • reply ORANG LAIN di bawah komen milik pengguna ini kekal yatim;
-  ///   • edge follow MASUK (orang lain → pengguna ini) kekal — hanya
-  ///     follower boleh memadamnya;
-  ///   • kaunter followersCount followee terlebih 1 untuk edge keluar yang
-  ///     gagal dibersihkan (lihat [lastDeletionCleanupReport]);
-  ///   • imbasan client ∝ jumlah post/komen dan dihadkan (had post + bajet
-  ///     masa 120s supaya tetingkap recent-auth 5 minit kekal terbuka) —
-  ///     jika dicapai, laporan ditanda tidak bersih.
-  ///   Pembersihan penuh memerlukan backend berkeistimewaan (kemudian).
-  ///
-  /// Throws [FirebaseAuthException] bila reauth (langkah 1) gagal.
-  /// Throws [FirebaseException]/[StateError] bila langkah 3–6 gagal.
+  /// Throws [FirebaseAuthException] bila reauth gagal.
+  /// Throws ralat Firestore/timeout sebenar bila request gagal/tidak pasti
+  /// (ketika itu [isDeletionIncomplete] == true dan write kekal disekat).
   Future<void> deleteAccount({required String password}) async {
     final User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
@@ -1182,175 +1255,67 @@ class UserModel extends ChangeNotifier {
       throw StateError('Padam akaun sedang berjalan.');
     }
     final String uid = currentUser.uid;
+    _syncSessionIdentity();
+
+    // Sudah dihantar: kekal beku. Tiada reauth, tiada request kedua.
+    if (_deletionMarkerUid == uid && _deletionSubmittedUid == uid) {
+      _enforceDeletionMarker(uid);
+      return;
+    }
+
     final String? userEmail = currentUser.email;
     if (userEmail == null || userEmail.isEmpty) {
       throw StateError('Akaun ini tiada e-mel berdaftar untuk reauthentication.');
     }
-    _syncSessionIdentity();
 
-    // ── 1. REAUTHENTICATE ─────────────────────────────────────────
+    // ── 1. REAUTHENTICATE ───────────────────────────────────────────
     final AuthCredential credential = EmailAuthProvider.credential(
       email: userEmail,
       password: password,
     );
     await currentUser.reauthenticateWithCredential(credential);
 
-    // F3-C: marker mesti berjaya disimpan SEBELUM operasi destructive.
-    // Jika app crash/force-close selepas titik ini, load() boleh
-    // memulihkan keadaan incomplete selepas restart.
-    await _persistDeletionIncompleteMarker(uid);
-
-    // ── 2. SEKAT WRITE + INVALIDATE SESI ─────────────────────────
+    // ── 2. BEKUKAN WRITE + INVALIDATE SESI ──────────────────────────
     _deletionInProgress = true;
     _writesBlocked = true;
     _invalidateSession();
-    // Hasil diabaikan dengan sengaja: kalau satu write masih tergantung
-    // (offline), generation + `update` ke dokumen yang sudah dipadam
-    // (not-found, tak akan mencipta) memastikan ia tak menghidupkan
-    // semula apa-apa.
-    await _drainPushChain(const Duration(seconds: 8));
 
-    bool destructiveStarted = false;
-    ProfileCleanupReport? profileReport;
-    SocialCleanupReport? socialReport;
     try {
-      // ── 3a. BERSIHKAN LIKE / KOMEN / REPLY SAYA ─────────────────
-      // Mesti SEBELUM post sendiri dipadam (komen/reply di bawah post
-      // yang sudah dipadam tak lagi boleh ditemui) dan sebelum akaun
-      // Auth dipadam (token diperlukan oleh rules).
-      final purge = await SocialService.instance.purgeMySocialContent();
-      if (purge.isFailure) {
-        // Imbasan tak dapat bermula → belum ada apa dipadam → dibatalkan
-        // melalui laluan "belum destruktif" di bawah.
-        throw StateError('Gagal membersihkan kandungan sosial. Cuba lagi.');
-      }
-      socialReport = purge.data;
-      lastSocialCleanupReport = socialReport;
-      if ((socialReport?.itemsRemoved ?? 0) > 0) {
-        destructiveStarted = true;
-      }
-
-      // F3-F: JANGAN teruskan pemadaman akaun jika social purge
-      // belum terbukti lengkap. Report yang partial/failed bermaksud
-      // masih ada kandungan pengguna yang tidak diketahui atau gagal
-      // dipadam. Berhenti di sini supaya Auth/users tidak dipadam
-      // seolah-olah cleanup sudah selesai; retry boleh sambung purge.
-      if (socialReport == null || !socialReport.isClean) {
-        throw StateError(
-          'Pembersihan kandungan sosial belum lengkap. Cuba lagi.',
-        );
-      }
-
-      // ── 3b. PADAM POST-POST PENGGUNA ────────────────────────────
-      // postsCount TIDAK digunakan sebagai sumber — ia bukan medan yang
-      // diselenggara (lihat _protectedCloudFields), jadi query sebenar
-      // ke koleksi posts ialah satu-satunya cara boleh dipercayai.
-      // Bacaan KRITIKAL: pelayan sahaja + berhad. Jika gagal / timeout ia
-      // dilempar → catch di bawah (BUKAN dianggap "tiada post") supaya
-      // padam tak diteruskan atas dasar senarai kosong palsu.
-      final QuerySnapshot<Map<String, dynamic>> postsQuery =
-          await FirebaseFirestore.instance
-              .collection('posts')
-              .where('authorId', isEqualTo: uid)
-              .get(const GetOptions(source: Source.server))
-              .timeout(_destructiveOpTimeout);
-
-      if (postsQuery.docs.isNotEmpty) {
-        destructiveStarted = true;
-        // Firestore had 500 operasi/batch — 400 bagi ruang selamat.
-        const int batchSize = 400;
-        for (var i = 0; i < postsQuery.docs.length; i += batchSize) {
-          final WriteBatch batch = FirebaseFirestore.instance.batch();
-          final chunk = postsQuery.docs.skip(i).take(batchSize);
-          for (final doc in chunk) {
-            batch.delete(doc.reference);
-          }
-          await batch.commit().timeout(_destructiveOpTimeout);
-        }
-      }
-
-      // ── 4. PADAM PROFIL AWAM + EDGE FOLLOW ──────────────────────
-      destructiveStarted = true;
-      final cleanup = await ProfileService.instance.deleteMyProfileAndEdges();
-      if (cleanup.isFailure) {
-        throw StateError('Gagal memadam profil awam. Cuba lagi.');
-      }
-      profileReport = cleanup.data;
-      lastDeletionCleanupReport = profileReport;
-
-      // F3-F: Edge follow yang gagal bermaksud graf follow belum
-      // dibersihkan sepenuhnya. Jangan padam users/Auth dalam keadaan
-      // report masih tidak bersih. Retry boleh membersihkan edge yang
-      // tertinggal sebelum langkah akhir.
-      if (profileReport == null || profileReport.edgesFailed != 0) {
-        throw StateError(
-          'Pembersihan follow belum lengkap. Cuba lagi.',
-        );
-      }
-
-      // ── 5. REAUTH SEBELUM LANGKAH AKHIR ─────────────────────────
-      // F3-D: proses purge + padam post boleh mengambil masa melebihi
-      // tetingkap "recent login" Firebase Auth. Reauth semula sekarang,
-      // selepas kerja Firestore yang panjang tetapi SEBELUM users/{uid}
-      // dan Auth dipadam. Jika recent-auth sudah luput, kita berhenti
-      // dengan state incomplete yang selamat — Auth masih wujud dan
-      // caller boleh retry dengan password yang sama.
-      await currentUser.reauthenticateWithCredential(credential);
-
-      // ── 6. PADAM DOKUMEN users/{uid} ────────────────────────────
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .delete()
-          .timeout(_destructiveOpTimeout);
-
-      // ── 7. PADAM AKAUN FIREBASE AUTH ────────────────────────────
-      // Langkah TERAKHIR & TAK BOLEH DIUNDUR.
-      await currentUser.delete();
-      // Akaun sudah tiada. `_writesBlocked` kekal sehingga resetLocalSession
-      // di bawah (uid kini null, jadi tiada push pun boleh berlaku).
-      _deletionInProgress = false;
-    } catch (e) {
-      _deletionInProgress = false;
-      if (destructiveStarted) {
-        // Sesuatu sudah dipadam: kekal disekat supaya tiada write lapuk /
-        // sync profil boleh "menghidupkan semula" akaun separuh padam.
-        _deletionIncomplete = true;
-        debugPrint('UserModel.deleteAccount TIDAK lengkap: $e');
-      } else {
-        // Belum ada apa yang dipadam → marker tidak lagi diperlukan.
-        await _clearDeletionIncompleteMarker();
-
-        // Belum ada apa yang dipadam → pulihkan sesi biasa dan hantar
-        // semula perubahan tempatan yang dilangkau semasa sekatan.
+      // ── 3. MARKER NIAT PERSISTEN ──────────────────────────────────
+      try {
+        await _persistDeletionIncompleteMarker(uid);
+      } catch (_) {
+        // Marker TIDAK tertulis dan request belum dicipta: tiada apa di
+        // pelayan. Selamat memulihkan write (sama seperti reauth gagal).
         _writesBlocked = false;
         _deletionIncomplete = false;
         unawaited(_queuePush(_toMap()));
+        rethrow;
       }
-      rethrow;
-    }
 
-    // ── 7b. CLEANUP AVATAR LOCAL ───────────────────────────────
-    // Hanya selepas Firebase Auth berjaya dipadam.
-    // Logout biasa tidak memanggil cleanup ini.
-    await _cleanupLocalAvatarFiles();
+      // Dari sini FAIL-CLOSED: marker + beku tidak dilonggarkan lagi.
+      _deletionIncomplete = true;
 
-    // ── 8. BERSIHKAN SESI LOCAL ─────────────────────────────────────
-    await resetLocalSession();
+      // ── 4. KOSONGKAN QUEUE PUSH ───────────────────────────────────
+      // Hasil diabaikan dengan sengaja: write tertangguh menjadi tak
+      // berbahaya kerana generation sudah berubah.
+      await _drainPushChain(const Duration(seconds: 8));
 
-    // resetLocalSession() mengosongkan laporan — pulihkan supaya hasil
-    // pembersihan boleh diperiksa selepas padam berjaya.
-    lastDeletionCleanupReport = profileReport;
-    lastSocialCleanupReport = socialReport;
-    final bool cleanedFully = profileReport.edgesFailed == 0 &&
-        socialReport.isClean;
-    if (!cleanedFully) {
-      debugPrint(
-        'UserModel.deleteAccount: akaun dipadam TETAPI pembersihan tidak '
-        'penuh — edge gagal: ${profileReport.edgesFailed}, '
-        'kandungan sosial gagal: ${socialReport.failedCount}, '
-        'imbasan lengkap: ${socialReport.scanComplete}.',
-      );
+      // ── 5. CIPTA REQUEST ──────────────────────────────────────────
+      await FirebaseFirestore.instance
+          .collection('accountDeletionRequests')
+          .doc(uid)
+          .set(<String, dynamic>{
+            'uid': uid,
+            'status': 'pending',
+            'createdAt': FieldValue.serverTimestamp(),
+          })
+          .timeout(_destructiveOpTimeout);
+
+      // ── 6. PENANDA "DIHANTAR" — kekal beku ────────────────────────
+      await _persistDeletionSubmittedMarker(uid);
+    } finally {
+      _deletionInProgress = false;
     }
   }
 

@@ -3,10 +3,14 @@
 // supaya boleh diuji. Digunakan oleh SettingsView._deleteAccount().
 //
 // Kunci pembezaan: [deletionIncomplete] (UserModel.isDeletionIncomplete).
-// Jika benar, sesuatu SUDAH dipadam sebelum ralat berlaku, jadi mesej
-// "Akaun TIDAK dipadam" akan menipu pengguna — walaupun ralat itu
-// FirebaseAuthException (mis. langkah padam Auth gagal selepas data
-// Firestore dipadam).
+// Jika benar, permintaan padam akaun sudah dimulakan/dihantar dan hasilnya
+// belum pasti, jadi mesej "Akaun TIDAK dipadam" akan menipu pengguna.
+
+/// Mesej apabila `UserModel.deleteAccount()` pulang tanpa ralat: permintaan
+/// DIHANTAR. BUKAN pengesahan akaun telah dipadam.
+const String deleteAccountSubmittedMessage =
+    'Permintaan padam akaun telah dihantar dan sedang diproses. '
+    'Anda tidak boleh membuat perubahan baharu pada akaun ini.';
 
 /// Mesej untuk ralat semasa `UserModel.deleteAccount()`.
 ///
@@ -17,9 +21,9 @@ String deleteAccountErrorMessage({
   String? authErrorCode,
 }) {
   if (deletionIncomplete) {
-    return 'Sebahagian data akaun sudah dipadam, tetapi akaun belum '
-        'selesai dipadam. Tekan Padam Akaun sekali lagi untuk '
-        'menyelesaikannya.';
+    return 'Permintaan padam akaun sudah dimulakan tetapi hasilnya belum '
+        'dapat disahkan. Akaun ini kekal dibekukan. Tekan Padam Akaun '
+        'sekali lagi untuk menyemak semula.';
   }
   if (authErrorCode == null) {
     return 'Ralat semasa memadam akaun. Sila cuba lagi atau hubungi sokongan.';

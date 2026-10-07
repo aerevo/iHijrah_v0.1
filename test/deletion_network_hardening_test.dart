@@ -28,11 +28,17 @@ int _count(String hay, String needle) =>
     needle.allMatches(hay).length;
 
 void main() {
-  group('static guard — F3-C persistent deletion marker', () {
+  group('static guard — F3-C persistent deletion marker (F01/D2)', () {
     late String userModel;
+    late String body;
 
     setUpAll(() {
       userModel = File('lib/models/user_model.dart').readAsStringSync();
+      body = _region(
+        'lib/models/user_model.dart',
+        'Future<void> deleteAccount({required String password}) async {',
+        'static Future<UserModel> load() async',
+      );
     });
 
     test('defines a UID-scoped persistent deletion marker', () {
@@ -49,89 +55,60 @@ void main() {
     });
 
     test(
-      'persists marker after re-authentication and before destructive work',
+      'persists marker after re-authentication and freeze, before the request',
       () {
-        final int reauth = userModel.indexOf(
+        final int reauth = body.indexOf(
           'await currentUser.reauthenticateWithCredential(credential);',
         );
-        final int persist = userModel.indexOf(
+        final int freeze = body.indexOf('_writesBlocked = true;', reauth);
+        final int persist = body.indexOf(
           'await _persistDeletionIncompleteMarker(uid);',
-          reauth,
+          freeze,
         );
-        final int destructive = userModel.indexOf(
-          '_deletionInProgress = true;',
+        final int request = body.indexOf(
+          ".collection('accountDeletionRequests')",
           persist,
         );
 
         expect(reauth, greaterThanOrEqualTo(0));
-        expect(persist, greaterThan(reauth));
-        expect(destructive, greaterThan(persist));
+        expect(freeze, greaterThan(reauth));
+        expect(persist, greaterThan(freeze));
+        expect(request, greaterThan(persist));
       },
     );
 
-    test('restores marker only for the current Firebase UID', () {
+    test('restores marker into memory and enforces it only for matching UID', () {
       expect(
         userModel.contains(
           'final String? markerUid = prefs.getString(_deletionIncompleteUidKey);',
         ),
         isTrue,
       );
+      expect(userModel.contains('_deletionMarkerUid = markerUid;'), isTrue);
       expect(
-        userModel.contains(
-          'final String? currentUid = _uidOrNull();',
-        ),
+        userModel.contains('final String? currentUid = _uidOrNull();'),
         isTrue,
       );
+      expect(userModel.contains('_enforceDeletionMarker(currentUid);'), isTrue);
+      // pelaksanaan enforce: hanya UID yang sama dengan marker
       expect(
-        userModel.contains(
-          'if (markerUid != null && markerUid == currentUid)',
-        ),
-        isTrue,
-      );
-      expect(
-        userModel.contains('_deletionIncomplete = true;'),
-        isTrue,
-      );
-      expect(
-        userModel.contains('_writesBlocked = true;'),
+        userModel.contains('if (uid != null && uid == _deletionMarkerUid) {'),
         isTrue,
       );
     });
 
-    test('clears marker on successful local-session reset', () {
-      final int reset = userModel.indexOf(
-        'Future<void> resetLocalSession() async',
+    test('local-session reset never removes the persisted marker', () {
+      final String reset = _region(
+        'lib/models/user_model.dart',
+        'Future<void> resetLocalSession({bool preserveDeletionMarker = false}) async {',
+        '// PADAM AKAUN — F01',
       );
-      final int clear = userModel.indexOf(
-        'await prefs.remove(_deletionIncompleteUidKey);',
-        reset,
-      );
-
-      expect(reset, greaterThanOrEqualTo(0));
-      expect(clear, greaterThan(reset));
+      expect(reset.contains('prefs.remove(_deletionIncompleteUidKey)'), isFalse);
+      expect(reset.contains('prefs.remove(_deletionSubmittedUidKey)'), isFalse);
     });
 
-    test('clears marker when deletion fails before destructive work', () {
-      final int catchStart = userModel.indexOf(
-        'bool destructiveStarted = false;',
-      );
-      final int clear = userModel.indexOf(
-        'await _clearDeletionIncompleteMarker();',
-        catchStart,
-      );
-      final int restoreWrites = userModel.indexOf(
-        '_writesBlocked = false;',
-        clear,
-      );
-      final int restoreIncomplete = userModel.indexOf(
-        '_deletionIncomplete = false;',
-        restoreWrites,
-      );
-
-      expect(catchStart, greaterThanOrEqualTo(0));
-      expect(clear, greaterThan(catchStart));
-      expect(restoreWrites, greaterThan(clear));
-      expect(restoreIncomplete, greaterThan(restoreWrites));
+    test('deleteAccount never clears the marker (fail-closed)', () {
+      expect(body.contains('_clearDeletionIncompleteMarker'), isFalse);
     });
 
     test('load restores the marker before reading cached user data', () {
@@ -335,75 +312,30 @@ void main() {
     });
   });
 
-  group('static guard — UserModel.deleteAccount destructive path', () {
-    late String path;
+  group('static guard — UserModel.deleteAccount request-only path (F01)', () {
+    late String body;
     setUpAll(() {
-      path = _region(
+      body = _region(
         'lib/models/user_model.dart',
-        '3b. PADAM POST-POST PENGGUNA',
-        '7. PADAM AKAUN FIREBASE AUTH',
+        'Future<void> deleteAccount({required String password}) async {',
+        'static Future<UserModel> load() async',
       );
     });
 
-    test('own-post query is server-only and bounded', () {
-      expect(path.contains('.get(const GetOptions(source: Source.server)).timeout(_destructiveOpTimeout)'),
-          isTrue);
-      expect(path.contains('.get()'), isFalse);
+    test('the single Firestore write is bounded', () {
+      expect(body.contains('.timeout(_destructiveOpTimeout)'), isTrue);
+      expect(_count(body, '.timeout(_destructiveOpTimeout)'), 1);
     });
 
-    test('post batch commits and users/{uid} delete are bounded', () {
-      expect(path.contains('batch.commit().timeout(_destructiveOpTimeout)'), isTrue);
-      expect(path.contains('await batch.commit();'), isFalse);
-      expect(path.contains('.delete().timeout(_destructiveOpTimeout)'), isTrue);
+    test('no Firestore read and no cache-source usage', () {
+      expect(body.contains('.get('), isFalse);
+      expect(body.contains('Source.'), isFalse);
     });
 
-    test('F3-D reauth happens after long Firestore work and before final deletes', () {
-      final String src = File('lib/models/user_model.dart').readAsStringSync();
-
-      final int profile = src.indexOf(
-        'final cleanup = await ProfileService.instance.deleteMyProfileAndEdges();',
-      );
-      final int reauth = src.indexOf(
-        'await currentUser.reauthenticateWithCredential(credential);',
-        profile,
-      );
-      final int usersMarker = src.indexOf(
-        'PADAM DOKUMEN users/{uid}',
-        reauth,
-      );
-      final int usersDelete = src.indexOf(
-        "collection('users')",
-        usersMarker,
-      );
-      final int authDelete = src.indexOf(
-        'await currentUser.delete();',
-        usersDelete,
-      );
-
-      expect(profile, greaterThanOrEqualTo(0));
-      expect(reauth, greaterThan(profile));
-      expect(usersMarker, greaterThan(reauth));
-      expect(usersDelete, greaterThan(usersMarker));
-      expect(authDelete, greaterThan(usersDelete));
-    });
-
-    test('deletion order is unchanged', () {
-      final String src = File('lib/models/user_model.dart').readAsStringSync();
-      final List<String> order = <String>[
-        '3a. BERSIHKAN LIKE / KOMEN / REPLY SAYA',
-        '3b. PADAM POST-POST PENGGUNA',
-        '4. PADAM PROFIL AWAM + EDGE FOLLOW',
-        '5. REAUTH SEBELUM LANGKAH AKHIR',
-        '6. PADAM DOKUMEN users/{uid}',
-        '7. PADAM AKAUN FIREBASE AUTH',
-        '8. BERSIHKAN SESI LOCAL',
-      ];
-      int last = -1;
-      for (final String marker in order) {
-        final int i = src.indexOf(marker);
-        expect(i, greaterThan(last), reason: 'urutan salah / hilang: $marker');
-        last = i;
-      }
+    test('no destructive client work remains', () {
+      expect(body.contains('batch'), isFalse);
+      expect(body.contains('.delete('), isFalse);
+      expect(body.contains('currentUser.delete'), isFalse);
     });
   });
 }

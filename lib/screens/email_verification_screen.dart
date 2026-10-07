@@ -153,11 +153,15 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     _pollTimer?.cancel();
     _cooldownTimer?.cancel();
     final UserModel userModel = Provider.of<UserModel>(context, listen: false);
+    // D2: tentukan SEBELUM signOut sama ada UID ini ada padam akaun tertunggak.
+    final bool deletionOutstanding = userModel.hasOutstandingDeletionMarker;
     await FirebaseAuth.instance.signOut();
     // Sama macam logout biasa (SettingsView): bersihkan sesi local supaya
     // akaun seterusnya pada peranti ni tak warisi data akaun ini.
     // resetLocalSession() tak push apa-apa ke cloud.
-    await userModel.resetLocalSession();
+    await userModel.resetLocalSession(
+      preserveDeletionMarker: deletionOutstanding,
+    );
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AuthScreen()),

@@ -51,6 +51,15 @@ void main() {
     });
   });
 
+  group('deleteAccountSubmittedMessage — F01', () {
+    test('says the request was submitted and does not claim completion', () {
+      expect(deleteAccountSubmittedMessage.contains('dihantar'), isTrue);
+      expect(deleteAccountSubmittedMessage.contains('sedang diproses'), isTrue);
+      expect(deleteAccountSubmittedMessage.contains('telah dipadam'), isFalse);
+      expect(deleteAccountSubmittedMessage.contains('berjaya dipadam'), isFalse);
+    });
+  });
+
   group('deleteAccountErrorMessage — deletion already started', () {
     test('never says "TIDAK dipadam", whatever the error type', () {
       final List<String?> codes = <String?>[

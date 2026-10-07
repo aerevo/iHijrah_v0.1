@@ -60,24 +60,27 @@ void main() {
     expect(catchBlock.contains('orphanAvatar'), isFalse);
   });
 
-  test('F3-E account deletion menjalankan local avatar cleanup selepas Auth delete',
-      () {
+  test('F01 deleteAccount (request-only) tidak membersihkan avatar local', () {
     final String src =
         File('lib/models/user_model.dart').readAsStringSync();
 
-    final int authDelete = src.indexOf('await currentUser.delete();');
-    final int avatarCleanup = src.indexOf(
-      'await _cleanupLocalAvatarFiles();',
-      authDelete,
+    final int start = src.indexOf(
+      'Future<void> deleteAccount({required String password}) async {',
     );
-    final int resetSession = src.indexOf(
-      'await resetLocalSession();',
-      avatarCleanup,
-    );
+    final int end = src.indexOf('static Future<UserModel> load() async', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
 
-    expect(authDelete, greaterThanOrEqualTo(0));
-    expect(avatarCleanup, greaterThan(authDelete));
-    expect(resetSession, greaterThan(avatarCleanup));
+    final String body = src.substring(start, end);
+    expect(body.contains('_cleanupLocalAvatarFiles'), isFalse);
+    expect(body.contains('resetLocalSession'), isFalse);
+
+    // Helper dikekalkan (untuk laluan siap D1 kelak) tetapi tiada pemanggil.
+    expect(src.contains('Future<void> _cleanupLocalAvatarFiles() async {'), isTrue);
+    expect(
+      RegExp(r'await _cleanupLocalAvatarFiles\(\);').hasMatch(src),
+      isFalse,
+    );
   });
 
   test('F3-E avatar cleanup hanya menyasar format avatar_<timestamp>.<ext>',
@@ -92,7 +95,7 @@ void main() {
 
     // Cleanup tidak boleh delete semua fail dalam Documents directory.
     final int helper = src.indexOf('_cleanupLocalAvatarFiles()');
-    final int reset = src.indexOf('resetLocalSession()', helper);
+    final int reset = src.indexOf('resetLocalSession(', helper);
 
     expect(helper, greaterThanOrEqualTo(0));
     expect(reset, greaterThan(helper));

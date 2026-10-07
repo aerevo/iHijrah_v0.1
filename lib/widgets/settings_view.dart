@@ -69,9 +69,14 @@ class SettingsView extends StatelessWidget {
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !context.mounted) return;
 
     try {
+      // D2: tentukan SEBELUM signOut (selepas itu currentUser == null)
+      // sama ada UID ini ada permintaan padam akaun yang tertunggak.
+      final user = Provider.of<UserModel>(context, listen: false);
+      final bool deletionOutstanding = user.hasOutstandingDeletionMarker;
+
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
 
@@ -80,9 +85,11 @@ class SettingsView extends StatelessWidget {
       // pengguna di cloud tak sekali-kali tertimpa kosong bila logout.
       // (Cara lama set user.email/name = '' terus save() adalah BUG:
       // save() sentiasa push ke cloud utk uid semasa.)
+      // Logout semasa padam akaun tertunggak: marker + sekatan write kekal.
       if (context.mounted) {
-        final user = Provider.of<UserModel>(context, listen: false);
-        await user.resetLocalSession();
+        await user.resetLocalSession(
+          preserveDeletionMarker: deletionOutstanding,
+        );
 
         // Navigate back to AuthScreen
         Navigator.of(context).pushAndRemoveUntil(
@@ -98,18 +105,17 @@ class SettingsView extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // PADAM AKAUN — reauth (kata laluan) WAJIB dulu, baru padam apa-apa.
-  // Urutan (client-side, tidak atomik sepenuhnya — lihat
-  // UserModel.deleteAccount() untuk sebab urutan ni penting):
+  // PADAM AKAUN (F01) — reauth (kata laluan) WAJIB dulu, kemudian client
+  // HANYA menghantar permintaan padam akaun kepada backend F3-G.
   //   1. Dialog amaran kekal & tak boleh dibatalkan.
   //   2. Dialog kata laluan → reauthenticateWithCredential.
-  //   3. Kalau reauth gagal → TIDAK PADAM APA-APA, papar ralat, berhenti.
-  //   4. Kalau reauth berjaya → padam post pengguna → users/{uid} →
-  //      akaun Firebase Auth → sesi local → AuthScreen.
-  //   5. Kalau ralat SELEPAS reauth berjaya (contoh: network putus di
-  //      tengah) → JANGAN navigate ke AuthScreen (akaun mungkin
-  //      separuh dipadam sahaja) — biar pengguna kekal log masuk &
-  //      cuba semula.
+  //   3. Kalau reauth gagal → tiada apa dihantar, papar ralat, berhenti.
+  //   4. Kalau reauth berjaya → write client dibekukan, permintaan
+  //      dihantar; backend memadam data dan akaun Auth.
+  //   5. Berjaya = permintaan DIHANTAR (bukan akaun dipadam). Kekal di
+  //      skrin ini; JANGAN navigasi ke AuthScreen seolah-olah selesai.
+  //   6. Ralat selepas niat disimpan → akaun kekal beku; papar mesej
+  //      "belum pasti", bukan "akaun tidak dipadam".
   // ══════════════════════════════════════════════════════════════
   Future<void> _deleteAccount(BuildContext context) async {
     final confirm = await showDialog<bool>(
@@ -145,7 +151,7 @@ class SettingsView extends StatelessWidget {
     final user = Provider.of<UserModel>(context, listen: false);
 
     // Proses ni beberapa panggilan network berturutan (reauth →
-    // padam posts → padam users/{uid} → padam Auth) — kunci UI
+    // hantar request padam akaun) — kunci UI
     // dengan loading yg tak boleh ditutup pengguna sendiri.
     // barrierDismissible:false hanya menghalang ketik di luar dialog;
     // PopScope(canPop:false) menghalang butang/gerak isyarat belakang.
@@ -164,18 +170,16 @@ class SettingsView extends StatelessWidget {
     try {
       await user.deleteAccount(password: password);
 
+      // F01: berjaya = permintaan DIHANTAR, BUKAN akaun dipadam. Kekal di
+      // skrin ini (beku) — jangan navigasi keluar seolah-olah selesai.
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop(); // tutup loading
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AuthScreen()),
-        (route) => false,
-      );
+      _snack(context, deleteAccountSubmittedMessage);
     } on FirebaseAuthException catch (e) {
-      // Dua punca FirebaseAuthException:
-      //  • reauth gagal (langkah 1) — belum ada apa dipadam;
-      //  • langkah padam Auth (langkah 6) gagal SELEPAS post/profil/
-      //    users sudah dipadam — user.isDeletionIncomplete == true.
-      // Mesej "TIDAK dipadam" hanya betul untuk yang pertama.
+      // FirebaseAuthException di sini datang daripada reauth (langkah 1) —
+      // belum ada apa-apa dihantar dan user.isDeletionIncomplete == false.
+      // Jika permintaan sudah tertunggak, mesej "TIDAK dipadam" tidak
+      // digunakan (lihat deleteAccountErrorMessage).
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       _snack(
@@ -186,10 +190,9 @@ class SettingsView extends StatelessWidget {
         ),
       );
     } catch (e) {
-      // Ralat SELEPAS reauth berjaya (contoh: gagal padam posts/
-      // users/Auth disebabkan network). Mungkin sebahagian data dah
-      // terpadam — JANGAN navigate ke AuthScreen; biar pengguna
-      // masih boleh log masuk & cuba padam semula.
+      // Ralat SELEPAS reauth berjaya (contoh: request tamat masa /
+      // ditolak). Hasil request mungkin tidak pasti — akaun kekal beku
+      // (isDeletionIncomplete == true). JANGAN navigate ke AuthScreen.
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       _snack(
