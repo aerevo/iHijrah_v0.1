@@ -332,10 +332,23 @@ void main() {
       expect(body.contains('Source.'), isFalse);
     });
 
-    test('no destructive client work remains', () {
-      expect(body.contains('batch'), isFalse);
+    test('only bounded atomic request/status creation remains', () {
+      expect(body.contains('WriteBatch'), isTrue);
+      expect(body.contains("collection('accountDeletionRequests')"), isTrue);
+      expect(body.contains("collection('accountDeletionStatus')"), isTrue);
+      expect(_count(body, 'deletionBatch.set('), 2);
+      expect(
+        body.contains('await deletionBatch.commit().timeout(_destructiveOpTimeout);'),
+        isTrue,
+      );
+      expect(body.contains('batch.delete('), isFalse);
       expect(body.contains('.delete('), isFalse);
       expect(body.contains('currentUser.delete'), isFalse);
+      expect(body.contains('purgeMySocialContent'), isFalse);
+      expect(body.contains('deleteMyProfileAndEdges'), isFalse);
+      expect(body.contains("collection('users')"), isFalse);
+      expect(body.contains("collection('posts')"), isFalse);
+      expect(body.contains("collection('profiles')"), isFalse);
     });
   });
 }

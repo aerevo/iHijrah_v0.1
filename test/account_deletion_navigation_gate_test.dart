@@ -37,7 +37,7 @@ void main() {
     final String source =
         read('lib/screens/account_deletion_recovery_screen.dart');
     expect(source, contains('model.reconcileAccountDeletion()'));
-    expect(source, contains('model.signOutAndReset()'));
+    expect(source, contains('.signOutAndReset()'));
     expect(source, contains('Akaun kekal dibekukan'));
     expect(source, isNot(contains('_clearDeletionIncompleteMarker')));
     expect(source, isNot(contains('deleteAccount(')));

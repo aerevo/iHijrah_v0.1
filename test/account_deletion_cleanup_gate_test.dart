@@ -32,14 +32,22 @@ void main() {
       "collection('users')",
       "collection('posts')",
       "collection('profiles')",
-      'WriteBatch',
-      'batch',
       'SocialService',
       'ProfileService',
     ];
     for (final String token in forbidden) {
       expect(body.contains(token), isFalse, reason: 'dilarang: $token');
     }
+
+    // Hanya batch penciptaan request + status dibenarkan.
+    expect(body.contains('WriteBatch'), isTrue);
+    expect(body.contains("collection('accountDeletionRequests')"), isTrue);
+    expect(body.contains("collection('accountDeletionStatus')"), isTrue);
+    expect(RegExp(r'deletionBatch\.set\(').allMatches(body).length, 2);
+    expect(
+      body.contains('await deletionBatch.commit().timeout(_destructiveOpTimeout);'),
+      isTrue,
+    );
   });
 
   test('F01 deleteAccount() tidak membersih/reset sesi tempatan sebagai siap',
