@@ -607,6 +607,38 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // ══ ACCOUNT DELETION STATUS: D1/D5 ═══════════════════════════
+    // Status ialah saluran lifecycle yang boleh dibaca client untuk UID
+    // sendiri. Client hanya boleh mencipta rekod awal 'pending' sekali.
+    // Semua perubahan selepas itu dibuat oleh backend/Admin SDK.
+    //
+    // Kewujudan accountDeletionRequests/{uid} kekal sebagai anchor
+    // W3 write-freeze. Dokumen status ini TIDAK digunakan oleh rules
+    // freeze dan tidak memberi client kuasa cleanup.
+    match /accountDeletionStatus/{userId} {
+      allow create: if verified()
+        && isOwner(userId)
+        && recentlyAuthenticated()
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+
+      allow read: if verified()
+        && isOwner(userId);
+
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

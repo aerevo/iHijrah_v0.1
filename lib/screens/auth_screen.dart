@@ -12,11 +12,13 @@ import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import '../utils/deletion_gate.dart';
 import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
 import '../widgets/iridescent_background.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/email_verification_screen.dart';
+import '../screens/account_deletion_recovery_screen.dart';
 import '../home.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -113,6 +115,36 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       final user = Provider.of<UserModel>(context, listen: false);
       user.email = email;
+
+      // D5: jangan pull profil atau navigasi biasa selagi deletion
+      // untuk UID ini belum disahkan selesai.
+      final AccountDeletionReconciliationResult deletionResult =
+          await user.reconcileAccountDeletion();
+      if (!mounted) return;
+      final DeletionGateAction deletionGate = deletionGateAction(
+        deletionResult,
+        markerOutstanding: user.hasOutstandingDeletionMarker,
+      );
+      if (deletionGate != DeletionGateAction.proceed) {
+        setState(() => _loading = false);
+        if (deletionGate == DeletionGateAction.showAuth) {
+          _snack(
+            'Akaun lama telah dipadam. Sila log masuk semula jika perlu.',
+          );
+          return;
+        }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => AccountDeletionRecoveryScreen(
+              initialResult:
+                  deletionResult == AccountDeletionReconciliationResult.none
+                      ? AccountDeletionReconciliationResult.unverifiable
+                      : deletionResult,
+            ),
+          ),
+        );
+        return;
+      }
 
       // Cuba tarik data sedia ada dari cloud (kes: akaun lama, telefon
       // baru). Kalau takde (akaun baru terus didaftar), teruskan je —

@@ -1096,6 +1096,60 @@ async function w5Read(uid) {
 }
 
 test(
+  'D1/D5: account deletion status follows processing -> completed lifecycle',
+  async () => {
+    const uid = 'status-lifecycle-user';
+    const scenario = { uids: [uid], postIds: [] };
+
+    await cleanupCountScenario(scenario);
+
+    try {
+      await ensureAuthUser(uid);
+      await seedUserDocs(uid);
+      await requestDeletion(uid);
+
+      const claimed = await claimRequest(uid);
+      assert.equal(claimed.reason, 'claimed');
+      assert.equal(typeof claimed.worker, 'string');
+      assert.ok(claimed.worker.length > 0);
+
+      const processingStatus = await db.collection('accountDeletionStatus').doc(uid).get();
+      assert.equal(processingStatus.exists, true);
+      assert.equal(processingStatus.data().uid, uid);
+      assert.equal(processingStatus.data().status, 'processing');
+      assert.equal(processingStatus.data().phase, 'posts');
+      assert.ok(processingStatus.data().updatedAt);
+
+      await db.collection("accountDeletionRequests").doc(uid).update({
+        leaseUntil: new Date(Date.now() - 1000),
+      });
+
+      const result = await processDeletion(uid);
+      assert.equal(result.processed, true);
+
+      const completedStatus = await db.collection('accountDeletionStatus').doc(uid).get();
+      assert.equal(completedStatus.exists, true);
+      assert.equal(completedStatus.data().uid, uid);
+      assert.equal(completedStatus.data().status, 'completed');
+      assert.equal(completedStatus.data().phase, 'completed');
+      assert.ok(completedStatus.data().updatedAt);
+      assert.ok(completedStatus.data().completedAt);
+
+      const request = await w5Read(uid);
+      assert.equal(request.status, 'completed');
+      assert.equal(request.phase, 'completed');
+
+      await assert.rejects(
+        () => auth.getUser(uid),
+        (error) => error?.code === 'auth/user-not-found',
+      );
+    } finally {
+      await cleanupCountScenario(scenario);
+    }
+  },
+);
+
+test(
   'W5: an ACTIVE lease blocks a second worker; the owner keeps the request, and the trigger does not swallow it',
   async () => {
     const uid = 'w5-active';

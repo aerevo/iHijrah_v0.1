@@ -18,9 +18,11 @@ import 'package:provider/provider.dart';
 
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+import '../utils/deletion_gate.dart';
 import '../widgets/metallic_gold.dart';
 import 'onboarding_screen.dart';
 import 'auth_screen.dart';
+import 'account_deletion_recovery_screen.dart';
 import '../home.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
@@ -95,12 +97,43 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
-  void _routeAfterVerified() {
+  Future<void> _routeAfterVerified() async {
     if (!mounted) return;
-    final UserModel userModel = Provider.of<UserModel>(context, listen: false);
+    final UserModel userModel =
+        Provider.of<UserModel>(context, listen: false);
+
+    // D5: verification email bukan bukti deletion telah selesai.
+    final AccountDeletionReconciliationResult deletionResult =
+        await userModel.reconcileAccountDeletion();
+    if (!mounted) return;
+
+    final DeletionGateAction deletionGate = deletionGateAction(
+      deletionResult,
+      markerOutstanding: userModel.hasOutstandingDeletionMarker,
+    );
+    if (deletionGate != DeletionGateAction.proceed) {
+      if (deletionGate == DeletionGateAction.showAuth) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute<void>(builder: (_) => const AuthScreen()),
+          (_) => false,
+        );
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => AccountDeletionRecoveryScreen(
+            initialResult:
+                deletionResult == AccountDeletionReconciliationResult.none
+                    ? AccountDeletionReconciliationResult.unverifiable
+                    : deletionResult,
+          ),
+        ),
+      );
+      return;
+    }
+
     final bool needsOnboarding =
         userModel.name.isEmpty || userModel.birthdate == null;
-
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) =>

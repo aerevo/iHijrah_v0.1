@@ -10,8 +10,10 @@ import '../models/user_model.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/auth_screen.dart';
 import '../screens/email_verification_screen.dart';
+import '../screens/account_deletion_recovery_screen.dart';
 import '../utils/audio_service.dart';
 import '../utils/constants.dart';
+import '../utils/deletion_gate.dart';
 import '../widgets/metallic_gold.dart';
 import '../widgets/tree_of_life_logo.dart';
 import '../widgets/iridescent_background.dart';
@@ -150,12 +152,34 @@ class _SplashScreenState extends State<SplashScreen>
         user.name.isEmpty || user.birthdate == null;
 
     Widget target;
-    if (firebaseUser == null) {
-      // Belum log masuk — AuthScreen dulu (data pokok/streak/profil
-      // kena terikat ke akaun sejak awal, bukan lepas onboarding).
+    if (firebaseUser != null && user.hasOutstandingDeletionMarker) {
+      final AccountDeletionReconciliationResult result =
+          await user.reconcileAccountDeletion();
+      if (!mounted) return;
+
+      final DeletionGateAction gate = deletionGateAction(
+        result,
+        markerOutstanding: user.hasOutstandingDeletionMarker,
+      );
+      if (gate == DeletionGateAction.showAuth) {
+        target = const AuthScreen();
+      } else if (gate == DeletionGateAction.showRecovery) {
+        target = AccountDeletionRecoveryScreen(
+          initialResult:
+              result == AccountDeletionReconciliationResult.none
+                  ? AccountDeletionReconciliationResult.unverifiable
+                  : result,
+        );
+      } else if (reloadFailed || !firebaseUser.emailVerified) {
+        target = const EmailVerificationScreen();
+      } else if (needsOnboarding) {
+        target = const OnboardingScreen();
+      } else {
+        target = const HomePage();
+      }
+    } else if (firebaseUser == null) {
       target = const AuthScreen();
     } else if (reloadFailed || !firebaseUser.emailVerified) {
-      // Belum verify (atau status tak dapat disahkan) — tak boleh masuk.
       target = const EmailVerificationScreen();
     } else if (needsOnboarding) {
       target = const OnboardingScreen();

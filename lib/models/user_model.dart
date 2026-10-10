@@ -15,6 +15,34 @@ import '../services/profile_service.dart';
 import '../services/social_failure.dart';
 import '../services/social_service.dart';
 
+/// Keputusan reconciliation lifecycle pemadaman akaun.
+enum AccountDeletionReconciliationResult {
+  /// UID aktif tidak mempunyai marker pemadaman yang sepadan.
+  none,
+
+  /// Request sudah dihantar tetapi masih menunggu worker.
+  pending,
+
+  /// Worker sedang membersihkan data.
+  processing,
+
+  /// Backend menandakan kegagalan dan scheduler akan mencuba semula.
+  failed,
+
+  /// Status lifecycle belum tersedia atau tidak dapat dibaca.
+  statusMissing,
+
+  /// Backend berkata completed tetapi Auth masih boleh diakses.
+  /// Kekalkan sekatan kerana keadaan ini bercanggah.
+  completedButAuthStillExists,
+
+  /// Hasil tidak dapat disahkan; kekalkan sekatan.
+  unverifiable,
+
+  /// Firebase Auth mengesahkan UID sudah tiada dan cleanup tempatan selesai.
+  authDeleted,
+}
+
 /// Hasil [UserModel.pullFromCloudDetailed].
 enum CloudPullResult {
   /// Dokumen users/{uid} dimuatkan dan digunakan.
@@ -108,6 +136,16 @@ class UserModel extends ChangeNotifier {
   // cara panggilan seterusnya mengelak mencipta request kedua.
   static const String _deletionSubmittedUidKey =
       'deletion_request_submitted_uid';
+
+  // D5: bukti tempatan bahawa Firebase Auth telah mengesahkan user-not-found.
+  // Digunakan hanya untuk menyambung cleanup jika app terhenti di tengah proses.
+  static const String _deletionAuthGoneConfirmedUidKey =
+      'deletion_auth_gone_confirmed_uid';
+
+  // D5: pemilik cache `user_data` (UID yang menulisnya). `user_data` ialah
+  // slot tunggal, jadi tanpa ini load() tidak boleh membuktikan cache itu
+  // milik UID aktif apabila bukti Auth-gone untuk UID LAIN wujud.
+  static const String _localDataOwnerUidKey = 'user_data_owner_uid';
 
   /// Mulakan pemantau auth-session SEKALI untuk setiap instance.
   /// Semua laluan yang menukar identiti Firebase (logout, login semula,
@@ -867,6 +905,22 @@ class UserModel extends ChangeNotifier {
     }
   }
 
+  /// D5: rekod UID pemilik `user_data`. Kegagalan menulis owner tidak boleh
+  /// menggagalkan simpan biasa (load() hanya menggunakannya dalam laluan
+  /// fail-closed apabila bukti Auth-gone UID lain wujud).
+  Future<void> _writeLocalDataOwner(SharedPreferences prefs) async {
+    final String? uid = _uidOrNull();
+    try {
+      if (uid == null) {
+        await prefs.remove(_localDataOwnerUidKey);
+      } else {
+        await prefs.setString(_localDataOwnerUidKey, uid);
+      }
+    } catch (e) {
+      debugPrint('UserModel: owner cache local gagal ditulis: $e');
+    }
+  }
+
   /// Simpan local SAHAJA (guard generation). null = sesi tamat semasa
   /// menyimpan, tiada apa-apa ditulis.
   Future<Map<String, dynamic>?> _persistLocal() async {
@@ -879,6 +933,7 @@ class UserModel extends ChangeNotifier {
     // semula data lama ke prefs yang baru dibersihkan.
     if (gen != _sessionGeneration) return null;
     await prefs.setString('user_data', json.encode(map));
+    await _writeLocalDataOwner(prefs);
     return map;
   }
 
@@ -1066,15 +1121,17 @@ class UserModel extends ChangeNotifier {
     await prefs.setString(_deletionSubmittedUidKey, uid);
   }
 
-  // Disimpan untuk laluan pengesahan siap (D1) yang BELUM wujud. Tiada
-  // pemanggil sekarang — marker TIDAK dibuang secara automatik oleh F01/D2.
-  // ignore: unused_element
+  // Hanya dipanggil selepas Firebase Auth mengesahkan user-not-found
+  // dan cleanup local selesai. Logout biasa tidak boleh memanggilnya.
   Future<void> _clearDeletionIncompleteMarker() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_deletionIncompleteUidKey);
     await prefs.remove(_deletionSubmittedUidKey);
+    await prefs.remove(_deletionAuthGoneConfirmedUidKey);
     _deletionMarkerUid = null;
     _deletionSubmittedUid = null;
+    _writesBlocked = false;
+    _deletionIncomplete = false;
   }
 
   Future<void> _restoreDeletionIncompleteMarker() async {
@@ -1207,6 +1264,7 @@ class UserModel extends ChangeNotifier {
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_data');
+    await prefs.remove(_localDataOwnerUidKey);
     await prefs.remove('birthday_state');
     await prefs.remove('birthday_note');
     notifyListeners();
@@ -1301,16 +1359,34 @@ class UserModel extends ChangeNotifier {
       // berbahaya kerana generation sudah berubah.
       await _drainPushChain(const Duration(seconds: 8));
 
-      // ── 5. CIPTA REQUEST ──────────────────────────────────────────
-      await FirebaseFirestore.instance
-          .collection('accountDeletionRequests')
-          .doc(uid)
-          .set(<String, dynamic>{
-            'uid': uid,
-            'status': 'pending',
-            'createdAt': FieldValue.serverTimestamp(),
-          })
-          .timeout(_destructiveOpTimeout);
+      // ── 5. CIPTA REQUEST + STATUS SECARA ATOMIK ──────────────────
+      // Kedua-dua dokumen mesti wujud bersama. Ini menutup jurang
+      // request-created -> status-missing ketika app/network terputus.
+      final WriteBatch deletionBatch = FirebaseFirestore.instance.batch();
+
+      deletionBatch.set(
+        FirebaseFirestore.instance
+            .collection('accountDeletionRequests')
+            .doc(uid),
+        <String, dynamic>{
+          'uid': uid,
+          'status': 'pending',
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+      );
+
+      deletionBatch.set(
+        FirebaseFirestore.instance
+            .collection('accountDeletionStatus')
+            .doc(uid),
+        <String, dynamic>{
+          'uid': uid,
+          'status': 'pending',
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+      );
+
+      await deletionBatch.commit().timeout(_destructiveOpTimeout);
 
       // ── 6. PENANDA "DIHANTAR" — kekal beku ────────────────────────
       await _persistDeletionSubmittedMarker(uid);
@@ -1323,6 +1399,41 @@ class UserModel extends ChangeNotifier {
     final UserModel m = UserModel();
     await m._restoreDeletionIncompleteMarker();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Sambung cleanup selepas restart hanya jika bukti Auth user-not-found
+    // telah dipersistkan. Marker biasa selepas logout kekal tidak disentuh.
+    final String? authGoneUid =
+        prefs.getString(_deletionAuthGoneConfirmedUidKey);
+    // D5: `user_data` ialah slot tunggal. Jika sambungan cleanup TIDAK
+    // selesai (UID lain aktif, atau cleanup gagal), cache itu mungkin milik
+    // UID yang dipadam — hanya guna jika pemiliknya terbukti UID aktif.
+    bool requireProvenOwner = false;
+    if (authGoneUid != null && authGoneUid == m._deletionMarkerUid) {
+      try {
+        final bool cleaned =
+            await m._finalizeLocalDeletionAfterAuthGone(authGoneUid);
+        requireProvenOwner = !cleaned;
+      } catch (e) {
+        m._enforceDeletionMarker(authGoneUid);
+        requireProvenOwner = true;
+        debugPrint('D5: cleanup sambungan selepas restart gagal: $e');
+      }
+    }
+
+    if (requireProvenOwner) {
+      final String? activeUid = _uidOrNull();
+      final String? ownerUid = prefs.getString(_localDataOwnerUidKey);
+      final bool ownerProven = activeUid != null &&
+          ownerUid == activeUid &&
+          activeUid != authGoneUid;
+      if (!ownerProven) {
+        debugPrint(
+          'D5: cache local tidak dimuat — pemilik tidak dapat dibuktikan.',
+        );
+        return m;
+      }
+    }
+
     final String? raw = prefs.getString('user_data');
     if (raw == null) return m;
     try {
@@ -1337,6 +1448,240 @@ class UserModel extends ChangeNotifier {
       debugPrint('UserModel.load: data local rosak, guna default: $e');
     }
     return m;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // D5 — PENYELARASAN PADAM AKAUN (Auth-gone → cleanup tempatan)
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Hanya untuk ujian: ganti pembacaan dokumen `accountDeletionStatus/{uid}`.
+  /// Pulang `null` = dokumen tiada; throw = status tidak dapat dibaca.
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> Function(String uid)?
+      debugStatusFetcher;
+
+  /// Hanya untuk ujian: ganti `currentUser.reload()`. Throw
+  /// [FirebaseAuthException] `user-not-found` untuk mensimulasi Auth dipadam.
+  @visibleForTesting
+  static Future<void> Function()? debugAuthReload;
+
+  /// Hanya untuk ujian: ganti `FirebaseAuth.signOut()`.
+  @visibleForTesting
+  static Future<void> Function()? debugAuthSignOut;
+
+  /// Hanya untuk ujian: dipanggil SEBELUM cleanup tempatan Auth-gone.
+  /// Throw untuk mensimulasi kegagalan cleanup tempatan.
+  @visibleForTesting
+  static Future<void> Function()? debugBeforeAuthGoneCleanup;
+
+  static Future<Map<String, dynamic>?> _fetchDeletionStatus(String uid) async {
+    final Future<Map<String, dynamic>?> Function(String)? override =
+        debugStatusFetcher;
+    if (override != null) return override(uid);
+    final DocumentSnapshot<Map<String, dynamic>> snap = await FirebaseFirestore
+        .instance
+        .collection('accountDeletionStatus')
+        .doc(uid)
+        .get(const GetOptions(source: Source.server));
+    return snap.exists ? snap.data() : null;
+  }
+
+  static Future<void> _reloadAuthUser() async {
+    final Future<void> Function()? override = debugAuthReload;
+    if (override != null) return override();
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    await user.reload();
+  }
+
+  static Future<void> _signOutAuth() async {
+    final Future<void> Function()? override = debugAuthSignOut;
+    if (override != null) return override();
+    await FirebaseAuth.instance.signOut();
+  }
+
+  /// Cleanup tempatan selepas Auth untuk [uid] DISAHKAN tiada (user-not-found).
+  ///
+  /// Pulang `true` = cleanup selesai dan marker dibuang (atau marker memang
+  /// bukan untuk [uid]). Pulang `false` = UID LAIN sedang aktif: TIADA apa
+  /// disentuh (tiada signOut, tiada reset, marker + bukti kekal). Throw =
+  /// cleanup tempatan gagal: marker + bukti kekal dan write kekal disekat.
+  Future<bool> _finalizeLocalDeletionAfterAuthGone(String uid) async {
+    if (_deletionMarkerUid != uid) return true;
+
+    final String? activeUid = _uidOrNull();
+    if (activeUid != null && activeUid != uid) {
+      // UID lain sedang aktif. Jangan sign-out atau padam data sesi itu.
+      // Ambil identiti UID itu supaya ia tidak mewarisi sekatan UID ini.
+      _syncSessionIdentity();
+      return false;
+    }
+
+    final bool wasInProgress = _deletionInProgress;
+    _deletionInProgress = true;
+    _writesBlocked = true;
+    _deletionIncomplete = true;
+
+    try {
+      final Future<void> Function()? gate = debugBeforeAuthGoneCleanup;
+      if (gate != null) await gate();
+
+      if (_uidOrNull() == uid) {
+        await _signOutAuth();
+      }
+
+      // Semak semula selepas await: jika UID lain mengambil alih, jangan
+      // reset data sesinya dan jangan bekukan dia.
+      final String? afterUid = _uidOrNull();
+      if (afterUid != null && afterUid != uid) {
+        _writesBlocked = false;
+        _deletionIncomplete = false;
+        _deletionInProgress = wasInProgress;
+        _syncSessionIdentity();
+        return false;
+      }
+
+      // Bersihkan profil dahulu sambil mengekalkan freeze dan marker.
+      // Marker hanya dipadam selepas cleanup tempatan berjaya.
+      await resetLocalSession(preserveDeletionMarker: true);
+      await _clearDeletionIncompleteMarker();
+      return true;
+    } catch (e) {
+      _enforceDeletionMarker(uid);
+      debugPrint('D5: cleanup tempatan selepas Auth deletion gagal: $e');
+      rethrow;
+    } finally {
+      _deletionInProgress = wasInProgress;
+    }
+  }
+
+  /// Semak status deletion dari server dan sahkan bahawa Auth masih wujud.
+  ///
+  /// Status completed sahaja TIDAK membuka freeze. Firebase Auth mesti
+  /// mengesahkan user-not-found sebelum marker tempatan dibersihkan.
+  ///
+  /// TIDAK PERNAH throw: sebarang ralat tidak dijangka dipulangkan sebagai
+  /// [AccountDeletionReconciliationResult.unverifiable] (marker kekal), supaya
+  /// skrin pemanggil (Splash/Auth/EmailVerification) tidak tersangkut.
+  Future<AccountDeletionReconciliationResult> reconcileAccountDeletion() async {
+    try {
+      return await _reconcileAccountDeletion();
+    } catch (e) {
+      debugPrint('D5: reconcile gagal tanpa bukti — marker dikekalkan: $e');
+      final String? uid = _uidOrNull();
+      if (uid != null && uid == _deletionMarkerUid) {
+        _enforceDeletionMarker(uid);
+        return AccountDeletionReconciliationResult.unverifiable;
+      }
+      return AccountDeletionReconciliationResult.none;
+    }
+  }
+
+  Future<AccountDeletionReconciliationResult>
+      _reconcileAccountDeletion() async {
+    _syncSessionIdentity();
+
+    final String? uid = _uidOrNull();
+    if (uid == null || _deletionMarkerUid != uid) {
+      return AccountDeletionReconciliationResult.none;
+    }
+    _enforceDeletionMarker(uid);
+
+    Map<String, dynamic>? statusData;
+    try {
+      statusData =
+          await _fetchDeletionStatus(uid).timeout(_destructiveOpTimeout);
+    } catch (e) {
+      // Kegagalan baca status TIDAK membuang marker. Auth masih disemak.
+      debugPrint('D5: status server belum dapat dibaca: $e');
+    }
+
+    bool authConfirmedPresent = false;
+    try {
+      await _reloadAuthUser().timeout(_destructiveOpTimeout);
+
+      if (_uidOrNull() != uid) {
+        // Auth hilang/bertukar semasa semakan: bukan bukti pemadaman.
+        return AccountDeletionReconciliationResult.unverifiable;
+      }
+      authConfirmedPresent = true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        // Simpan bukti sebelum sign-out/reset. Bukti ini benar (Auth sudah
+        // mengesahkannya) walaupun UID lain kebetulan aktif; ia tidak
+        // digunakan kecuali marker sepadan, dan load() fail-closed apabila
+        // UID lain aktif. Jika app terhenti selepas ini, load() menyambung
+        // cleanup tanpa bergantung pada currentUser.
+        try {
+          final SharedPreferences prefs =
+              await SharedPreferences.getInstance();
+          await prefs.setString(_deletionAuthGoneConfirmedUidKey, uid);
+        } catch (persistError) {
+          debugPrint(
+            'D5: bukti Auth deletion gagal disimpan: $persistError',
+          );
+          return AccountDeletionReconciliationResult.unverifiable;
+        }
+
+        try {
+          final bool cleaned = await _finalizeLocalDeletionAfterAuthGone(uid);
+          return cleaned
+              ? AccountDeletionReconciliationResult.authDeleted
+              : AccountDeletionReconciliationResult.unverifiable;
+        } catch (cleanupError) {
+          // Cleanup tempatan gagal ≠ pemulihan berjaya.
+          debugPrint('D5: cleanup tempatan gagal: $cleanupError');
+          return AccountDeletionReconciliationResult.unverifiable;
+        }
+      }
+
+      debugPrint('D5: Auth deletion belum dapat disahkan: ${e.code}');
+    } catch (e) {
+      debugPrint('D5: pemeriksaan Auth belum dapat disahkan: $e');
+    }
+
+    if (statusData == null) {
+      return AccountDeletionReconciliationResult.statusMissing;
+    }
+
+    if (statusData['uid'] != uid) {
+      return AccountDeletionReconciliationResult.unverifiable;
+    }
+
+    final Object? rawStatus = statusData['status'];
+    final String? status = rawStatus is String ? rawStatus : null;
+    const Set<String> knownStatuses = <String>{
+      'pending',
+      'processing',
+      'failed',
+      'completed',
+    };
+    if (status == null || !knownStatuses.contains(status)) {
+      return AccountDeletionReconciliationResult.unverifiable;
+    }
+
+    // Rekod status yang sah membuktikan request/status batch pernah wujud.
+    // Cache submitted UID sebelum menulis preference, selari dengan D2.
+    try {
+      await _persistDeletionSubmittedMarker(uid);
+    } catch (e) {
+      debugPrint('D5: submitted marker gagal disimpan semula: $e');
+    }
+
+    switch (status) {
+      case 'pending':
+        return AccountDeletionReconciliationResult.pending;
+      case 'processing':
+        return AccountDeletionReconciliationResult.processing;
+      case 'failed':
+        return AccountDeletionReconciliationResult.failed;
+      case 'completed':
+        return authConfirmedPresent
+            ? AccountDeletionReconciliationResult.completedButAuthStillExists
+            : AccountDeletionReconciliationResult.unverifiable;
+      default:
+        return AccountDeletionReconciliationResult.unverifiable;
+    }
   }
 
   // ── STORAGE (Firebase — backup, dipulih lepas reinstall) ────────
@@ -1383,6 +1728,7 @@ class UserModel extends ChangeNotifier {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       if (_isStale(uid, gen)) return CloudPullResult.staleSession;
       await prefs.setString('user_data', json.encode(_toMap()));
+      await _writeLocalDataOwner(prefs);
       notifyListeners();
       return CloudPullResult.applied;
     } catch (e) {

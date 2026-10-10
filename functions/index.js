@@ -7,6 +7,10 @@ const {
 } = require('firebase-functions/v2/firestore');
 
 const {
+  onSchedule,
+} = require('firebase-functions/v2/scheduler');
+
+const {
   logger,
 } = require('firebase-functions');
 
@@ -79,6 +83,10 @@ function phaseIsKnown(phase) {
 
 function deletionRef(uid) {
   return db.collection('accountDeletionRequests').doc(uid);
+}
+
+function deletionStatusRef(uid) {
+  return db.collection('accountDeletionStatus').doc(uid);
 }
 
 /*
@@ -161,6 +169,8 @@ async function claimRequest(uid) {
       previousLeaseUntilMs: currentLeaseUntil,
     };
 
+    const updatedAt = new Date(nowMs() + 0);
+
     tx.set(
       ref,
       {
@@ -168,8 +178,19 @@ async function claimRequest(uid) {
         phase,
         workerId: id,
         leaseUntil: new Date(nowMs() + LEASE_MS),
-        updatedAt: new Date(),
+        updatedAt,
         lastError: null,
+      },
+      { merge: true },
+    );
+
+    tx.set(
+      deletionStatusRef(uid),
+      {
+        uid,
+        status: 'processing',
+        phase,
+        updatedAt,
       },
       { merge: true },
     );
@@ -302,14 +323,27 @@ async function markFailed(uid, id, phase, error) {
         return;
       }
 
+      const updatedAt = new Date();
+
       tx.update(ref, {
         status: 'failed',
         phase,
         workerId: null,
         leaseUntil: null,
-        updatedAt: new Date(),
+        updatedAt,
         lastError: String(error?.message || error),
       });
+
+      tx.set(
+        deletionStatusRef(uid),
+        {
+          uid,
+          status: 'failed',
+          phase,
+          updatedAt,
+        },
+        { merge: true },
+      );
     });
   } catch (markError) {
     logger.error(
@@ -346,15 +380,29 @@ async function markCompleted(uid, id) {
       throw new LeaseLostError();
     }
 
+    const completedAt = new Date();
+
     tx.update(ref, {
       status: 'completed',
       phase: 'completed',
       workerId: null,
       leaseUntil: null,
-      completedAt: new Date(),
-      updatedAt: new Date(),
+      completedAt,
+      updatedAt: completedAt,
       lastError: null,
     });
+
+    tx.set(
+      deletionStatusRef(uid),
+      {
+        uid,
+        status: 'completed',
+        phase: 'completed',
+        completedAt,
+        updatedAt: completedAt,
+      },
+      { merge: true },
+    );
   });
 }
 
@@ -1202,6 +1250,82 @@ async function processDeletionOrRetry(uid) {
   return result;
 }
 
+async function runScheduledDeletionRecovery() {
+  const now = new Date();
+  const candidates = new Map();
+
+  const [
+    pendingSnapshot,
+    failedSnapshot,
+    expiredProcessingSnapshot,
+  ] = await Promise.all([
+    db.collection("accountDeletionRequests")
+      .where("status", "==", "pending")
+      .limit(50)
+      .get(),
+    db.collection("accountDeletionRequests")
+      .where("status", "==", "failed")
+      .limit(50)
+      .get(),
+    db.collection("accountDeletionRequests")
+      .where("status", "==", "processing")
+      .where("leaseUntil", "<=", now)
+      .limit(50)
+      .get(),
+  ]);
+
+  for (const snapshot of [
+    pendingSnapshot,
+    failedSnapshot,
+    expiredProcessingSnapshot,
+  ]) {
+    for (const doc of snapshot.docs) {
+      candidates.set(doc.id, doc.id);
+    }
+  }
+
+  logger.info(
+    "D3: scheduled account deletion recovery scan.",
+    {
+      event: "scheduled-recovery-scan",
+      candidateCount: candidates.size,
+    },
+  );
+
+  for (const uid of candidates.keys()) {
+    try {
+      await processDeletionOrRetry(uid);
+    } catch (error) {
+      logger.error(
+        "D3: scheduled account deletion recovery failed.",
+        {
+          event: "scheduled-recovery-failure",
+          uid,
+          error: String(error),
+        },
+      );
+    }
+  }
+
+  return {
+    scanned: candidates.size,
+  };
+}
+
+exports.recoverAccountDeletions = onSchedule(
+  {
+    schedule: "every 5 minutes",
+    timeZone: "Asia/Kuala_Lumpur",
+    region: "asia-southeast1",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+    retryCount: 3,
+  },
+  async () => {
+    await runScheduledDeletionRecovery();
+  },
+);
+
 exports.processAccountDeletion = onDocumentCreated(
   {
     document: 'accountDeletionRequests/{uid}',
@@ -1255,6 +1379,7 @@ exports.processAccountDeletion = onDocumentCreated(
  */
 exports.__test = {
   claimRequest,
+  runScheduledDeletionRecovery,
   processDeletion,
   processDeletionOrRetry,
   phasePosts,

@@ -34,21 +34,44 @@ void main() {
     late String body;
     setUpAll(() => body = _deleteAccountBody());
 
-    test('request path is accountDeletionRequests/{uid} with EXACT payload', () {
+    test('request and status are created atomically with exact payloads', () {
       expect(
         body.contains(
-          ".collection('accountDeletionRequests').doc(uid)"
-          ".set(<String, dynamic>{ 'uid': uid, 'status': 'pending', "
-          "'createdAt': FieldValue.serverTimestamp(), })"
-          '.timeout(_destructiveOpTimeout);',
+          'final WriteBatch deletionBatch = FirebaseFirestore.instance.batch();',
         ),
         isTrue,
       );
-      // tepat tiga kunci
-      final int open = body.indexOf('.set(<String, dynamic>{');
-      final int close = body.indexOf('})', open);
-      final String map = body.substring(open, close);
-      expect(RegExp(r"'[A-Za-z]+':").allMatches(map).length, 3);
+      expect(RegExp(r'deletionBatch\.set\(').allMatches(body).length, 2);
+      expect(body.contains(".collection('accountDeletionRequests')"), isTrue);
+      expect(body.contains(".collection('accountDeletionStatus')"), isTrue);
+      expect(
+        body.contains(
+          'await deletionBatch.commit().timeout(_destructiveOpTimeout);',
+        ),
+        isTrue,
+      );
+
+      final List<int> starts = RegExp(r'deletionBatch\.set\(')
+          .allMatches(body)
+          .map((match) => match.start)
+          .toList();
+
+      for (final int setStart in starts) {
+        final int mapStart = body.indexOf('<String, dynamic>{', setStart);
+        expect(mapStart, greaterThan(setStart));
+
+        final int mapEnd = body.indexOf('},', mapStart);
+        expect(mapEnd, greaterThan(mapStart));
+
+        final String map = body.substring(mapStart, mapEnd);
+        expect(RegExp(r"'[A-Za-z]+':").allMatches(map).length, 3);
+        expect(map.contains("'uid': uid"), isTrue);
+        expect(map.contains("'status': 'pending'"), isTrue);
+        expect(
+          map.contains("'createdAt': FieldValue.serverTimestamp()"),
+          isTrue,
+        );
+      }
     });
 
     test('order: reauth → freeze → invalidate → marker → drain → request → submitted',
