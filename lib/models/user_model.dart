@@ -29,7 +29,7 @@ enum AccountDeletionReconciliationResult {
   /// Backend menandakan kegagalan dan scheduler akan mencuba semula.
   failed,
 
-  /// Status lifecycle belum tersedia atau tidak dapat dibaca.
+  /// Bacaan server berjaya tetapi dokumen status pemadaman tiada.
   statusMissing,
 
   /// Backend berkata completed tetapi Auth masih boleh diakses.
@@ -1588,11 +1588,14 @@ class UserModel extends ChangeNotifier {
     _enforceDeletionMarker(uid);
 
     Map<String, dynamic>? statusData;
+    bool statusReadFailed = false;
     try {
       statusData =
           await _fetchDeletionStatus(uid).timeout(_destructiveOpTimeout);
     } catch (e) {
-      // Kegagalan baca status TIDAK membuang marker. Auth masih disemak.
+      // Bezakan kegagalan baca daripada server mengesahkan dokumen tiada.
+      // Auth masih disemak; marker dan freeze tidak dilonggarkan.
+      statusReadFailed = true;
       debugPrint('D5: status server belum dapat dibaca: $e');
     }
 
@@ -1640,7 +1643,12 @@ class UserModel extends ChangeNotifier {
       debugPrint('D5: pemeriksaan Auth belum dapat disahkan: $e');
     }
 
+    if (statusReadFailed) {
+      return AccountDeletionReconciliationResult.unverifiable;
+    }
+
     if (statusData == null) {
+      // Bacaan server berjaya tetapi dokumen status memang tiada.
       return AccountDeletionReconciliationResult.statusMissing;
     }
 

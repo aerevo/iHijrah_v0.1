@@ -232,12 +232,28 @@ void main() {
       expect(p.getString(evidenceKey), 'A'); // bukti kekal utk sambung
     });
 
-    test('server status unavailable + Auth present → statusMissing, frozen',
+    test('server read succeeds but status document is missing → statusMissing, frozen',
+        () async {
+      installSeams(status: null);
+      final UserModel m = await loadWith(markerA(), 'A');
+
+      expect(await m.reconcileAccountDeletion(),
+          AccountDeletionReconciliationResult.statusMissing);
+      expect(statusFetches, 1);
+      expect(m.debugWritesBlocked, isTrue);
+      expect(m.debugDeletionMarkerUid, 'A');
+      expect(signOutCalls, 0);
+
+      final SharedPreferences p = await SharedPreferences.getInstance();
+      expect(p.getString(markerKey), 'A');
+    });
+
+    test('server status read fails + Auth present → unverifiable, frozen',
         () async {
       installSeams(statusThrows: true);
       final UserModel m = await loadWith(markerA(), 'A');
       expect(await m.reconcileAccountDeletion(),
-          AccountDeletionReconciliationResult.statusMissing);
+          AccountDeletionReconciliationResult.unverifiable);
       expect(m.debugWritesBlocked, isTrue);
       expect(m.debugDeletionMarkerUid, 'A');
       expect(signOutCalls, 0);
@@ -251,7 +267,7 @@ void main() {
       );
       final UserModel m = await loadWith(markerA(), 'A');
       expect(await m.reconcileAccountDeletion(),
-          AccountDeletionReconciliationResult.statusMissing);
+          AccountDeletionReconciliationResult.unverifiable);
       expect(m.debugDeletionMarkerUid, 'A');
       expect(m.debugWritesBlocked, isTrue);
     });
