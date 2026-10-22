@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -34,7 +35,8 @@ class _AccountDeletionRecoveryScreenState
       case AccountDeletionReconciliationResult.failed:
         return 'Backend melaporkan kegagalan. Sistem boleh mencuba semula.';
       case AccountDeletionReconciliationResult.statusMissing:
-        return 'Status pelayan belum tersedia. Akaun kekal dibekukan.';
+        return 'Pelayan mengesahkan permintaan pemadaman belum diterima. '
+            'Akaun kekal dibekukan.';
       case AccountDeletionReconciliationResult.completedButAuthStillExists:
         return 'Pembersihan dilaporkan selesai tetapi Auth masih wujud.';
       case AccountDeletionReconciliationResult.authDeleted:
@@ -94,6 +96,89 @@ class _AccountDeletionRecoveryScreenState
     }
   }
 
+  Future<String?> _askPassword() async {
+    final TextEditingController controller = TextEditingController();
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (BuildContext dialogContext) => AlertDialog(
+          title: const Text('Hantar semula permintaan'),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Kata laluan'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('Hantar'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  void _snack(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  Future<void> _resend() async {
+    if (_busy) return;
+    final String? password = await _askPassword();
+    if (password == null || password.isEmpty || !mounted) return;
+
+    setState(() => _busy = true);
+    bool refresh = false;
+    try {
+      final UserModel model =
+          Provider.of<UserModel>(context, listen: false);
+      final DeletionResendResult outcome =
+          await model.resendDeletionRequest(password: password);
+      if (!mounted) return;
+
+      switch (outcome) {
+        case DeletionResendResult.resent:
+          _snack('Permintaan dihantar semula.');
+          refresh = true;
+          break;
+        case DeletionResendResult.alreadySubmitted:
+          _snack('Permintaan sudah wujud di pelayan.');
+          refresh = true;
+          break;
+        case DeletionResendResult.accountDeleted:
+          refresh = true;
+          break;
+        case DeletionResendResult.notAllowed:
+          _snack('Tidak dapat dipastikan selamat untuk hantar semula. '
+              'Akaun kekal dibekukan.');
+          break;
+        case DeletionResendResult.failed:
+          _snack('Penghantaran gagal. Akaun kekal dibekukan.');
+          break;
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('D5-A reauth gagal: ${e.code}');
+      _snack('Pengesahan kata laluan gagal.');
+    } catch (e) {
+      debugPrint('D5-A hantar semula gagal: $e');
+      _snack('Penghantaran gagal. Akaun kekal dibekukan.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (refresh && mounted) await _retry();
+  }
+
   Future<void> _signOut() async {
     if (_busy) return;
     setState(() => _busy = true);
@@ -147,6 +232,19 @@ class _AccountDeletionRecoveryScreenState
                     child: Text(_busy ? 'Menyemak…' : 'Semak semula status'),
                   ),
                 ),
+                if (_result ==
+                        AccountDeletionReconciliationResult.statusMissing &&
+                    Provider.of<UserModel>(context, listen: false)
+                        .hasUnsubmittedDeletionMarker) ...<Widget>[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _busy ? null : _resend,
+                      child: const Text('Hantar semula permintaan'),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,

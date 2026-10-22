@@ -43,6 +43,25 @@ enum AccountDeletionReconciliationResult {
   authDeleted,
 }
 
+/// Hasil [UserModel.resendDeletionRequest] (D5-A).
+enum DeletionResendResult {
+  /// Request dihantar semula SEKALI dan penanda "dihantar" disimpan.
+  resent,
+
+  /// Server sudah mempunyai status: request memang wujud. Penanda "dihantar"
+  /// dipulihkan dan TIADA request kedua dihantar.
+  alreadySubmitted,
+
+  /// Auth disahkan sudah tiada dan cleanup tempatan selesai.
+  accountDeleted,
+
+  /// Syarat tidak dipenuhi atau tidak dapat dibuktikan. Akaun kekal beku.
+  notAllowed,
+
+  /// Penghantaran gagal atau tidak pasti. Akaun kekal beku; tiada gelung.
+  failed,
+}
+
 /// Hasil [UserModel.pullFromCloudDetailed].
 enum CloudPullResult {
   /// Dokumen users/{uid} dimuatkan dan digunakan.
@@ -717,6 +736,14 @@ class UserModel extends ChangeNotifier {
   bool get hasOutstandingDeletionMarker {
     final String? uid = _uidOrNull() ?? _sessionUid;
     return uid != null && uid == _deletionMarkerUid;
+  }
+
+  /// D5-A: marker niat untuk UID aktif ada tetapi penanda "dihantar" tiada.
+  bool get hasUnsubmittedDeletionMarker {
+    final String? uid = _uidOrNull();
+    return uid != null &&
+        uid == _deletionMarkerUid &&
+        uid != _deletionSubmittedUid;
   }
 
   @visibleForTesting
@@ -1474,6 +1501,20 @@ class UserModel extends ChangeNotifier {
   @visibleForTesting
   static Future<void> Function()? debugBeforeAuthGoneCleanup;
 
+  /// Hanya untuk ujian: ganti `FirebaseFirestore.waitForPendingWrites()`.
+  @visibleForTesting
+  static Future<void> Function()? debugWaitForPendingWrites;
+
+  /// Hanya untuk ujian: ganti [deleteAccount] dalam [resendDeletionRequest].
+  @visibleForTesting
+  static Future<void> Function(String password)? debugSubmitDeletion;
+
+  static Future<void> _waitForPendingWrites() async {
+    final Future<void> Function()? override = debugWaitForPendingWrites;
+    if (override != null) return override();
+    await FirebaseFirestore.instance.waitForPendingWrites();
+  }
+
   static Future<Map<String, dynamic>?> _fetchDeletionStatus(String uid) async {
     final Future<Map<String, dynamic>?> Function(String)? override =
         debugStatusFetcher;
@@ -1574,6 +1615,109 @@ class UserModel extends ChangeNotifier {
         return AccountDeletionReconciliationResult.unverifiable;
       }
       return AccountDeletionReconciliationResult.none;
+    }
+  }
+
+  /// D5-A: hantar semula permintaan pemadaman yang tidak sampai ke server
+  /// (app terhenti selepas marker niat ditulis tetapi sebelum batch tiba).
+  ///
+  /// Dibenarkan HANYA jika SEMUA benar: marker tempatan untuk UID aktif ada;
+  /// penanda "dihantar" tiada; tiada penulisan Firestore tertangguh; bacaan
+  /// server berjaya dan dokumen status memang tiada; Auth masih wujud.
+  /// Jika bukti tidak cukup, akaun kekal beku dan TIADA request dihantar.
+  ///
+  /// Request tidak dicipta dua kali: rules hanya membenarkan create, dan
+  /// `permission-denied` menyebabkan status dibaca semula SEKALI (status
+  /// wujud = request sudah ada). Tiada gelung.
+  ///
+  /// Throws [FirebaseAuthException] bila reauth (kata laluan) gagal; tiada
+  /// apa-apa berubah dalam kes itu.
+  Future<DeletionResendResult> resendDeletionRequest({
+    required String password,
+  }) async {
+    final String? uid = _uidOrNull();
+    if (uid == null || _deletionMarkerUid != uid) {
+      return DeletionResendResult.notAllowed;
+    }
+    // Penanda "dihantar" ada tetapi status tiada = anomali: kekal beku.
+    if (_deletionSubmittedUid == uid || _deletionInProgress) {
+      _enforceDeletionMarker(uid);
+      return DeletionResendResult.notAllowed;
+    }
+    _enforceDeletionMarker(uid);
+
+    // 1. Tiada penulisan tertangguh yang mungkin masih sampai ke server.
+    try {
+      await _waitForPendingWrites().timeout(_destructiveOpTimeout);
+    } catch (e) {
+      debugPrint('D5-A: penulisan tertangguh belum selesai: $e');
+      return DeletionResendResult.notAllowed;
+    }
+
+    // 2. Bacaan server dan Auth disahkan melalui reconcile (tidak pernah throw).
+    final AccountDeletionReconciliationResult state =
+        await reconcileAccountDeletion();
+
+    if (state == AccountDeletionReconciliationResult.authDeleted) {
+      return DeletionResendResult.accountDeleted;
+    }
+    if (state == AccountDeletionReconciliationResult.pending ||
+        state == AccountDeletionReconciliationResult.processing ||
+        state == AccountDeletionReconciliationResult.failed) {
+      // Status wujud: request memang sudah dicipta (batch atomik).
+      try {
+        await _persistDeletionSubmittedMarker(uid);
+      } catch (e) {
+        debugPrint('D5-A: penanda dihantar gagal ditulis (cache kekal): $e');
+      }
+      return DeletionResendResult.alreadySubmitted;
+    }
+    if (state != AccountDeletionReconciliationResult.statusMissing) {
+      return DeletionResendResult.notAllowed;
+    }
+
+    // Reconcile boleh memulangkan statusMissing walaupun Auth tidak dapat
+    // disahkan. Hantar semula memerlukan Auth DISAHKAN masih wujud.
+    try {
+      await _reloadAuthUser().timeout(_destructiveOpTimeout);
+      if (_uidOrNull() != uid) return DeletionResendResult.notAllowed;
+    } catch (e) {
+      debugPrint('D5-A: Auth belum dapat disahkan masih wujud: $e');
+      return DeletionResendResult.notAllowed;
+    }
+
+    // 3. Hantar semula SEKALI: reauth + marker + batch atomik + penanda.
+    try {
+      final Future<void> Function(String)? override = debugSubmitDeletion;
+      if (override != null) {
+        await override(password);
+      } else {
+        await deleteAccount(password: password);
+      }
+      return DeletionResendResult.resent;
+    } on FirebaseAuthException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        try {
+          final Map<String, dynamic>? status =
+              await _fetchDeletionStatus(uid).timeout(_destructiveOpTimeout);
+          if (status != null && status['uid'] == uid) {
+            try {
+              await _persistDeletionSubmittedMarker(uid);
+            } catch (_) {}
+            return DeletionResendResult.alreadySubmitted;
+          }
+        } catch (readError) {
+          debugPrint('D5-A: baca semula status gagal: $readError');
+        }
+      }
+      _enforceDeletionMarker(uid);
+      return DeletionResendResult.failed;
+    } catch (e) {
+      debugPrint('D5-A: hantar semula gagal: $e');
+      _enforceDeletionMarker(uid);
+      return DeletionResendResult.failed;
     }
   }
 
