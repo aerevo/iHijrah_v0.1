@@ -814,6 +814,31 @@ test('[unit/fake] recovery: active lease conflict is not counted as processing f
   assert.equal(result.leaseConflicts, 1);
 });
 
+test('[unit/fake] recovery: per-run work budget caps attempts and the run stays healthy', async () => {
+  for (let i = 0; i < 50; i += 1) {
+    const uid = `bp-${i}`;
+    fakeDb.seed(REQ, uid, { uid, status: 'pending', createdAt: past(500_000 - i) });
+  }
+  for (let i = 0; i < 50; i += 1) {
+    const uid = `bf-${i}`;
+    fakeDb.seed(REQ, uid, {
+      uid, status: 'failed', phase: 'profile',
+      workerId: null, leaseUntil: null, updatedAt: past(500_000 - i),
+    });
+  }
+  const seen = [];
+  const { value: result, events } = await capture(() => runScheduledDeletionRecovery({
+    process: async (uid) => { seen.push(uid); },
+  }));
+
+  // 100 distinct candidates exist; the run stops at its attempt budget (80).
+  assert.equal(seen.length, 80);
+  assert.equal(new Set(seen).size, 80);
+  assert.equal(result.processErrors, 0);
+  assert.deepEqual(result.queryFailures, []);
+  assert.ok(events.some((e) => e.event === 'scheduled-recovery-budget-reached'));
+});
+
 test('[unit/fake] recovery: queries are bounded, ordered oldest-first and lease query orders by its inequality field', async () => {
   await capture(() => runScheduledDeletionRecovery({ process: async () => {} }));
 

@@ -1337,7 +1337,8 @@ async function processDeletionOrRetry(uid) {
  * built-in single-field index; this is unverified and must be confirmed on
  * a real Firestore project.
  * (An expired-processing request without a leaseUntil timestamp is
- * likewise invisible to the lease query; that gap predates this change.)
+ * invisible to the lease query; the rotating processing-fallback lane
+ * discovers it.)
  */
 const RECOVERY_BATCH_LIMIT = 50;
 const RECOVERY_FALLBACK_LIMIT = 20;
