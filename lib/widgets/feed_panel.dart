@@ -40,7 +40,6 @@ class FeedPanel extends StatefulWidget {
 class _FeedPanelState extends State<FeedPanel> {
 
   List<_FeedItem> _dailyItems = [];
-  List<PostModel> _posts      = [];
   bool            _cached     = false;
 
   // Stream disimpan (bukan dibuat semula tiap build) supaya rebuild
@@ -54,31 +53,6 @@ class _FeedPanelState extends State<FeedPanel> {
           .orderBy('createdAt', descending: true)
           .limit(50)
           .snapshots();
-
-  static const List<PostModel> _allPosts = [
-    PostModel(id:'101',type:'video',  title:'Kisah Hijrah Rasulullah ﷺ',       content:'Detik cemas di Gua Thur. Bagaimana laba-laba menyelamatkan baginda.',        author:'Ustaz Don',       authorAge:'40',likes:1240,time:'2j',  assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'102',type:'quote',  title:'Kata Hikmah',                     content:'Jangan bersedih, sesungguhnya Allah bersama kita. (At-Taubah: 40)',          author:"Imam Syafi'i",    authorAge:'',  likes:850, time:'5j'),
-    PostModel(id:'103',type:'article',title:'Kelebihan Selawat',                content:'Barangsiapa berselawat sekali, Allah balas sepuluh kali ganda.',              author:'Habib Ali',       authorAge:'52',likes:2100,time:'1h',  assetPath:'assets/images/dummy_post2.jpg'),
-    PostModel(id:'104',type:'event',  title:'Majlis Ilmu Perdana',              content:'Jom sertai kami di Masjid Negeri untuk kupasan kitab Sirah Nabawiyah.',       author:'Admin iHijrah',   authorAge:'',  likes:500, time:'10j'),
-    PostModel(id:'105',type:'quote',  title:'Pesan Imam Malik',                 content:'Ilmu bukan pada apa yang dihafal, tetapi pada apa yang memberi manfaat.',     author:'Imam Malik',      authorAge:'',  likes:3200,time:'12j'),
-    PostModel(id:'106',type:'video',  title:'Tajwid Asas: Al-Fatihah',          content:'Mari perbaiki bacaan Al-Fatihah. Setiap huruf ada makhrajnya.',               author:'Ustaz Azhar',     authorAge:'60',likes:890, time:'1h'),
-    PostModel(id:'107',type:'article',title:'Rahsia Dhuha & Pintu Rezeki',      content:'Konsistensi solat Dhuha membuka pintu rezeki yang tidak disangka-sangka.',  author:'Ustaz Wadi',      authorAge:'45',likes:4500,time:'30m', assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'108',type:'quote',  title:'Nasihat Imam Ghazali',             content:'Ilmu tanpa amal itu gila, amal tanpa ilmu itu sia-sia.',                      author:'Imam Ghazali',    authorAge:'',  likes:5100,time:'2h'),
-    PostModel(id:'109',type:'article',title:'Keutamaan Surah Al-Mulk',          content:'Sesiapa membaca Al-Mulk setiap malam dilindungi dari azab kubur.',            author:'Ustazah Noor',    authorAge:'38',likes:1870,time:'3h',  assetPath:'assets/images/dummy_post2.jpg'),
-    PostModel(id:'110',type:'event',  title:'Kem Tahfiz Ramadan 1446H',         content:'Kem intensif hafazan Al-Quran 10 hari untuk semua peringkat umur.',           author:'Markaz Quran KL', authorAge:'',  likes:720, time:'4h'),
-    PostModel(id:'111',type:'video',  title:'Doa Pagi yang Mujarab',            content:'Amalkan 7 doa ini setiap pagi. Nabi ﷺ mengajarkan kepada para sahabat.',    author:'Dr Rozaimi',      authorAge:'47',likes:3300,time:'5h',  assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'112',type:'quote',  title:'Kata Ibn Qayyim',                  content:'Hati yang kosong dari zikir adalah hati yang mati walaupun bernyawa.',        author:'Ibn Qayyim',      authorAge:'',  likes:6200,time:'6h'),
-    PostModel(id:'115',type:'video',  title:'Tafsir Surah Al-Kahfi Ayat 1-10', content:'Perlindungan dari fitnah Dajjal bermula dengan 10 ayat pertama surah ini.',  author:'Ust Fathul Bari', authorAge:'50',likes:7800,time:'9h',  assetPath:'assets/images/dummy_post1.jpg'),
-    PostModel(id:'116',type:'article',title:'Merenung Ciptaan Langit',          content:'Tidakkah kamu perhatikan langit yang terbentang tanpa tiang? (Ar-Ra\'d: 2)', author:'Ustaz Firdaus',   authorAge:'44',likes:2650,time:'7h',  assetPath:'assets/images/langit.png'),
-    PostModel(id:'117',type:'event',  title:'Selamat Datang ke iHijrah',        content:'Versi terkini iHijrah kini rasmi — Embun Jiwa untuk peneman ibadah harian anda.', author:'Admin iHijrah',   authorAge:'',  likes:980, time:'1h',  assetPath:'assets/images/logo.png'),
-    PostModel(id:'118',type:'article',title:'Kenali Pokok Hijrah Anda',         content:'Setiap amalan yang kau catat menumbuhkan Pokok Embun Jiwa kau sendiri.',      author:'Admin iHijrah',   authorAge:'',  likes:1540,time:'3h',  assetPath:'assets/images/pokok_intro.png'),
-    PostModel(id:'119',type:'event',  title:'Naik Level 2: Pucuk Menghijau',    content:'Tahniah! Konsistensi amalan kau dah cukup untuk pokok naik ke Level 2.',      author:'Admin iHijrah',   authorAge:'',  likes:610, time:'2h',  assetPath:'assets/images/pokok_level2.png'),
-    PostModel(id:'120',type:'event',  title:'Naik Level 3: Dahan Mula Rendang', content:'Pokok kau semakin rendang — teruskan istiqamah, jangan putus rentak.',        author:'Admin iHijrah',   authorAge:'',  likes:730, time:'4h',  assetPath:'assets/images/pokok_level3.png'),
-    PostModel(id:'121',type:'event',  title:'Naik Level 4: Berbuah Amalan',      content:'Masya-Allah, pokok kau dah mula berbuah — hasil disiplin ibadah harian.',      author:'Admin iHijrah',   authorAge:'',  likes:890, time:'6h',  assetPath:'assets/images/pokok_level4.png'),
-    PostModel(id:'122',type:'event',  title:'Naik Level 5: Pokok Matang Emas',  content:'Tahap tertinggi dicapai — pokok kau kini matang & berkilauan keemasan.',      author:'Admin iHijrah',   authorAge:'',  likes:1120,time:'8h',  assetPath:'assets/images/pokok_level5.png'),
-    PostModel(id:'123',type:'article',title:'Sertai Komuniti iHijrah',          content:'Kongsi perjalanan hijrah kau bersama ribuan pengguna lain di seluruh negara.', author:'Admin iHijrah',   authorAge:'',  likes:1780,time:'11h', assetPath:'assets/images/profile_default.png'),
-    PostModel(id:'124',type:'article',title:'Tema Wallpaper Baharu Tersedia',   content:'Latar belakang baharu \"Embun Jiwa\" kini boleh dipilih dalam tetapan aplikasi.', author:'Admin iHijrah',   authorAge:'',  likes:640, time:'13h', assetPath:'assets/images/wallpaper.png'),
-  ];
 
   List<_FeedItem> _buildDaily(DailyContentProvider d) {
     final items = <_FeedItem>[];
@@ -105,7 +79,6 @@ class _FeedPanelState extends State<FeedPanel> {
 
     if (!_cached) {
       _dailyItems = _buildDaily(daily);
-      _posts      = _allPosts;
       _cached     = true;
     }
 
@@ -160,11 +133,9 @@ class _FeedPanelState extends State<FeedPanel> {
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
             ],
 
-            // ── KOMUNITI — post sebenar (Firestore) + seed content ──
-            // Post pengguna sebenar (drpd CreatePostScreen) muncul DULU
-            // (terkini atas), diikuti _allPosts (seed/dummy) sbg
-            // pengisi. Bila komuniti dah membesar & seed tak diperlukan
-            // lagi, buang _allPosts terus drpd senarai gabungan ni.
+            // ── KOMUNITI — post sebenar dari Firestore ──────────────
+            // Post pengguna sebenar dipaparkan terkini di atas.
+            // Jika tiada post, papar keadaan kosong yang jelas.
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -183,10 +154,10 @@ class _FeedPanelState extends State<FeedPanel> {
                 final List<PostModel> realPosts = snapshot.hasData
                     ? snapshot.data!.docs.map(_postFromDoc).toList()
                     : <PostModel>[];
-                final List<PostModel> combined = [...realPosts, ..._posts];
+                final List<PostModel> combined = realPosts;
 
                 // Status stream: error / memuatkan dipaparkan sbg baris
-                // di atas senarai (seed content kekal kelihatan).
+                // di atas senarai.
                 final bool hasError = snapshot.hasError;
                 final bool isLoading = !hasError &&
                     !snapshot.hasData &&
@@ -194,6 +165,24 @@ class _FeedPanelState extends State<FeedPanel> {
                 final int offset = (hasError || isLoading) ? 1 : 0;
                 if (hasError) {
                   debugPrint('FeedPanel: stream posts gagal: ${snapshot.error}');
+                }
+
+                if (!hasError && !isLoading && combined.isEmpty) {
+                  return SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                    sliver: SliverToBoxAdapter(
+                      child: Center(
+                        child: Text(
+                          'Belum ada post komuniti lagi. Jadilah yang pertama berkongsi.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: widget.palette.textMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
                 }
 
                 return SliverPadding(
