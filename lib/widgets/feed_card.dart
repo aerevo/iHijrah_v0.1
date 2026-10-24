@@ -9,6 +9,7 @@
 // bukan beza seni bina. Tiada lagi FeedPalette/PremiumGlass/Playfair
 // — kad kekal putih, static, ringkas macam FB sebenar.
 import 'package:flutter/material.dart';
+import '../screens/user_profile_screen.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 import 'anim_helpers.dart';
@@ -110,9 +111,29 @@ class FeedCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(post.author, maxLines: 1, overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700,
-                                  color: kTextPrimary)),
+                          GestureDetector(
+                            onTap: isLive
+                                ? () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => UserProfileScreen(
+                                          uid: post.authorId,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: Text(
+                              post.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: kTextPrimary,
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 2),
                           Row(children: [
                             Text(post.time, style: const TextStyle(fontSize: 12, color: kTextMuted)),
