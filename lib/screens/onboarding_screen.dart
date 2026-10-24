@@ -1,6 +1,7 @@
 // lib/screens/onboarding_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
@@ -154,7 +155,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _avatarPath = null;
         _saving = false;
       });
-      _snack('Ralat menyimpan data. Cuba lagi.');
+      String detail = 'Ralat menyimpan data. Cuba lagi.';
+      if (e is FirebaseException) {
+        detail = 'Ralat menyimpan data: ' + e.code;
+      } else if (e is StateError) {
+        detail = 'Ralat menyimpan data: ' + e.message;
+      }
+      _snack(detail);
     }
   }
 
