@@ -248,6 +248,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: kTextMuted, fontSize: 11.5),
               ),
+              const SizedBox(height: 6),
+              const Text(
+                'Tak nampak e-mel? Semak juga folder Spam.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: kTextMuted, fontSize: 11.5),
+              ),
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,

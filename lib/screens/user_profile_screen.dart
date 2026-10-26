@@ -9,6 +9,38 @@ import '../models/profile_model.dart';
 import '../services/profile_service.dart';
 import '../services/social_failure.dart';
 
+/// Keadaan butang Ikuti/Mengikuti. Logik tulen supaya boleh diuji tanpa Firebase.
+@visibleForTesting
+class FollowButtonState {
+  const FollowButtonState({
+    required this.label,
+    required this.enabled,
+    required this.targetFollow,
+  });
+
+  /// Teks butang (Bahasa Melayu).
+  final String label;
+
+  /// Butang boleh ditekan hanya apabila status dimuat dan tiada operasi berjalan.
+  final bool enabled;
+
+  /// Nilai `follow` yang dihantar ke ProfileService.setFollowing apabila ditekan.
+  final bool targetFollow;
+}
+
+@visibleForTesting
+FollowButtonState followButtonState({
+  required bool following,
+  required bool loading,
+  required bool busy,
+}) {
+  return FollowButtonState(
+    label: following ? 'Mengikuti' : 'Ikuti',
+    enabled: !loading && !busy,
+    targetFollow: !following,
+  );
+}
+
 class UserProfileScreen extends StatefulWidget {
   final String uid;
 
@@ -122,18 +154,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           followSnapshot.connectionState ==
                               ConnectionState.waiting;
 
+                      final FollowButtonState state = followButtonState(
+                        following: following,
+                        loading: loading,
+                        busy: _busy,
+                      );
+
                       return ElevatedButton.icon(
-                        onPressed: loading || _busy
-                            ? null
-                            : () => _toggleFollow(!following),
+                        onPressed: state.enabled
+                            ? () => _toggleFollow(state.targetFollow)
+                            : null,
                         icon: Icon(
                           following
                               ? Icons.check_rounded
                               : Icons.person_add_alt_rounded,
                         ),
-                        label: Text(
-                          following ? 'Following' : 'Follow',
-                        ),
+                        label: Text(state.label),
                       );
                     },
                   ),
