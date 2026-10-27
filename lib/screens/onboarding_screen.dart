@@ -157,7 +157,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       });
       String detail = 'Ralat menyimpan data. Cuba lagi.';
       if (e is FirebaseException) {
-        detail = 'Ralat menyimpan data: ' + e.code;
+        final String? diag =
+            Provider.of<UserModel>(context, listen: false).lastCloudDiagnostic;
+        detail = 'Ralat menyimpan data: ${e.code}' +
+            (diag == null ? '' : ' [$diag]');
       } else if (e is StateError) {
         detail = 'Ralat menyimpan data: ' + e.message;
       }

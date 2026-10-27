@@ -1034,6 +1034,7 @@ class UserModel extends ChangeNotifier {
     final DocumentReference<Map<String, dynamic>> docRef =
         FirebaseFirestore.instance.collection('users').doc(uid);
 
+    _lastCloudDiag = null;
     try {
       await docRef.update(buildUpdatePayload(map));
       if (!_isStale(uid, gen)) {
@@ -1042,12 +1043,28 @@ class UserModel extends ChangeNotifier {
       }
       return;
     } on FirebaseException catch (e) {
-      if (e.code != 'not-found') {
+      bool docMissing = e.code == 'not-found';
+      if (!docMissing && e.code == 'permission-denied') {
+        // update() pada dokumen yang belum wujud dinilai oleh rules dengan
+        // resource == null dan boleh memulangkan permission-denied (bukan
+        // not-found). Semak kewujudan melalui read (rules: owner boleh baca).
+        docMissing = await _usersDocMissing(docRef);
+        _recordCloudDiag(
+          op: 'update',
+          code: e.code,
+          doc: docMissing ? 'missing' : 'exists',
+          map: map,
+        );
+      }
+      if (!docMissing) {
+        if (_lastCloudDiag == null) {
+          _recordCloudDiag(op: 'update', code: e.code, doc: 'unknown', map: map);
+        }
         debugPrint('UserModel._pushToCloud update gagal (offline?): $e');
         if (!_isStale(uid, gen)) _cloudInSync = false;
         rethrow;
       }
-      // not-found → teruskan ke logik cipta di bawah.
+      // Dokumen tiada → teruskan ke logik cipta di bawah.
     }
 
     // ── Dokumen users/{uid} tiada ────────────────────────────────
@@ -1077,8 +1094,48 @@ class UserModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('UserModel._pushToCloud create gagal (offline?): $e');
+      if (e is FirebaseException) {
+        _recordCloudDiag(op: 'create', code: e.code, doc: 'missing', map: map);
+      }
       if (!_isStale(uid, gen)) _cloudInSync = false;
       rethrow;
+    }
+  }
+
+  /// Diagnosis selamat (tanpa e-mel, token atau data peribadi) bagi
+  /// kegagalan tulis users/{uid} yang terakhir. Dipaparkan oleh Onboarding.
+  String? _lastCloudDiag;
+  String? get lastCloudDiagnostic => _lastCloudDiag;
+
+  void _recordCloudDiag({
+    required String op,
+    required String code,
+    required String doc,
+    required Map<String, dynamic> map,
+  }) {
+    final String? authEmail = _currentAuthUser()?.email;
+    final Object? mapEmail = map['email'];
+    final bool emailMatch =
+        mapEmail is String && authEmail != null && mapEmail == authEmail;
+    final Object? birthdate = map['birthdate'];
+    final Object? hijri = map['hijriDOB'];
+    final bool hijriEq = hijri == null || hijri == birthdate;
+    _lastCloudDiag = 'op=$op;code=$code;doc=$doc;keys=${map.length};'
+        'emailMatch=$emailMatch;birthdate=${birthdate != null};'
+        'hijriEq=$hijriEq';
+  }
+
+  /// true HANYA jika server mengesahkan dokumen tiada. Ralat baca → false.
+  static Future<bool> _usersDocMissing(
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> snap =
+          await ref.get(const GetOptions(source: Source.server));
+      return !snap.exists;
+    } catch (e) {
+      debugPrint('UserModel: semakan kewujudan users doc gagal: $e');
+      return false;
     }
   }
 
