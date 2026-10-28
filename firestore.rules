@@ -639,6 +639,44 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── Laporan kandungan pengguna (R1-9) ────────────────────────
+    // Tulis sahaja: tiada klien boleh baca, ubah atau padam (semakan dibuat
+    // melalui Firebase Console). ID dokumen deterministik
+    // (pelapor_jenis_sasaran) menghalang laporan berganda oleh pengguna yang
+    // sama untuk sasaran yang sama (create-only). targetId tidak boleh
+    // mengandungi '/' (ID dokumen); guna ':' untuk komen dan reply.
+    match /reports/{reportId} {
+      allow create: if verified()
+        && !clientWriteFrozen(request.auth.uid)
+        && request.resource.data.keys().hasOnly([
+          'reporterId', 'targetType', 'targetId', 'targetAuthorId',
+          'reason', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'reporterId', 'targetType', 'targetId', 'targetAuthorId',
+          'reason', 'createdAt'
+        ])
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.targetType in
+          ['post', 'comment', 'reply', 'profile']
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() > 0
+        && request.resource.data.targetId.size() <= 200
+        && !request.resource.data.targetId.matches('.*/.*')
+        && request.resource.data.targetAuthorId is string
+        && request.resource.data.targetAuthorId.size() > 0
+        && request.resource.data.targetAuthorId.size() <= 128
+        && request.resource.data.targetAuthorId != request.auth.uid
+        && request.resource.data.reason in
+          ['spam', 'tidak_sesuai', 'gangguan', 'palsu', 'lain']
+        && request.resource.data.createdAt == request.time
+        && reportId == request.auth.uid + '_'
+          + request.resource.data.targetType + '_'
+          + request.resource.data.targetId;
+
+      allow read, update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
